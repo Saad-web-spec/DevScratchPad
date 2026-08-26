@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import {
   FileJson, Database, Key, Binary, Hash, Type, Regex, Code, Clock,
   Terminal, SplitSquareHorizontal, History, Trash2,
-  FileCode, Calendar, ArrowLeftRight, Minimize2, Sparkles, FileText, Shield, Network, Zap
+  FileCode, Calendar, ArrowLeftRight, Minimize2, Sparkles, FileText, Shield, Network
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -13,12 +13,6 @@ import {
 } from "@/lib/storage";
 
 const NAV_CATEGORIES = [
-  {
-    title: "Pipeline",
-    items: [
-      { name: "Recipe Pipeline", icon: Zap, id: "recipe-pipeline" },
-    ],
-  },
   {
     title: "Formatters & Minifiers",
     items: [
@@ -105,7 +99,7 @@ export function Sidebar({
   };
 
   return (
-    <aside className={cn("w-60 bg-slate-50 dark:bg-slate-900 border-r border-slate-200 dark:border-slate-700 flex flex-col h-full shrink-0 overflow-y-auto", className)}>
+    <aside className={cn("w-60 bg-slate-50 dark:bg-[#0b101b] border-r border-slate-200 dark:border-slate-800/80 flex flex-col h-full shrink-0 overflow-y-auto transition-colors", className)}>
       <div className="flex-1 py-4">
         {NAV_CATEGORIES.map((category) => (
           <div key={category.title} className="mb-5">
@@ -120,16 +114,18 @@ export function Sidebar({
                     <button
                       onClick={() => handleToolClick(item.id)}
                       className={cn(
-                        "w-full flex items-center gap-3 px-4 py-2 text-[13px] transition-colors text-left",
+                        "w-full flex items-center gap-3 px-4 py-2 text-[13px] transition-all text-left group",
                         isActive
-                          ? "bg-blue-50 dark:bg-blue-950 text-blue-600 dark:text-blue-400 border-r-2 border-blue-600 dark:border-blue-400 font-medium"
-                          : "text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 border-r-2 border-transparent"
+                          ? "bg-blue-50 dark:bg-gradient-to-r dark:from-cyan-500/15 dark:via-blue-600/10 dark:to-transparent text-blue-600 dark:text-cyan-300 border-r-2 border-blue-600 dark:border-cyan-400 font-semibold"
+                          : "text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/50 border-r-2 border-transparent"
                       )}
                     >
                       <item.icon
                         className={cn(
-                          "w-4 h-4 shrink-0",
-                          isActive ? "text-blue-600 dark:text-blue-400" : "text-slate-400 dark:text-slate-500"
+                          "w-4 h-4 shrink-0 transition-colors",
+                          isActive
+                            ? "text-blue-600 dark:text-cyan-400"
+                            : "text-slate-400 dark:text-slate-500 group-hover:text-slate-600 dark:group-hover:text-slate-300"
                         )}
                       />
                       <span className="truncate">{item.name}</span>
@@ -143,35 +139,35 @@ export function Sidebar({
       </div>
 
       {/* History Drawer Toggle */}
-      <div className="border-t border-slate-200 dark:border-slate-700">
+      <div className="border-t border-slate-200 dark:border-slate-800/80">
         <button
           onClick={() => setHistoryOpen(!historyOpen)}
-          className="w-full flex items-center justify-between px-4 py-3 text-[13px] text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+          className="w-full flex items-center justify-between px-4 py-3 text-[13px] text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors"
         >
           <div className="flex items-center gap-2">
-            <History className="w-4 h-4" />
+            <History className="w-4 h-4 text-slate-400 dark:text-slate-500" />
             <span>History</span>
           </div>
-          <span className="text-[10px] bg-slate-200 dark:bg-slate-700 text-slate-500 dark:text-slate-400 px-1.5 py-0.5 rounded-full font-medium">
+          <span className="text-[10px] bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-cyan-400 border border-transparent dark:border-slate-700 px-1.5 py-0.5 rounded-full font-medium">
             {entries.length}
           </span>
         </button>
 
         {historyOpen && (
-          <div className="border-t border-slate-200 dark:border-slate-700 max-h-72 overflow-y-auto bg-white dark:bg-slate-900">
+          <div className="border-t border-slate-200 dark:border-slate-800 max-h-72 overflow-y-auto bg-white dark:bg-[#0e1526]">
             {entries.length === 0 ? (
               <p className="px-4 py-6 text-xs text-slate-400 dark:text-slate-500 text-center">
                 No history yet
               </p>
             ) : (
               <>
-                <div className="px-3 py-2 flex items-center justify-between">
+                <div className="px-3 py-2 flex items-center justify-between border-b border-slate-100 dark:border-slate-800/60">
                   <span className="text-[10px] text-slate-400 dark:text-slate-500 uppercase tracking-wider font-medium">
                     Recent
                   </span>
                   <button
                     onClick={handleClearAll}
-                    className="text-[10px] text-red-500 hover:text-red-700 dark:hover:text-red-400 font-medium"
+                    className="text-[10px] text-red-500 hover:text-red-700 dark:text-rose-400 dark:hover:text-rose-300 font-medium"
                   >
                     Clear All
                   </button>
@@ -180,16 +176,16 @@ export function Sidebar({
                   {entries.map((entry) => (
                     <li
                       key={entry.id}
-                      className="group flex items-center justify-between px-3 py-2 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+                      className="group flex items-center justify-between px-3 py-2 hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-colors"
                     >
                       <button
                         onClick={() => handleHistoryClick(entry)}
                         className="flex-1 text-left min-w-0"
                       >
-                        <p className="text-xs font-medium text-slate-700 dark:text-slate-200 truncate">
+                        <p className="text-xs font-medium text-slate-700 dark:text-slate-200 truncate group-hover:text-blue-600 dark:group-hover:text-cyan-300 transition-colors">
                           {entry.toolName}
                         </p>
-                        <p className="text-[10px] text-slate-400 dark:text-slate-500 truncate">
+                        <p className="text-[10px] text-slate-400 dark:text-slate-500 truncate font-mono">
                           {entry.input.slice(0, 50)}…
                         </p>
                       </button>
@@ -202,7 +198,7 @@ export function Sidebar({
                             e.stopPropagation();
                             handleDelete(entry.id);
                           }}
-                          className="p-1 text-slate-300 dark:text-slate-600 hover:text-red-500 dark:hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity"
+                          className="p-1 text-slate-300 dark:text-slate-600 hover:text-red-500 dark:hover:text-rose-400 opacity-0 group-hover:opacity-100 transition-opacity"
                         >
                           <Trash2 className="w-3 h-3" />
                         </button>

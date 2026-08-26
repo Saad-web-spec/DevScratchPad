@@ -13,13 +13,13 @@
 }
 
 .dark {
-  --background: #0f172a;
-  --foreground: #e2e8f0;
-  --surface: #1e293b;
-  --border: #334155;
+  --background: #080c14;
+  --foreground: #f1f5f9;
+  --surface: #0e1526;
+  --border: #1e293b;
   --text-secondary: #94a3b8;
-  --accent: #3b82f6;
-  --active: #e2e8f0;
+  --accent: #38bdf8;
+  --active: #38bdf8;
 }
 
 body {
@@ -35,8 +35,8 @@ body {
 
 /* Crisp scrollbars — adapt to theme */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 7px;
+  height: 7px;
 }
 ::-webkit-scrollbar-track {
   background: #f1f5f9;
@@ -50,11 +50,12 @@ body {
 }
 
 .dark ::-webkit-scrollbar-track {
-  background: #1e293b;
+  background: #0b101b;
 }
 .dark ::-webkit-scrollbar-thumb {
-  background: #475569;
+  background: #1e293b;
+  border-radius: 4px;
 }
 .dark ::-webkit-scrollbar-thumb:hover {
-  background: #64748b;
+  background: #334155;
 }

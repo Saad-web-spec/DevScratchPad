@@ -19,24 +19,24 @@ export function StatusBar({
   executionMs,
 }: StatusBarProps) {
   return (
-    <footer className="h-7 bg-slate-50 dark:bg-slate-900 border-t border-slate-200 dark:border-slate-700 flex items-center justify-between px-3 shrink-0 text-[11px] font-medium text-slate-500 dark:text-slate-400 z-50 relative">
+    <footer className="h-7 bg-slate-50 dark:bg-[#080c14] border-t border-slate-200 dark:border-slate-800/80 flex items-center justify-between px-3 shrink-0 text-[11px] font-medium text-slate-500 dark:text-slate-400 z-50 relative transition-colors">
       <div className="flex items-center gap-4 min-w-0 flex-1">
         <div
           className={cn(
-            "flex items-center gap-1.5 px-2 py-0.5 rounded-sm shrink-0",
+            "flex items-center gap-1.5 px-2 py-0.5 rounded-sm shrink-0 font-medium transition-all",
             isValid
-              ? "text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950"
-              : "text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950"
+              ? "text-emerald-600 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/50 dark:border dark:border-emerald-500/30"
+              : "text-red-600 dark:text-rose-300 bg-red-50 dark:bg-rose-950/50 dark:border dark:border-rose-500/30"
           )}
         >
           {isValid ? (
             <>
-              <CheckCircle2 className="w-3.5 h-3.5" />
+              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 dark:text-emerald-400" />
               <span>Valid</span>
             </>
           ) : (
             <>
-              <XCircle className="w-3.5 h-3.5" />
+              <XCircle className="w-3.5 h-3.5 text-red-500 dark:text-rose-400" />
               <span>
                 Invalid Syntax{errorLine ? ` at line ${errorLine}` : ""}
               </span>
@@ -45,7 +45,7 @@ export function StatusBar({
         </div>
 
         {!isValid && errorMessage && (
-          <span className="text-red-500 dark:text-red-400 truncate">{errorMessage}</span>
+          <span className="text-red-500 dark:text-rose-400 truncate font-mono text-[10px]">{errorMessage}</span>
         )}
       </div>
 
@@ -58,7 +58,7 @@ export function StatusBar({
           <Clock className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500" />
           <span>{executionMs.toFixed(2)} ms</span>
         </div>
-        <div className="w-px h-3 bg-slate-200 dark:bg-slate-700"></div>
+        <div className="w-px h-3 bg-slate-200 dark:bg-slate-800"></div>
         <div className="text-slate-400 dark:text-slate-500">UTF-8</div>
       </div>
     </footer>

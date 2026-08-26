@@ -23,7 +23,6 @@ import { GraphqlFormatterTool } from "@/components/tools/GraphqlFormatterTool";
 import { MarkdownPreviewerTool } from "@/components/tools/MarkdownPreviewerTool";
 import { HmacGeneratorTool } from "@/components/tools/HmacGeneratorTool";
 import { CidrCalculatorTool } from "@/components/tools/CidrCalculatorTool";
-import { RecipePipelineTool } from "@/components/tools/RecipePipelineTool";
 import { CommandPalette } from "@/components/modals/CommandPalette";
 import { SeoContent } from "@/components/seo/SeoContent";
 import { getToolMeta, type ToolMeta } from "@/lib/tools/registry";
@@ -53,7 +52,6 @@ const SIDEBAR_TO_SLUG: Record<string, string> = {
   "markdown-previewer": "markdown-previewer",
   "hmac-generator": "hmac-generator",
   "cidr-calculator": "cidr-calculator",
-  "recipe-pipeline": "recipe-pipeline",
 };
 
 const SIDEBAR_TO_NAME: Record<string, string> = {
@@ -76,7 +74,6 @@ const SIDEBAR_TO_NAME: Record<string, string> = {
   "markdown-previewer": "Markdown Previewer",
   "hmac-generator": "HMAC Generator",
   "cidr-calculator": "CIDR Calculator",
-  "recipe-pipeline": "Recipe Pipeline",
 };
 
 const SLUG_TO_SIDEBAR: Record<string, string> = Object.fromEntries(
@@ -214,11 +211,10 @@ export function WorkspaceShell({ initialToolSlug, toolMeta }: WorkspaceShellProp
     "markdown-previewer",
     "hmac-generator",
     "cidr-calculator",
-    "recipe-pipeline",
   ];
 
   return (
-    <div className="flex flex-col h-screen w-full bg-white dark:bg-slate-950 overflow-hidden relative">
+    <div className="flex flex-col h-screen w-full bg-white dark:bg-[#080c14] overflow-hidden relative">
       <TopBar
         onOpenCommandPalette={() => setCommandPaletteOpen(true)}
         onOpenMobileMenu={() => setIsMobileDrawerOpen(true)}
@@ -238,18 +234,18 @@ export function WorkspaceShell({ initialToolSlug, toolMeta }: WorkspaceShellProp
           <div className="fixed inset-0 z-50 md:hidden flex">
             {/* Backdrop */}
             <div
-              className="fixed inset-0 bg-slate-900/50 dark:bg-black/60 backdrop-blur-xs transition-opacity animate-in fade-in duration-200"
+              className="fixed inset-0 bg-slate-900/50 dark:bg-black/70 backdrop-blur-xs transition-opacity animate-in fade-in duration-200"
               onClick={() => setIsMobileDrawerOpen(false)}
             />
 
             {/* Slide-over Container */}
-            <div className="relative flex flex-col w-72 max-w-[85vw] bg-white dark:bg-slate-900 h-full shadow-2xl z-10 animate-in slide-in-from-left duration-200">
-              <div className="h-14 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between px-4 shrink-0 bg-white dark:bg-slate-900">
+            <div className="relative flex flex-col w-72 max-w-[85vw] bg-white dark:bg-[#0b101b] h-full shadow-2xl z-10 animate-in slide-in-from-left duration-200 border-r border-transparent dark:border-slate-800">
+              <div className="h-14 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between px-4 shrink-0 bg-white dark:bg-[#0b101b]">
                 <div className="flex items-center gap-2.5">
-                  <div className="w-8 h-8 bg-slate-900 dark:bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold text-xs shrink-0">
+                  <div className="w-8 h-8 bg-slate-900 dark:bg-gradient-to-tr dark:from-cyan-500 dark:via-blue-600 dark:to-indigo-600 rounded-lg flex items-center justify-center text-white font-bold text-xs shrink-0 shadow-sm dark:shadow-md dark:shadow-blue-500/25">
                     DS
                   </div>
-                  <span className="font-semibold text-base text-slate-900 dark:text-white truncate">
+                  <span className="font-semibold text-base text-slate-900 dark:text-transparent dark:bg-clip-text dark:bg-gradient-to-r dark:from-white dark:via-slate-100 dark:to-slate-300 truncate">
                     DevScratchpad
                   </span>
                 </div>
@@ -281,7 +277,7 @@ export function WorkspaceShell({ initialToolSlug, toolMeta }: WorkspaceShellProp
           </div>
         )}
 
-        <main className="flex-1 flex flex-col min-w-0 bg-white dark:bg-slate-950 overflow-y-auto">
+        <main className="flex-1 flex flex-col min-w-0 bg-white dark:bg-[#080c14] overflow-y-auto">
           <div className="flex-1 min-h-0 relative flex flex-col">
             <div className="flex-1 min-h-[500px]">
               {activeTool === "json-formatter" && (
@@ -420,14 +416,6 @@ export function WorkspaceShell({ initialToolSlug, toolMeta }: WorkspaceShellProp
               )}
               {activeTool === "cidr-calculator" && (
                 <CidrCalculatorTool
-                  onValidationChange={handleValidationChange}
-                  onStatsChange={handleStatsChange}
-                  onLogHistory={handleLogHistory}
-                  restoredInput={restoredInput}
-                />
-              )}
-              {activeTool === "recipe-pipeline" && (
-                <RecipePipelineTool
                   onValidationChange={handleValidationChange}
                   onStatsChange={handleStatsChange}
                   onLogHistory={handleLogHistory}

@@ -404,30 +404,6 @@ export const TOOLS_REGISTRY: Record<string, ToolMeta> = {
       "Ctrl/Cmd + K — Open Command Palette to switch tools instantly.",
     ],
   },
-  "recipe-pipeline": {
-    slug: "recipe-pipeline",
-    name: "Recipe Pipeline",
-    shortName: "Recipe Pipeline",
-    description: "Chain multiple operations into an automated pipeline",
-    seoDescription:
-      "Fast, client-side Recipe Pipeline. 100% private, zero server transmission. Chain Base64, JSON, URL encoding, text transforms, and conversions into multi-step automated workflows in your browser.",
-    howToUse: [
-      "Paste or type your input data into the Input panel.",
-      "Click 'Add Step' to select operations from JSON, Encoding, or Text categories.",
-      "Reorder steps with the arrow buttons or remove them with the trash icon.",
-      "Click 'Run Pipeline' to execute all steps sequentially — each step's output feeds the next.",
-      "Expand any step to preview its intermediate output.",
-      "Click 'Copy' on the Final Output panel to copy the result.",
-    ],
-    edgeCases: [
-      "If a step fails (e.g. invalid JSON for a JSON operation), the pipeline halts at that step.",
-      "Steps are executed synchronously in the browser — very large payloads may briefly block the UI.",
-      "The pipeline does not persist across page reloads (save the recipe if needed).",
-    ],
-    shortcuts: [
-      "Ctrl/Cmd + K — Open Command Palette to switch tools instantly.",
-    ],
-  },
 };
 
 export const TOOL_SLUGS = Object.keys(TOOLS_REGISTRY);
