@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { MonacoEditor } from "@/components/MonacoEditor";
 import { testRegex, replaceRegex, type RegexMatch } from "@/lib/tools/regex";
-import { Copy, Trash2, Check, Regex as RegexIcon, Replace, CheckCircle2, AlertCircle, Link as LinkIcon } from "lucide-react";
+import { Copy, Trash2, Check, Regex as RegexIcon, Replace, AlertCircle, Link as LinkIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { addSnapshot } from "@/lib/storage";
 
@@ -39,6 +39,7 @@ export function RegexTesterTool({
   const [matches, setMatches] = useState<RegexMatch[]>([]);
   const [regexError, setRegexError] = useState<string | undefined>();
   const [copied, setCopied] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<"input" | "output">("input");
 
   // Save workspace snapshot
   useEffect(() => {
@@ -116,42 +117,43 @@ export function RegexTesterTool({
   };
 
   return (
-    <div className="flex flex-col h-full bg-white">
+    <div className="flex flex-col h-full bg-white w-full overflow-x-hidden">
       {/* Tool Header */}
-      <div className="h-14 border-b border-[#e2e8f0] flex items-center justify-between px-4 bg-[#f8fafc] shrink-0">
+      <div className="min-h-14 border-b border-[#e2e8f0] flex flex-wrap md:flex-nowrap items-center justify-between px-3 md:px-4 py-2 md:py-0 bg-[#f8fafc] shrink-0 gap-2">
         <div>
           <h2 className="text-sm font-semibold text-slate-800">Regex Tester</h2>
-          <p className="text-[11px] text-slate-400">Test regular expressions and inspect match groups</p>
+          <p className="text-[11px] text-slate-400 hidden sm:block">Test regular expressions and inspect match groups</p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5 md:gap-2 flex-wrap">
           <button
             onClick={() => {
               try {
                 window.location.hash = 'data=' + btoa(testString);
               } catch {}
             }}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-slate-50 text-slate-700 rounded text-xs font-medium transition-colors border border-[#e2e8f0] shadow-sm"
+            className="flex items-center gap-1 px-2.5 py-1.5 bg-white hover:bg-slate-50 text-slate-700 rounded text-xs font-medium transition-colors border border-[#e2e8f0] shadow-2xs"
           >
             <LinkIcon className="w-3.5 h-3.5" />
-            Share
+            <span>Share</span>
           </button>
+
           {/* Flag toggles */}
-          <div className="flex items-center bg-slate-100 rounded-lg p-1 border border-slate-200 gap-1">
+          <div className="flex items-center bg-slate-100 rounded-lg p-0.5 border border-slate-200 gap-0.5">
             {[
-              { id: "g", label: "g", title: "Global (find all matches)" },
+              { id: "g", label: "g", title: "Global" },
               { id: "i", label: "i", title: "Case insensitive" },
               { id: "m", label: "m", title: "Multiline" },
-              { id: "s", label: "s", title: "DotAll (dot matches newline)" },
+              { id: "s", label: "s", title: "DotAll" },
             ].map((f) => (
               <button
                 key={f.id}
                 onClick={() => toggleFlag(f.id)}
                 title={f.title}
                 className={cn(
-                  "w-6 h-6 rounded text-xs font-mono font-medium transition-colors flex items-center justify-center",
+                  "w-5 h-5 rounded text-xs font-mono font-medium transition-colors flex items-center justify-center",
                   flags[f.id]
-                    ? "bg-blue-600 text-white font-bold shadow-xs"
+                    ? "bg-blue-600 text-white font-bold shadow-2xs"
                     : "text-slate-500 hover:text-slate-800 hover:bg-slate-200"
                 )}
               >
@@ -164,22 +166,22 @@ export function RegexTesterTool({
           <button
             onClick={() => setReplaceMode(!replaceMode)}
             className={cn(
-              "flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-medium transition-colors border",
+              "flex items-center gap-1 px-2.5 py-1.5 rounded text-xs font-medium transition-colors border",
               replaceMode
                 ? "bg-blue-50 border-blue-200 text-blue-700 font-semibold"
                 : "bg-slate-100 border-slate-200 text-slate-700 hover:bg-slate-200"
             )}
           >
             <Replace className="w-3.5 h-3.5" />
-            Substitution
+            <span>Substitution</span>
           </button>
         </div>
       </div>
 
       {/* Regex Pattern Input Bar */}
-      <div className="border-b border-[#e2e8f0] bg-white p-3 px-4 flex flex-col gap-2 shrink-0">
-        <div className="flex items-center bg-[#f8fafc] border border-slate-200 focus-within:border-blue-500 rounded-lg px-3 py-2">
-          <span className="text-slate-400 font-mono text-base font-semibold select-none pr-1">
+      <div className="border-b border-[#e2e8f0] bg-white p-3 px-3 md:px-4 flex flex-col gap-2 shrink-0">
+        <div className="flex items-center bg-[#f8fafc] border border-slate-200 focus-within:border-blue-500 rounded-lg px-2.5 py-1.5">
+          <span className="text-slate-400 font-mono text-sm md:text-base font-semibold select-none pr-1">
             /
           </span>
           <input
@@ -187,17 +189,17 @@ export function RegexTesterTool({
             value={pattern}
             onChange={(e) => setPattern(e.target.value)}
             placeholder="Enter regular expression pattern..."
-            className="flex-1 bg-transparent text-slate-900 font-mono text-sm focus:outline-none placeholder:text-slate-400"
+            className="flex-1 min-w-0 bg-transparent text-slate-900 font-mono text-xs md:text-sm focus:outline-none placeholder:text-slate-400"
           />
-          <span className="text-slate-400 font-mono text-base font-semibold select-none pl-1">
+          <span className="text-slate-400 font-mono text-xs md:text-base font-semibold select-none pl-1 shrink-0">
             /{activeFlagsString}
           </span>
         </div>
 
         {/* Sub-bar for Replace Pattern if enabled */}
         {replaceMode && (
-          <div className="flex items-center bg-[#f8fafc] border border-slate-200 focus-within:border-blue-500 rounded-lg px-3 py-1.5 mt-1">
-            <span className="text-xs font-medium text-slate-500 pr-2 select-none">
+          <div className="flex items-center bg-[#f8fafc] border border-slate-200 focus-within:border-blue-500 rounded-lg px-2.5 py-1.5 mt-1">
+            <span className="text-xs font-medium text-slate-500 pr-2 select-none shrink-0">
               Replace:
             </span>
             <input
@@ -205,7 +207,7 @@ export function RegexTesterTool({
               value={replacePattern}
               onChange={(e) => setReplacePattern(e.target.value)}
               placeholder="Replacement pattern (e.g. $1, [REDACTED])..."
-              className="flex-1 bg-transparent text-slate-900 font-mono text-xs focus:outline-none placeholder:text-slate-400"
+              className="flex-1 min-w-0 bg-transparent text-slate-900 font-mono text-xs focus:outline-none placeholder:text-slate-400"
             />
           </div>
         )}
@@ -214,16 +216,42 @@ export function RegexTesterTool({
         {regexError && (
           <div className="flex items-center gap-1.5 text-xs text-rose-600 bg-rose-50 border border-rose-200 px-3 py-1.5 rounded-md">
             <AlertCircle className="w-4 h-4 shrink-0" />
-            <span>{regexError}</span>
+            <span className="truncate">{regexError}</span>
           </div>
         )}
       </div>
 
+      {/* Mobile Segmented Tab Control */}
+      <div className="flex md:hidden bg-[#f1f5f9] p-1 border-b border-[#e2e8f0] shrink-0">
+        <button
+          onClick={() => setActiveTab("input")}
+          className={cn(
+            "flex-1 py-1.5 text-xs font-medium rounded-md transition-colors text-center",
+            activeTab === "input"
+              ? "bg-white text-slate-900 shadow-2xs"
+              : "text-slate-500 hover:text-slate-700"
+          )}
+        >
+          Test String
+        </button>
+        <button
+          onClick={() => setActiveTab("output")}
+          className={cn(
+            "flex-1 py-1.5 text-xs font-medium rounded-md transition-colors text-center",
+            activeTab === "output"
+              ? "bg-white text-slate-900 shadow-2xs"
+              : "text-slate-500 hover:text-slate-700"
+          )}
+        >
+          {replaceMode ? "Replaced Result" : `Matches (${matches.length})`}
+        </button>
+      </div>
+
       {/* Main Dual Area */}
-      <div className="flex-1 flex overflow-hidden">
+      <div className="flex-1 flex flex-col md:flex-row overflow-hidden w-full max-w-full">
         {/* Left: Test String */}
-        <div className="flex-1 border-r border-[#e2e8f0] flex flex-col min-w-0">
-          <div className="h-8 bg-[#f8fafc] border-b border-[#e2e8f0] flex items-center justify-between px-3">
+        <div className={cn("flex-1 border-r-0 md:border-r border-b md:border-b-0 border-[#e2e8f0] flex flex-col min-w-0 w-full overflow-x-hidden", activeTab !== "input" && "hidden md:flex")}>
+          <div className="h-8 bg-[#f8fafc] border-b border-[#e2e8f0] flex items-center justify-between px-3 shrink-0">
             <span className="text-[11px] font-medium text-slate-500 uppercase tracking-wider">
               Test String
             </span>
@@ -235,7 +263,7 @@ export function RegexTesterTool({
               <Trash2 className="w-3.5 h-3.5" />
             </button>
           </div>
-          <div className="flex-1 relative">
+          <div className="flex-1 relative w-full max-w-full overflow-x-hidden">
             <MonacoEditor
               height="100%"
               defaultLanguage="plaintext"
@@ -255,11 +283,11 @@ export function RegexTesterTool({
         </div>
 
         {/* Right: Matches or Replacement Output */}
-        <div className="flex-1 flex flex-col min-w-0 bg-white">
+        <div className={cn("flex-1 flex flex-col min-w-0 bg-white w-full max-w-full overflow-x-hidden", activeTab !== "output" && "hidden md:flex")}>
           {replaceMode ? (
             /* Replaced Output */
-            <div className="flex-1 flex flex-col min-w-0">
-              <div className="h-8 bg-[#f8fafc] border-b border-[#e2e8f0] flex items-center justify-between px-3">
+            <div className="flex-1 flex flex-col min-w-0 w-full overflow-x-hidden">
+              <div className="h-8 bg-[#f8fafc] border-b border-[#e2e8f0] flex items-center justify-between px-3 shrink-0">
                 <span className="text-[11px] font-medium text-slate-500 uppercase tracking-wider">
                   Replaced Result
                 </span>
@@ -280,7 +308,7 @@ export function RegexTesterTool({
                   {copied === "replaced" ? "Copied" : "Copy"}
                 </button>
               </div>
-              <div className="flex-1 relative">
+              <div className="flex-1 relative w-full max-w-full overflow-x-hidden">
                 <MonacoEditor
                   height="100%"
                   defaultLanguage="plaintext"
@@ -301,7 +329,7 @@ export function RegexTesterTool({
             </div>
           ) : (
             /* Matches & Group List */
-            <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+            <div className="flex-1 flex flex-col min-w-0 overflow-hidden w-full max-w-full">
               <div className="h-8 bg-[#f8fafc] border-b border-[#e2e8f0] flex items-center justify-between px-3 shrink-0">
                 <div className="flex items-center gap-2">
                   <span className="text-[11px] font-medium text-slate-500 uppercase tracking-wider">
@@ -332,7 +360,7 @@ export function RegexTesterTool({
                 )}
               </div>
 
-              <div className="flex-1 overflow-y-auto p-4 space-y-3">
+              <div className="flex-1 overflow-y-auto p-3 md:p-4 space-y-3">
                 {matches.length === 0 ? (
                   <div className="flex flex-col items-center justify-center h-full text-slate-400 py-12">
                     <RegexIcon className="w-8 h-8 text-slate-300 mb-2" />
@@ -354,7 +382,7 @@ export function RegexTesterTool({
                             Match #{idx + 1}
                           </span>
                           <span className="text-[11px] text-slate-400">
-                            index: {m.index}..{m.index + m.length} ({m.length} chars)
+                            idx: {m.index}..{m.index + m.length}
                           </span>
                         </div>
                         <button

@@ -27,6 +27,7 @@ import { CommandPalette } from "@/components/modals/CommandPalette";
 import { SeoContent } from "@/components/seo/SeoContent";
 import { getToolMeta, type ToolMeta } from "@/lib/tools/registry";
 import { addHistoryEntry, type HistoryEntry } from "@/lib/storage";
+import { X } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 // Bidirectional map between sidebar IDs and URL slugs
@@ -92,6 +93,7 @@ export function WorkspaceShell({ initialToolSlug, toolMeta }: WorkspaceShellProp
 
   const [activeTool, setActiveTool] = useState(initialSidebarId);
   const [isCommandPaletteOpen, setCommandPaletteOpen] = useState(false);
+  const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false);
   const [restoredInput, setRestoredInput] = useState<string | null>(null);
 
   // Status Bar State
@@ -210,15 +212,68 @@ export function WorkspaceShell({ initialToolSlug, toolMeta }: WorkspaceShellProp
   ];
 
   return (
-    <div className="flex flex-col h-screen w-full bg-white overflow-hidden">
-      <TopBar onOpenCommandPalette={() => setCommandPaletteOpen(true)} />
+    <div className="flex flex-col h-screen w-full bg-white overflow-hidden relative">
+      <TopBar
+        onOpenCommandPalette={() => setCommandPaletteOpen(true)}
+        onOpenMobileMenu={() => setIsMobileDrawerOpen(true)}
+      />
 
-      <div className="flex flex-1 overflow-hidden">
+      <div className="flex flex-1 overflow-hidden relative">
+        {/* Desktop Left Sidebar: hidden on mobile (< 768px), visible on md+ */}
         <Sidebar
           activeToolId={activeTool}
           onSelectTool={handleToolChange}
           onRestoreHistory={handleRestoreHistory}
+          className="hidden md:flex"
         />
+
+        {/* Mobile Slide-over Drawer / Sheet Component */}
+        {isMobileDrawerOpen && (
+          <div className="fixed inset-0 z-50 md:hidden flex">
+            {/* Backdrop */}
+            <div
+              className="fixed inset-0 bg-slate-900/50 backdrop-blur-xs transition-opacity animate-in fade-in duration-200"
+              onClick={() => setIsMobileDrawerOpen(false)}
+            />
+
+            {/* Slide-over Container */}
+            <div className="relative flex flex-col w-72 max-w-[85vw] bg-white h-full shadow-2xl z-10 animate-in slide-in-from-left duration-200">
+              <div className="h-14 border-b border-[#e2e8f0] flex items-center justify-between px-4 shrink-0 bg-white">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 bg-slate-900 rounded-lg flex items-center justify-center text-white font-bold text-xs shrink-0">
+                    DS
+                  </div>
+                  <span className="font-semibold text-base text-slate-900 truncate">
+                    DevScratchpad
+                  </span>
+                </div>
+                <button
+                  onClick={() => setIsMobileDrawerOpen(false)}
+                  className="p-1.5 rounded-lg text-slate-500 hover:text-slate-700 hover:bg-slate-100 transition-colors"
+                  aria-label="Close navigation drawer"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <div className="flex-1 overflow-y-auto min-h-0">
+                <Sidebar
+                  activeToolId={activeTool}
+                  onSelectTool={(id) => {
+                    handleToolChange(id);
+                    setIsMobileDrawerOpen(false);
+                  }}
+                  onRestoreHistory={(entry) => {
+                    handleRestoreHistory(entry);
+                    setIsMobileDrawerOpen(false);
+                  }}
+                  onCloseMobileMenu={() => setIsMobileDrawerOpen(false)}
+                  className="w-full border-r-0"
+                />
+              </div>
+            </div>
+          </div>
+        )}
 
         <main className="flex-1 flex flex-col min-w-0 bg-white overflow-y-auto">
           <div className="flex-1 min-h-0 relative flex flex-col">

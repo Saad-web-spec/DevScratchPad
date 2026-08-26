@@ -71,26 +71,26 @@ export function HmacGeneratorTool({ onValidationChange, onStatsChange, onLogHist
   };
 
   return (
-    <div className="flex flex-col h-full bg-white overflow-y-auto">
+    <div className="flex flex-col h-full bg-white overflow-y-auto w-full overflow-x-hidden">
       {/* Tool Header */}
-      <div className="h-14 border-b border-[#e2e8f0] flex items-center justify-between px-4 bg-[#f8fafc] shrink-0 sticky top-0 z-10">
+      <div className="min-h-14 border-b border-[#e2e8f0] flex flex-wrap md:flex-nowrap items-center justify-between px-3 md:px-4 py-2 md:py-0 bg-[#f8fafc] shrink-0 sticky top-0 z-10 gap-2">
         <div>
           <h2 className="text-sm font-semibold text-slate-800">HMAC Generator</h2>
-          <p className="text-[11px] text-slate-400">Generate HMAC signatures</p>
+          <p className="text-[11px] text-slate-400 hidden sm:block">Generate HMAC signatures</p>
         </div>
         
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5 md:gap-2 flex-wrap">
           <button
             onClick={() => { try { window.location.hash = 'data=' + btoa(payload); } catch(e) {} }}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-slate-50 text-slate-700 rounded text-xs font-medium transition-colors border border-[#e2e8f0] shadow-sm"
+            className="flex items-center gap-1 px-2.5 py-1.5 bg-white hover:bg-slate-50 text-slate-700 rounded text-xs font-medium transition-colors border border-[#e2e8f0] shadow-2xs"
           >
             <LinkIcon className="w-3.5 h-3.5" />
-            Share
+            <span>Share</span>
           </button>
         </div>
       </div>
 
-      <div className="p-6 max-w-4xl mx-auto w-full space-y-6">
+      <div className="p-4 md:p-6 max-w-4xl mx-auto w-full space-y-4 md:space-y-6">
         <div className="space-y-4">
           <div>
             <label className="block text-xs font-medium text-slate-700 mb-1">Algorithm</label>
@@ -121,7 +121,7 @@ export function HmacGeneratorTool({ onValidationChange, onStatsChange, onLogHist
               value={payload}
               onChange={(e) => setPayload(e.target.value)}
               placeholder="Enter data to hash..."
-              rows={6}
+              rows={5}
               className="w-full bg-white border border-[#e2e8f0] text-slate-800 text-sm rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-shadow font-mono resize-y"
             />
           </div>
@@ -130,7 +130,7 @@ export function HmacGeneratorTool({ onValidationChange, onStatsChange, onLogHist
         <div className="space-y-4 pt-4 border-t border-[#e2e8f0]">
           <h3 className="text-sm font-semibold text-slate-800">Results</h3>
           
-          <div className="bg-[#f8fafc] border border-[#e2e8f0] rounded-lg p-4">
+          <div className="bg-[#f8fafc] border border-[#e2e8f0] rounded-lg p-3 md:p-4">
             <div className="flex items-center justify-between mb-2">
               <span className="text-xs font-medium text-slate-500 uppercase tracking-wider">Hex</span>
               <button 
@@ -142,12 +142,12 @@ export function HmacGeneratorTool({ onValidationChange, onStatsChange, onLogHist
                 {copiedHex ? "Copied" : "Copy"}
               </button>
             </div>
-            <div className="font-mono text-sm text-slate-800 break-all bg-white border border-[#e2e8f0] p-3 rounded shadow-sm min-h-[46px]">
+            <div className="font-mono text-xs md:text-sm text-slate-800 break-all bg-white border border-[#e2e8f0] p-3 rounded shadow-2xs min-h-[46px]">
               {hexOutput || <span className="text-slate-400 italic">Result will appear here...</span>}
             </div>
           </div>
 
-          <div className="bg-[#f8fafc] border border-[#e2e8f0] rounded-lg p-4">
+          <div className="bg-[#f8fafc] border border-[#e2e8f0] rounded-lg p-3 md:p-4">
             <div className="flex items-center justify-between mb-2">
               <span className="text-xs font-medium text-slate-500 uppercase tracking-wider">Base64</span>
               <button 
@@ -159,7 +159,7 @@ export function HmacGeneratorTool({ onValidationChange, onStatsChange, onLogHist
                 {copiedBase64 ? "Copied" : "Copy"}
               </button>
             </div>
-            <div className="font-mono text-sm text-slate-800 break-all bg-white border border-[#e2e8f0] p-3 rounded shadow-sm min-h-[46px]">
+            <div className="font-mono text-xs md:text-sm text-slate-800 break-all bg-white border border-[#e2e8f0] p-3 rounded shadow-2xs min-h-[46px]">
               {base64Output || <span className="text-slate-400 italic">Result will appear here...</span>}
             </div>
           </div>

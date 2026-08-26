@@ -32,6 +32,7 @@ export function XmlFormatterTool({
   const [output, setOutput] = useState<string>("");
   const [indent, setIndent] = useState<number>(2);
   const [copied, setCopied] = useState(false);
+  const [activeTab, setActiveTab] = useState<"input" | "output">("input");
 
   // Save workspace snapshot
   useEffect(() => {
@@ -64,6 +65,7 @@ export function XmlFormatterTool({
       setOutput(formatted);
       onValidationChange(true);
       onLogHistory?.(input);
+      setActiveTab("output");
     } catch (err: any) {
       // Validation error caught
     }
@@ -77,6 +79,7 @@ export function XmlFormatterTool({
       const minified = minifyXml(input);
       setOutput(minified);
       onLogHistory?.(input);
+      setActiveTab("output");
     } catch (err: any) {}
     const end = performance.now();
     onStatsChange(input.length, end - start);
@@ -90,25 +93,25 @@ export function XmlFormatterTool({
   };
 
   return (
-    <div className="flex flex-col h-full bg-white">
+    <div className="flex flex-col h-full bg-white w-full overflow-x-hidden">
       {/* Tool Header */}
-      <div className="h-14 border-b border-[#e2e8f0] flex items-center justify-between px-4 bg-[#f8fafc] shrink-0">
+      <div className="min-h-14 border-b border-[#e2e8f0] flex flex-wrap md:flex-nowrap items-center justify-between px-3 md:px-4 py-2 md:py-0 bg-[#f8fafc] shrink-0 gap-2">
         <div>
           <h2 className="text-sm font-semibold text-slate-800">XML Formatter & Minifier</h2>
-          <p className="text-[11px] text-slate-400">Format, beautify, and minify XML data</p>
+          <p className="text-[11px] text-slate-400 hidden sm:block">Format, beautify, and minify XML data</p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5 md:gap-2 flex-wrap">
           <button
             onClick={() => {
               try {
                 window.location.hash = 'data=' + btoa(input);
               } catch {}
             }}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-slate-50 text-slate-700 rounded text-xs font-medium transition-colors border border-[#e2e8f0] shadow-sm"
+            className="flex items-center gap-1 px-2.5 py-1.5 bg-white hover:bg-slate-50 text-slate-700 rounded text-xs font-medium transition-colors border border-[#e2e8f0] shadow-2xs"
           >
             <LinkIcon className="w-3.5 h-3.5" />
-            Share
+            <span>Share</span>
           </button>
           <select
             value={indent}
@@ -121,27 +124,53 @@ export function XmlFormatterTool({
 
           <button
             onClick={handleMinify}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded text-xs font-medium transition-colors border border-slate-200"
+            className="flex items-center gap-1 px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded text-xs font-medium transition-colors border border-slate-200"
           >
             <Minimize2 className="w-3.5 h-3.5" />
-            Minify
+            <span>Minify</span>
           </button>
 
           <button
             onClick={handleFormat}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs font-medium transition-colors shadow-sm shadow-blue-100"
+            className="flex items-center gap-1 px-2.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs font-medium transition-colors shadow-2xs"
           >
             <Play className="w-3.5 h-3.5" />
-            Format
+            <span>Format</span>
           </button>
         </div>
       </div>
 
+      {/* Mobile Segmented Tab Control */}
+      <div className="flex md:hidden bg-[#f1f5f9] p-1 border-b border-[#e2e8f0] shrink-0">
+        <button
+          onClick={() => setActiveTab("input")}
+          className={cn(
+            "flex-1 py-1.5 text-xs font-medium rounded-md transition-colors text-center",
+            activeTab === "input"
+              ? "bg-white text-slate-900 shadow-2xs"
+              : "text-slate-500 hover:text-slate-700"
+          )}
+        >
+          Input XML
+        </button>
+        <button
+          onClick={() => setActiveTab("output")}
+          className={cn(
+            "flex-1 py-1.5 text-xs font-medium rounded-md transition-colors text-center",
+            activeTab === "output"
+              ? "bg-white text-slate-900 shadow-2xs"
+              : "text-slate-500 hover:text-slate-700"
+          )}
+        >
+          Formatted Output
+        </button>
+      </div>
+
       {/* Dual Editors */}
-      <div className="flex-1 flex overflow-hidden">
+      <div className="flex-1 flex flex-col md:flex-row overflow-hidden w-full max-w-full">
         {/* Left: Input */}
-        <div className="flex-1 border-r border-[#e2e8f0] flex flex-col min-w-0">
-          <div className="h-8 bg-[#f8fafc] border-b border-[#e2e8f0] flex items-center justify-between px-3">
+        <div className={cn("flex-1 border-r-0 md:border-r border-b md:border-b-0 border-[#e2e8f0] flex flex-col min-w-0 w-full overflow-x-hidden", activeTab !== "input" && "hidden md:flex")}>
+          <div className="h-8 bg-[#f8fafc] border-b border-[#e2e8f0] flex items-center justify-between px-3 shrink-0">
             <span className="text-[11px] font-medium text-slate-500 uppercase tracking-wider">Input XML</span>
             <button
               onClick={() => setInput("")}
@@ -151,7 +180,7 @@ export function XmlFormatterTool({
               <Trash2 className="w-3.5 h-3.5" />
             </button>
           </div>
-          <div className="flex-1 relative">
+          <div className="flex-1 relative w-full max-w-full overflow-x-hidden">
             <MonacoEditor
               height="100%"
               defaultLanguage="xml"
@@ -171,8 +200,8 @@ export function XmlFormatterTool({
         </div>
 
         {/* Right: Output */}
-        <div className="flex-1 flex flex-col min-w-0">
-          <div className="h-8 bg-[#f8fafc] border-b border-[#e2e8f0] flex items-center justify-between px-3">
+        <div className={cn("flex-1 flex flex-col min-w-0 w-full overflow-x-hidden", activeTab !== "output" && "hidden md:flex")}>
+          <div className="h-8 bg-[#f8fafc] border-b border-[#e2e8f0] flex items-center justify-between px-3 shrink-0">
             <span className="text-[11px] font-medium text-slate-500 uppercase tracking-wider">Formatted Output</span>
             <button
               onClick={handleCopy}
@@ -185,7 +214,7 @@ export function XmlFormatterTool({
               {copied ? "Copied" : "Copy"}
             </button>
           </div>
-          <div className="flex-1 relative">
+          <div className="flex-1 relative w-full max-w-full overflow-x-hidden">
             <MonacoEditor
               height="100%"
               defaultLanguage="xml"

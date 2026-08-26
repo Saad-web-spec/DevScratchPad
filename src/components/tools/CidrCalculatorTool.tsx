@@ -57,39 +57,39 @@ export function CidrCalculatorTool({ onValidationChange, onStatsChange, onLogHis
   }, [input, onValidationChange, onStatsChange]);
 
   return (
-    <div className="flex flex-col h-full bg-white overflow-y-auto">
+    <div className="flex flex-col h-full bg-white overflow-y-auto w-full overflow-x-hidden">
       {/* Tool Header */}
-      <div className="h-14 border-b border-[#e2e8f0] flex items-center justify-between px-4 bg-[#f8fafc] shrink-0 sticky top-0 z-10">
+      <div className="min-h-14 border-b border-[#e2e8f0] flex flex-wrap md:flex-nowrap items-center justify-between px-3 md:px-4 py-2 md:py-0 bg-[#f8fafc] shrink-0 sticky top-0 z-10 gap-2">
         <div>
           <h2 className="text-sm font-semibold text-slate-800">CIDR Calculator</h2>
-          <p className="text-[11px] text-slate-400">Calculate IP ranges and subnets</p>
+          <p className="text-[11px] text-slate-400 hidden sm:block">Calculate IP ranges and subnets</p>
         </div>
         
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5 md:gap-2 flex-wrap">
           <button
             onClick={() => { try { window.location.hash = 'data=' + btoa(input); } catch(e) {} }}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-slate-50 text-slate-700 rounded text-xs font-medium transition-colors border border-[#e2e8f0] shadow-sm"
+            className="flex items-center gap-1 px-2.5 py-1.5 bg-white hover:bg-slate-50 text-slate-700 rounded text-xs font-medium transition-colors border border-[#e2e8f0] shadow-2xs"
           >
             <LinkIcon className="w-3.5 h-3.5" />
-            Share
+            <span>Share</span>
           </button>
         </div>
       </div>
 
-      <div className="p-6 max-w-4xl mx-auto w-full space-y-8">
+      <div className="p-4 md:p-6 max-w-4xl mx-auto w-full space-y-6 md:space-y-8">
         <div>
-          <label className="block text-sm font-medium text-slate-700 mb-2">CIDR Notation</label>
+          <label className="block text-xs md:text-sm font-medium text-slate-700 mb-1.5 md:mb-2">CIDR Notation</label>
           <input
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
             placeholder="e.g. 192.168.1.0/24"
-            className="w-full bg-white border border-[#e2e8f0] text-slate-800 text-base rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-shadow font-mono shadow-sm"
+            className="w-full bg-white border border-[#e2e8f0] text-slate-800 text-sm md:text-base rounded-lg px-3.5 md:px-4 py-2.5 md:py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-shadow font-mono shadow-2xs"
           />
         </div>
 
         {info ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
             <MetricCard label="Network Address" value={info.network} />
             <MetricCard label="Broadcast Address" value={info.broadcast} />
             <MetricCard label="First Usable" value={info.firstUsable} />
@@ -110,9 +110,9 @@ export function CidrCalculatorTool({ onValidationChange, onStatsChange, onLogHis
 
 function MetricCard({ label, value }: { label: string; value: string | number }) {
   return (
-    <div className="bg-[#f8fafc] border border-[#e2e8f0] rounded-xl p-5 flex flex-col justify-center shadow-sm">
-      <span className="text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">{label}</span>
-      <span className="text-lg font-semibold text-blue-600 font-mono break-all">{value}</span>
+    <div className="bg-[#f8fafc] border border-[#e2e8f0] rounded-xl p-4 md:p-5 flex flex-col justify-center shadow-2xs">
+      <span className="text-xs font-medium text-slate-500 uppercase tracking-wider mb-1.5 md:mb-2">{label}</span>
+      <span className="text-base md:text-lg font-semibold text-blue-600 font-mono break-all">{value}</span>
     </div>
   );
 }

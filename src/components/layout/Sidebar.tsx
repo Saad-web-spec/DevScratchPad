@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import {
   FileJson, Database, Key, Binary, Hash, Type, Regex, Code, Clock,
-  Terminal, SplitSquareHorizontal, History, Trash2, RotateCcw,
+  Terminal, SplitSquareHorizontal, History, Trash2,
   FileCode, Calendar, ArrowLeftRight, Minimize2
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -54,12 +54,16 @@ interface SidebarProps {
   activeToolId?: string;
   onSelectTool?: (id: string) => void;
   onRestoreHistory?: (entry: HistoryEntry) => void;
+  onCloseMobileMenu?: () => void;
+  className?: string;
 }
 
 export function Sidebar({
   activeToolId = "json-formatter",
   onSelectTool,
   onRestoreHistory,
+  onCloseMobileMenu,
+  className,
 }: SidebarProps) {
   const [historyOpen, setHistoryOpen] = useState(false);
   const [entries, setEntries] = useState<HistoryEntry[]>([]);
@@ -80,8 +84,18 @@ export function Sidebar({
     refreshHistory();
   };
 
+  const handleToolClick = (id: string) => {
+    onSelectTool?.(id);
+    onCloseMobileMenu?.();
+  };
+
+  const handleHistoryClick = (entry: HistoryEntry) => {
+    onRestoreHistory?.(entry);
+    onCloseMobileMenu?.();
+  };
+
   return (
-    <aside className="w-60 bg-[#f8fafc] border-r border-[#e2e8f0] flex flex-col h-full shrink-0 overflow-y-auto">
+    <aside className={cn("w-60 bg-[#f8fafc] border-r border-[#e2e8f0] flex flex-col h-full shrink-0 overflow-y-auto", className)}>
       <div className="flex-1 py-4">
         {NAV_CATEGORIES.map((category) => (
           <div key={category.title} className="mb-5">
@@ -94,9 +108,9 @@ export function Sidebar({
                 return (
                   <li key={item.id}>
                     <button
-                      onClick={() => onSelectTool?.(item.id)}
+                      onClick={() => handleToolClick(item.id)}
                       className={cn(
-                        "w-full flex items-center gap-3 px-4 py-2 text-[13px] transition-colors",
+                        "w-full flex items-center gap-3 px-4 py-2 text-[13px] transition-colors text-left",
                         isActive
                           ? "bg-blue-50 text-blue-600 border-r-2 border-blue-600 font-medium"
                           : "text-slate-600 hover:text-slate-900 hover:bg-slate-50 border-r-2 border-transparent"
@@ -104,11 +118,11 @@ export function Sidebar({
                     >
                       <item.icon
                         className={cn(
-                          "w-4 h-4",
+                          "w-4 h-4 shrink-0",
                           isActive ? "text-blue-600" : "text-slate-400"
                         )}
                       />
-                      {item.name}
+                      <span className="truncate">{item.name}</span>
                     </button>
                   </li>
                 );
@@ -159,7 +173,7 @@ export function Sidebar({
                       className="group flex items-center justify-between px-3 py-2 hover:bg-slate-50 transition-colors"
                     >
                       <button
-                        onClick={() => onRestoreHistory?.(entry)}
+                        onClick={() => handleHistoryClick(entry)}
                         className="flex-1 text-left min-w-0"
                       >
                         <p className="text-xs font-medium text-slate-700 truncate">

@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { MonacoEditor } from "@/components/MonacoEditor";
 import { generateAllHashes, type HashResults } from "@/lib/tools/hash";
-import { Copy, Trash2, Check, Hash, Sparkles, Link as LinkIcon } from "lucide-react";
+import { Copy, Trash2, Check, Link as LinkIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { addSnapshot } from "@/lib/storage";
 
@@ -122,30 +122,30 @@ export function HashGeneratorTool({
   ];
 
   return (
-    <div className="flex flex-col h-full bg-white overflow-y-auto">
+    <div className="flex flex-col h-full bg-white overflow-y-auto w-full overflow-x-hidden">
       {/* Tool Header */}
-      <div className="h-14 border-b border-[#e2e8f0] flex items-center justify-between px-4 bg-[#f8fafc] shrink-0">
+      <div className="min-h-14 border-b border-[#e2e8f0] flex flex-wrap md:flex-nowrap items-center justify-between px-3 md:px-4 py-2 md:py-0 bg-[#f8fafc] shrink-0 gap-2">
         <div>
           <h2 className="text-sm font-semibold text-slate-800">Hash Generator</h2>
-          <p className="text-[11px] text-slate-400">Generate cryptographic hashes (MD5, SHA-1, SHA-256, SHA-512)</p>
+          <p className="text-[11px] text-slate-400 hidden sm:block">Generate cryptographic hashes (MD5, SHA-1, SHA-256, SHA-512)</p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5 md:gap-2 flex-wrap">
           <button
             onClick={() => {
               try {
                 window.location.hash = 'data=' + btoa(input);
               } catch {}
             }}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-slate-50 text-slate-700 rounded text-xs font-medium transition-colors border border-[#e2e8f0] shadow-sm"
+            className="flex items-center gap-1 px-2.5 py-1.5 bg-white hover:bg-slate-50 text-slate-700 rounded text-xs font-medium transition-colors border border-[#e2e8f0] shadow-2xs"
           >
             <LinkIcon className="w-3.5 h-3.5" />
-            Share
+            <span>Share</span>
           </button>
           <button
             onClick={() => setIsUppercase(!isUppercase)}
             className={cn(
-              "px-3 py-1.5 rounded text-xs font-medium transition-colors border",
+              "px-2.5 py-1.5 rounded text-xs font-medium transition-colors border",
               isUppercase
                 ? "bg-blue-50 border-blue-200 text-blue-700"
                 : "bg-slate-100 border-slate-200 text-slate-700 hover:bg-slate-200"
@@ -156,23 +156,23 @@ export function HashGeneratorTool({
 
           <button
             onClick={handleCopyAll}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded text-xs font-medium transition-colors border border-slate-200"
+            className="flex items-center gap-1 px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded text-xs font-medium transition-colors border border-slate-200"
           >
             {copiedKey === "all" ? (
               <Check className="w-3.5 h-3.5 text-emerald-600" />
             ) : (
               <Copy className="w-3.5 h-3.5" />
             )}
-            {copiedKey === "all" ? "Copied All" : "Copy All"}
+            <span>{copiedKey === "all" ? "Copied All" : "Copy All"}</span>
           </button>
         </div>
       </div>
 
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col p-4 md:p-6 max-w-5xl mx-auto w-full gap-6">
+      <div className="flex-1 flex flex-col p-3 md:p-6 max-w-5xl mx-auto w-full gap-4 md:gap-6">
         {/* Input Panel */}
-        <div className="border border-[#e2e8f0] rounded-xl overflow-hidden shadow-sm bg-white flex flex-col shrink-0">
-          <div className="h-9 bg-[#f8fafc] border-b border-[#e2e8f0] flex items-center justify-between px-4 shrink-0">
+        <div className="border border-[#e2e8f0] rounded-xl overflow-hidden shadow-2xs bg-white flex flex-col shrink-0 w-full max-w-full">
+          <div className="h-9 bg-[#f8fafc] border-b border-[#e2e8f0] flex items-center justify-between px-3 md:px-4 shrink-0">
             <span className="text-[11px] font-medium text-slate-500 uppercase tracking-wider">
               Input String / Text
             </span>
@@ -184,7 +184,7 @@ export function HashGeneratorTool({
               <Trash2 className="w-3.5 h-3.5" />
             </button>
           </div>
-          <div className="min-h-[150px] relative shrink-0">
+          <div className="min-h-[150px] relative shrink-0 w-full max-w-full overflow-x-hidden">
             <MonacoEditor
               height="100%"
               defaultLanguage="plaintext"
@@ -204,7 +204,7 @@ export function HashGeneratorTool({
         </div>
 
         {/* Hashes Output Grid */}
-        <div className="space-y-3">
+        <div className="space-y-3 w-full max-w-full">
           <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wider px-1">
             Generated Hashes
           </h3>
@@ -220,9 +220,9 @@ export function HashGeneratorTool({
               return (
                 <div
                   key={card.id}
-                  className="bg-white border border-[#e2e8f0] hover:border-slate-300 rounded-xl p-4 transition-all shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3 group"
+                  className="bg-white border border-[#e2e8f0] hover:border-slate-300 rounded-xl p-3 md:p-4 transition-all shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 md:gap-3 group min-w-0"
                 >
-                  <div className="flex items-center gap-3 min-w-[130px] shrink-0">
+                  <div className="flex items-center gap-2.5 min-w-[120px] shrink-0">
                     <span className="text-xs font-bold text-slate-800">
                       {card.name}
                     </span>
@@ -259,7 +259,7 @@ export function HashGeneratorTool({
                       ) : (
                         <Copy className="w-3.5 h-3.5" />
                       )}
-                      {copiedKey === card.id ? "Copied" : "Copy"}
+                      <span>{copiedKey === card.id ? "Copied" : "Copy"}</span>
                     </button>
                   </div>
                 </div>
