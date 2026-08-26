@@ -102,26 +102,26 @@ export function Base64Tool({
   };
 
   return (
-    <div className="flex flex-col h-full bg-white dark:bg-slate-950 w-full overflow-x-hidden">
+    <div className="flex flex-col h-full bg-white dark:bg-zinc-950 w-full overflow-x-hidden">
       {/* Tool Header */}
-      <div className="min-h-14 border-b border-[#e2e8f0] dark:border-slate-700 flex flex-wrap md:flex-nowrap items-center justify-between px-3 md:px-4 py-2 md:py-0 bg-[#f8fafc] dark:bg-slate-900 shrink-0 gap-2">
+      <div className="min-h-14 border-b border-[#e2e8f0] dark:border-zinc-700 flex flex-wrap md:flex-nowrap items-center justify-between px-3 md:px-4 py-2 md:py-0 bg-[#f8fafc] dark:bg-zinc-900 shrink-0 gap-2">
         <div>
-          <h2 className="text-sm font-semibold text-slate-800 dark:text-slate-200">Base64 Encoder & Decoder</h2>
-          <p className="text-[11px] text-slate-400 dark:text-slate-500 hidden sm:block">Convert text to Base64 and back with UTF-8 support</p>
+          <h2 className="text-sm font-semibold text-zinc-800 dark:text-zinc-200">Base64 Encoder & Decoder</h2>
+          <p className="text-[11px] text-zinc-400 dark:text-zinc-500 hidden sm:block">Convert text to Base64 and back with UTF-8 support</p>
         </div>
 
         <div className="flex items-center gap-1.5 md:gap-3 flex-wrap">
           <ShareButton toolSlug="base64-decoder" data={input} />
 
           {/* Mode Switcher */}
-          <div className="flex items-center bg-slate-200/80 dark:bg-slate-800 p-0.5 rounded-lg">
+          <div className="flex items-center bg-zinc-200/80 dark:bg-zinc-800 p-0.5 rounded-lg">
             <button
               onClick={() => setMode("encode")}
               className={cn(
                 "px-2.5 py-1 text-xs font-medium rounded-md transition-all",
                 mode === "encode"
-                  ? "bg-white dark:bg-slate-950 text-blue-600 dark:text-blue-400 shadow-2xs"
-                  : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+                  ? "bg-white dark:bg-zinc-950 text-blue-600 dark:text-blue-400 shadow-2xs"
+                  : "text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white"
               )}
             >
               Encode
@@ -131,8 +131,8 @@ export function Base64Tool({
               className={cn(
                 "px-2.5 py-1 text-xs font-medium rounded-md transition-all",
                 mode === "decode"
-                  ? "bg-white dark:bg-slate-950 text-blue-600 dark:text-blue-400 shadow-2xs"
-                  : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+                  ? "bg-white dark:bg-zinc-950 text-blue-600 dark:text-blue-400 shadow-2xs"
+                  : "text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white"
               )}
             >
               Decode
@@ -140,12 +140,12 @@ export function Base64Tool({
           </div>
 
           {/* URL Safe Toggle */}
-          <label className="flex items-center gap-1 cursor-pointer text-xs text-slate-600 dark:text-slate-400 select-none">
+          <label className="flex items-center gap-1 cursor-pointer text-xs text-zinc-600 dark:text-zinc-400 select-none">
             <input
               type="checkbox"
               checked={urlSafe}
               onChange={(e) => setUrlSafe(e.target.checked)}
-              className="rounded border-slate-300 dark:border-slate-600 text-blue-600 focus:ring-blue-500 w-3.5 h-3.5"
+              className="rounded border-zinc-300 dark:border-zinc-600 text-blue-600 focus:ring-blue-500 w-3.5 h-3.5"
             />
             <span>URL-Safe</span>
           </label>
@@ -154,7 +154,7 @@ export function Base64Tool({
           <button
             onClick={handleSwap}
             disabled={!output}
-            className="flex items-center gap-1 px-2.5 py-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 disabled:opacity-40 disabled:cursor-not-allowed text-slate-700 dark:text-slate-300 rounded text-xs font-medium transition-colors border border-slate-200 dark:border-slate-700"
+            className="flex items-center gap-1 px-2.5 py-1.5 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 disabled:opacity-40 disabled:cursor-not-allowed text-zinc-700 dark:text-zinc-300 rounded text-xs font-medium transition-colors border border-zinc-200 dark:border-zinc-700"
             title="Swap input and output"
           >
             <ArrowLeftRight className="w-3.5 h-3.5" />
@@ -173,14 +173,14 @@ export function Base64Tool({
       </div>
 
       {/* Mobile Segmented Tab Control */}
-      <div className="flex md:hidden bg-[#f1f5f9] dark:bg-slate-800 p-1 border-b border-[#e2e8f0] dark:border-slate-700 shrink-0">
+      <div className="flex md:hidden bg-[#f1f5f9] dark:bg-zinc-800 p-1 border-b border-[#e2e8f0] dark:border-zinc-700 shrink-0">
         <button
           onClick={() => setActiveTab("input")}
           className={cn(
             "flex-1 py-1.5 text-xs font-medium rounded-md transition-colors text-center",
             activeTab === "input"
-              ? "bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 shadow-2xs"
-              : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
+              ? "bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 shadow-2xs"
+              : "text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200"
           )}
         >
           {mode === "encode" ? "Raw Input" : "Base64 Input"}
@@ -190,8 +190,8 @@ export function Base64Tool({
           className={cn(
             "flex-1 py-1.5 text-xs font-medium rounded-md transition-colors text-center",
             activeTab === "output"
-              ? "bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 shadow-2xs"
-              : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
+              ? "bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 shadow-2xs"
+              : "text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200"
           )}
         >
           {mode === "encode" ? "Base64 Output" : "Decoded Text"}
@@ -201,14 +201,14 @@ export function Base64Tool({
       {/* Dual Editors */}
       <div className="flex-1 flex flex-col md:flex-row overflow-hidden w-full max-w-full">
         {/* Left: Input */}
-        <div className={cn("flex-1 border-r-0 md:border-r border-b md:border-b-0 border-[#e2e8f0] dark:border-slate-700 flex flex-col min-w-0 w-full overflow-x-hidden", activeTab !== "input" && "hidden md:flex")}>
-          <div className="h-8 bg-[#f8fafc] dark:bg-slate-900 border-b border-[#e2e8f0] dark:border-slate-700 flex items-center justify-between px-3 shrink-0">
-            <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+        <div className={cn("flex-1 border-r-0 md:border-r border-b md:border-b-0 border-[#e2e8f0] dark:border-zinc-700 flex flex-col min-w-0 w-full overflow-x-hidden", activeTab !== "input" && "hidden md:flex")}>
+          <div className="h-8 bg-[#f8fafc] dark:bg-zinc-900 border-b border-[#e2e8f0] dark:border-zinc-700 flex items-center justify-between px-3 shrink-0">
+            <span className="text-[11px] font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
               {mode === "encode" ? "Raw Text Input" : "Base64 Input"}
             </span>
             <button
               onClick={() => setInput("")}
-              className="text-slate-400 dark:text-slate-500 hover:text-red-600 dark:hover:text-red-400 transition-colors"
+              className="text-zinc-400 dark:text-zinc-500 hover:text-red-600 dark:hover:text-red-400 transition-colors"
               title="Clear"
             >
               <Trash2 className="w-3.5 h-3.5" />
@@ -234,15 +234,15 @@ export function Base64Tool({
 
         {/* Right: Output */}
         <div className={cn("flex-1 flex flex-col min-w-0 w-full overflow-x-hidden", activeTab !== "output" && "hidden md:flex")}>
-          <div className="h-8 bg-[#f8fafc] dark:bg-slate-900 border-b border-[#e2e8f0] dark:border-slate-700 flex items-center justify-between px-3 shrink-0">
-            <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+          <div className="h-8 bg-[#f8fafc] dark:bg-zinc-900 border-b border-[#e2e8f0] dark:border-zinc-700 flex items-center justify-between px-3 shrink-0">
+            <span className="text-[11px] font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
               {mode === "encode" ? "Base64 Output" : "Decoded Text"}
             </span>
             <button
               onClick={handleCopy}
               className={cn(
                 "flex items-center gap-1 text-[11px] transition-colors",
-                copied ? "text-emerald-600 dark:text-emerald-400" : "text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-200"
+                copied ? "text-emerald-600 dark:text-emerald-400" : "text-zinc-400 dark:text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-200"
               )}
             >
               {copied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}

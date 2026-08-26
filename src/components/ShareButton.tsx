@@ -74,7 +74,7 @@ export function ShareButton({ toolSlug, data, className }: ShareButtonProps) {
     <button
       onClick={handleShare}
       className={cn(
-        "flex items-center gap-1 px-2.5 py-1.5 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded text-xs font-medium transition-colors border border-slate-200 dark:border-slate-600 shadow-2xs shrink-0",
+        "flex items-center gap-1 px-2.5 py-1.5 bg-white dark:bg-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-300 rounded text-xs font-medium transition-colors border border-zinc-200 dark:border-zinc-600 shadow-2xs shrink-0",
         className
       )}
       title="Generate and copy shareable link for this tool"
@@ -82,7 +82,7 @@ export function ShareButton({ toolSlug, data, className }: ShareButtonProps) {
       {copied ? (
         <Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
       ) : (
-        <LinkIcon className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
+        <LinkIcon className="w-3.5 h-3.5 text-zinc-500 dark:text-zinc-400" />
       )}
       <span>{copied ? "Link Copied!" : "Share"}</span>
     </button>

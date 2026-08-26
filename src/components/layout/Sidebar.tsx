@@ -99,11 +99,11 @@ export function Sidebar({
   };
 
   return (
-    <aside className={cn("w-60 bg-slate-50 dark:bg-[#0b101b] border-r border-slate-200 dark:border-slate-800/80 flex flex-col h-full shrink-0 overflow-y-auto transition-colors", className)}>
+    <aside className={cn("w-60 bg-zinc-50 dark:bg-zinc-900 border-r border-zinc-200 dark:border-zinc-800 flex flex-col h-full shrink-0 overflow-y-auto transition-colors", className)}>
       <div className="flex-1 py-4">
         {NAV_CATEGORIES.map((category) => (
           <div key={category.title} className="mb-5">
-            <h3 className="px-4 text-[10px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1.5">
+            <h3 className="px-4 text-[10px] font-semibold text-zinc-400 dark:text-zinc-500 uppercase tracking-widest mb-1.5">
               {category.title}
             </h3>
             <ul className="space-y-px">
@@ -116,16 +116,16 @@ export function Sidebar({
                       className={cn(
                         "w-full flex items-center gap-3 px-4 py-2 text-[13px] transition-all text-left group",
                         isActive
-                          ? "bg-blue-50 dark:bg-gradient-to-r dark:from-cyan-500/15 dark:via-blue-600/10 dark:to-transparent text-blue-600 dark:text-cyan-300 border-r-2 border-blue-600 dark:border-cyan-400 font-semibold"
-                          : "text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/50 border-r-2 border-transparent"
+                          ? "bg-blue-50 dark:bg-zinc-800 text-blue-600 dark:text-zinc-50 border-l-2 border-blue-600 dark:border-zinc-50 font-medium"
+                          : "text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800/50 border-l-2 border-transparent"
                       )}
                     >
                       <item.icon
                         className={cn(
                           "w-4 h-4 shrink-0 transition-colors",
                           isActive
-                            ? "text-blue-600 dark:text-cyan-400"
-                            : "text-slate-400 dark:text-slate-500 group-hover:text-slate-600 dark:group-hover:text-slate-300"
+                            ? "text-blue-600 dark:text-zinc-50"
+                            : "text-zinc-400 dark:text-zinc-500 group-hover:text-zinc-500 dark:group-hover:text-zinc-400"
                         )}
                       />
                       <span className="truncate">{item.name}</span>
@@ -139,30 +139,30 @@ export function Sidebar({
       </div>
 
       {/* History Drawer Toggle */}
-      <div className="border-t border-slate-200 dark:border-slate-800/80">
+      <div className="border-t border-zinc-200 dark:border-zinc-800">
         <button
           onClick={() => setHistoryOpen(!historyOpen)}
-          className="w-full flex items-center justify-between px-4 py-3 text-[13px] text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors"
+          className="w-full flex items-center justify-between px-4 py-3 text-[13px] text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-zinc-800/40 transition-colors"
         >
           <div className="flex items-center gap-2">
-            <History className="w-4 h-4 text-slate-400 dark:text-slate-500" />
+            <History className="w-4 h-4 text-zinc-400 dark:text-zinc-500" />
             <span>History</span>
           </div>
-          <span className="text-[10px] bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-cyan-400 border border-transparent dark:border-slate-700 px-1.5 py-0.5 rounded-full font-medium">
+          <span className="text-[10px] bg-zinc-200 dark:bg-zinc-800 text-zinc-600 dark:text-cyan-400 border border-transparent dark:border-zinc-700 px-1.5 py-0.5 rounded-full font-medium">
             {entries.length}
           </span>
         </button>
 
         {historyOpen && (
-          <div className="border-t border-slate-200 dark:border-slate-800 max-h-72 overflow-y-auto bg-white dark:bg-[#0e1526]">
+          <div className="border-t border-zinc-200 dark:border-zinc-800 max-h-72 overflow-y-auto bg-white dark:bg-zinc-900">
             {entries.length === 0 ? (
-              <p className="px-4 py-6 text-xs text-slate-400 dark:text-slate-500 text-center">
+              <p className="px-4 py-6 text-xs text-zinc-400 dark:text-zinc-500 text-center">
                 No history yet
               </p>
             ) : (
               <>
-                <div className="px-3 py-2 flex items-center justify-between border-b border-slate-100 dark:border-slate-800/60">
-                  <span className="text-[10px] text-slate-400 dark:text-slate-500 uppercase tracking-wider font-medium">
+                <div className="px-3 py-2 flex items-center justify-between border-b border-zinc-100 dark:border-zinc-800/60">
+                  <span className="text-[10px] text-zinc-400 dark:text-zinc-500 uppercase tracking-wider font-medium">
                     Recent
                   </span>
                   <button
@@ -176,21 +176,21 @@ export function Sidebar({
                   {entries.map((entry) => (
                     <li
                       key={entry.id}
-                      className="group flex items-center justify-between px-3 py-2 hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-colors"
+                      className="group flex items-center justify-between px-3 py-2 hover:bg-zinc-50 dark:hover:bg-zinc-800/60 transition-colors"
                     >
                       <button
                         onClick={() => handleHistoryClick(entry)}
                         className="flex-1 text-left min-w-0"
                       >
-                        <p className="text-xs font-medium text-slate-700 dark:text-slate-200 truncate group-hover:text-blue-600 dark:group-hover:text-cyan-300 transition-colors">
+                        <p className="text-xs font-medium text-zinc-700 dark:text-zinc-200 truncate group-hover:text-blue-600 dark:group-hover:text-cyan-300 transition-colors">
                           {entry.toolName}
                         </p>
-                        <p className="text-[10px] text-slate-400 dark:text-slate-500 truncate font-mono">
+                        <p className="text-[10px] text-zinc-400 dark:text-zinc-500 truncate font-mono">
                           {entry.input.slice(0, 50)}…
                         </p>
                       </button>
                       <div className="flex items-center gap-1 shrink-0 ml-2">
-                        <span className="text-[10px] text-slate-400 dark:text-slate-500">
+                        <span className="text-[10px] text-zinc-400 dark:text-zinc-500">
                           {formatRelativeTime(entry.timestamp)}
                         </span>
                         <button
@@ -198,7 +198,7 @@ export function Sidebar({
                             e.stopPropagation();
                             handleDelete(entry.id);
                           }}
-                          className="p-1 text-slate-300 dark:text-slate-600 hover:text-red-500 dark:hover:text-rose-400 opacity-0 group-hover:opacity-100 transition-opacity"
+                          className="p-1 text-zinc-300 dark:text-zinc-600 hover:text-red-500 dark:hover:text-rose-400 opacity-0 group-hover:opacity-100 transition-opacity"
                         >
                           <Trash2 className="w-3 h-3" />
                         </button>

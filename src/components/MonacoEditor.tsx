@@ -3,15 +3,34 @@
 import dynamic from "next/dynamic";
 import type { EditorProps, DiffEditorProps } from "@monaco-editor/react";
 import { useTheme } from "@/lib/theme";
+import type { Monaco } from "@monaco-editor/react";
 
 const LoadingPlaceholder = () => (
-  <div className="flex items-center justify-center h-full bg-white dark:bg-slate-950">
-    <div className="flex items-center gap-2 text-slate-400 dark:text-slate-500 text-sm">
-      <div className="w-4 h-4 border-2 border-slate-300 dark:border-slate-600 border-t-blue-500 rounded-full animate-spin" />
+  <div className="flex items-center justify-center h-full bg-white dark:bg-zinc-950">
+    <div className="flex items-center gap-2 text-zinc-400 dark:text-zinc-500 text-sm">
+      <div className="w-4 h-4 border-2 border-zinc-300 dark:border-zinc-600 border-t-blue-500 rounded-full animate-spin" />
       Loading editor…
     </div>
   </div>
 );
+
+const handleEditorWillMount = (monaco: Monaco) => {
+  monaco.editor.defineTheme('devscratchpad-dark', {
+    base: 'vs-dark',
+    inherit: true,
+    rules: [
+      { background: '09090B' }
+    ],
+    colors: {
+      'editor.background': '#09090B',
+      'editor.lineHighlightBackground': '#18181B',
+      'editorLineNumber.foreground': '#71717A',
+      'editorIndentGuide.background': '#27272A',
+      'editorWidget.background': '#18181B',
+      'editorWidget.border': '#27272A',
+    }
+  });
+};
 
 const InternalEditor = dynamic(
   () => import("@monaco-editor/react").then((mod) => mod.default),
@@ -25,12 +44,32 @@ const InternalDiffEditor = dynamic(
 
 export function MonacoEditor(props: EditorProps) {
   const { theme: appTheme } = useTheme();
-  const editorTheme = appTheme === "dark" ? "vs-dark" : "vs";
-  return <InternalEditor {...props} theme={props.theme === "vs-dark" ? "vs-dark" : editorTheme} />;
+  const editorTheme = appTheme === "dark" ? "devscratchpad-dark" : "vs";
+  
+  return (
+    <InternalEditor 
+      {...props} 
+      theme={props.theme === "vs-dark" ? "devscratchpad-dark" : editorTheme} 
+      beforeMount={(monaco) => {
+        handleEditorWillMount(monaco);
+        if (props.beforeMount) props.beforeMount(monaco);
+      }}
+    />
+  );
 }
 
 export function MonacoDiffEditor(props: DiffEditorProps) {
   const { theme: appTheme } = useTheme();
-  const editorTheme = appTheme === "dark" ? "vs-dark" : "vs";
-  return <InternalDiffEditor {...props} theme={props.theme === "vs-dark" ? "vs-dark" : editorTheme} />;
+  const editorTheme = appTheme === "dark" ? "devscratchpad-dark" : "vs";
+  
+  return (
+    <InternalDiffEditor 
+      {...props} 
+      theme={props.theme === "vs-dark" ? "devscratchpad-dark" : editorTheme}
+      beforeMount={(monaco) => {
+        handleEditorWillMount(monaco);
+        if (props.beforeMount) props.beforeMount(monaco);
+      }}
+    />
+  );
 }

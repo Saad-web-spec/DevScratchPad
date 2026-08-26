@@ -63,12 +63,12 @@ export function GraphqlFormatterTool({ onValidationChange, onStatsChange, onLogH
   };
 
   return (
-    <div className="flex flex-col h-full bg-white dark:bg-slate-950 w-full overflow-x-hidden">
+    <div className="flex flex-col h-full bg-white dark:bg-zinc-950 w-full overflow-x-hidden">
       {/* Tool Header */}
-      <div className="min-h-14 border-b border-[#e2e8f0] dark:border-slate-700 flex flex-wrap md:flex-nowrap items-center justify-between px-3 md:px-4 py-2 md:py-0 bg-[#f8fafc] dark:bg-slate-900 shrink-0 gap-2">
+      <div className="min-h-14 border-b border-[#e2e8f0] dark:border-zinc-700 flex flex-wrap md:flex-nowrap items-center justify-between px-3 md:px-4 py-2 md:py-0 bg-[#f8fafc] dark:bg-zinc-900 shrink-0 gap-2">
         <div>
-          <h2 className="text-sm font-semibold text-slate-800 dark:text-slate-200">GraphQL Formatter</h2>
-          <p className="text-[11px] text-slate-400 dark:text-slate-500 hidden sm:block">Format and validate GraphQL queries</p>
+          <h2 className="text-sm font-semibold text-zinc-800 dark:text-zinc-200">GraphQL Formatter</h2>
+          <p className="text-[11px] text-zinc-400 dark:text-zinc-500 hidden sm:block">Format and validate GraphQL queries</p>
         </div>
         
         <div className="flex items-center gap-1.5 md:gap-2 flex-wrap">
@@ -82,14 +82,14 @@ export function GraphqlFormatterTool({ onValidationChange, onStatsChange, onLogH
       </div>
 
       {/* Mobile Segmented Tab Control */}
-      <div className="flex md:hidden bg-[#f1f5f9] dark:bg-slate-800 p-1 border-b border-[#e2e8f0] dark:border-slate-700 shrink-0">
+      <div className="flex md:hidden bg-[#f1f5f9] dark:bg-zinc-800 p-1 border-b border-[#e2e8f0] dark:border-zinc-700 shrink-0">
         <button
           onClick={() => setActiveTab("input")}
           className={cn(
             "flex-1 py-1.5 text-xs font-medium rounded-md transition-colors text-center",
             activeTab === "input"
-              ? "bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-2xs"
-              : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
+              ? "bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white shadow-2xs"
+              : "text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200"
           )}
         >
           Input Query
@@ -99,8 +99,8 @@ export function GraphqlFormatterTool({ onValidationChange, onStatsChange, onLogH
           className={cn(
             "flex-1 py-1.5 text-xs font-medium rounded-md transition-colors text-center",
             activeTab === "output"
-              ? "bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-2xs"
-              : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
+              ? "bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white shadow-2xs"
+              : "text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200"
           )}
         >
           Formatted Result
@@ -110,10 +110,10 @@ export function GraphqlFormatterTool({ onValidationChange, onStatsChange, onLogH
       {/* Dual Editors */}
       <div className="flex-1 flex flex-col md:flex-row overflow-hidden w-full max-w-full">
         {/* Left: Input */}
-        <div className={cn("flex-1 border-r-0 md:border-r border-b md:border-b-0 border-[#e2e8f0] dark:border-slate-700 flex flex-col min-w-0 w-full overflow-x-hidden", activeTab !== "input" && "hidden md:flex")}>
-          <div className="h-8 bg-[#f8fafc] dark:bg-slate-900 border-b border-[#e2e8f0] dark:border-slate-700 flex items-center justify-between px-3 shrink-0">
-            <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Input</span>
-            <button onClick={() => setInput("")} className="text-slate-400 dark:text-slate-500 hover:text-red-600 dark:hover:text-red-400 transition-colors" title="Clear">
+        <div className={cn("flex-1 border-r-0 md:border-r border-b md:border-b-0 border-[#e2e8f0] dark:border-zinc-700 flex flex-col min-w-0 w-full overflow-x-hidden", activeTab !== "input" && "hidden md:flex")}>
+          <div className="h-8 bg-[#f8fafc] dark:bg-zinc-900 border-b border-[#e2e8f0] dark:border-zinc-700 flex items-center justify-between px-3 shrink-0">
+            <span className="text-[11px] font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">Input</span>
+            <button onClick={() => setInput("")} className="text-zinc-400 dark:text-zinc-500 hover:text-red-600 dark:hover:text-red-400 transition-colors" title="Clear">
               <Trash2 className="w-3.5 h-3.5" />
             </button>
           </div>
@@ -137,9 +137,9 @@ export function GraphqlFormatterTool({ onValidationChange, onStatsChange, onLogH
 
         {/* Right: Output */}
         <div className={cn("flex-1 flex flex-col min-w-0 w-full overflow-x-hidden", activeTab !== "output" && "hidden md:flex")}>
-          <div className="h-8 bg-[#f8fafc] dark:bg-slate-900 border-b border-[#e2e8f0] dark:border-slate-700 flex items-center justify-between px-3 shrink-0">
-            <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Output</span>
-            <button onClick={handleCopy} className={cn("flex items-center gap-1 text-[11px] transition-colors", copied ? "text-emerald-600 dark:text-emerald-400" : "text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-300")}>
+          <div className="h-8 bg-[#f8fafc] dark:bg-zinc-900 border-b border-[#e2e8f0] dark:border-zinc-700 flex items-center justify-between px-3 shrink-0">
+            <span className="text-[11px] font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">Output</span>
+            <button onClick={handleCopy} className={cn("flex items-center gap-1 text-[11px] transition-colors", copied ? "text-emerald-600 dark:text-emerald-400" : "text-zinc-400 dark:text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300")}>
               {copied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
               {copied ? "Copied" : "Copy"}
             </button>

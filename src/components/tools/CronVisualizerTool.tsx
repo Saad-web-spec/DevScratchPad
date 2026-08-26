@@ -106,12 +106,12 @@ export function CronVisualizerTool({
   const cronParts = input.trim().split(/\s+/).filter(Boolean);
 
   return (
-    <div className="flex flex-col h-full bg-white dark:bg-slate-950 overflow-y-auto w-full overflow-x-hidden">
+    <div className="flex flex-col h-full bg-white dark:bg-zinc-950 overflow-y-auto w-full overflow-x-hidden">
       {/* Tool Header */}
-      <div className="min-h-14 border-b border-[#e2e8f0] dark:border-slate-800 flex flex-wrap md:flex-nowrap items-center justify-between px-3 md:px-6 py-2 md:py-0 bg-[#f8fafc] dark:bg-slate-900 shrink-0 gap-2">
+      <div className="min-h-14 border-b border-[#e2e8f0] dark:border-zinc-800 flex flex-wrap md:flex-nowrap items-center justify-between px-3 md:px-6 py-2 md:py-0 bg-[#f8fafc] dark:bg-zinc-900 shrink-0 gap-2">
         <div>
-          <h2 className="text-sm font-semibold text-slate-800 dark:text-slate-200">Cron Expression Visualizer</h2>
-          <p className="text-[11px] text-slate-400 dark:text-slate-500 hidden sm:block">Convert cron schedule syntax into clear, human-readable English</p>
+          <h2 className="text-sm font-semibold text-zinc-800 dark:text-zinc-200">Cron Expression Visualizer</h2>
+          <p className="text-[11px] text-zinc-400 dark:text-zinc-500 hidden sm:block">Convert cron schedule syntax into clear, human-readable English</p>
         </div>
 
         <div className="flex items-center gap-1.5 md:gap-2 flex-wrap">
@@ -122,7 +122,7 @@ export function CronVisualizerTool({
       <div className="flex-1 p-4 md:p-6 max-w-4xl w-full mx-auto space-y-4 md:space-y-6">
         {/* Presets */}
         <div>
-          <span className="text-[11px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider block mb-2">
+          <span className="text-[11px] font-semibold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider block mb-2">
             Common Schedules
           </span>
           <div className="flex flex-wrap gap-1.5 md:gap-2">
@@ -134,7 +134,7 @@ export function CronVisualizerTool({
                   "px-2.5 md:px-3 py-1 md:py-1.5 rounded-full text-xs font-medium transition-colors border",
                   input === preset.cron
                     ? "bg-[#2563EB] dark:bg-blue-600 text-white border-[#2563EB] dark:border-blue-600 shadow-2xs"
-                    : "bg-[#F1F5F9] dark:bg-slate-800 text-[#0F172A] dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700 border-transparent dark:border-slate-700"
+                    : "bg-[#F1F5F9] dark:bg-zinc-800 text-[#0F172A] dark:text-zinc-200 hover:bg-zinc-200 dark:hover:bg-zinc-700 border-transparent dark:border-zinc-700"
                 )}
               >
                 {preset.label}
@@ -144,14 +144,14 @@ export function CronVisualizerTool({
         </div>
 
         {/* Cron Input Field */}
-        <div className="bg-white dark:bg-slate-900 border border-[#E2E8F0] dark:border-slate-800 rounded-xl p-3.5 md:p-5 shadow-2xs">
+        <div className="bg-white dark:bg-zinc-900 border border-[#E2E8F0] dark:border-zinc-800 rounded-xl p-3.5 md:p-5 shadow-2xs">
           <div className="flex items-center justify-between mb-2 md:mb-3">
-            <label htmlFor="cron-expression-input" className="text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+            <label htmlFor="cron-expression-input" className="text-xs font-semibold text-zinc-700 dark:text-zinc-300 uppercase tracking-wider">
               Cron Expression
             </label>
             <button
               onClick={() => setInput("")}
-              className="text-slate-400 hover:text-red-600 dark:hover:text-red-400 text-xs flex items-center gap-1 transition-colors"
+              className="text-zinc-400 hover:text-red-600 dark:hover:text-red-400 text-xs flex items-center gap-1 transition-colors"
               title="Clear input"
             >
               <Trash2 className="w-3.5 h-3.5" />
@@ -166,7 +166,7 @@ export function CronVisualizerTool({
               value={input}
               onChange={(e) => setInput(e.target.value)}
               placeholder="e.g. */15 * * * * or 0 9 * * 1-5"
-              className="w-full bg-[#F8FAFC] dark:bg-slate-950 border border-[#E2E8F0] dark:border-slate-700 text-slate-900 dark:text-slate-100 font-mono text-base md:text-xl tracking-widest px-3 md:px-4 py-2.5 md:py-3 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-900 shadow-inner"
+              className="w-full bg-[#F8FAFC] dark:bg-zinc-950 border border-[#E2E8F0] dark:border-zinc-700 text-zinc-900 dark:text-zinc-100 font-mono text-base md:text-xl tracking-widest px-3 md:px-4 py-2.5 md:py-3 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-900 shadow-inner"
             />
           </div>
 
@@ -175,10 +175,10 @@ export function CronVisualizerTool({
             {CRON_FIELDS.map((field, idx) => {
               const val = cronParts[idx] || "-";
               return (
-                <div key={field.name} className="flex flex-col items-center text-center p-2 md:p-3 rounded-lg bg-white dark:bg-slate-950 border border-[#E2E8F0] dark:border-slate-800 shadow-2xs">
-                  <span className="text-[10px] text-slate-500 dark:text-slate-400 font-semibold uppercase tracking-wider mb-0.5 md:mb-1">{field.name}</span>
+                <div key={field.name} className="flex flex-col items-center text-center p-2 md:p-3 rounded-lg bg-white dark:bg-zinc-950 border border-[#E2E8F0] dark:border-zinc-800 shadow-2xs">
+                  <span className="text-[10px] text-zinc-500 dark:text-zinc-400 font-semibold uppercase tracking-wider mb-0.5 md:mb-1">{field.name}</span>
                   <span className="font-mono text-base md:text-lg font-bold text-[#2563EB] dark:text-blue-400 mb-0.5 md:mb-1">{val}</span>
-                  <span className="text-[10px] text-[#94A3B8] dark:text-slate-500 font-medium truncate max-w-full">{field.range}</span>
+                  <span className="text-[10px] text-[#94A3B8] dark:text-zinc-500 font-medium truncate max-w-full">{field.range}</span>
                 </div>
               );
             })}
@@ -187,17 +187,17 @@ export function CronVisualizerTool({
 
         {/* Result Explanation Card */}
         {output && (
-          <div className="bg-white dark:bg-slate-900 border border-[#E2E8F0] dark:border-slate-800 rounded-xl p-4 md:p-6 relative shadow-2xs flex flex-col md:flex-row md:items-start justify-between gap-4">
+          <div className="bg-white dark:bg-zinc-900 border border-[#E2E8F0] dark:border-zinc-800 rounded-xl p-4 md:p-6 relative shadow-2xs flex flex-col md:flex-row md:items-start justify-between gap-4">
             <div className="flex items-start gap-3 md:gap-4">
               <div className="shrink-0 mt-0.5">
-                <Clock className="w-6 h-6 md:w-7 md:h-7 text-[#0F172A] dark:text-slate-200" strokeWidth={1.5} />
+                <Clock className="w-6 h-6 md:w-7 md:h-7 text-[#0F172A] dark:text-zinc-200" strokeWidth={1.5} />
               </div>
               <div className="min-w-0">
-                <h3 className="text-base md:text-[18px] font-bold text-slate-900 dark:text-slate-100 leading-snug break-words">
+                <h3 className="text-base md:text-[18px] font-bold text-zinc-900 dark:text-zinc-100 leading-snug break-words">
                   {output}
                 </h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400 mt-2 font-mono break-all">
-                  Expression: <span className="text-slate-800 dark:text-slate-200 font-semibold">{input}</span>
+                <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-2 font-mono break-all">
+                  Expression: <span className="text-zinc-800 dark:text-zinc-200 font-semibold">{input}</span>
                 </p>
               </div>
             </div>
@@ -206,13 +206,13 @@ export function CronVisualizerTool({
               <button
                 onClick={handleCopy}
                 className={cn(
-                  "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors border bg-white dark:bg-slate-800 shadow-2xs",
+                  "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors border bg-white dark:bg-zinc-800 shadow-2xs",
                   copied
                     ? "text-emerald-700 dark:text-emerald-400 border-emerald-300 dark:border-emerald-700"
-                    : "hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 border-[#E2E8F0] dark:border-slate-700"
+                    : "hover:bg-zinc-50 dark:hover:bg-zinc-700 text-zinc-600 dark:text-zinc-300 border-[#E2E8F0] dark:border-zinc-700"
                 )}
               >
-                {copied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500" />}
+                {copied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5 text-zinc-400 dark:text-zinc-500" />}
                 <span>{copied ? "Copied" : "Copy"}</span>
               </button>
             </div>
