@@ -50,14 +50,14 @@ export function TimestampConverterTool({ onValidationChange, onStatsChange, rest
   };
 
   const ResultCard = ({ title, value, id }: { title: string; value?: string | number; id: string }) => (
-    <div className="bg-[#f8fafc] border border-[#e2e8f0] rounded-lg p-3.5 md:p-4 flex items-center justify-between group hover:border-slate-200 transition-colors gap-2 min-w-0">
+    <div className="bg-[#f8fafc] dark:bg-slate-900 border border-[#e2e8f0] dark:border-slate-700 rounded-lg p-3.5 md:p-4 flex items-center justify-between group hover:border-slate-200 dark:hover:border-slate-600 transition-colors gap-2 min-w-0">
       <div className="flex flex-col gap-0.5 md:gap-1 min-w-0">
-        <span className="text-[10px] md:text-xs font-medium text-slate-400 uppercase tracking-wider">{title}</span>
-        <span className="text-xs md:text-sm font-mono text-slate-800 break-all">{value !== undefined ? value : "-"}</span>
+        <span className="text-[10px] md:text-xs font-medium text-slate-400 dark:text-slate-500 uppercase tracking-wider">{title}</span>
+        <span className="text-xs md:text-sm font-mono text-slate-800 dark:text-slate-200 break-all">{value !== undefined ? value : "-"}</span>
       </div>
       <button 
         onClick={() => value && handleCopy(value.toString(), id)} 
-        className={cn("p-1.5 md:p-2 rounded-md transition-colors shrink-0", copied === id ? "bg-emerald-50 text-emerald-600" : "bg-[#f8fafc] text-slate-500 hover:text-slate-800 hover:bg-slate-100 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 focus:opacity-100")}
+        className={cn("p-1.5 md:p-2 rounded-md transition-colors shrink-0", copied === id ? "bg-emerald-50 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400" : "bg-[#f8fafc] dark:bg-slate-900 text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 focus:opacity-100")}
       >
         {copied === id ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
       </button>
@@ -65,12 +65,12 @@ export function TimestampConverterTool({ onValidationChange, onStatsChange, rest
   );
 
   return (
-    <div className="flex flex-col h-full bg-white overflow-y-auto w-full overflow-x-hidden">
+    <div className="flex flex-col h-full bg-white dark:bg-slate-950 overflow-y-auto w-full overflow-x-hidden">
       {/* Tool Header */}
-      <div className="min-h-14 border-b border-[#e2e8f0] flex flex-wrap md:flex-nowrap items-center justify-between px-3 md:px-4 py-2 md:py-0 bg-[#f8fafc] shrink-0 gap-2">
+      <div className="min-h-14 border-b border-[#e2e8f0] dark:border-slate-700 flex flex-wrap md:flex-nowrap items-center justify-between px-3 md:px-4 py-2 md:py-0 bg-[#f8fafc] dark:bg-slate-900 shrink-0 gap-2">
         <div>
-          <h2 className="text-sm font-semibold text-slate-800">Unix Timestamp Converter</h2>
-          <p className="text-[11px] text-slate-400 hidden sm:block">Convert Epoch to human-readable dates and vice versa</p>
+          <h2 className="text-sm font-semibold text-slate-800 dark:text-slate-200">Unix Timestamp Converter</h2>
+          <p className="text-[11px] text-slate-400 dark:text-slate-500 hidden sm:block">Convert Epoch to human-readable dates and vice versa</p>
         </div>
         
         <div className="flex items-center gap-1.5 md:gap-2 flex-wrap">
@@ -81,19 +81,19 @@ export function TimestampConverterTool({ onValidationChange, onStatsChange, rest
       <div className="p-4 md:p-6 max-w-4xl mx-auto w-full flex flex-col gap-6 md:gap-8">
         
         {/* Input Section */}
-        <div className="bg-white border border-[#e2e8f0] rounded-xl p-1 shadow-2xs">
-          <div className="flex items-center bg-[#f8fafc] rounded-lg p-2 px-3 md:px-4 gap-2 md:gap-4">
-            <Clock className="w-5 h-5 text-blue-600 shrink-0" />
+        <div className="bg-white dark:bg-slate-900 border border-[#e2e8f0] dark:border-slate-700 rounded-xl p-1 shadow-2xs">
+          <div className="flex items-center bg-[#f8fafc] dark:bg-slate-950 rounded-lg p-2 px-3 md:px-4 gap-2 md:gap-4">
+            <Clock className="w-5 h-5 text-blue-600 dark:text-blue-400 shrink-0" />
             <input 
               type="text" 
               value={input}
               onChange={(e) => setInput(e.target.value)}
               placeholder="Enter epoch (1770000000) or date string (2025-01-01)"
-              className="flex-1 min-w-0 bg-transparent text-slate-800 font-mono text-sm md:text-lg focus:outline-none"
+              className="flex-1 min-w-0 bg-transparent text-slate-800 dark:text-slate-100 font-mono text-sm md:text-lg focus:outline-none placeholder:text-slate-400 dark:placeholder:text-slate-600"
             />
             <button 
               onClick={() => setInput(Math.floor(Date.now() / 1000).toString())}
-              className="px-2.5 md:px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-600 rounded-md text-xs font-medium transition-colors shrink-0"
+              className="px-2.5 md:px-3 py-1.5 bg-blue-50 dark:bg-blue-950 hover:bg-blue-100 dark:hover:bg-blue-900 text-blue-600 dark:text-blue-400 rounded-md text-xs font-medium transition-colors shrink-0"
             >
               Now
             </button>

@@ -97,38 +97,38 @@ export function HashGeneratorTool({
       name: "MD5",
       bits: "128-bit",
       value: hashes.md5,
-      color: "text-amber-600 bg-amber-50 border-amber-200",
+      color: "text-amber-600 bg-amber-50 border-amber-200 dark:bg-amber-950/50 dark:text-amber-400 dark:border-amber-800",
     },
     {
       id: "sha1",
       name: "SHA-1",
       bits: "160-bit",
       value: hashes.sha1,
-      color: "text-blue-600 bg-blue-50 border-blue-200",
+      color: "text-blue-600 bg-blue-50 border-blue-200 dark:bg-blue-950/50 dark:text-blue-400 dark:border-blue-800",
     },
     {
       id: "sha256",
       name: "SHA-256",
       bits: "256-bit",
       value: hashes.sha256,
-      color: "text-emerald-600 bg-emerald-50 border-emerald-200",
+      color: "text-emerald-600 bg-emerald-50 border-emerald-200 dark:bg-emerald-950/50 dark:text-emerald-400 dark:border-emerald-800",
     },
     {
       id: "sha512",
       name: "SHA-512",
       bits: "512-bit",
       value: hashes.sha512,
-      color: "text-purple-600 bg-purple-50 border-purple-200",
+      color: "text-purple-600 bg-purple-50 border-purple-200 dark:bg-purple-950/50 dark:text-purple-400 dark:border-purple-800",
     },
   ];
 
   return (
-    <div className="flex flex-col h-full bg-white overflow-y-auto w-full overflow-x-hidden">
+    <div className="flex flex-col h-full bg-white dark:bg-slate-950 overflow-y-auto w-full overflow-x-hidden">
       {/* Tool Header */}
-      <div className="min-h-14 border-b border-[#e2e8f0] flex flex-wrap md:flex-nowrap items-center justify-between px-3 md:px-4 py-2 md:py-0 bg-[#f8fafc] shrink-0 gap-2">
+      <div className="min-h-14 border-b border-[#e2e8f0] dark:border-slate-800 flex flex-wrap md:flex-nowrap items-center justify-between px-3 md:px-4 py-2 md:py-0 bg-[#f8fafc] dark:bg-slate-900 shrink-0 gap-2">
         <div>
-          <h2 className="text-sm font-semibold text-slate-800">Hash Generator</h2>
-          <p className="text-[11px] text-slate-400 hidden sm:block">Generate cryptographic hashes (MD5, SHA-1, SHA-256, SHA-512)</p>
+          <h2 className="text-sm font-semibold text-slate-800 dark:text-slate-200">Hash Generator</h2>
+          <p className="text-[11px] text-slate-400 dark:text-slate-500 hidden sm:block">Generate cryptographic hashes (MD5, SHA-1, SHA-256, SHA-512)</p>
         </div>
 
         <div className="flex items-center gap-1.5 md:gap-2 flex-wrap">
@@ -138,8 +138,8 @@ export function HashGeneratorTool({
             className={cn(
               "px-2.5 py-1.5 rounded text-xs font-medium transition-colors border",
               isUppercase
-                ? "bg-blue-50 border-blue-200 text-blue-700"
-                : "bg-slate-100 border-slate-200 text-slate-700 hover:bg-slate-200"
+                ? "bg-blue-50 border-blue-200 text-blue-700 dark:bg-blue-950 dark:border-blue-800 dark:text-blue-400"
+                : "bg-slate-100 border-slate-200 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-700"
             )}
           >
             {isUppercase ? "UPPERCASE" : "lowercase"}
@@ -147,10 +147,10 @@ export function HashGeneratorTool({
 
           <button
             onClick={handleCopyAll}
-            className="flex items-center gap-1 px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded text-xs font-medium transition-colors border border-slate-200"
+            className="flex items-center gap-1 px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-300 rounded text-xs font-medium transition-colors border border-slate-200 dark:border-slate-700"
           >
             {copiedKey === "all" ? (
-              <Check className="w-3.5 h-3.5 text-emerald-600" />
+              <Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
             ) : (
               <Copy className="w-3.5 h-3.5" />
             )}
@@ -162,14 +162,14 @@ export function HashGeneratorTool({
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col p-3 md:p-6 max-w-5xl mx-auto w-full gap-4 md:gap-6">
         {/* Input Panel */}
-        <div className="border border-[#e2e8f0] rounded-xl overflow-hidden shadow-2xs bg-white flex flex-col shrink-0 w-full max-w-full">
-          <div className="h-9 bg-[#f8fafc] border-b border-[#e2e8f0] flex items-center justify-between px-3 md:px-4 shrink-0">
-            <span className="text-[11px] font-medium text-slate-500 uppercase tracking-wider">
+        <div className="border border-[#e2e8f0] dark:border-slate-700 rounded-xl overflow-hidden shadow-2xs bg-white dark:bg-slate-950 flex flex-col shrink-0 w-full max-w-full">
+          <div className="h-9 bg-[#f8fafc] dark:bg-slate-900 border-b border-[#e2e8f0] dark:border-slate-700 flex items-center justify-between px-3 md:px-4 shrink-0">
+            <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
               Input String / Text
             </span>
             <button
               onClick={() => setInput("")}
-              className="text-slate-400 hover:text-red-600 transition-colors"
+              className="text-slate-400 hover:text-red-600 dark:hover:text-red-400 transition-colors"
               title="Clear input"
             >
               <Trash2 className="w-3.5 h-3.5" />
@@ -179,7 +179,6 @@ export function HashGeneratorTool({
             <MonacoEditor
               height="100%"
               defaultLanguage="plaintext"
-              theme="vs"
               value={input}
               onChange={(value) => setInput(value || "")}
               options={{
@@ -196,7 +195,7 @@ export function HashGeneratorTool({
 
         {/* Hashes Output Grid */}
         <div className="space-y-3 w-full max-w-full">
-          <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wider px-1">
+          <h3 className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider px-1">
             Generated Hashes
           </h3>
 
@@ -211,10 +210,10 @@ export function HashGeneratorTool({
               return (
                 <div
                   key={card.id}
-                  className="bg-white border border-[#e2e8f0] hover:border-slate-300 rounded-xl p-3 md:p-4 transition-all shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 md:gap-3 group min-w-0"
+                  className="bg-white dark:bg-slate-900 border border-[#e2e8f0] dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 rounded-xl p-3 md:p-4 transition-all shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 md:gap-3 group min-w-0"
                 >
                   <div className="flex items-center gap-2.5 min-w-[120px] shrink-0">
-                    <span className="text-xs font-bold text-slate-800">
+                    <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
                       {card.name}
                     </span>
                     <span
@@ -227,12 +226,12 @@ export function HashGeneratorTool({
                     </span>
                   </div>
 
-                  <div className="flex-1 min-w-0 bg-[#f8fafc] px-3 py-2 rounded-lg border border-[#e2e8f0] font-mono text-xs text-slate-700 break-all select-all">
+                  <div className="flex-1 min-w-0 bg-[#f8fafc] dark:bg-slate-950 px-3 py-2 rounded-lg border border-[#e2e8f0] dark:border-slate-800 font-mono text-xs text-slate-700 dark:text-slate-300 break-all select-all">
                     {displayVal}
                   </div>
 
                   <div className="flex items-center justify-between sm:justify-end gap-2 shrink-0">
-                    <span className="text-[11px] text-slate-400">
+                    <span className="text-[11px] text-slate-400 dark:text-slate-500">
                       {card.value ? `${card.value.length} chars` : ""}
                     </span>
                     <button
@@ -241,8 +240,8 @@ export function HashGeneratorTool({
                       className={cn(
                         "flex items-center gap-1 px-3 py-1.5 rounded-md text-xs font-medium transition-colors border",
                         copiedKey === card.id
-                          ? "bg-emerald-50 text-emerald-600 border-emerald-200"
-                          : "bg-white hover:bg-slate-50 text-slate-600 border-slate-200"
+                          ? "bg-emerald-50 text-emerald-600 border-emerald-200 dark:bg-emerald-950/50 dark:text-emerald-400 dark:border-emerald-800"
+                          : "bg-white hover:bg-slate-50 text-slate-600 border-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-300 dark:border-slate-700"
                       )}
                     >
                       {copiedKey === card.id ? (

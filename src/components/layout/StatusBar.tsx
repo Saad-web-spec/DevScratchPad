@@ -19,14 +19,14 @@ export function StatusBar({
   executionMs,
 }: StatusBarProps) {
   return (
-    <footer className="h-7 bg-[#f8fafc] border-t border-[#e2e8f0] flex items-center justify-between px-3 shrink-0 text-[11px] font-medium text-slate-500 z-50 relative">
+    <footer className="h-7 bg-slate-50 dark:bg-slate-900 border-t border-slate-200 dark:border-slate-700 flex items-center justify-between px-3 shrink-0 text-[11px] font-medium text-slate-500 dark:text-slate-400 z-50 relative">
       <div className="flex items-center gap-4 min-w-0 flex-1">
         <div
           className={cn(
             "flex items-center gap-1.5 px-2 py-0.5 rounded-sm shrink-0",
             isValid
-              ? "text-emerald-600 bg-emerald-50"
-              : "text-red-600 bg-red-50"
+              ? "text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950"
+              : "text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950"
           )}
         >
           {isValid ? (
@@ -45,21 +45,21 @@ export function StatusBar({
         </div>
 
         {!isValid && errorMessage && (
-          <span className="text-red-500 truncate">{errorMessage}</span>
+          <span className="text-red-500 dark:text-red-400 truncate">{errorMessage}</span>
         )}
       </div>
 
       <div className="flex items-center gap-4">
         <div className="flex items-center gap-1.5" title="Input Length">
-          <FileText className="w-3.5 h-3.5 text-slate-400" />
+          <FileText className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500" />
           <span>{inputLength.toLocaleString()} chars</span>
         </div>
         <div className="flex items-center gap-1.5" title="Execution Time">
-          <Clock className="w-3.5 h-3.5 text-slate-400" />
+          <Clock className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500" />
           <span>{executionMs.toFixed(2)} ms</span>
         </div>
-        <div className="w-px h-3 bg-[#e2e8f0]"></div>
-        <div className="text-slate-400">UTF-8</div>
+        <div className="w-px h-3 bg-slate-200 dark:bg-slate-700"></div>
+        <div className="text-slate-400 dark:text-slate-500">UTF-8</div>
       </div>
     </footer>
   );

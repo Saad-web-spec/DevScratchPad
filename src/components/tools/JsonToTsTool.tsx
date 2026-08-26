@@ -94,18 +94,18 @@ export function JsonToTsTool({
   };
 
   return (
-    <div className="flex flex-col h-full bg-white w-full overflow-x-hidden">
+    <div className="flex flex-col h-full bg-white dark:bg-slate-950 w-full overflow-x-hidden">
       {/* Tool Header */}
-      <div className="min-h-14 border-b border-[#e2e8f0] flex flex-wrap md:flex-nowrap items-center justify-between px-3 md:px-4 py-2 md:py-0 bg-[#f8fafc] shrink-0 gap-2">
+      <div className="min-h-14 border-b border-[#e2e8f0] dark:border-slate-700 flex flex-wrap md:flex-nowrap items-center justify-between px-3 md:px-4 py-2 md:py-0 bg-[#f8fafc] dark:bg-slate-900 shrink-0 gap-2">
         <div>
-          <h2 className="text-sm font-semibold text-slate-800">JSON to TypeScript Converter</h2>
-          <p className="text-[11px] text-slate-400 hidden sm:block">Generate TypeScript interfaces from JSON data</p>
+          <h2 className="text-sm font-semibold text-slate-800 dark:text-slate-200">JSON to TypeScript Converter</h2>
+          <p className="text-[11px] text-slate-400 dark:text-slate-500 hidden sm:block">Generate TypeScript interfaces from JSON data</p>
         </div>
 
         <div className="flex items-center gap-1.5 md:gap-3 flex-wrap">
           <ShareButton toolSlug="json-to-typescript" data={input} />
           <div className="flex items-center gap-1.5">
-            <label htmlFor="root-name-input" className="text-xs text-slate-500 font-medium whitespace-nowrap">
+            <label htmlFor="root-name-input" className="text-xs text-slate-500 dark:text-slate-400 font-medium whitespace-nowrap">
               Root:
             </label>
             <input
@@ -114,13 +114,13 @@ export function JsonToTsTool({
               value={rootName}
               onChange={(e) => setRootName(e.target.value)}
               placeholder="RootObject"
-              className="bg-white border border-slate-200 text-slate-700 text-xs rounded px-2 py-1.5 focus:outline-none focus:border-blue-500 w-28 md:w-36 font-mono"
+              className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 text-xs rounded px-2 py-1.5 focus:outline-none focus:border-blue-500 w-28 md:w-36 font-mono"
             />
           </div>
 
           <button
             onClick={handleGenerate}
-            className="flex items-center gap-1 px-2.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs font-medium transition-colors shadow-2xs"
+            className="flex items-center gap-1 px-2.5 py-1.5 bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white rounded text-xs font-medium transition-colors shadow-2xs"
           >
             <Play className="w-3.5 h-3.5" />
             <span>Generate</span>
@@ -129,14 +129,14 @@ export function JsonToTsTool({
       </div>
 
       {/* Mobile Segmented Tab Control */}
-      <div className="flex md:hidden bg-[#f1f5f9] p-1 border-b border-[#e2e8f0] shrink-0">
+      <div className="flex md:hidden bg-[#f1f5f9] dark:bg-slate-800 p-1 border-b border-[#e2e8f0] dark:border-slate-700 shrink-0">
         <button
           onClick={() => setActiveTab("input")}
           className={cn(
             "flex-1 py-1.5 text-xs font-medium rounded-md transition-colors text-center",
             activeTab === "input"
-              ? "bg-white text-slate-900 shadow-2xs"
-              : "text-slate-500 hover:text-slate-700"
+              ? "bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 shadow-2xs"
+              : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
           )}
         >
           JSON Input
@@ -146,8 +146,8 @@ export function JsonToTsTool({
           className={cn(
             "flex-1 py-1.5 text-xs font-medium rounded-md transition-colors text-center",
             activeTab === "output"
-              ? "bg-white text-slate-900 shadow-2xs"
-              : "text-slate-500 hover:text-slate-700"
+              ? "bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 shadow-2xs"
+              : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
           )}
         >
           TypeScript Output
@@ -157,12 +157,12 @@ export function JsonToTsTool({
       {/* Dual Editors */}
       <div className="flex-1 flex flex-col md:flex-row overflow-hidden w-full max-w-full">
         {/* Left: Input */}
-        <div className={cn("flex-1 border-r-0 md:border-r border-b md:border-b-0 border-[#e2e8f0] flex flex-col min-w-0 w-full overflow-x-hidden", activeTab !== "input" && "hidden md:flex")}>
-          <div className="h-8 bg-[#f8fafc] border-b border-[#e2e8f0] flex items-center justify-between px-3 shrink-0">
-            <span className="text-[11px] font-medium text-slate-500 uppercase tracking-wider">JSON Input</span>
+        <div className={cn("flex-1 border-r-0 md:border-r border-b md:border-b-0 border-[#e2e8f0] dark:border-slate-700 flex flex-col min-w-0 w-full overflow-x-hidden", activeTab !== "input" && "hidden md:flex")}>
+          <div className="h-8 bg-[#f8fafc] dark:bg-slate-900 border-b border-[#e2e8f0] dark:border-slate-700 flex items-center justify-between px-3 shrink-0">
+            <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">JSON Input</span>
             <button
               onClick={() => setInput("")}
-              className="text-slate-400 hover:text-red-600 transition-colors"
+              className="text-slate-400 dark:text-slate-500 hover:text-red-600 dark:hover:text-red-400 transition-colors"
               title="Clear"
             >
               <Trash2 className="w-3.5 h-3.5" />
@@ -172,7 +172,6 @@ export function JsonToTsTool({
             <MonacoEditor
               height="100%"
               defaultLanguage="json"
-              theme="vs"
               value={input}
               onChange={(value) => setInput(value || "")}
               options={{
@@ -189,13 +188,13 @@ export function JsonToTsTool({
 
         {/* Right: Output */}
         <div className={cn("flex-1 flex flex-col min-w-0 w-full overflow-x-hidden", activeTab !== "output" && "hidden md:flex")}>
-          <div className="h-8 bg-[#f8fafc] border-b border-[#e2e8f0] flex items-center justify-between px-3 shrink-0">
-            <span className="text-[11px] font-medium text-slate-500 uppercase tracking-wider">TypeScript Interfaces</span>
+          <div className="h-8 bg-[#f8fafc] dark:bg-slate-900 border-b border-[#e2e8f0] dark:border-slate-700 flex items-center justify-between px-3 shrink-0">
+            <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">TypeScript Interfaces</span>
             <button
               onClick={handleCopy}
               className={cn(
                 "flex items-center gap-1 text-[11px] transition-colors",
-                copied ? "text-emerald-600" : "text-slate-400 hover:text-slate-700"
+                copied ? "text-emerald-600 dark:text-emerald-400" : "text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-200"
               )}
             >
               {copied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
@@ -206,7 +205,6 @@ export function JsonToTsTool({
             <MonacoEditor
               height="100%"
               defaultLanguage="typescript"
-              theme="vs"
               value={output}
               options={{
                 readOnly: true,

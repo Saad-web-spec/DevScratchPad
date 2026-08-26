@@ -57,12 +57,12 @@ export function CidrCalculatorTool({ onValidationChange, onStatsChange, onLogHis
   }, [input, onValidationChange, onStatsChange]);
 
   return (
-    <div className="flex flex-col h-full bg-white overflow-y-auto w-full overflow-x-hidden">
+    <div className="flex flex-col h-full bg-white dark:bg-slate-950 overflow-y-auto w-full overflow-x-hidden">
       {/* Tool Header */}
-      <div className="min-h-14 border-b border-[#e2e8f0] flex flex-wrap md:flex-nowrap items-center justify-between px-3 md:px-4 py-2 md:py-0 bg-[#f8fafc] shrink-0 sticky top-0 z-10 gap-2">
+      <div className="min-h-14 border-b border-[#e2e8f0] dark:border-slate-800 flex flex-wrap md:flex-nowrap items-center justify-between px-3 md:px-4 py-2 md:py-0 bg-[#f8fafc] dark:bg-slate-900 shrink-0 sticky top-0 z-10 gap-2">
         <div>
-          <h2 className="text-sm font-semibold text-slate-800">CIDR Calculator</h2>
-          <p className="text-[11px] text-slate-400 hidden sm:block">Calculate IP ranges and subnets</p>
+          <h2 className="text-sm font-semibold text-slate-800 dark:text-slate-200">CIDR Calculator</h2>
+          <p className="text-[11px] text-slate-400 dark:text-slate-500 hidden sm:block">Calculate IP ranges and subnets</p>
         </div>
         
         <div className="flex items-center gap-1.5 md:gap-2 flex-wrap">
@@ -72,13 +72,13 @@ export function CidrCalculatorTool({ onValidationChange, onStatsChange, onLogHis
 
       <div className="p-4 md:p-6 max-w-4xl mx-auto w-full space-y-6 md:space-y-8">
         <div>
-          <label className="block text-xs md:text-sm font-medium text-slate-700 mb-1.5 md:mb-2">CIDR Notation</label>
+          <label className="block text-xs md:text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5 md:mb-2">CIDR Notation</label>
           <input
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
             placeholder="e.g. 192.168.1.0/24"
-            className="w-full bg-white border border-[#e2e8f0] text-slate-800 text-sm md:text-base rounded-lg px-3.5 md:px-4 py-2.5 md:py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-shadow font-mono shadow-2xs"
+            className="w-full bg-white dark:bg-slate-900 border border-[#e2e8f0] dark:border-slate-700 text-slate-800 dark:text-slate-200 text-sm md:text-base rounded-lg px-3.5 md:px-4 py-2.5 md:py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-shadow font-mono shadow-2xs placeholder:text-slate-400 dark:placeholder:text-slate-500"
           />
         </div>
 
@@ -93,7 +93,7 @@ export function CidrCalculatorTool({ onValidationChange, onStatsChange, onLogHis
             <MetricCard label="Total Hosts" value={info.totalHosts.toLocaleString()} />
           </div>
         ) : (
-          <div className="text-center py-12 text-slate-400 text-sm">
+          <div className="text-center py-12 text-slate-400 dark:text-slate-500 text-sm">
             Enter a valid CIDR string to see the network metrics.
           </div>
         )}
@@ -104,9 +104,9 @@ export function CidrCalculatorTool({ onValidationChange, onStatsChange, onLogHis
 
 function MetricCard({ label, value }: { label: string; value: string | number }) {
   return (
-    <div className="bg-[#f8fafc] border border-[#e2e8f0] rounded-xl p-4 md:p-5 flex flex-col justify-center shadow-2xs">
-      <span className="text-xs font-medium text-slate-500 uppercase tracking-wider mb-1.5 md:mb-2">{label}</span>
-      <span className="text-base md:text-lg font-semibold text-blue-600 font-mono break-all">{value}</span>
+    <div className="bg-[#f8fafc] dark:bg-slate-900 border border-[#e2e8f0] dark:border-slate-800 rounded-xl p-4 md:p-5 flex flex-col justify-center shadow-2xs">
+      <span className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5 md:mb-2">{label}</span>
+      <span className="text-base md:text-lg font-semibold text-blue-600 dark:text-blue-400 font-mono break-all">{value}</span>
     </div>
   );
 }
