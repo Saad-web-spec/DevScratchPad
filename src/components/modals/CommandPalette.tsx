@@ -18,6 +18,10 @@ import {
   Calendar,
   ArrowLeftRight,
   Minimize2,
+  Sparkles,
+  FileText,
+  Shield,
+  Network,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -31,6 +35,7 @@ const ALL_TOOLS = [
   { id: "json-formatter", name: "JSON Formatter", category: "Formatters", icon: FileJson },
   { id: "xml-formatter", name: "XML Formatter", category: "Formatters", icon: Code },
   { id: "sql-formatter", name: "SQL Formatter", category: "Formatters", icon: Database },
+  { id: "graphql-formatter", name: "GraphQL Formatter", category: "Formatters", icon: Sparkles },
   { id: "minifier", name: "CSS/SVG Minifier", category: "Formatters", icon: Minimize2 },
   { id: "curl", name: "cURL Converter", category: "Formatters", icon: Terminal },
   { id: "base64", name: "Base64 Decoder", category: "Decoders", icon: Binary },
@@ -39,6 +44,9 @@ const ALL_TOOLS = [
   { id: "json-to-ts", name: "JSON to TypeScript", category: "Converters", icon: FileCode },
   { id: "yaml", name: "YAML / JSON Converter", category: "Converters", icon: ArrowLeftRight },
   { id: "timestamp", name: "Unix Timestamp", category: "Converters", icon: Clock },
+  { id: "markdown-previewer", name: "Markdown Previewer", category: "Utilities", icon: FileText },
+  { id: "hmac-generator", name: "HMAC Generator", category: "Utilities", icon: Shield },
+  { id: "cidr-calculator", name: "CIDR Calculator", category: "Utilities", icon: Network },
   { id: "cron", name: "Cron Visualizer", category: "Utilities", icon: Calendar },
   { id: "diff", name: "Diff Checker", category: "Utilities", icon: SplitSquareHorizontal },
   { id: "hash", name: "Hash Generator", category: "Utilities", icon: Hash },

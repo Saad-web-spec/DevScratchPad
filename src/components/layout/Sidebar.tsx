@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import {
   FileJson, Database, Key, Binary, Hash, Type, Regex, Code, Clock,
   Terminal, SplitSquareHorizontal, History, Trash2,
-  FileCode, Calendar, ArrowLeftRight, Minimize2
+  FileCode, Calendar, ArrowLeftRight, Minimize2, Sparkles, FileText, Shield, Network
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -19,6 +19,7 @@ const NAV_CATEGORIES = [
       { name: "JSON Formatter", icon: FileJson, id: "json-formatter" },
       { name: "XML Formatter", icon: Code, id: "xml-formatter" },
       { name: "SQL Formatter", icon: Database, id: "sql-formatter" },
+      { name: "GraphQL Formatter", icon: Sparkles, id: "graphql-formatter" },
       { name: "CSS/SVG Minifier", icon: Minimize2, id: "minifier" },
       { name: "cURL Converter", icon: Terminal, id: "curl" },
     ],
@@ -40,8 +41,11 @@ const NAV_CATEGORIES = [
     ],
   },
   {
-    title: "Utilities",
+    title: "Utilities & Network",
     items: [
+      { name: "Markdown Previewer", icon: FileText, id: "markdown-previewer" },
+      { name: "HMAC Generator", icon: Shield, id: "hmac-generator" },
+      { name: "CIDR Calculator", icon: Network, id: "cidr-calculator" },
       { name: "Cron Visualizer", icon: Calendar, id: "cron" },
       { name: "Diff Checker", icon: SplitSquareHorizontal, id: "diff" },
       { name: "Hash Generator", icon: Hash, id: "hash" },
