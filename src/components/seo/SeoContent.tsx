@@ -2,8 +2,28 @@ import { Shield } from "lucide-react";
 import type { ToolMeta } from "@/lib/tools/registry";
 
 export function SeoContent({ tool }: { tool: ToolMeta }) {
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    "name": `${tool.name} Online`,
+    "url": `https://tools.saadengineer.works/${tool.slug}`,
+    "applicationCategory": "DeveloperApplication",
+    "operatingSystem": "All",
+    "browserRequirements": "Requires JavaScript",
+    "offers": {
+      "@type": "Offer",
+      "price": "0",
+      "priceCurrency": "USD"
+    },
+    "description": tool.description,
+  };
+
   return (
     <section className="border-t border-[#e2e8f0] bg-[#f8fafc] px-6 py-8 max-w-4xl">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       <h1 className="text-2xl font-bold text-slate-900 mb-2">
         {tool.name} Online
       </h1>
