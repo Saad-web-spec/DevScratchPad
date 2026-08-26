@@ -29,6 +29,7 @@ import { getToolMeta, type ToolMeta } from "@/lib/tools/registry";
 import { addHistoryEntry, type HistoryEntry } from "@/lib/storage";
 import { X } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { decodeShareData } from "@/components/ShareButton";
 
 // Bidirectional map between sidebar IDs and URL slugs
 const SIDEBAR_TO_SLUG: Record<string, string> = {
@@ -114,7 +115,6 @@ export function WorkspaceShell({ initialToolSlug, toolMeta }: WorkspaceShellProp
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
-
   // Restore state from URL Hash (#data=base64...)
   useEffect(() => {
     const handleHash = () => {
@@ -122,8 +122,10 @@ export function WorkspaceShell({ initialToolSlug, toolMeta }: WorkspaceShellProp
       if (hash && hash.startsWith("#data=")) {
         try {
           const base64Data = hash.substring(6);
-          const decoded = atob(base64Data);
-          setRestoredInput(decoded);
+          const decoded = decodeShareData(base64Data);
+          if (decoded) {
+            setRestoredInput(decoded);
+          }
         } catch (e) {
           console.error("Failed to decode hash data", e);
         }
@@ -290,21 +292,24 @@ export function WorkspaceShell({ initialToolSlug, toolMeta }: WorkspaceShellProp
                 <JwtDecoderTool
                   onValidationChange={handleValidationChange}
                   onStatsChange={handleStatsChange}
+                  restoredInput={restoredInput}
                 />
               )}
               {activeTool === "timestamp" && (
                 <TimestampConverterTool
                   onValidationChange={handleValidationChange}
                   onStatsChange={handleStatsChange}
+                  restoredInput={restoredInput}
                 />
               )}
               {activeTool === "curl" && (
                 <CurlConverterTool
                   onValidationChange={handleValidationChange}
                   onStatsChange={handleStatsChange}
+                  restoredInput={restoredInput}
                 />
               )}
-              {activeTool === "diff" && <DiffCheckerTool />}
+              {activeTool === "diff" && <DiffCheckerTool restoredInput={restoredInput} />}
               {activeTool === "xml-formatter" && (
                 <XmlFormatterTool
                   onValidationChange={handleValidationChange}

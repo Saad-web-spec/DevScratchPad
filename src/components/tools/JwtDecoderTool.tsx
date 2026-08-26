@@ -3,22 +3,29 @@
 import { useState, useEffect } from "react";
 import { MonacoEditor } from "@/components/MonacoEditor";
 import { decodeJwt } from "@/lib/tools/jwt";
-import { Copy, Trash2, Check, Link as LinkIcon } from "lucide-react";
+import { ShareButton } from "@/components/ShareButton";
+import { Copy, Trash2, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { addSnapshot } from "@/lib/storage";
 
 interface JwtDecoderToolProps {
   onValidationChange: (isValid: boolean, error?: string) => void;
   onStatsChange: (length: number, execMs: number) => void;
+  restoredInput?: string | null;
 }
 
-export function JwtDecoderTool({ onValidationChange, onStatsChange }: JwtDecoderToolProps) {
+export function JwtDecoderTool({ onValidationChange, onStatsChange, restoredInput }: JwtDecoderToolProps) {
   const [input, setInput] = useState<string>("");
   const [headerOutput, setHeaderOutput] = useState<string>("");
   const [payloadOutput, setPayloadOutput] = useState<string>("");
   const [signature, setSignature] = useState<string>("");
   const [copied, setCopied] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<"input" | "output">("input");
+
+  // Restore from history / share URL
+  useEffect(() => {
+    if (restoredInput) setInput(restoredInput);
+  }, [restoredInput]);
 
   // Save workspace snapshot
   useEffect(() => {
@@ -65,17 +72,7 @@ export function JwtDecoderTool({ onValidationChange, onStatsChange }: JwtDecoder
         </div>
         
         <div className="flex items-center gap-1.5 md:gap-2 flex-wrap">
-          <button
-            onClick={() => {
-              try {
-                window.location.hash = 'data=' + btoa(input);
-              } catch {}
-            }}
-            className="flex items-center gap-1 px-2.5 py-1.5 bg-white hover:bg-slate-50 text-slate-700 rounded text-xs font-medium transition-colors border border-[#e2e8f0] shadow-2xs"
-          >
-            <LinkIcon className="w-3.5 h-3.5" />
-            <span>Share</span>
-          </button>
+          <ShareButton toolSlug="jwt-decoder" data={input} />
         </div>
       </div>
 

@@ -3,7 +3,8 @@
 import { useState, useEffect } from "react";
 import { MonacoEditor } from "@/components/MonacoEditor";
 import { minifyCss, minifySvg, validateCss, validateSvg } from "@/lib/tools/minify";
-import { Play, Copy, Trash2, Check, Zap, Link as LinkIcon } from "lucide-react";
+import { ShareButton } from "@/components/ShareButton";
+import { Play, Copy, Trash2, Check, Zap } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface MinifierToolProps {
@@ -130,17 +131,7 @@ export function MinifierTool({
         </div>
 
         <div className="flex items-center gap-1.5 md:gap-3 flex-wrap">
-          <button
-            onClick={() => {
-              try {
-                window.location.hash = 'data=' + btoa(input);
-              } catch {}
-            }}
-            className="flex items-center gap-1 px-2.5 py-1.5 bg-white hover:bg-slate-50 text-slate-700 rounded text-xs font-medium transition-colors border border-[#e2e8f0] shadow-2xs"
-          >
-            <LinkIcon className="w-3.5 h-3.5" />
-            <span>Share</span>
-          </button>
+          <ShareButton toolSlug="css-svg-minifier" data={input} />
           {/* Mode Dropdown */}
           <div className="flex items-center gap-1.5">
             <label htmlFor="minifier-mode-select" className="text-xs text-slate-500 font-medium">

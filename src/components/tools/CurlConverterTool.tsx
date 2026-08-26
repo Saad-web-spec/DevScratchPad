@@ -3,23 +3,30 @@
 import { useState, useEffect } from "react";
 import { MonacoEditor } from "@/components/MonacoEditor";
 import { parseCurlCommand, generateFetch, generatePythonRequests, generateGoHttp } from "@/lib/tools/curl";
-import { Copy, Trash2, Check, Link as LinkIcon } from "lucide-react";
+import { ShareButton } from "@/components/ShareButton";
+import { Copy, Trash2, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { addSnapshot } from "@/lib/storage";
 
 interface CurlConverterToolProps {
   onValidationChange: (isValid: boolean, error?: string) => void;
   onStatsChange: (length: number, execMs: number) => void;
+  restoredInput?: string | null;
 }
 
 type LangTarget = 'javascript' | 'python' | 'go';
 
-export function CurlConverterTool({ onValidationChange, onStatsChange }: CurlConverterToolProps) {
+export function CurlConverterTool({ onValidationChange, onStatsChange, restoredInput }: CurlConverterToolProps) {
   const [input, setInput] = useState<string>("curl -X POST https://api.example.com/data \\\n  -H \"Content-Type: application/json\" \\\n  -H \"Authorization: Bearer token123\" \\\n  -d '{\"key\":\"value\"}'");
   const [output, setOutput] = useState<string>("");
   const [target, setTarget] = useState<LangTarget>('javascript');
   const [copied, setCopied] = useState(false);
   const [activeTab, setActiveTab] = useState<"input" | "output">("input");
+
+  // Restore from history / share URL
+  useEffect(() => {
+    if (restoredInput) setInput(restoredInput);
+  }, [restoredInput]);
 
   // Save workspace snapshot
   useEffect(() => {
@@ -66,17 +73,7 @@ export function CurlConverterTool({ onValidationChange, onStatsChange }: CurlCon
         </div>
         
         <div className="flex items-center gap-1.5 md:gap-2 flex-wrap">
-          <button
-            onClick={() => {
-              try {
-                window.location.hash = 'data=' + btoa(input);
-              } catch {}
-            }}
-            className="flex items-center gap-1 px-2.5 py-1.5 bg-white hover:bg-slate-50 text-slate-700 rounded text-xs font-medium transition-colors border border-[#e2e8f0] shadow-2xs"
-          >
-            <LinkIcon className="w-3.5 h-3.5" />
-            <span>Share</span>
-          </button>
+          <ShareButton toolSlug="curl-converter" data={input} />
           <select 
             value={target}
             onChange={(e) => setTarget(e.target.value as LangTarget)}

@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { explainCron, validateCron } from "@/lib/tools/cron";
-import { Clock, Copy, Trash2, Check, AlertCircle, Link as LinkIcon } from "lucide-react";
+import { ShareButton } from "@/components/ShareButton";
+import { Clock, Copy, Trash2, Check, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface CronVisualizerToolProps {
@@ -114,17 +115,7 @@ export function CronVisualizerTool({
         </div>
 
         <div className="flex items-center gap-1.5 md:gap-2 flex-wrap">
-          <button
-            onClick={() => {
-              try {
-                window.location.hash = 'data=' + btoa(input);
-              } catch {}
-            }}
-            className="flex items-center gap-1 px-2.5 py-1.5 bg-white hover:bg-slate-50 text-slate-700 rounded text-xs font-medium transition-colors border border-[#e2e8f0] shadow-2xs"
-          >
-            <LinkIcon className="w-3.5 h-3.5" />
-            <span>Share</span>
-          </button>
+          <ShareButton toolSlug="cron-visualizer" data={input} />
         </div>
       </div>
 

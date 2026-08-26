@@ -2,19 +2,26 @@
 
 import { useState, useEffect } from "react";
 import { parseTimestamp, TimestampResult } from "@/lib/tools/timestamp";
-import { Clock, Copy, Check, Link as LinkIcon } from "lucide-react";
+import { ShareButton } from "@/components/ShareButton";
+import { Clock, Copy, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { addSnapshot } from "@/lib/storage";
 
 interface TimestampConverterToolProps {
   onValidationChange: (isValid: boolean, error?: string) => void;
   onStatsChange: (length: number, execMs: number) => void;
+  restoredInput?: string | null;
 }
 
-export function TimestampConverterTool({ onValidationChange, onStatsChange }: TimestampConverterToolProps) {
+export function TimestampConverterTool({ onValidationChange, onStatsChange, restoredInput }: TimestampConverterToolProps) {
   const [input, setInput] = useState<string>(Math.floor(Date.now() / 1000).toString());
   const [result, setResult] = useState<TimestampResult>({ valid: true });
   const [copied, setCopied] = useState<string | null>(null);
+
+  // Restore from history / share URL
+  useEffect(() => {
+    if (restoredInput) setInput(restoredInput);
+  }, [restoredInput]);
 
   // Save workspace snapshot
   useEffect(() => {
@@ -67,17 +74,7 @@ export function TimestampConverterTool({ onValidationChange, onStatsChange }: Ti
         </div>
         
         <div className="flex items-center gap-1.5 md:gap-2 flex-wrap">
-          <button
-            onClick={() => {
-              try {
-                window.location.hash = 'data=' + btoa(input);
-              } catch {}
-            }}
-            className="flex items-center gap-1 px-2.5 py-1.5 bg-white hover:bg-slate-50 text-slate-700 rounded text-xs font-medium transition-colors border border-[#e2e8f0] shadow-2xs"
-          >
-            <LinkIcon className="w-3.5 h-3.5" />
-            <span>Share</span>
-          </button>
+          <ShareButton toolSlug="unix-timestamp" data={input} />
         </div>
       </div>
 

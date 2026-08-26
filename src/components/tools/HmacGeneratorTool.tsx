@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { generateHmac } from "@/lib/tools/hmac";
-import { Copy, Check, Link as LinkIcon } from "lucide-react";
+import { ShareButton } from "@/components/ShareButton";
+import { Copy, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface HmacGeneratorToolProps {
@@ -32,9 +33,19 @@ export function HmacGeneratorTool({ onValidationChange, onStatsChange, onLogHist
     }
   }, [payload, hexOutput]);
 
-  // Restore from history
+  // Restore from history / share URL
   useEffect(() => {
-    if (restoredInput) setPayload(restoredInput);
+    if (restoredInput) {
+      try {
+        const parsed = JSON.parse(restoredInput);
+        if (parsed && typeof parsed === "object") {
+          if ("secret" in parsed) setSecret(parsed.secret || "");
+          if ("payload" in parsed) setPayload(parsed.payload || "");
+          return;
+        }
+      } catch {}
+      setPayload(restoredInput);
+    }
   }, [restoredInput]);
 
   useEffect(() => {
@@ -80,13 +91,7 @@ export function HmacGeneratorTool({ onValidationChange, onStatsChange, onLogHist
         </div>
         
         <div className="flex items-center gap-1.5 md:gap-2 flex-wrap">
-          <button
-            onClick={() => { try { window.location.hash = 'data=' + btoa(payload); } catch(e) {} }}
-            className="flex items-center gap-1 px-2.5 py-1.5 bg-white hover:bg-slate-50 text-slate-700 rounded text-xs font-medium transition-colors border border-[#e2e8f0] shadow-2xs"
-          >
-            <LinkIcon className="w-3.5 h-3.5" />
-            <span>Share</span>
-          </button>
+          <ShareButton toolSlug="hmac-generator" data={{ secret, payload }} />
         </div>
       </div>
 

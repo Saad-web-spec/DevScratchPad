@@ -2,10 +2,15 @@
 
 import { useState, useEffect } from "react";
 import { MonacoDiffEditor } from "@/components/MonacoEditor";
-import { Trash2, Link as LinkIcon } from "lucide-react";
+import { Trash2 } from "lucide-react";
 import { addSnapshot } from "@/lib/storage";
+import { ShareButton } from "@/components/ShareButton";
 
-export function DiffCheckerTool() {
+interface DiffCheckerToolProps {
+  restoredInput?: string | null;
+}
+
+export function DiffCheckerTool({ restoredInput }: DiffCheckerToolProps) {
   const [original, setOriginal] = useState<string>("{\n  \"version\": 1,\n  \"name\": \"DevScratchpad\"\n}");
   const [modified, setModified] = useState<string>("{\n  \"version\": 2,\n  \"name\": \"DevScratchpad\",\n  \"privacy\": \"zero-server\"\n}");
   const [isMobile, setIsMobile] = useState(false);
@@ -18,6 +23,21 @@ export function DiffCheckerTool() {
     window.addEventListener("resize", checkMobile);
     return () => window.removeEventListener("resize", checkMobile);
   }, []);
+
+  // Restore from share link / history
+  useEffect(() => {
+    if (restoredInput) {
+      try {
+        const parsed = JSON.parse(restoredInput);
+        if (parsed && typeof parsed === "object") {
+          if ("original" in parsed) setOriginal(parsed.original || "");
+          if ("modified" in parsed) setModified(parsed.modified || "");
+          return;
+        }
+      } catch {}
+      setOriginal(restoredInput);
+    }
+  }, [restoredInput]);
 
   // Save workspace snapshot
   useEffect(() => {
@@ -38,17 +58,7 @@ export function DiffCheckerTool() {
         </div>
         
         <div className="flex items-center gap-1.5 md:gap-2 flex-wrap">
-          <button
-            onClick={() => {
-              try {
-                window.location.hash = 'data=' + btoa(original);
-              } catch {}
-            }}
-            className="flex items-center gap-1 px-2.5 py-1.5 bg-white hover:bg-slate-50 text-slate-700 rounded text-xs font-medium transition-colors border border-[#e2e8f0] shadow-2xs"
-          >
-            <LinkIcon className="w-3.5 h-3.5" />
-            <span>Share</span>
-          </button>
+          <ShareButton toolSlug="diff-checker" data={{ original, modified }} />
           <button 
             onClick={() => { setOriginal(""); setModified(""); }}
             className="flex items-center gap-1 px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-red-600 rounded text-xs font-medium transition-colors border border-slate-200"
