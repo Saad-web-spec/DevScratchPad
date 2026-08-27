@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { MonacoEditor } from "@/components/MonacoEditor";
 import { formatGraphQL } from "@/lib/tools/graphql";
 import { ShareButton } from "@/components/ShareButton";
+import { ExportImageButton } from "@/components/ExportImageButton";
 import { Play, Copy, Trash2, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { StatusBar } from "@/components/layout/StatusBar";
@@ -80,6 +81,7 @@ export function GraphqlFormatterTool({ onValidationChange, onStatsChange, onLogH
         </div>
         
         <div className="flex items-center gap-1.5 md:gap-2 flex-wrap">
+          <ExportImageButton code={output || input} language="graphql" />
           <ShareButton toolSlug="graphql-formatter" data={input} />
           
           <button onClick={handleFormat} className="h-9 px-3 bg-blue-600 dark:bg-blue-600 hover:bg-blue-700 dark:hover:bg-blue-500 text-white rounded-md text-xs font-medium transition-colors flex items-center gap-1.5 shadow-2xs">

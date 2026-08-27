@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { MonacoEditor } from "@/components/MonacoEditor";
 import { formatXml, minifyXml, validateXml } from "@/lib/tools/xml";
 import { ShareButton } from "@/components/ShareButton";
+import { ExportImageButton } from "@/components/ExportImageButton";
 import { Play, Copy, Trash2, Minimize2, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { addSnapshot } from "@/lib/storage";
@@ -115,6 +116,7 @@ export function XmlFormatterTool({
         </div>
 
         <div className="flex items-center gap-1.5 md:gap-2 flex-wrap">
+          <ExportImageButton code={output || input} language="xml" />
           <ShareButton toolSlug="xml-formatter" data={input} />
           <select
             value={indent}

@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { MonacoEditor } from "@/components/MonacoEditor";
 import { jsonToTs, validateJsonForTs } from "@/lib/tools/json-to-ts";
 import { ShareButton } from "@/components/ShareButton";
+import { ExportImageButton } from "@/components/ExportImageButton";
 import { Play, Copy, Trash2, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { StatusBar } from "@/components/layout/StatusBar";
@@ -117,6 +118,7 @@ export function JsonToTsTool({
         </div>
 
         <div className="flex items-center gap-1.5 md:gap-3 flex-wrap">
+          <ExportImageButton code={output || input} language="typescript" />
           <ShareButton toolSlug="json-to-typescript" data={input} />
           <div className="flex items-center gap-1.5">
             <label htmlFor="root-name-input" className="text-xs text-zinc-400 font-medium whitespace-nowrap">

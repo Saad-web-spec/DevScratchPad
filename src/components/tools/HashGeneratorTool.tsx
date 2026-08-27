@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { MonacoEditor } from "@/components/MonacoEditor";
 import { generateAllHashes, type HashResults } from "@/lib/tools/hash";
 import { ShareButton } from "@/components/ShareButton";
+import { ExportImageButton } from "@/components/ExportImageButton";
 import { Copy, Trash2, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { addSnapshot } from "@/lib/storage";
@@ -134,6 +135,7 @@ export function HashGeneratorTool({
 
         <div className="flex items-center gap-1.5 md:gap-2 flex-wrap">
           <ValidationBadge isValid={true} />
+          <ExportImageButton code={JSON.stringify(hashes, null, 2) || input} language="plaintext" />
           <ShareButton toolSlug="hash-generator" data={input} />
           <button
             onClick={() => setIsUppercase(!isUppercase)}

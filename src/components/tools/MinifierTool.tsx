@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { MonacoEditor } from "@/components/MonacoEditor";
 import { minifyCss, minifySvg, validateCss, validateSvg } from "@/lib/tools/minify";
 import { ShareButton } from "@/components/ShareButton";
+import { ExportImageButton } from "@/components/ExportImageButton";
 import { Play, Copy, Trash2, Check, Zap, Minimize2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { StatusBar } from "@/components/layout/StatusBar";
@@ -141,6 +142,7 @@ export function MinifierTool({
         </div>
 
         <div className="flex items-center gap-1.5 md:gap-3 flex-wrap">
+          <ExportImageButton code={output || input} language="css" />
           <ShareButton toolSlug="css-svg-minifier" data={input} />
           {/* Mode Dropdown */}
           <div className="flex items-center gap-1.5">

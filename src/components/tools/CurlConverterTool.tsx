@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { MonacoEditor } from "@/components/MonacoEditor";
 import { parseCurlCommand, generateFetch, generatePythonRequests, generateGoHttp } from "@/lib/tools/curl";
 import { ShareButton } from "@/components/ShareButton";
+import { ExportImageButton } from "@/components/ExportImageButton";
 import { Copy, Trash2, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { addSnapshot } from "@/lib/storage";
@@ -80,6 +81,7 @@ export function CurlConverterTool({ onValidationChange, onStatsChange, restoredI
         </div>
         
         <div className="flex items-center gap-1.5 md:gap-2 flex-wrap">
+          <ExportImageButton code={output || input} language="bash" />
           <ShareButton toolSlug="curl-converter" data={input} />
           <select 
             value={target}

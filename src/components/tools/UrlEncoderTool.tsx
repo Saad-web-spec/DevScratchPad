@@ -9,6 +9,7 @@ import {
   type UrlEncodeMode,
 } from "@/lib/tools/url";
 import { ShareButton } from "@/components/ShareButton";
+import { ExportImageButton } from "@/components/ExportImageButton";
 import { Play, Copy, Trash2, ArrowLeftRight, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { addSnapshot } from "@/lib/storage";
@@ -128,6 +129,7 @@ export function UrlEncoderTool({
         </div>
 
         <div className="flex items-center gap-1.5 md:gap-3 flex-wrap">
+          <ExportImageButton code={output || input} language="plaintext" />
           <ShareButton toolSlug="url-encoder" data={input} />
           {/* Action Switcher */}
           <div className="flex items-center bg-zinc-200/80 dark:bg-zinc-800 p-0.5 rounded-lg">

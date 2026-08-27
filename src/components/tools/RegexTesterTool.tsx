@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { MonacoEditor } from "@/components/MonacoEditor";
 import { testRegex, replaceRegex, type RegexMatch } from "@/lib/tools/regex";
 import { ShareButton } from "@/components/ShareButton";
+import { ExportImageButton } from "@/components/ExportImageButton";
 import { Copy, Trash2, Check, Regex as RegexIcon, Replace, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { addSnapshot } from "@/lib/storage";
@@ -132,7 +133,8 @@ export function RegexTesterTool({
 
         <div className="flex items-center gap-2 flex-wrap">
           <ValidationBadge isValid={!regexError} />
-          <ShareButton toolSlug="regex-tester" data={{ pattern, testString }} />
+          <ExportImageButton code={replacedOutput || testString} language="javascript" />
+          <ShareButton toolSlug="regex-tester" data={{ pattern, testString, replacePattern, replaceMode }} />
 
           {/* Replace Mode Toggle */}
           <button

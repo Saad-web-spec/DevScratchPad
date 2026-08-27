@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { MonacoEditor } from "@/components/MonacoEditor";
 import { decodeJwt } from "@/lib/tools/jwt";
 import { ShareButton } from "@/components/ShareButton";
+import { ExportImageButton } from "@/components/ExportImageButton";
 import { Copy, Trash2, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { addSnapshot } from "@/lib/storage";
@@ -78,7 +79,8 @@ export function JwtDecoderTool({ onValidationChange, onStatsChange, restoredInpu
         </div>
         
         <div className="flex items-center gap-1.5 md:gap-2 flex-wrap">
-          <ShareButton toolSlug="jwt-decoder" data={input} />
+          <ExportImageButton code={payloadOutput || input} language="json" />
+          <ShareButton toolSlug="jwt" data={input} />
         </div>
       </div>
 
