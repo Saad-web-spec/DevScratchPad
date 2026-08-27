@@ -7,6 +7,7 @@ import { ShareButton } from "@/components/ShareButton";
 import { Copy, Trash2, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { addSnapshot } from "@/lib/storage";
+import { ValidationBadge } from "@/components/layout/StatusBar";
 
 interface HashGeneratorToolProps {
   onValidationChange: (isValid: boolean, error?: string) => void;
@@ -132,6 +133,7 @@ export function HashGeneratorTool({
         </div>
 
         <div className="flex items-center gap-1.5 md:gap-2 flex-wrap">
+          <ValidationBadge isValid={true} />
           <ShareButton toolSlug="hash-generator" data={input} />
           <button
             onClick={() => setIsUppercase(!isUppercase)}

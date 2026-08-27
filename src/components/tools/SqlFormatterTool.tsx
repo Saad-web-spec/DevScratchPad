@@ -7,6 +7,7 @@ import { ShareButton } from "@/components/ShareButton";
 import { Play, Copy, Trash2, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { addSnapshot } from "@/lib/storage";
+import { StatusBar } from "@/components/layout/StatusBar";
 
 interface SqlFormatterToolProps {
   onValidationChange: (isValid: boolean, error?: string, line?: number) => void;
@@ -49,6 +50,9 @@ export function SqlFormatterTool({
   const [keywordCase, setKeywordCase] = useState<"upper" | "lower" | "preserve">("upper");
   const [copied, setCopied] = useState(false);
   const [activeTab, setActiveTab] = useState<"input" | "output">("input");
+  const [isValid, setIsValid] = useState(true);
+  const [errorLine, setErrorLine] = useState<number | undefined>();
+  const [execMs, setExecMs] = useState(0);
 
   // Save workspace snapshot
   useEffect(() => {
@@ -73,9 +77,13 @@ export function SqlFormatterTool({
       keywordCase,
     });
     const end = performance.now();
+    const ms = end - start;
 
+    setIsValid(valid);
+    setErrorLine(undefined);
+    setExecMs(ms);
     onValidationChange(valid, error);
-    onStatsChange(input.length, end - start);
+    onStatsChange(input.length, ms);
   }, [input, dialect, indent, keywordCase, onValidationChange, onStatsChange]);
 
   const handleFormat = () => {
@@ -94,7 +102,9 @@ export function SqlFormatterTool({
       onValidationChange(false, err.message || "Failed to format SQL");
     }
     const end = performance.now();
-    onStatsChange(input.length, end - start);
+    const ms = end - start;
+    setExecMs(ms);
+    onStatsChange(input.length, ms);
   };
 
   const handleCopy = () => {
@@ -251,6 +261,14 @@ export function SqlFormatterTool({
           </div>
         </div>
       </div>
+
+      {/* Embedded 32px Status Bar */}
+      <StatusBar
+        isValid={isValid}
+        errorLine={errorLine}
+        inputLength={input.length}
+        executionMs={execMs}
+      />
     </div>
   );
 }

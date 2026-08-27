@@ -6,6 +6,7 @@ import { jsonToTs, validateJsonForTs } from "@/lib/tools/json-to-ts";
 import { ShareButton } from "@/components/ShareButton";
 import { Play, Copy, Trash2, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { StatusBar } from "@/components/layout/StatusBar";
 
 interface JsonToTsToolProps {
   onValidationChange: (isValid: boolean, error?: string, line?: number) => void;
@@ -27,6 +28,9 @@ export function JsonToTsTool({
   const [rootName, setRootName] = useState<string>("RootObject");
   const [copied, setCopied] = useState(false);
   const [activeTab, setActiveTab] = useState<"input" | "output">("input");
+  const [isValid, setIsValid] = useState(true);
+  const [errorLine, setErrorLine] = useState<number | undefined>();
+  const [execMs, setExecMs] = useState(0);
 
   // Restore from history
   useEffect(() => {
@@ -37,6 +41,12 @@ export function JsonToTsTool({
   useEffect(() => {
     const start = performance.now();
     const validation = validateJsonForTs(input);
+    const end = performance.now();
+    const ms = end - start;
+
+    setIsValid(validation.valid);
+    setErrorLine(validation.line);
+    setExecMs(ms);
     onValidationChange(validation.valid, validation.error, validation.line);
 
     if (validation.valid && input.trim()) {
@@ -45,14 +55,14 @@ export function JsonToTsTool({
         setOutput(tsResult);
       } catch (err: any) {
         setOutput("");
+        setIsValid(false);
         onValidationChange(false, err.message);
       }
     } else if (!input.trim()) {
       setOutput("");
     }
 
-    const end = performance.now();
-    onStatsChange(input.length, end - start);
+    onStatsChange(input.length, ms);
   }, [input, rootName, onValidationChange, onStatsChange]);
 
   // Dispatch custom events when input/output change
@@ -76,14 +86,18 @@ export function JsonToTsTool({
     try {
       const tsResult = jsonToTs(input, rootName);
       setOutput(tsResult);
+      setIsValid(true);
       onValidationChange(true);
       onLogHistory?.(input);
       setActiveTab("output");
     } catch (err: any) {
+      setIsValid(false);
       onValidationChange(false, err.message);
     }
     const end = performance.now();
-    onStatsChange(input.length, end - start);
+    const ms = end - start;
+    setExecMs(ms);
+    onStatsChange(input.length, ms);
   };
 
   const handleCopy = () => {
@@ -219,6 +233,14 @@ export function JsonToTsTool({
           </div>
         </div>
       </div>
+
+      {/* Embedded 32px Status Bar */}
+      <StatusBar
+        isValid={isValid}
+        errorLine={errorLine}
+        inputLength={input.length}
+        executionMs={execMs}
+      />
     </div>
   );
 }

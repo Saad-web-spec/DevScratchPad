@@ -6,6 +6,7 @@ import { formatGraphQL } from "@/lib/tools/graphql";
 import { ShareButton } from "@/components/ShareButton";
 import { Play, Copy, Trash2, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { StatusBar } from "@/components/layout/StatusBar";
 
 interface GraphqlFormatterToolProps {
   onValidationChange: (isValid: boolean, error?: string, line?: number) => void;
@@ -19,6 +20,8 @@ export function GraphqlFormatterTool({ onValidationChange, onStatsChange, onLogH
   const [output, setOutput] = useState<string>("");
   const [copied, setCopied] = useState(false);
   const [activeTab, setActiveTab] = useState<"input" | "output">("input");
+  const [isValid, setIsValid] = useState(true);
+  const [execMs, setExecMs] = useState(0);
 
   // Dispatch workspace state
   useEffect(() => {
@@ -42,17 +45,22 @@ export function GraphqlFormatterTool({ onValidationChange, onStatsChange, onLogH
       const result = formatGraphQL(input);
       if (result.valid) {
         setOutput(result.formatted || "");
+        setIsValid(true);
         onValidationChange(true);
         onLogHistory?.(input);
         setActiveTab("output");
       } else {
+        setIsValid(false);
         onValidationChange(false, result.error);
       }
     } catch (err: any) {
+      setIsValid(false);
       onValidationChange(false, err.message);
     }
     const end = performance.now();
-    onStatsChange(input.length, end - start);
+    const ms = end - start;
+    setExecMs(ms);
+    onStatsChange(input.length, ms);
   };
 
   const handleCopy = () => {
@@ -162,6 +170,13 @@ export function GraphqlFormatterTool({ onValidationChange, onStatsChange, onLogH
           </div>
         </div>
       </div>
+
+      {/* Embedded 32px Status Bar */}
+      <StatusBar
+        isValid={isValid}
+        inputLength={input.length}
+        executionMs={execMs}
+      />
     </div>
   );
 }

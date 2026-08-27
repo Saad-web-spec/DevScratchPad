@@ -6,6 +6,7 @@ import { yamlToJson, jsonToYaml, validateYaml, validateJsonForYaml } from "@/lib
 import { ShareButton } from "@/components/ShareButton";
 import { Play, Copy, Trash2, ArrowLeftRight, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { StatusBar } from "@/components/layout/StatusBar";
 
 interface YamlConverterToolProps {
   onValidationChange: (isValid: boolean, error?: string, line?: number) => void;
@@ -43,6 +44,9 @@ export function YamlConverterTool({
   const [indent, setIndent] = useState<number>(2);
   const [copied, setCopied] = useState(false);
   const [activeTab, setActiveTab] = useState<"input" | "output">("input");
+  const [isValid, setIsValid] = useState(true);
+  const [errorLine, setErrorLine] = useState<number | undefined>();
+  const [execMs, setExecMs] = useState(0);
 
   // Restore from history
   useEffect(() => {
@@ -54,7 +58,12 @@ export function YamlConverterTool({
     const start = performance.now();
     const isYamlMode = mode === "yaml-to-json";
     const validation = isYamlMode ? validateYaml(input) : validateJsonForYaml(input);
+    const end = performance.now();
+    const ms = end - start;
     
+    setIsValid(validation.valid);
+    setErrorLine(validation.line);
+    setExecMs(ms);
     onValidationChange(validation.valid, validation.error, validation.line);
 
     if (validation.valid && input.trim()) {
@@ -63,6 +72,7 @@ export function YamlConverterTool({
         setOutput(result);
       } catch (err: any) {
         setOutput("");
+        setIsValid(false);
         onValidationChange(false, err.message);
       }
     } else if (!input.trim()) {
@@ -71,8 +81,7 @@ export function YamlConverterTool({
       setOutput("");
     }
 
-    const end = performance.now();
-    onStatsChange(input.length, end - start);
+    onStatsChange(input.length, ms);
   }, [input, mode, indent, onValidationChange, onStatsChange]);
 
   // Dispatch custom events when input/output change
@@ -97,14 +106,18 @@ export function YamlConverterTool({
       const isYamlMode = mode === "yaml-to-json";
       const result = isYamlMode ? yamlToJson(input, indent) : jsonToYaml(input);
       setOutput(result);
+      setIsValid(true);
       onValidationChange(true);
       onLogHistory?.(input);
       setActiveTab("output");
     } catch (err: any) {
+      setIsValid(false);
       onValidationChange(false, err.message);
     }
     const end = performance.now();
-    onStatsChange(input.length, end - start);
+    const ms = end - start;
+    setExecMs(ms);
+    onStatsChange(input.length, ms);
   };
 
   const handleSwap = () => {
@@ -293,6 +306,14 @@ export function YamlConverterTool({
           </div>
         </div>
       </div>
+
+      {/* Embedded 32px Status Bar */}
+      <StatusBar
+        isValid={isValid}
+        errorLine={errorLine}
+        inputLength={input.length}
+        executionMs={execMs}
+      />
     </div>
   );
 }

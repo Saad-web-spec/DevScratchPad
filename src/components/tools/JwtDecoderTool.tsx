@@ -7,6 +7,7 @@ import { ShareButton } from "@/components/ShareButton";
 import { Copy, Trash2, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { addSnapshot } from "@/lib/storage";
+import { StatusBar } from "@/components/layout/StatusBar";
 
 interface JwtDecoderToolProps {
   onValidationChange: (isValid: boolean, error?: string) => void;
@@ -21,6 +22,8 @@ export function JwtDecoderTool({ onValidationChange, onStatsChange, restoredInpu
   const [signature, setSignature] = useState<string>("");
   const [copied, setCopied] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<"input" | "output">("input");
+  const [isValid, setIsValid] = useState(true);
+  const [execMs, setExecMs] = useState(0);
 
   // Restore from history / share URL
   useEffect(() => {
@@ -40,9 +43,12 @@ export function JwtDecoderTool({ onValidationChange, onStatsChange, restoredInpu
     const start = performance.now();
     const result = decodeJwt(input);
     const end = performance.now();
+    const ms = end - start;
     
+    setIsValid(result.valid);
+    setExecMs(ms);
     onValidationChange(result.valid, result.error);
-    onStatsChange(input.length, end - start);
+    onStatsChange(input.length, ms);
 
     if (result.valid && result.header) {
       setHeaderOutput(result.header);
@@ -175,6 +181,13 @@ export function JwtDecoderTool({ onValidationChange, onStatsChange, restoredInpu
           
         </div>
       </div>
+
+      {/* Embedded 32px Status Bar */}
+      <StatusBar
+        isValid={isValid}
+        inputLength={input.length}
+        executionMs={execMs}
+      />
     </div>
   );
 }

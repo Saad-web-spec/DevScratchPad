@@ -6,6 +6,7 @@ import { minifyCss, minifySvg, validateCss, validateSvg } from "@/lib/tools/mini
 import { ShareButton } from "@/components/ShareButton";
 import { Play, Copy, Trash2, Check, Zap } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { StatusBar } from "@/components/layout/StatusBar";
 
 interface MinifierToolProps {
   onValidationChange: (isValid: boolean, error?: string, line?: number) => void;
@@ -54,6 +55,8 @@ export function MinifierTool({
   const [output, setOutput] = useState<string>("");
   const [copied, setCopied] = useState(false);
   const [activeTab, setActiveTab] = useState<"input" | "output">("input");
+  const [isValid, setIsValid] = useState(true);
+  const [execMs, setExecMs] = useState(0);
 
   // Restore from history
   useEffect(() => {
@@ -64,10 +67,13 @@ export function MinifierTool({
   useEffect(() => {
     const start = performance.now();
     const validation = mode === "css" ? validateCss(input) : validateSvg(input);
-    onValidationChange(validation.valid, validation.error);
-
     const end = performance.now();
-    onStatsChange(input.length, end - start);
+    const ms = end - start;
+
+    setIsValid(validation.valid);
+    setExecMs(ms);
+    onValidationChange(validation.valid, validation.error);
+    onStatsChange(input.length, ms);
   }, [input, mode, onValidationChange, onStatsChange]);
 
   // Dispatch custom events when input/output change
@@ -91,14 +97,18 @@ export function MinifierTool({
     try {
       const minified = mode === "css" ? minifyCss(input) : minifySvg(input);
       setOutput(minified);
+      setIsValid(true);
       onValidationChange(true);
       onLogHistory?.(input);
       setActiveTab("output");
     } catch (err: any) {
+      setIsValid(false);
       onValidationChange(false, err.message);
     }
     const end = performance.now();
-    onStatsChange(input.length, end - start);
+    const ms = end - start;
+    setExecMs(ms);
+    onStatsChange(input.length, ms);
   };
 
   const handleModeChange = (newMode: "css" | "svg") => {
@@ -264,6 +274,13 @@ export function MinifierTool({
           </div>
         </div>
       </div>
+
+      {/* Embedded 32px Status Bar */}
+      <StatusBar
+        isValid={isValid}
+        inputLength={input.length}
+        executionMs={execMs}
+      />
     </div>
   );
 }

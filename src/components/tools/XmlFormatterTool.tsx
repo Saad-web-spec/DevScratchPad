@@ -7,6 +7,7 @@ import { ShareButton } from "@/components/ShareButton";
 import { Play, Copy, Trash2, Minimize2, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { addSnapshot } from "@/lib/storage";
+import { StatusBar } from "@/components/layout/StatusBar";
 
 interface XmlFormatterToolProps {
   onValidationChange: (isValid: boolean, error?: string, line?: number) => void;
@@ -34,6 +35,9 @@ export function XmlFormatterTool({
   const [indent, setIndent] = useState<number>(2);
   const [copied, setCopied] = useState(false);
   const [activeTab, setActiveTab] = useState<"input" | "output">("input");
+  const [isValid, setIsValid] = useState(true);
+  const [errorLine, setErrorLine] = useState<number | undefined>();
+  const [execMs, setExecMs] = useState(0);
 
   // Save workspace snapshot
   useEffect(() => {
@@ -54,9 +58,13 @@ export function XmlFormatterTool({
     const start = performance.now();
     const { valid, error, line } = validateXml(input);
     const end = performance.now();
+    const ms = end - start;
 
+    setIsValid(valid);
+    setErrorLine(line);
+    setExecMs(ms);
     onValidationChange(valid, error, line);
-    onStatsChange(input.length, end - start);
+    onStatsChange(input.length, ms);
   }, [input, onValidationChange, onStatsChange]);
 
   const handleFormat = () => {
@@ -71,7 +79,9 @@ export function XmlFormatterTool({
       // Validation error caught
     }
     const end = performance.now();
-    onStatsChange(input.length, end - start);
+    const ms = end - start;
+    setExecMs(ms);
+    onStatsChange(input.length, ms);
   };
 
   const handleMinify = () => {
@@ -83,7 +93,9 @@ export function XmlFormatterTool({
       setActiveTab("output");
     } catch (err: any) {}
     const end = performance.now();
-    onStatsChange(input.length, end - start);
+    const ms = end - start;
+    setExecMs(ms);
+    onStatsChange(input.length, ms);
   };
 
   const handleCopy = () => {
@@ -222,6 +234,14 @@ export function XmlFormatterTool({
           </div>
         </div>
       </div>
+
+      {/* Embedded 32px Status Bar */}
+      <StatusBar
+        isValid={isValid}
+        errorLine={errorLine}
+        inputLength={input.length}
+        executionMs={execMs}
+      />
     </div>
   );
 }

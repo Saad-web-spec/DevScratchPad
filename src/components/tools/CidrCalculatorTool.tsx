@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { parseCidr, CidrInfo } from "@/lib/tools/cidr";
 import { ShareButton } from "@/components/ShareButton";
 import { cn } from "@/lib/utils";
+import { ValidationBadge } from "@/components/layout/StatusBar";
 
 interface CidrCalculatorToolProps {
   onValidationChange: (isValid: boolean, error?: string, line?: number) => void;
@@ -15,6 +16,7 @@ interface CidrCalculatorToolProps {
 export function CidrCalculatorTool({ onValidationChange, onStatsChange, onLogHistory, restoredInput }: CidrCalculatorToolProps) {
   const [input, setInput] = useState<string>('192.168.1.0/24');
   const [info, setInfo] = useState<CidrInfo | null>(null);
+  const [isValid, setIsValid] = useState(true);
 
   // Dispatch workspace state
   useEffect(() => {
@@ -39,17 +41,21 @@ export function CidrCalculatorTool({ onValidationChange, onStatsChange, onLogHis
         const result = parseCidr(input);
         if (result.valid && result.info) {
           setInfo(result.info);
+          setIsValid(true);
           onValidationChange(true);
         } else {
           setInfo(null);
+          setIsValid(false);
           onValidationChange(false, result.error);
         }
       } else {
         setInfo(null);
+        setIsValid(true);
         onValidationChange(true);
       }
     } catch (err: any) {
       setInfo(null);
+      setIsValid(false);
       onValidationChange(false, err.message);
     }
     const end = performance.now();
@@ -66,6 +72,7 @@ export function CidrCalculatorTool({ onValidationChange, onStatsChange, onLogHis
         </div>
         
         <div className="flex items-center gap-1.5 md:gap-2 flex-wrap">
+          <ValidationBadge isValid={isValid} />
           <ShareButton toolSlug="cidr-calculator" data={input} />
         </div>
       </div>

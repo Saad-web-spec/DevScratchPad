@@ -12,6 +12,7 @@ import { ShareButton } from "@/components/ShareButton";
 import { Play, Copy, Trash2, ArrowLeftRight, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { addSnapshot } from "@/lib/storage";
+import { StatusBar } from "@/components/layout/StatusBar";
 
 interface UrlEncoderToolProps {
   onValidationChange: (isValid: boolean, error?: string) => void;
@@ -35,6 +36,8 @@ export function UrlEncoderTool({
   const [encodeMode, setEncodeMode] = useState<UrlEncodeMode>("component");
   const [copied, setCopied] = useState(false);
   const [activeTab, setActiveTab] = useState<"input" | "output">("input");
+  const [isValid, setIsValid] = useState(true);
+  const [execMs, setExecMs] = useState(0);
 
   // Save workspace snapshot
   useEffect(() => {
@@ -54,6 +57,11 @@ export function UrlEncoderTool({
   useEffect(() => {
     const start = performance.now();
     const validation = validateUrl(input, action, encodeMode);
+    const end = performance.now();
+    const ms = end - start;
+
+    setIsValid(validation.valid);
+    setExecMs(ms);
     onValidationChange(validation.valid, validation.error);
 
     if (validation.valid) {
@@ -70,8 +78,7 @@ export function UrlEncoderTool({
       setOutput("");
     }
 
-    const end = performance.now();
-    onStatsChange(input.length, end - start);
+    onStatsChange(input.length, ms);
   }, [input, action, encodeMode, onValidationChange, onStatsChange]);
 
   const handleAction = () => {
@@ -82,14 +89,18 @@ export function UrlEncoderTool({
           ? encodeUrl(input, encodeMode)
           : decodeUrl(input, encodeMode);
       setOutput(res);
+      setIsValid(true);
       onValidationChange(true);
       onLogHistory?.(input);
       setActiveTab("output");
     } catch (err: any) {
+      setIsValid(false);
       onValidationChange(false, err.message);
     }
     const end = performance.now();
-    onStatsChange(input.length, end - start);
+    const ms = end - start;
+    setExecMs(ms);
+    onStatsChange(input.length, ms);
   };
 
   const handleSwap = () => {
@@ -271,6 +282,13 @@ export function UrlEncoderTool({
           </div>
         </div>
       </div>
+
+      {/* Embedded 32px Status Bar */}
+      <StatusBar
+        isValid={isValid}
+        inputLength={input.length}
+        executionMs={execMs}
+      />
     </div>
   );
 }

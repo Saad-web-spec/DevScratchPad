@@ -3,7 +3,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { TopBar } from "@/components/layout/TopBar";
 import { Sidebar } from "@/components/layout/Sidebar";
-import { StatusBar } from "@/components/layout/StatusBar";
 import { JsonFormatterTool } from "@/components/tools/JsonFormatterTool";
 import { JwtDecoderTool } from "@/components/tools/JwtDecoderTool";
 import { TimestampConverterTool } from "@/components/tools/TimestampConverterTool";
@@ -442,13 +441,6 @@ export function WorkspaceShell({ initialToolSlug, toolMeta }: WorkspaceShellProp
               )}
             </div>
 
-            <StatusBar
-              isValid={isValid}
-              errorMessage={errorMsg}
-              errorLine={errorLine}
-              inputLength={inputLength}
-              executionMs={execMs}
-            />
             {currentMeta && <SeoContent tool={currentMeta} />}
           </div>
         </main>

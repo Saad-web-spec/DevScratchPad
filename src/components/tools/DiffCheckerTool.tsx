@@ -5,6 +5,7 @@ import { MonacoDiffEditor } from "@/components/MonacoEditor";
 import { Trash2 } from "lucide-react";
 import { addSnapshot } from "@/lib/storage";
 import { ShareButton } from "@/components/ShareButton";
+import { StatusBar } from "@/components/layout/StatusBar";
 
 interface DiffCheckerToolProps {
   restoredInput?: string | null;
@@ -94,6 +95,13 @@ export function DiffCheckerTool({ restoredInput }: DiffCheckerToolProps) {
           />
         </div>
       </div>
+
+      {/* Embedded 32px Status Bar */}
+      <StatusBar
+        isValid={true}
+        inputLength={original.length + modified.length}
+        executionMs={0}
+      />
     </div>
   );
 }

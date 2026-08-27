@@ -6,6 +6,7 @@ import { renderMarkdown } from "@/lib/tools/markdown";
 import { ShareButton } from "@/components/ShareButton";
 import { Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { StatusBar } from "@/components/layout/StatusBar";
 
 interface MarkdownPreviewerToolProps {
   onValidationChange: (isValid: boolean, error?: string, line?: number) => void;
@@ -18,6 +19,8 @@ export function MarkdownPreviewerTool({ onValidationChange, onStatsChange, onLog
   const [input, setInput] = useState<string>('# Hello Markdown');
   const [htmlOutput, setHtmlOutput] = useState<string>("");
   const [activeTab, setActiveTab] = useState<"input" | "output">("input");
+  const [isValid, setIsValid] = useState(true);
+  const [execMs, setExecMs] = useState(0);
 
   // Dispatch workspace state
   useEffect(() => {
@@ -44,16 +47,20 @@ export function MarkdownPreviewerTool({ onValidationChange, onStatsChange, onLog
         const html = await renderMarkdown(input);
         if (mounted) {
           setHtmlOutput(html);
+          setIsValid(true);
           onValidationChange(true);
         }
       } catch (err: any) {
         if (mounted) {
+          setIsValid(false);
           onValidationChange(false, err.message);
         }
       } finally {
         if (mounted) {
           const end = performance.now();
-          onStatsChange(input.length, end - start);
+          const ms = end - start;
+          setExecMs(ms);
+          onStatsChange(input.length, ms);
         }
       }
     };
@@ -146,6 +153,13 @@ export function MarkdownPreviewerTool({ onValidationChange, onStatsChange, onLog
           </div>
         </div>
       </div>
+
+      {/* Embedded 32px Status Bar */}
+      <StatusBar
+        isValid={isValid}
+        inputLength={input.length}
+        executionMs={execMs}
+      />
     </div>
   );
 }

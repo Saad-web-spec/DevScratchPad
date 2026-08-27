@@ -5,6 +5,7 @@ import { generateHmac } from "@/lib/tools/hmac";
 import { ShareButton } from "@/components/ShareButton";
 import { Copy, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { ValidationBadge } from "@/components/layout/StatusBar";
 
 interface HmacGeneratorToolProps {
   onValidationChange: (isValid: boolean, error?: string, line?: number) => void;
@@ -21,6 +22,7 @@ export function HmacGeneratorTool({ onValidationChange, onStatsChange, onLogHist
   const [base64Output, setBase64Output] = useState<string>('');
   const [copiedHex, setCopiedHex] = useState(false);
   const [copiedBase64, setCopiedBase64] = useState(false);
+  const [isValid, setIsValid] = useState(true);
 
   // Dispatch workspace state
   useEffect(() => {
@@ -59,8 +61,10 @@ export function HmacGeneratorTool({ onValidationChange, onStatsChange, onLogHist
         setHexOutput('');
         setBase64Output('');
       }
+      setIsValid(true);
       onValidationChange(true);
     } catch (err: any) {
+      setIsValid(false);
       onValidationChange(false, err.message);
       setHexOutput('');
       setBase64Output('');
@@ -91,6 +95,7 @@ export function HmacGeneratorTool({ onValidationChange, onStatsChange, onLogHist
         </div>
         
         <div className="flex items-center gap-1.5 md:gap-2 flex-wrap">
+          <ValidationBadge isValid={isValid} />
           <ShareButton toolSlug="hmac-generator" data={{ secret, payload }} />
         </div>
       </div>

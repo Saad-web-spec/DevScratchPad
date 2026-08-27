@@ -7,6 +7,7 @@ import { Play, Copy, Trash2, Minimize2, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { addSnapshot } from "@/lib/storage";
 import { ShareButton } from "@/components/ShareButton";
+import { StatusBar } from "@/components/layout/StatusBar";
 
 interface JsonFormatterToolProps {
   onValidationChange: (isValid: boolean, error?: string, line?: number) => void;
@@ -21,6 +22,9 @@ export function JsonFormatterTool({ onValidationChange, onStatsChange, onLogHist
   const [indent, setIndent] = useState<number>(2);
   const [copied, setCopied] = useState(false);
   const [activeTab, setActiveTab] = useState<"input" | "output">("input");
+  const [isValid, setIsValid] = useState(true);
+  const [errorLine, setErrorLine] = useState<number | undefined>();
+  const [execMs, setExecMs] = useState(0);
 
   // Save workspace snapshot
   useEffect(() => {
@@ -41,9 +45,13 @@ export function JsonFormatterTool({ onValidationChange, onStatsChange, onLogHist
     const start = performance.now();
     const { valid, error, line } = validateJson(input);
     const end = performance.now();
+    const ms = end - start;
     
+    setIsValid(valid);
+    setErrorLine(line);
+    setExecMs(ms);
     onValidationChange(valid, error, line);
-    onStatsChange(input.length, end - start);
+    onStatsChange(input.length, ms);
   }, [input, onValidationChange, onStatsChange]);
 
   const handleFormat = () => {
@@ -58,7 +66,9 @@ export function JsonFormatterTool({ onValidationChange, onStatsChange, onLogHist
       // Validation already catches this
     }
     const end = performance.now();
-    onStatsChange(input.length, end - start);
+    const ms = end - start;
+    setExecMs(ms);
+    onStatsChange(input.length, ms);
   };
 
   const handleMinify = () => {
@@ -70,7 +80,9 @@ export function JsonFormatterTool({ onValidationChange, onStatsChange, onLogHist
       setActiveTab("output");
     } catch (err) {}
     const end = performance.now();
-    onStatsChange(input.length, end - start);
+    const ms = end - start;
+    setExecMs(ms);
+    onStatsChange(input.length, ms);
   };
 
   const handleCopy = () => {
@@ -193,6 +205,14 @@ export function JsonFormatterTool({ onValidationChange, onStatsChange, onLogHist
           </div>
         </div>
       </div>
+
+      {/* Embedded 32px Status Bar */}
+      <StatusBar
+        isValid={isValid}
+        errorLine={errorLine}
+        inputLength={input.length}
+        executionMs={execMs}
+      />
     </div>
   );
 }

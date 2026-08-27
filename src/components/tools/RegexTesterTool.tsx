@@ -7,6 +7,7 @@ import { ShareButton } from "@/components/ShareButton";
 import { Copy, Trash2, Check, Regex as RegexIcon, Replace, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { addSnapshot } from "@/lib/storage";
+import { ValidationBadge } from "@/components/layout/StatusBar";
 
 interface RegexTesterToolProps {
   onValidationChange: (isValid: boolean, error?: string) => void;
@@ -45,41 +46,37 @@ export function RegexTesterTool({
   // Save workspace snapshot
   useEffect(() => {
     const handleSave = () => {
-      const output = replaceMode ? replacedOutput : JSON.stringify(matches, null, 2);
-      addSnapshot("regex", "Regex Tester", pattern, output);
+      addSnapshot("regex", "Regex Tester", pattern, testString);
     };
     window.addEventListener("save-workspace", handleSave);
     return () => window.removeEventListener("save-workspace", handleSave);
-  }, [pattern, replaceMode, replacedOutput, matches]);
+  }, [pattern, testString]);
 
-  // Restore from history / share link
+  // Restore from history
   useEffect(() => {
     if (restoredInput) {
       try {
         const parsed = JSON.parse(restoredInput);
-        if (parsed && typeof parsed === "object") {
-          if ("pattern" in parsed) setPattern(parsed.pattern || "");
-          if ("testString" in parsed) setTestString(parsed.testString || "");
-          return;
-        }
-      } catch {}
-      setPattern(restoredInput);
+        if (parsed.pattern) setPattern(parsed.pattern);
+        if (parsed.testString) setTestString(parsed.testString);
+      } catch {
+        setPattern(restoredInput);
+      }
     }
   }, [restoredInput]);
 
-  const activeFlagsString = Object.entries(flags)
-    .filter(([_, active]) => active)
-    .map(([f]) => f)
-    .join("");
-
-  // Test regex & update matches
+  // Compile and match
   useEffect(() => {
     const start = performance.now();
-    const result = testRegex(pattern, activeFlagsString, testString);
-    const end = performance.now();
+    const flagStr = Object.entries(flags)
+      .filter(([_, active]) => active)
+      .map(([f]) => f)
+      .join("");
+
+    const result = testRegex(pattern, flagStr, testString);
 
     if (result.valid) {
-      setMatches(result.matches);
+      setMatches(result.matches || []);
       setRegexError(undefined);
       onValidationChange(true);
     } else {
@@ -89,20 +86,17 @@ export function RegexTesterTool({
     }
 
     if (replaceMode && result.valid) {
-      const rep = replaceRegex(pattern, activeFlagsString, testString, replacePattern);
-      setReplacedOutput(rep.result);
+      try {
+        const replaced = replaceRegex(pattern, flagStr, testString, replacePattern);
+        setReplacedOutput(replaced.result);
+      } catch (err: any) {
+        setReplacedOutput("");
+      }
     }
 
+    const end = performance.now();
     onStatsChange(testString.length, end - start);
-  }, [
-    pattern,
-    activeFlagsString,
-    testString,
-    replaceMode,
-    replacePattern,
-    onValidationChange,
-    onStatsChange,
-  ]);
+  }, [pattern, flags, testString, replaceMode, replacePattern, onValidationChange, onStatsChange]);
 
   const toggleFlag = (flag: string) => {
     setFlags((prev) => ({ ...prev, [flag]: !prev[flag] }));
@@ -137,6 +131,7 @@ export function RegexTesterTool({
         </div>
 
         <div className="flex items-center gap-2 flex-wrap">
+          <ValidationBadge isValid={!regexError} />
           <ShareButton toolSlug="regex-tester" data={{ pattern, testString }} />
 
           {/* Replace Mode Toggle */}

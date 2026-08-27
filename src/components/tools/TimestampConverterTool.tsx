@@ -6,6 +6,7 @@ import { ShareButton } from "@/components/ShareButton";
 import { Clock, Copy, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { addSnapshot } from "@/lib/storage";
+import { ValidationBadge } from "@/components/layout/StatusBar";
 
 interface TimestampConverterToolProps {
   onValidationChange: (isValid: boolean, error?: string) => void;
@@ -74,6 +75,7 @@ export function TimestampConverterTool({ onValidationChange, onStatsChange, rest
         </div>
         
         <div className="flex items-center gap-1.5 md:gap-2 flex-wrap">
+          <ValidationBadge isValid={result.valid} />
           <ShareButton toolSlug="unix-timestamp" data={input} />
         </div>
       </div>

@@ -5,6 +5,7 @@ import { explainCron, validateCron } from "@/lib/tools/cron";
 import { ShareButton } from "@/components/ShareButton";
 import { Clock, Copy, Trash2, Check, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { ValidationBadge } from "@/components/layout/StatusBar";
 
 interface CronVisualizerToolProps {
   onValidationChange: (isValid: boolean, error?: string) => void;
@@ -42,6 +43,7 @@ export function CronVisualizerTool({
   const [output, setOutput] = useState<string>("");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [isValid, setIsValid] = useState(true);
 
   // Restore from history
   useEffect(() => {
@@ -52,6 +54,7 @@ export function CronVisualizerTool({
   useEffect(() => {
     const start = performance.now();
     const validation = validateCron(input);
+    setIsValid(validation.valid);
     onValidationChange(validation.valid, validation.error);
 
     if (validation.valid && input.trim()) {
@@ -62,6 +65,7 @@ export function CronVisualizerTool({
       } catch (err: any) {
         setOutput("");
         setErrorMessage(err.message || "Invalid cron expression");
+        setIsValid(false);
       }
     } else if (!input.trim()) {
       setOutput("");
@@ -114,7 +118,8 @@ export function CronVisualizerTool({
           <p className="text-[11px] text-zinc-400 dark:text-zinc-500 hidden sm:block">Convert cron schedule syntax into clear, human-readable English</p>
         </div>
 
-        <div className="flex items-center gap-1.5 md:gap-2 flex-wrap">
+        <div className="flex items-center gap-2 flex-wrap">
+          <ValidationBadge isValid={isValid} />
           <ShareButton toolSlug="cron-visualizer" data={input} />
         </div>
       </div>

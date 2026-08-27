@@ -19,38 +19,36 @@ export function SeoContent({ tool }: { tool: ToolMeta }) {
   };
 
   return (
-    <section className="border-t border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-900 px-6 py-8 max-w-4xl">
+    <div className="mt-12 pt-8 border-t border-zinc-200 dark:border-[#27272A] max-w-4xl pb-24 mx-auto px-4 w-full">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
-      <h1 className="text-2xl font-bold text-zinc-900 dark:text-white mb-2">
+      <h1 className="mt-6 mb-3 text-2xl font-bold text-zinc-900 dark:text-zinc-100">
         {tool.name} Online
       </h1>
-      <h2 className="text-lg font-semibold text-zinc-800 dark:text-zinc-200 mb-4">
-        How to use {tool.shortName}
+      <p className="text-zinc-600 dark:text-zinc-400 text-sm leading-relaxed mb-6">
+        {tool.description}
+      </p>
+
+      <h2 className="mt-6 mb-3 text-2xl font-bold text-zinc-900 dark:text-zinc-100">
+        How to use {tool.shortName || tool.name}
       </h2>
 
-      <ul className="space-y-2 mb-6">
+      <ol className="list-decimal pl-5 space-y-2 text-zinc-600 dark:text-zinc-400 text-sm leading-relaxed mb-6">
         {tool.howToUse.map((step, i) => (
-          <li key={i} className="flex items-start gap-2 text-sm text-zinc-600 dark:text-zinc-400">
-            <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-blue-500 shrink-0" />
-            {step}
-          </li>
+          <li key={i}>{step}</li>
         ))}
-      </ul>
+      </ol>
 
       {tool.edgeCases.length > 0 && (
         <>
-          <h3 className="text-sm font-semibold text-zinc-700 dark:text-zinc-300 mb-2">
+          <h3 className="mt-6 mb-3 text-lg font-semibold text-zinc-800 dark:text-zinc-200">
             Edge Cases &amp; Limitations
           </h3>
-          <ul className="space-y-1.5 mb-6">
+          <ul className="list-disc pl-5 space-y-2 text-zinc-600 dark:text-zinc-400 text-sm leading-relaxed mb-6">
             {tool.edgeCases.map((c, i) => (
-              <li key={i} className="flex items-start gap-2 text-sm text-zinc-500 dark:text-zinc-400">
-                <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-amber-400 shrink-0" />
-                {c}
-              </li>
+              <li key={i}>{c}</li>
             ))}
           </ul>
         </>
@@ -58,24 +56,21 @@ export function SeoContent({ tool }: { tool: ToolMeta }) {
 
       {tool.shortcuts.length > 0 && (
         <>
-          <h3 className="text-sm font-semibold text-zinc-700 dark:text-zinc-300 mb-2">
+          <h3 className="mt-6 mb-3 text-lg font-semibold text-zinc-800 dark:text-zinc-200">
             Keyboard Shortcuts
           </h3>
-          <ul className="space-y-1.5 mb-6">
+          <ul className="list-disc pl-5 space-y-2 text-zinc-600 dark:text-zinc-400 text-sm leading-relaxed mb-6">
             {tool.shortcuts.map((s, i) => (
-              <li key={i} className="flex items-start gap-2 text-sm text-zinc-600 dark:text-zinc-400">
-                <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-violet-400 shrink-0" />
-                {s}
-              </li>
+              <li key={i}>{s}</li>
             ))}
           </ul>
         </>
       )}
 
-      <div className="mt-6 flex items-start gap-3 p-4 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg">
-        <ShieldCheck className="w-5 h-5 text-zinc-500 dark:text-zinc-400 shrink-0 mt-0.5" />
+      <div className="mt-8 flex items-start gap-3 p-4 bg-zinc-50 dark:bg-[#121215] border border-zinc-200 dark:border-[#27272A] rounded-xl">
+        <ShieldCheck className="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
         <div>
-          <p className="text-sm font-bold text-zinc-900 dark:text-zinc-50 mb-1">
+          <p className="text-sm font-bold text-zinc-900 dark:text-zinc-100 mb-1">
             100% Client-Side Privacy
           </p>
           <p className="text-sm text-zinc-600 dark:text-zinc-400 leading-relaxed">
@@ -86,6 +81,6 @@ export function SeoContent({ tool }: { tool: ToolMeta }) {
           </p>
         </div>
       </div>
-    </section>
+    </div>
   );
 }

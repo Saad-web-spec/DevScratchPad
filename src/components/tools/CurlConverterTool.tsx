@@ -7,6 +7,7 @@ import { ShareButton } from "@/components/ShareButton";
 import { Copy, Trash2, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { addSnapshot } from "@/lib/storage";
+import { StatusBar } from "@/components/layout/StatusBar";
 
 interface CurlConverterToolProps {
   onValidationChange: (isValid: boolean, error?: string) => void;
@@ -22,6 +23,8 @@ export function CurlConverterTool({ onValidationChange, onStatsChange, restoredI
   const [target, setTarget] = useState<LangTarget>('javascript');
   const [copied, setCopied] = useState(false);
   const [activeTab, setActiveTab] = useState<"input" | "output">("input");
+  const [isValid, setIsValid] = useState(true);
+  const [execMs, setExecMs] = useState(0);
 
   // Restore from history / share URL
   useEffect(() => {
@@ -43,8 +46,10 @@ export function CurlConverterTool({ onValidationChange, onStatsChange, restoredI
     let code = "";
     
     if (parsed.error && input.trim().length > 0) {
+      setIsValid(false);
       onValidationChange(false, parsed.error);
     } else {
+      setIsValid(true);
       onValidationChange(true);
       if (target === 'javascript') code = generateFetch(parsed);
       if (target === 'python') code = generatePythonRequests(parsed);
@@ -53,7 +58,9 @@ export function CurlConverterTool({ onValidationChange, onStatsChange, restoredI
     }
     
     const end = performance.now();
-    onStatsChange(input.length, end - start);
+    const ms = end - start;
+    setExecMs(ms);
+    onStatsChange(input.length, ms);
   }, [input, target, onValidationChange, onStatsChange]);
 
   const handleCopy = () => {
@@ -152,6 +159,13 @@ export function CurlConverterTool({ onValidationChange, onStatsChange, restoredI
           </div>
         </div>
       </div>
+
+      {/* Embedded 32px Status Bar */}
+      <StatusBar
+        isValid={isValid}
+        inputLength={input.length}
+        executionMs={execMs}
+      />
     </div>
   );
 }

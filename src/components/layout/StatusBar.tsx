@@ -37,3 +37,17 @@ export function StatusBar({
     </div>
   );
 }
+
+export function ValidationBadge({ isValid }: { isValid: boolean }) {
+  return isValid ? (
+    <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+      <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.8)]" />
+      <span>Valid</span>
+    </div>
+  ) : (
+    <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-red-500/10 text-red-600 dark:text-red-400 border border-red-500/20">
+      <div className="w-1.5 h-1.5 rounded-full bg-red-500 shadow-[0_0_6px_rgba(239,68,68,0.8)]" />
+      <span>Invalid</span>
+    </div>
+  );
+}

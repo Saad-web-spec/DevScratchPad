@@ -7,6 +7,7 @@ import { ShareButton } from "@/components/ShareButton";
 import { Play, Copy, Trash2, ArrowLeftRight, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { addSnapshot } from "@/lib/storage";
+import { StatusBar } from "@/components/layout/StatusBar";
 
 interface Base64ToolProps {
   onValidationChange: (isValid: boolean, error?: string) => void;
@@ -29,6 +30,8 @@ export function Base64Tool({
   const [urlSafe, setUrlSafe] = useState<boolean>(false);
   const [copied, setCopied] = useState(false);
   const [activeTab, setActiveTab] = useState<"input" | "output">("input");
+  const [isValid, setIsValid] = useState(true);
+  const [execMs, setExecMs] = useState(0);
 
   // Save workspace snapshot
   useEffect(() => {
@@ -48,6 +51,11 @@ export function Base64Tool({
   useEffect(() => {
     const start = performance.now();
     const validation = validateBase64(input, mode, urlSafe);
+    const end = performance.now();
+    const ms = end - start;
+
+    setIsValid(validation.valid);
+    setExecMs(ms);
     onValidationChange(validation.valid, validation.error);
 
     if (validation.valid) {
@@ -64,8 +72,7 @@ export function Base64Tool({
       setOutput("");
     }
 
-    const end = performance.now();
-    onStatsChange(input.length, end - start);
+    onStatsChange(input.length, ms);
   }, [input, mode, urlSafe, onValidationChange, onStatsChange]);
 
   const handleAction = () => {
@@ -76,14 +83,18 @@ export function Base64Tool({
           ? encodeBase64(input, urlSafe)
           : decodeBase64(input, urlSafe);
       setOutput(res);
+      setIsValid(true);
       onValidationChange(true);
       onLogHistory?.(input);
       setActiveTab("output");
     } catch (err: any) {
+      setIsValid(false);
       onValidationChange(false, err.message);
     }
     const end = performance.now();
-    onStatsChange(input.length, end - start);
+    const ms = end - start;
+    setExecMs(ms);
+    onStatsChange(input.length, ms);
   };
 
   const handleSwap = () => {
@@ -267,6 +278,13 @@ export function Base64Tool({
           </div>
         </div>
       </div>
+
+      {/* Embedded 32px Status Bar */}
+      <StatusBar
+        isValid={isValid}
+        inputLength={input.length}
+        executionMs={execMs}
+      />
     </div>
   );
 }
