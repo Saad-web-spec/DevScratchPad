@@ -7,6 +7,7 @@ import { Play, Copy, Trash2, Minimize2, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { addSnapshot } from "@/lib/storage";
 import { ShareButton } from "@/components/ShareButton";
+import { ExportImageButton } from "@/components/ExportImageButton";
 import { StatusBar } from "@/components/layout/StatusBar";
 
 interface JsonFormatterToolProps {
@@ -78,7 +79,7 @@ export function JsonFormatterTool({ onValidationChange, onStatsChange, onLogHist
       setOutput(minified);
       onLogHistory?.(input);
       setActiveTab("output");
-    } catch (err) {}
+    } catch (err: any) {}
     const end = performance.now();
     const ms = end - start;
     setExecMs(ms);
@@ -102,6 +103,7 @@ export function JsonFormatterTool({ onValidationChange, onStatsChange, onLogHist
         </div>
         
         <div className="flex items-center gap-1.5 md:gap-2 flex-wrap">
+          <ExportImageButton code={output || input} language="json" />
           <ShareButton toolSlug="json-formatter" data={input} />
           <select 
             value={indent}
