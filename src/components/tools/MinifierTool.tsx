@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { MonacoEditor } from "@/components/MonacoEditor";
 import { minifyCss, minifySvg, validateCss, validateSvg } from "@/lib/tools/minify";
 import { ShareButton } from "@/components/ShareButton";
-import { Play, Copy, Trash2, Check, Zap } from "lucide-react";
+import { Play, Copy, Trash2, Check, Zap, Minimize2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { StatusBar } from "@/components/layout/StatusBar";
 
@@ -121,7 +121,7 @@ export function MinifierTool({
     if (!output) return;
     navigator.clipboard.writeText(output);
     setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    setTimeout(() => setCopied(false), 1500);
   };
 
   const savedBytes = input.length - output.length;
@@ -144,14 +144,14 @@ export function MinifierTool({
           <ShareButton toolSlug="css-svg-minifier" data={input} />
           {/* Mode Dropdown */}
           <div className="flex items-center gap-1.5">
-            <label htmlFor="minifier-mode-select" className="text-xs text-zinc-500 dark:text-zinc-400 font-medium">
+            <label htmlFor="minifier-mode-select" className="text-xs text-zinc-400 font-medium">
               Mode:
             </label>
             <select
               id="minifier-mode-select"
               value={mode}
               onChange={(e) => handleModeChange(e.target.value as "css" | "svg")}
-              className="bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 text-xs rounded px-2.5 py-1.5 focus:outline-none focus:border-blue-500 font-medium"
+              className="h-9 bg-[#18181B] border border-[#27272A] text-zinc-300 text-xs rounded-md px-2 focus:outline-none font-medium"
             >
               <option value="css">CSS Minifier</option>
               <option value="svg">SVG Minifier</option>
@@ -160,19 +160,19 @@ export function MinifierTool({
 
           {/* Compression savings badge */}
           {output && (
-            <span className="hidden sm:inline-flex items-center gap-1 text-[11px] font-medium text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950 border border-emerald-200 dark:border-emerald-800 px-2 py-1 rounded">
-              <Zap className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
+            <span className="hidden sm:inline-flex items-center gap-1 text-[11px] font-medium text-emerald-300 bg-emerald-950/60 border border-emerald-800/60 px-2 py-1 rounded">
+              <Zap className="w-3 h-3 text-emerald-400" />
               Saved {savedBytes > 0 ? savedBytes : 0} B ({savingsPercent}%)
             </span>
           )}
 
-          {/* Minify Button */}
+          {/* Action Button */}
           <button
             onClick={handleMinify}
-            className="flex items-center gap-1 px-2.5 py-1.5 bg-blue-600 dark:bg-blue-500 hover:bg-blue-700 dark:hover:bg-blue-600 text-white rounded text-xs font-medium transition-colors shadow-2xs"
+            className="h-9 px-3 bg-blue-600 dark:bg-blue-600 hover:bg-blue-700 dark:hover:bg-blue-500 text-white rounded-md text-xs font-medium transition-colors flex items-center gap-1.5 shadow-2xs"
           >
-            <Play className="w-3.5 h-3.5" />
-            <span>Minify</span>
+            <Minimize2 className="w-3.5 h-3.5" />
+            <span>Minify {mode.toUpperCase()}</span>
           </button>
         </div>
       </div>
@@ -184,22 +184,22 @@ export function MinifierTool({
           className={cn(
             "flex-1 py-1.5 text-xs font-medium rounded-md transition-colors text-center",
             activeTab === "input"
-              ? "bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white shadow-2xs"
+              ? "bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 shadow-2xs"
               : "text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200"
           )}
         >
-          {mode === "css" ? "Raw CSS" : "Raw SVG"}
+          Raw {mode.toUpperCase()} Input
         </button>
         <button
           onClick={() => setActiveTab("output")}
           className={cn(
             "flex-1 py-1.5 text-xs font-medium rounded-md transition-colors text-center",
             activeTab === "output"
-              ? "bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white shadow-2xs"
+              ? "bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 shadow-2xs"
               : "text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200"
           )}
         >
-          Minified Result
+          Minified Output
         </button>
       </div>
 
@@ -209,7 +209,7 @@ export function MinifierTool({
         <div className={cn("flex-1 border-r-0 md:border-r border-b md:border-b-0 border-[#e2e8f0] dark:border-zinc-700 flex flex-col min-w-0 w-full overflow-x-hidden", activeTab !== "input" && "hidden md:flex")}>
           <div className="h-8 bg-[#f8fafc] dark:bg-zinc-900 border-b border-[#e2e8f0] dark:border-zinc-700 flex items-center justify-between px-3 shrink-0">
             <span className="text-[11px] font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
-              {mode === "css" ? "Raw CSS Input" : "Raw SVG Input"}
+              Raw {mode.toUpperCase()} Input
             </span>
             <button
               onClick={() => setInput("")}
@@ -248,11 +248,11 @@ export function MinifierTool({
               onClick={handleCopy}
               className={cn(
                 "flex items-center gap-1 text-[11px] transition-colors",
-                copied ? "text-emerald-600 dark:text-emerald-400" : "text-zinc-400 dark:text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300"
+                copied ? "text-emerald-400 font-medium" : "text-zinc-400 dark:text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300"
               )}
             >
-              {copied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
-              {copied ? "Copied" : "Copy"}
+              {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+              <span>{copied ? "Copied!" : "Copy"}</span>
             </button>
           </div>
           <div className="flex-1 relative w-full max-w-full overflow-x-hidden">

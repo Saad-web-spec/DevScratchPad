@@ -67,14 +67,14 @@ export function ShareButton({ toolSlug, data, className }: ShareButtonProps) {
 
     navigator.clipboard.writeText(shareUrl);
     setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    setTimeout(() => setCopied(false), 1500);
   };
 
   return (
     <button
       onClick={handleShare}
       className={cn(
-        "flex items-center gap-1 px-2.5 py-1.5 bg-white dark:bg-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-300 rounded text-xs font-medium transition-colors border border-zinc-200 dark:border-zinc-600 shadow-2xs shrink-0",
+        "h-9 px-3 bg-zinc-100 dark:bg-[#18181B] hover:bg-zinc-200 dark:hover:bg-[#27272A] border border-zinc-200 dark:border-[#27272A] text-zinc-700 dark:text-zinc-300 text-xs font-medium rounded-md transition-colors flex items-center gap-1.5 shrink-0",
         className
       )}
       title="Generate and copy shareable link for this tool"
@@ -84,7 +84,7 @@ export function ShareButton({ toolSlug, data, className }: ShareButtonProps) {
       ) : (
         <LinkIcon className="w-3.5 h-3.5 text-zinc-500 dark:text-zinc-400" />
       )}
-      <span>{copied ? "Link Copied!" : "Share"}</span>
+      <span>{copied ? "Copied!" : "Share Payload"}</span>
     </button>
   );
 }

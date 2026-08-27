@@ -65,7 +65,7 @@ export function JwtDecoderTool({ onValidationChange, onStatsChange, restoredInpu
     if (!text) return;
     navigator.clipboard.writeText(text);
     setCopied(id);
-    setTimeout(() => setCopied(null), 2000);
+    setTimeout(() => setCopied(null), 1500);
   };
 
   return (
@@ -118,12 +118,12 @@ export function JwtDecoderTool({ onValidationChange, onStatsChange, restoredInpu
               <Trash2 className="w-3.5 h-3.5" />
             </button>
           </div>
-          <div className="flex-1 relative p-4 bg-white dark:bg-zinc-950 min-h-[250px]">
+          <div className="flex-1 relative p-4 bg-[#09090B] min-h-[250px]">
              <textarea 
                value={input}
                onChange={(e) => setInput(e.target.value)}
                placeholder="Paste your JWT here (eyJ...)"
-               className="w-full h-full bg-transparent text-zinc-700 dark:text-zinc-200 font-mono text-sm resize-none focus:outline-none placeholder:text-zinc-500 dark:placeholder:text-zinc-500 break-all"
+               className="w-full h-full font-mono text-base tracking-wide bg-[#121215] border border-[#27272A] text-zinc-100 focus:ring-1 focus:ring-zinc-400 rounded-lg p-3 resize-none focus:outline-none placeholder:text-zinc-500 break-all"
              />
           </div>
         </div>
@@ -135,9 +135,9 @@ export function JwtDecoderTool({ onValidationChange, onStatsChange, restoredInpu
           <div className="flex flex-col min-h-[160px] border-b border-[#e2e8f0] dark:border-zinc-700">
             <div className="h-8 bg-[#f8fafc] dark:bg-zinc-900 border-b border-[#e2e8f0] dark:border-zinc-700 flex items-center justify-between px-3 shrink-0">
               <span className="text-[11px] font-medium text-pink-600 dark:text-pink-400 uppercase tracking-wider">Header (Algorithm & Token Type)</span>
-              <button onClick={() => handleCopy(headerOutput, 'header')} className={cn("flex items-center gap-1 text-[11px] transition-colors", copied === 'header' ? "text-emerald-600 dark:text-emerald-400" : "text-zinc-400 dark:text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-200")}>
-                {copied === 'header' ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
-                {copied === 'header' ? "Copied" : "Copy"}
+              <button onClick={() => handleCopy(headerOutput, 'header')} className={cn("flex items-center gap-1 text-[11px] transition-colors", copied === 'header' ? "text-emerald-400 font-medium" : "text-zinc-400 dark:text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-200")}>
+                {copied === 'header' ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                <span>{copied === 'header' ? "Copied!" : "Copy"}</span>
               </button>
             </div>
             <div className="flex-1 relative w-full max-w-full overflow-x-hidden min-h-[120px]">
@@ -154,9 +154,9 @@ export function JwtDecoderTool({ onValidationChange, onStatsChange, restoredInpu
           <div className="flex flex-col min-h-[220px] border-b border-[#e2e8f0] dark:border-zinc-700">
             <div className="h-8 bg-[#f8fafc] dark:bg-zinc-900 border-b border-[#e2e8f0] dark:border-zinc-700 flex items-center justify-between px-3 shrink-0">
               <span className="text-[11px] font-medium text-blue-600 dark:text-blue-400 uppercase tracking-wider">Payload (Data & Claims)</span>
-              <button onClick={() => handleCopy(payloadOutput, 'payload')} className={cn("flex items-center gap-1 text-[11px] transition-colors", copied === 'payload' ? "text-emerald-600 dark:text-emerald-400" : "text-zinc-400 dark:text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-200")}>
-                {copied === 'payload' ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
-                {copied === 'payload' ? "Copied" : "Copy"}
+              <button onClick={() => handleCopy(payloadOutput, 'payload')} className={cn("flex items-center gap-1 text-[11px] transition-colors", copied === 'payload' ? "text-emerald-400 font-medium" : "text-zinc-400 dark:text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-200")}>
+                {copied === 'payload' ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                <span>{copied === 'payload' ? "Copied!" : "Copy"}</span>
               </button>
             </div>
             <div className="flex-1 relative w-full max-w-full overflow-x-hidden min-h-[180px]">

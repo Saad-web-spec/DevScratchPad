@@ -67,7 +67,7 @@ export function CurlConverterTool({ onValidationChange, onStatsChange, restoredI
     if (!output) return;
     navigator.clipboard.writeText(output);
     setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    setTimeout(() => setCopied(false), 1500);
   };
 
   return (
@@ -84,7 +84,7 @@ export function CurlConverterTool({ onValidationChange, onStatsChange, restoredI
           <select 
             value={target}
             onChange={(e) => setTarget(e.target.value as LangTarget)}
-            className="bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 text-xs rounded px-2 py-1.5 focus:outline-none focus:border-blue-500 font-medium"
+            className="h-9 bg-[#18181B] border border-[#27272A] text-zinc-300 text-xs rounded-md px-2 focus:outline-none font-medium"
           >
             <option value="javascript">JavaScript (fetch)</option>
             <option value="python">Python (requests)</option>
@@ -144,9 +144,9 @@ export function CurlConverterTool({ onValidationChange, onStatsChange, restoredI
         <div className={cn("flex-1 flex flex-col min-w-0 w-full overflow-x-hidden", activeTab !== "output" && "hidden md:flex")}>
           <div className="h-8 bg-[#f8fafc] dark:bg-zinc-900 border-b border-[#e2e8f0] dark:border-zinc-700 flex items-center justify-between px-3 shrink-0">
             <span className="text-[11px] font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">Generated Code</span>
-            <button onClick={handleCopy} className={cn("flex items-center gap-1 text-[11px] transition-colors", copied ? "text-emerald-600 dark:text-emerald-400" : "text-zinc-400 dark:text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300")}>
-              {copied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
-              {copied ? "Copied" : "Copy"}
+            <button onClick={handleCopy} className={cn("flex items-center gap-1 text-[11px] transition-colors", copied ? "text-emerald-400 font-medium" : "text-zinc-400 dark:text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300")}>
+              {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+              <span>{copied ? "Copied!" : "Copy"}</span>
             </button>
           </div>
           <div className="flex-1 relative w-full max-w-full overflow-x-hidden">

@@ -104,7 +104,7 @@ export function JsonToTsTool({
     if (!output) return;
     navigator.clipboard.writeText(output);
     setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    setTimeout(() => setCopied(false), 1500);
   };
 
   return (
@@ -119,7 +119,7 @@ export function JsonToTsTool({
         <div className="flex items-center gap-1.5 md:gap-3 flex-wrap">
           <ShareButton toolSlug="json-to-typescript" data={input} />
           <div className="flex items-center gap-1.5">
-            <label htmlFor="root-name-input" className="text-xs text-zinc-500 dark:text-zinc-400 font-medium whitespace-nowrap">
+            <label htmlFor="root-name-input" className="text-xs text-zinc-400 font-medium whitespace-nowrap">
               Root:
             </label>
             <input
@@ -128,13 +128,13 @@ export function JsonToTsTool({
               value={rootName}
               onChange={(e) => setRootName(e.target.value)}
               placeholder="RootObject"
-              className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 text-zinc-700 dark:text-zinc-200 text-xs rounded px-2 py-1.5 focus:outline-none focus:border-blue-500 w-28 md:w-36 font-mono"
+              className="h-9 bg-[#18181B] border border-[#27272A] text-zinc-100 text-xs rounded-md px-3 focus:outline-none focus:ring-1 focus:ring-zinc-400 w-28 md:w-36 font-mono"
             />
           </div>
 
           <button
             onClick={handleGenerate}
-            className="flex items-center gap-1 px-2.5 py-1.5 bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white rounded text-xs font-medium transition-colors shadow-2xs"
+            className="h-9 px-3 bg-blue-600 dark:bg-blue-600 hover:bg-blue-700 dark:hover:bg-blue-500 text-white rounded-md text-xs font-medium transition-colors flex items-center gap-1.5 shadow-2xs"
           >
             <Play className="w-3.5 h-3.5" />
             <span>Generate</span>
@@ -208,11 +208,11 @@ export function JsonToTsTool({
               onClick={handleCopy}
               className={cn(
                 "flex items-center gap-1 text-[11px] transition-colors",
-                copied ? "text-emerald-600 dark:text-emerald-400" : "text-zinc-400 dark:text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-200"
+                copied ? "text-emerald-400 font-medium" : "text-zinc-400 dark:text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-200"
               )}
             >
-              {copied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
-              {copied ? "Copied" : "Copy"}
+              {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+              <span>{copied ? "Copied!" : "Copy"}</span>
             </button>
           </div>
           <div className="flex-1 relative w-full max-w-full overflow-x-hidden">

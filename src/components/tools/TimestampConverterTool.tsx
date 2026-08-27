@@ -47,7 +47,7 @@ export function TimestampConverterTool({ onValidationChange, onStatsChange, rest
     if (!text) return;
     navigator.clipboard.writeText(text);
     setCopied(id);
-    setTimeout(() => setCopied(null), 2000);
+    setTimeout(() => setCopied(null), 1500);
   };
 
   const ResultCard = ({ title, value, id }: { title: string; value?: string | number; id: string }) => (
@@ -58,9 +58,10 @@ export function TimestampConverterTool({ onValidationChange, onStatsChange, rest
       </div>
       <button 
         onClick={() => value && handleCopy(value.toString(), id)} 
-        className={cn("p-1.5 md:p-2 rounded-md transition-colors shrink-0", copied === id ? "bg-emerald-50 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400" : "bg-[#f8fafc] dark:bg-zinc-900 text-zinc-500 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-800 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 focus:opacity-100")}
+        className={cn("p-1.5 md:p-2 rounded-md transition-colors shrink-0", copied === id ? "bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400" : "bg-[#f8fafc] dark:bg-zinc-900 text-zinc-500 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-800 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 focus:opacity-100")}
+        title={copied === id ? "Copied!" : "Copy"}
       >
-        {copied === id ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+        {copied === id ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
       </button>
     </div>
   );
@@ -83,18 +84,18 @@ export function TimestampConverterTool({ onValidationChange, onStatsChange, rest
       <div className="p-4 md:p-8 max-w-4xl mx-auto w-full flex flex-col gap-6 md:gap-8">
         
         {/* Input Section */}
-        <div className="flex items-center bg-[#f8fafc] dark:bg-[#121215] border border-[#E2E8F0] dark:border-[#27272A] rounded-lg p-2 px-3 md:px-4 gap-2 md:gap-4">
-          <Clock className="w-5 h-5 text-blue-600 dark:text-blue-400 shrink-0" />
+        <div className="flex items-center bg-[#121215] border border-[#27272A] rounded-lg p-1.5 px-3 md:px-4 gap-2 md:gap-3 focus-within:ring-1 focus-within:ring-zinc-400">
+          <Clock className="w-5 h-5 text-zinc-400 shrink-0" />
           <input 
             type="text" 
             value={input}
             onChange={(e) => setInput(e.target.value)}
             placeholder="Enter epoch (1770000000) or date string (2025-01-01)"
-            className="flex-1 min-w-0 bg-transparent text-zinc-800 dark:text-zinc-100 font-mono text-sm md:text-lg focus:outline-none placeholder:text-zinc-400 dark:placeholder:text-zinc-600"
+            className="flex-1 min-w-0 bg-transparent text-zinc-100 font-mono text-base tracking-wide focus:outline-none placeholder:text-zinc-500 py-1.5"
           />
           <button 
             onClick={() => setInput(Math.floor(Date.now() / 1000).toString())}
-            className="px-2.5 md:px-3 py-1.5 bg-blue-50 dark:bg-blue-950 hover:bg-blue-100 dark:hover:bg-blue-900 text-blue-600 dark:text-blue-400 rounded-md text-xs font-medium transition-colors shrink-0"
+            className="h-9 px-3 bg-[#18181B] hover:bg-[#27272A] border border-[#27272A] text-zinc-300 text-xs font-medium rounded-md transition-colors shrink-0"
           >
             Now
           </button>

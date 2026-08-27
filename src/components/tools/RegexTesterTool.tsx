@@ -107,7 +107,7 @@ export function RegexTesterTool({
     navigator.clipboard.writeText(text);
     setCopied(id);
     onLogHistory?.(pattern);
-    setTimeout(() => setCopied(null), 2000);
+    setTimeout(() => setCopied(null), 1500);
   };
 
   const handleCopyAllMatches = () => {
@@ -116,7 +116,7 @@ export function RegexTesterTool({
     navigator.clipboard.writeText(all);
     setCopied("all-matches");
     onLogHistory?.(pattern);
-    setTimeout(() => setCopied(null), 2000);
+    setTimeout(() => setCopied(null), 1500);
   };
 
   return (
@@ -138,10 +138,10 @@ export function RegexTesterTool({
           <button
             onClick={() => setReplaceMode(!replaceMode)}
             className={cn(
-              "flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors border",
+              "h-9 px-3 rounded-md text-xs font-medium transition-colors border flex items-center gap-1.5",
               replaceMode
                 ? "bg-blue-500/10 border-blue-500/30 text-blue-600 dark:text-blue-400 font-semibold"
-                : "bg-zinc-100 dark:bg-zinc-800/80 border-zinc-200 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700"
+                : "bg-[#18181B] hover:bg-[#27272A] border-[#27272A] text-zinc-300"
             )}
           >
             <Replace className="w-3.5 h-3.5" />
@@ -152,7 +152,7 @@ export function RegexTesterTool({
 
       {/* Main Integrated Regex Input Bar */}
       <div className="p-4 md:p-6 pb-0 flex flex-col shrink-0">
-        <div className="flex items-center gap-2 p-2 px-4 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50 shadow-xs focus-within:border-blue-500 dark:focus-within:border-blue-500 transition-colors">
+        <div className="flex items-center gap-2 font-mono text-base tracking-wide bg-[#121215] border border-[#27272A] text-zinc-100 focus-within:ring-1 focus-within:ring-zinc-400 rounded-lg p-3">
           <span className="text-zinc-400 dark:text-zinc-500 font-mono text-base font-semibold select-none">
             /
           </span>
@@ -161,14 +161,14 @@ export function RegexTesterTool({
             value={pattern}
             onChange={(e) => setPattern(e.target.value)}
             placeholder="Enter regular expression pattern..."
-            className="font-mono text-base bg-transparent border-0 focus:ring-0 focus:outline-none text-zinc-900 dark:text-zinc-100 w-full placeholder:text-zinc-400 dark:placeholder:text-zinc-600"
+            className="font-mono text-base tracking-wide bg-transparent border-0 focus:ring-0 focus:outline-none text-zinc-100 w-full placeholder:text-zinc-500"
           />
           <span className="text-zinc-400 dark:text-zinc-500 font-mono text-base font-semibold select-none">
             /
           </span>
 
           {/* Integrated Flags Segment */}
-          <div className="flex items-center gap-1 shrink-0 pl-2 border-l border-zinc-200 dark:border-zinc-800">
+          <div className="flex items-center gap-1 shrink-0 pl-2 border-l border-[#27272A]">
             {[
               { id: "g", label: "g", title: "Global (g)" },
               { id: "i", label: "i", title: "Case insensitive (i)" },
@@ -184,7 +184,7 @@ export function RegexTesterTool({
                   "transition-colors",
                   flags[f.id]
                     ? "bg-blue-500/10 text-blue-600 dark:text-blue-400 font-bold px-2 py-0.5 rounded text-xs"
-                    : "text-zinc-400 dark:text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300 font-medium px-2 py-0.5 rounded text-xs"
+                    : "text-zinc-400 dark:text-zinc-500 hover:text-zinc-200 font-medium px-2 py-0.5 rounded text-xs"
                 )}
               >
                 {f.label}
@@ -195,8 +195,8 @@ export function RegexTesterTool({
 
         {/* Sub-bar for Replace Pattern if enabled */}
         {replaceMode && (
-          <div className="flex items-center gap-2 p-2 px-4 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50 shadow-xs mt-3">
-            <span className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider select-none shrink-0 pr-1">
+          <div className="flex items-center gap-2 font-mono text-base tracking-wide bg-[#121215] border border-[#27272A] text-zinc-100 focus-within:ring-1 focus-within:ring-zinc-400 rounded-lg p-3 mt-3">
+            <span className="text-xs font-semibold text-zinc-400 uppercase tracking-wider select-none shrink-0 pr-1">
               Replace:
             </span>
             <input
@@ -204,7 +204,7 @@ export function RegexTesterTool({
               value={replacePattern}
               onChange={(e) => setReplacePattern(e.target.value)}
               placeholder="Replacement pattern (e.g. $1, [REDACTED])..."
-              className="font-mono text-sm bg-transparent border-0 focus:ring-0 focus:outline-none text-zinc-900 dark:text-zinc-100 w-full placeholder:text-zinc-400 dark:placeholder:text-zinc-600"
+              className="font-mono text-base tracking-wide bg-transparent border-0 focus:ring-0 focus:outline-none text-zinc-100 w-full placeholder:text-zinc-500"
             />
           </div>
         )}
@@ -353,18 +353,16 @@ export function RegexTesterTool({
                   <button
                     onClick={handleCopyAllMatches}
                     className={cn(
-                      "flex items-center gap-1.5 text-xs font-medium transition-colors",
-                      copied === "all-matches"
-                        ? "text-emerald-600 dark:text-emerald-400"
-                        : "text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100"
+                      "h-9 px-3 bg-[#18181B] hover:bg-[#27272A] border border-[#27272A] text-zinc-300 text-xs font-medium rounded-md transition-colors flex items-center gap-1.5",
+                      copied === "all-matches" && "text-emerald-400 border-emerald-500/40"
                     )}
                   >
                     {copied === "all-matches" ? (
-                      <Check className="w-3.5 h-3.5" />
+                      <Check className="w-3.5 h-3.5 text-emerald-400" />
                     ) : (
-                      <Copy className="w-3.5 h-3.5" />
+                      <Copy className="w-3.5 h-3.5 text-zinc-400" />
                     )}
-                    <span>{copied === "all-matches" ? "Copied All" : "Copy Matches"}</span>
+                    <span>{copied === "all-matches" ? "Copied!" : "Copy Matches"}</span>
                   </button>
                 )}
               </div>
@@ -397,18 +395,16 @@ export function RegexTesterTool({
                         <button
                           onClick={() => handleCopy(m.match, `match-${idx}`)}
                           className={cn(
-                            "flex items-center gap-1 text-xs transition-colors",
-                            copied === `match-${idx}`
-                              ? "text-emerald-600 dark:text-emerald-400 font-medium"
-                              : "text-zinc-400 hover:text-zinc-700 dark:text-zinc-500 dark:hover:text-zinc-300"
+                            "h-9 px-3 bg-[#18181B] hover:bg-[#27272A] border border-[#27272A] text-zinc-300 text-xs font-medium rounded-md transition-colors flex items-center gap-1.5",
+                            copied === `match-${idx}` && "text-emerald-400 border-emerald-500/40"
                           )}
                         >
                           {copied === `match-${idx}` ? (
-                            <Check className="w-3.5 h-3.5" />
+                            <Check className="w-3.5 h-3.5 text-emerald-400" />
                           ) : (
-                            <Copy className="w-3.5 h-3.5" />
+                            <Copy className="w-3.5 h-3.5 text-zinc-400" />
                           )}
-                          <span>{copied === `match-${idx}` ? "Copied" : "Copy"}</span>
+                          <span>{copied === `match-${idx}` ? "Copied!" : "Copy"}</span>
                         </button>
                       </div>
 

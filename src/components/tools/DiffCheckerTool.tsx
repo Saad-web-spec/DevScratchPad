@@ -62,7 +62,7 @@ export function DiffCheckerTool({ restoredInput }: DiffCheckerToolProps) {
           <ShareButton toolSlug="diff-checker" data={{ original, modified }} />
           <button 
             onClick={() => { setOriginal(""); setModified(""); }}
-            className="flex items-center gap-1 px-2.5 py-1.5 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-red-600 dark:text-red-400 rounded text-xs font-medium transition-colors border border-zinc-200 dark:border-zinc-700"
+            className="h-9 px-3 bg-[#18181B] hover:bg-[#27272A] border border-[#27272A] text-red-400 rounded-md text-xs font-medium transition-colors flex items-center gap-1.5"
           >
             <Trash2 className="w-3.5 h-3.5" />
             <span>Clear Both</span>

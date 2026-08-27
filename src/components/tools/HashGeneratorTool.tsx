@@ -74,7 +74,7 @@ export function HashGeneratorTool({
     navigator.clipboard.writeText(valueToCopy);
     setCopiedKey(key);
     onLogHistory?.(input);
-    setTimeout(() => setCopiedKey(null), 2000);
+    setTimeout(() => setCopiedKey(null), 1500);
   };
 
   const handleCopyAll = () => {
@@ -89,7 +89,7 @@ export function HashGeneratorTool({
     navigator.clipboard.writeText(allText);
     setCopiedKey("all");
     onLogHistory?.(input);
-    setTimeout(() => setCopiedKey(null), 2000);
+    setTimeout(() => setCopiedKey(null), 1500);
   };
 
   const HASH_CARDS = [
@@ -138,10 +138,10 @@ export function HashGeneratorTool({
           <button
             onClick={() => setIsUppercase(!isUppercase)}
             className={cn(
-              "px-2.5 py-1.5 rounded text-xs font-medium transition-colors border",
+              "h-9 px-3 rounded-md text-xs font-medium transition-colors border",
               isUppercase
-                ? "bg-blue-50 border-blue-200 text-blue-700 dark:bg-blue-950 dark:border-blue-800 dark:text-blue-400"
-                : "bg-zinc-100 border-zinc-200 text-zinc-700 hover:bg-zinc-200 dark:bg-zinc-800 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-700"
+                ? "bg-blue-500/10 border-blue-500/30 text-blue-600 dark:text-blue-400 font-semibold"
+                : "bg-[#18181B] hover:bg-[#27272A] border-[#27272A] text-zinc-300"
             )}
           >
             {isUppercase ? "UPPERCASE" : "lowercase"}
@@ -149,14 +149,17 @@ export function HashGeneratorTool({
 
           <button
             onClick={handleCopyAll}
-            className="flex items-center gap-1 px-2.5 py-1.5 bg-zinc-100 hover:bg-zinc-200 text-zinc-700 dark:bg-zinc-800 dark:hover:bg-zinc-700 dark:text-zinc-300 rounded text-xs font-medium transition-colors border border-zinc-200 dark:border-zinc-700"
+            className={cn(
+              "h-9 px-3 bg-[#18181B] hover:bg-[#27272A] border border-[#27272A] text-zinc-300 text-xs font-medium rounded-md transition-colors flex items-center gap-1.5",
+              copiedKey === "all" && "text-emerald-400 border-emerald-500/40"
+            )}
           >
             {copiedKey === "all" ? (
-              <Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+              <Check className="w-3.5 h-3.5 text-emerald-400" />
             ) : (
-              <Copy className="w-3.5 h-3.5" />
+              <Copy className="w-3.5 h-3.5 text-zinc-400" />
             )}
-            <span>{copiedKey === "all" ? "Copied All" : "Copy All"}</span>
+            <span>{copiedKey === "all" ? "Copied!" : "Copy All"}</span>
           </button>
         </div>
       </div>
@@ -171,11 +174,11 @@ export function HashGeneratorTool({
             </span>
             <button
               onClick={() => setInput("")}
-              className="text-zinc-500 hover:text-red-400 transition-colors text-xs flex items-center gap-1"
+              className="h-9 px-3 bg-[#18181B] hover:bg-[#27272A] border border-[#27272A] text-zinc-300 text-xs font-medium rounded-md transition-colors flex items-center gap-1.5"
               title="Clear input"
             >
               <Trash2 className="w-3.5 h-3.5" />
-              Clear
+              <span>Clear</span>
             </button>
           </div>
           <div className="min-h-[120px] rounded-lg overflow-hidden border border-[#27272A] bg-[#09090B]">
@@ -243,18 +246,16 @@ export function HashGeneratorTool({
                     onClick={() => handleCopy(card.value, card.id)}
                     disabled={!card.value}
                     className={cn(
-                      "flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors shrink-0",
-                      copiedKey === card.id
-                        ? "text-emerald-400"
-                        : "text-zinc-500 hover:text-zinc-200"
+                      "h-9 px-3 bg-[#18181B] hover:bg-[#27272A] border border-[#27272A] text-zinc-300 text-xs font-medium rounded-md transition-colors flex items-center gap-1.5 shrink-0",
+                      copiedKey === card.id && "text-emerald-400 border-emerald-500/40"
                     )}
                   >
                     {copiedKey === card.id ? (
-                      <Check className="w-3.5 h-3.5" />
+                      <Check className="w-3.5 h-3.5 text-emerald-400" />
                     ) : (
-                      <Copy className="w-3.5 h-3.5" />
+                      <Copy className="w-3.5 h-3.5 text-zinc-400" />
                     )}
-                    <span>{copiedKey === card.id ? "Copied" : "Copy"}</span>
+                    <span>{copiedKey === card.id ? "Copied!" : "Copy"}</span>
                   </button>
                 </div>
               );

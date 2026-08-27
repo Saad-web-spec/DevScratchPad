@@ -104,7 +104,7 @@ export function CronVisualizerTool({
     if (!output) return;
     navigator.clipboard.writeText(output);
     setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    setTimeout(() => setCopied(false), 1500);
   };
 
   const cronParts = input.trim().split(/\s+/).filter(Boolean);
@@ -156,7 +156,7 @@ export function CronVisualizerTool({
             </label>
             <button
               onClick={() => setInput("")}
-              className="text-zinc-400 hover:text-red-600 dark:hover:text-red-400 text-xs flex items-center gap-1 transition-colors"
+              className="h-9 px-3 bg-[#18181B] hover:bg-[#27272A] border border-[#27272A] text-zinc-300 text-xs font-medium rounded-md transition-colors flex items-center gap-1.5"
               title="Clear input"
             >
               <Trash2 className="w-3.5 h-3.5" />
@@ -171,7 +171,7 @@ export function CronVisualizerTool({
               value={input}
               onChange={(e) => setInput(e.target.value)}
               placeholder="e.g. */15 * * * * or 0 9 * * 1-5"
-              className="w-full bg-[#F8FAFC] dark:bg-[#121215] border border-[#E2E8F0] dark:border-[#27272A] text-zinc-900 dark:text-zinc-100 font-mono text-base md:text-xl tracking-widest px-3 md:px-4 py-2.5 md:py-3 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-900"
+              className="w-full font-mono text-base tracking-wide bg-[#121215] border border-[#27272A] text-zinc-100 focus:ring-1 focus:ring-zinc-400 rounded-lg p-3 focus:outline-none"
             />
           </div>
 
@@ -211,14 +211,12 @@ export function CronVisualizerTool({
               <button
                 onClick={handleCopy}
                 className={cn(
-                  "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors border bg-white dark:bg-zinc-800 shadow-2xs",
-                  copied
-                    ? "text-emerald-700 dark:text-emerald-400 border-emerald-300 dark:border-emerald-700"
-                    : "hover:bg-zinc-50 dark:hover:bg-zinc-700 text-zinc-600 dark:text-zinc-300 border-[#E2E8F0] dark:border-zinc-700"
+                  "h-9 px-3 bg-[#18181B] hover:bg-[#27272A] border border-[#27272A] text-zinc-300 text-xs font-medium rounded-md transition-colors flex items-center gap-1.5",
+                  copied && "text-emerald-400 border-emerald-500/40"
                 )}
               >
-                {copied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5 text-zinc-400 dark:text-zinc-500" />}
-                <span>{copied ? "Copied" : "Copy"}</span>
+                {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5 text-zinc-400" />}
+                <span>{copied ? "Copied!" : "Copy"}</span>
               </button>
             </div>
           </div>

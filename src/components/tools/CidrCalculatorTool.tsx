@@ -79,13 +79,13 @@ export function CidrCalculatorTool({ onValidationChange, onStatsChange, onLogHis
 
       <div className="p-4 md:p-6 max-w-4xl mx-auto w-full space-y-6 md:space-y-8">
         <div>
-          <label className="block text-xs md:text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1.5 md:mb-2">CIDR Notation</label>
+          <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 uppercase tracking-wider mb-2">CIDR Notation</label>
           <input
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
             placeholder="e.g. 192.168.1.0/24"
-            className="w-full bg-white dark:bg-zinc-900 border border-[#e2e8f0] dark:border-zinc-700 text-zinc-800 dark:text-zinc-200 text-sm md:text-base rounded-lg px-3.5 md:px-4 py-2.5 md:py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-shadow font-mono shadow-2xs placeholder:text-zinc-400 dark:placeholder:text-zinc-500"
+            className="w-full font-mono text-base tracking-wide bg-[#121215] border border-[#27272A] text-zinc-100 focus:ring-1 focus:ring-zinc-400 rounded-lg p-3 focus:outline-none placeholder:text-zinc-500"
           />
         </div>
 
@@ -111,9 +111,9 @@ export function CidrCalculatorTool({ onValidationChange, onStatsChange, onLogHis
 
 function MetricCard({ label, value }: { label: string; value: string | number }) {
   return (
-    <div className="bg-[#f8fafc] dark:bg-zinc-900 border border-[#e2e8f0] dark:border-zinc-800 rounded-xl p-4 md:p-5 flex flex-col justify-center shadow-2xs">
-      <span className="text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider mb-1.5 md:mb-2">{label}</span>
-      <span className="text-base md:text-lg font-semibold text-blue-600 dark:text-blue-400 font-mono break-all">{value}</span>
+    <div className="bg-[#121215] border border-[#27272A] rounded-xl p-4 md:p-5 flex flex-col justify-center">
+      <span className="text-xs font-medium text-zinc-400 uppercase tracking-wider mb-1.5 md:mb-2">{label}</span>
+      <span className="text-base md:text-lg font-semibold text-blue-400 font-mono break-all">{value}</span>
     </div>
   );
 }

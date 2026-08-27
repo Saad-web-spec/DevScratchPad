@@ -115,7 +115,7 @@ export function UrlEncoderTool({
     if (!output) return;
     navigator.clipboard.writeText(output);
     setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    setTimeout(() => setCopied(false), 1500);
   };
 
   return (
@@ -159,7 +159,7 @@ export function UrlEncoderTool({
           <select
             value={encodeMode}
             onChange={(e) => setEncodeMode(e.target.value as UrlEncodeMode)}
-            className="bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 text-xs rounded px-2 py-1.5 focus:outline-none focus:border-blue-500 font-medium"
+            className="h-9 bg-[#18181B] border border-[#27272A] text-zinc-300 text-xs rounded-md px-2 focus:outline-none font-medium"
           >
             <option value="component">Component (encodeURIComponent)</option>
             <option value="full">Full URI (encodeURI)</option>
@@ -169,7 +169,7 @@ export function UrlEncoderTool({
           <button
             onClick={handleSwap}
             disabled={!output}
-            className="flex items-center gap-1 px-2.5 py-1.5 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 disabled:opacity-40 disabled:cursor-not-allowed text-zinc-700 dark:text-zinc-300 rounded text-xs font-medium transition-colors border border-zinc-200 dark:border-zinc-700"
+            className="h-9 px-3 bg-[#18181B] hover:bg-[#27272A] border border-[#27272A] disabled:opacity-40 disabled:cursor-not-allowed text-zinc-300 rounded-md text-xs font-medium transition-colors flex items-center gap-1.5"
             title="Swap input and output"
           >
             <ArrowLeftRight className="w-3.5 h-3.5" />
@@ -179,7 +179,7 @@ export function UrlEncoderTool({
           {/* Process Button */}
           <button
             onClick={handleAction}
-            className="flex items-center gap-1 px-2.5 py-1.5 bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white rounded text-xs font-medium transition-colors shadow-2xs"
+            className="h-9 px-3 bg-blue-600 dark:bg-blue-600 hover:bg-blue-700 dark:hover:bg-blue-500 text-white rounded-md text-xs font-medium transition-colors flex items-center gap-1.5 shadow-2xs"
           >
             <Play className="w-3.5 h-3.5" />
             <span>{action === "encode" ? "Encode" : "Decode"}</span>
@@ -257,11 +257,11 @@ export function UrlEncoderTool({
               onClick={handleCopy}
               className={cn(
                 "flex items-center gap-1 text-[11px] transition-colors",
-                copied ? "text-emerald-600 dark:text-emerald-400" : "text-zinc-400 dark:text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-200"
+                copied ? "text-emerald-400 font-medium" : "text-zinc-400 dark:text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-200"
               )}
             >
-              {copied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
-              {copied ? "Copied" : "Copy"}
+              {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+              <span>{copied ? "Copied!" : "Copy"}</span>
             </button>
           </div>
           <div className="flex-1 relative w-full max-w-full overflow-x-hidden">
