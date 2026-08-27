@@ -23,11 +23,12 @@ const BACKGROUNDS = [
 ];
 
 const SYNTAX_THEMES = [
-  { name: "One Dark Pro", bg: "#282C34" },
-  { name: "Dark Slate", bg: "#121215" },
-  { name: "Dracula", bg: "#282A36" },
-  { name: "GitHub Dark", bg: "#0D1117" },
-  { name: "Nord", bg: "#2E3440" },
+  { name: "GitHub Light", bg: "#FFFFFF", headerBg: "#F6F6F6", textClass: "text-zinc-600", themeId: "vs" },
+  { name: "One Dark Pro", bg: "#282C34", headerBg: "#21252B", textClass: "text-white/60", themeId: "devscratchpad-dark" },
+  { name: "Dark Slate", bg: "#121215", headerBg: "#09090B", textClass: "text-white/60", themeId: "devscratchpad-dark" },
+  { name: "Dracula", bg: "#282A36", headerBg: "#21222C", textClass: "text-white/60", themeId: "devscratchpad-dark" },
+  { name: "GitHub Dark", bg: "#0D1117", headerBg: "#010409", textClass: "text-white/60", themeId: "devscratchpad-dark" },
+  { name: "Nord", bg: "#2E3440", headerBg: "#3B4252", textClass: "text-white/60", themeId: "devscratchpad-dark" },
 ];
 
 const PADDINGS = [
@@ -38,7 +39,7 @@ const PADDINGS = [
 
 export function ExportImageModal({ isOpen, onClose, code, language }: ExportImageModalProps) {
   const [activeBg, setActiveBg] = useState(BACKGROUNDS[0]);
-  const [activeTheme, setActiveTheme] = useState(SYNTAX_THEMES[1]); // Default Dark Slate
+  const [activeTheme, setActiveTheme] = useState(SYNTAX_THEMES[0]); // Default GitHub Light
   const [activePadding, setActivePadding] = useState(PADDINGS[1]); // Default 32px
   const [showLineNumbers, setShowLineNumbers] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
@@ -140,11 +141,14 @@ export function ExportImageModal({ isOpen, onClose, code, language }: ExportImag
             >
               {/* Code Window Container */}
               <div 
-                className="w-full rounded-xl shadow-2xl shadow-black/60 border border-white/10 overflow-hidden flex flex-col"
+                className="w-full min-w-[500px] rounded-xl shadow-2xl shadow-black/60 border border-white/10 overflow-hidden flex flex-col"
                 style={{ backgroundColor: activeTheme.bg }}
               >
                 {/* Window Header */}
-                <div className="h-12 px-4 flex items-center relative shrink-0">
+                <div 
+                  className="h-12 px-4 flex items-center relative shrink-0 border-b border-black/5 dark:border-white/5"
+                  style={{ backgroundColor: activeTheme.headerBg }}
+                >
                   {/* macOS Dots */}
                   <div className="flex items-center gap-2 absolute left-4">
                     <div className="w-3 h-3 rounded-full bg-[#FF5F56]"></div>
@@ -152,7 +156,7 @@ export function ExportImageModal({ isOpen, onClose, code, language }: ExportImag
                     <div className="w-3 h-3 rounded-full bg-[#27C93F]"></div>
                   </div>
                   {/* Filename Badge */}
-                  <div className="mx-auto px-3 py-1 rounded-md bg-white/5 border border-white/5 text-xs text-white/60 font-mono tracking-wide">
+                  <div className={cn("mx-auto px-3 py-1 rounded-md text-xs font-mono tracking-wide", activeTheme.textClass)}>
                     {`data.${language === 'json' ? 'json' : language === 'javascript' ? 'js' : language === 'typescript' ? 'ts' : 'txt'}`}
                   </div>
                 </div>
@@ -163,7 +167,7 @@ export function ExportImageModal({ isOpen, onClose, code, language }: ExportImag
                     <MonacoEditor
                       language={language}
                       value={code}
-                      theme="devscratchpad-dark" // We override the bg via CSS
+                      theme={activeTheme.themeId} // Override dynamically
                       options={{
                         readOnly: true,
                         minimap: { enabled: false },
