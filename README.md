@@ -1,73 +1,128 @@
-# DevScratchpad
+<div align="center">
 
-**DevScratchpad** is a lightning-fast, client-side, privacy-first developer utility platform. Built natively on **Next.js 16 (App Router)** and **React 19**, it processes everything strictly within the browser memory—meaning absolute zero server transmission and maximum security for sensitive data and tokens.
+# ⚡ DevScratchpad
 
-It features **19 distinct high-value developer tools** integrated into a beautiful, crisp, system-UI-driven workspace, inspired by tools like CyberChef and VS Code.
+**The privacy-first developer utility suite & scratchpad with zero server transmission.**
 
-## 🚀 Key Features
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-tools.saadengineer.works-2563EB?style=for-the-badge&logo=vercel&logoColor=white)](https://tools.saadengineer.works)
+[![Next.js 16](https://img.shields.io/badge/Next.js-16.3.3-black?style=for-the-badge&logo=next.js&logoColor=white)](https://nextjs.org/)
+[![React 19](https://img.shields.io/badge/React-19.2.8-61DAFB?style=for-the-badge&logo=react&logoColor=black)](https://react.dev/)
+[![Tailwind CSS v4](https://img.shields.io/badge/Tailwind_CSS-v4.0-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-emerald?style=for-the-badge)](./LICENSE)
 
-*   **100% Client-Side Processing**: No API servers, no databases. Everything executes instantly in the browser.
-*   **Lightning Fast UI**: Uses a system-UI font stack (`system-ui, -apple-system, sans-serif`) ensuring zero layout shifts (CLS) and instant renders.
-*   **Monaco Editor Integration**: Heavy use of `@monaco-editor/react` (lazy-loaded for performance) to provide VS Code-level syntax highlighting, auto-completion, and dual-pane diff checking.
-*   **Workspace History State**: Built-in LocalStorage synchronization to auto-save sessions, allowing developers to instantly restore previous tool sessions with one click.
-*   **Programmatic SEO**: Fully dynamic `sitemap.xml`, `robots.txt`, and OpenGraph metadata generated automatically from the centralized `registry.ts`.
-*   **Shareable Payloads**: URL Hash persistence (`#data=base64...`) allowing users to easily bookmark or share specific tool states and inputs securely without a backend.
-*   **Command Palette**: Quick tool switching accessible globally via `Ctrl/Cmd + K`.
+<br/>
 
----
+[**Explore 19+ Tools**](https://tools.saadengineer.works) • [**Report a Bug**](https://github.com/Saad-web-spec/DevScratchPad/issues/new) • [**Request a Feature**](https://github.com/Saad-web-spec/DevScratchPad/issues/new) • [**Submit a PR**](./CONTRIBUTING.md)
 
-## 🛠️ The 19 Developer Utilities
-
-1.  **JSON Formatter & Minifier**: Format, minify, and validate JSON schemas in real-time.
-2.  **JWT Decoder**: Securely decode JSON Web Tokens (Header, Payload, Signature) without exposing secrets.
-3.  **Unix Timestamp Converter**: Convert Epoch integers to human-readable UTC/Local/ISO formats instantly.
-4.  **cURL Command Converter**: Translate raw `curl` terminal commands into executable `fetch` (JavaScript), `requests` (Python), or `net/http` (Go) code.
-5.  **Diff Checker**: Compare text or code modifications side-by-side with colorized inline insertion/deletion highlighting.
-6.  **XML Formatter**: Pretty-print and compress XML data.
-7.  **SQL Formatter**: Indent and beautify complex SQL queries across various dialects.
-8.  **Base64 Encoder/Decoder**: Instantly translate standard text to and from Base64 encoding.
-9.  **URL Encoder/Decoder**: Safely encode special URI characters for query strings and paths.
-10. **Hash Generator**: Generate high-speed MD5, SHA-1, SHA-256, and SHA-512 hashes.
-11. **Regex Tester**: Test regular expression patterns against strings with live highlight matching.
-12. **JSON to TypeScript**: Instantly generate strongly-typed TypeScript interfaces directly from raw JSON objects.
-13. **Cron Expression Visualizer**: Translate complex `* * * * *` cron syntax into plain English schedules.
-14. **YAML to JSON Converter**: Bi-directional conversion between YAML and JSON formats.
-15. **CSS & SVG Minifier**: Optimize and compress frontend CSS code and SVG markup effortlessly.
-16. **GraphQL Formatter**: Format and beautify complex GraphQL queries and schemas using the official AST parser.
-17. **Markdown Previewer**: Live dual-pane editor that sanitizes (via DOMPurify) and renders Markdown as safe HTML.
-18. **HMAC Webhook Generator**: Compute cryptographic SHA-256 and SHA-512 signatures for API and webhook testing.
-19. **IP / CIDR Calculator**: Parse IPv4 CIDR blocks to compute Network, Broadcast, Subnet Masks, and usable host bounds instantly.
+</div>
 
 ---
 
-## 🏗️ Architecture & Technology Stack
+## 🔒 100% Zero-Server Privacy Guarantee
 
-*   **Framework**: Next.js 16 (App Router) using Turbopack
-*   **Library**: React 19
-*   **Language**: TypeScript
-*   **Styling**: Tailwind CSS v4 (with strict crisp white / `bg-slate-50` aesthetics)
-*   **Icons**: Lucide React
-*   **Editors**: Monaco Editor (VS Code core engine)
+> **Why DevScratchpad?** Most online formatters and decoders secretly transmit your sensitive API keys, JWT tokens, environment secrets, and customer payloads to remote tracking servers. 
 
-## 📦 Local Development
+**DevScratchpad is 100% client-side:**
+- **Zero API Endpoints:** Every formatter, parser, hash generator, and converter executes in pure browser JavaScript & WASM.
+- **Zero Telemetry on Payloads:** Your inputs never touch a server or database.
+- **Auditable & Open-Source:** Inspect the network tab or the source code in this repository to verify that no network requests leave your machine.
 
-1. **Install dependencies:**
-   ```bash
-   npm install
-   ```
-2. **Run the development server:**
-   ```bash
-   npm run dev
-   ```
-3. Open `http://localhost:3000` in your browser.
+---
 
-## 🚢 Deployment (Vercel)
+## ✨ Features & Architecture
 
-The easiest way to deploy the application is through [Vercel](https://vercel.com).
-The repository is optimized for Vercel's zero-config `Next.js` template.
+- ⚡ **Next.js 16 & Turbopack:** 100% Static Site Generated (SSG) with sub-millisecond TTFB.
+- 🎨 **Unified Spatial Dark UI:** High-contrast pitch-black canvas (`#09090B`), elevated cards (`#121215`), and standardized monospace inputs.
+- 💻 **Monaco Code Editor:** VS Code's editor engine built-in with syntax highlighting, auto-wrap, error lines, and dual-pane diff comparison.
+- ⏱️ **Local Status Bars:** Embedded 32px Monaco status footers displaying real-time execution speeds (ms), character volume, and syntax error lines.
+- ⌨️ **Command Palette:** Global <kbd>Ctrl</kbd> + <kbd>K</kbd> / <kbd>Cmd</kbd> + <kbd>K</kbd> navigation to jump between tools in milliseconds.
+- 🔗 **Zero-Backend Sharing:** Payloads are serialized directly into URL hash fragments (`#data=...`), enabling private sharing with no server storage.
+- 💾 **Local Workspace History:** FIFO 15-entry local history buffer and workspace snapshot bookmarking.
 
-1. Import the repository into Vercel.
-2. Select **Next.js** framework preset.
-3. Click **Deploy**.
+---
 
-To host on a custom subdomain like `tools.saadengineer.works`, simply add the CNAME record mapping your host to `cname.vercel-dns.com`.
+## 🛠️ The 19 Developer Utilities Matrix
+
+| Category | Tool Name | Route | What It Does |
+| :--- | :--- | :--- | :--- |
+| **Code Formatting** | [JSON Formatter](https://tools.saadengineer.works/json-formatter) | `/json-formatter` | Multi-indent (2/4 spaces) formatting, minification, and real-time syntax error line tracking. |
+| | [XML Formatter](https://tools.saadengineer.works/xml-formatter) | `/xml-formatter` | Format, beautify, and minify XML data structures with indentation controls. |
+| | [SQL Formatter](https://tools.saadengineer.works/sql-formatter) | `/sql-formatter` | Multi-dialect query beautifier (PostgreSQL, MySQL, SQLite, T-SQL, PL/SQL) with keyword casing. |
+| | [GraphQL Formatter](https://tools.saadengineer.works/graphql-formatter) | `/graphql-formatter` | Formats and validates GraphQL queries and schemas using the official AST parser. |
+| **Security & Crypto** | [JWT Decoder](https://tools.saadengineer.works/jwt-decoder) | `/jwt-decoder` | Safely decodes Header, Payload & Signature; auto-converts `exp`/`iat` timestamps to ISO dates. |
+| | [Hash Generator](https://tools.saadengineer.works/hash-generator) | `/hash-generator` | Computes MD5 (SparkMD5), SHA-1, SHA-256, and SHA-512 in parallel client-side. |
+| | [HMAC Generator](https://tools.saadengineer.works/hmac-generator) | `/hmac-generator` | Computes SHA256 & SHA512 HMAC signatures in Hex & Base64 for Stripe/GitHub webhook testing. |
+| | [Base64 Tool](https://tools.saadengineer.works/base64-decoder) | `/base64-decoder` | Safe UTF-8 Base64 encoding & decoding with URL-safe toggle and instant swapping. |
+| **Networking & Unix** | [Unix Timestamp](https://tools.saadengineer.works/unix-timestamp) | `/unix-timestamp` | Bidirectional Epoch ↔ UTC/Local/ISO date converter with auto-second/millisecond detection. |
+| | [Cron Visualizer](https://tools.saadengineer.works/cron-visualizer) | `/cron-visualizer` | Translates complex cron schedules into plain English with a 5-column breakdown grid. |
+| | [IP / CIDR Calculator](https://tools.saadengineer.works/cidr-calculator) | `/cidr-calculator` | Calculates IPv4 network address, broadcast, wildcard mask, and usable host bounds. |
+| **Code Converters** | [cURL Converter](https://tools.saadengineer.works/curl-converter) | `/curl-converter` | Transforms cURL commands into executable JavaScript (`fetch`), Python (`requests`), or Go. |
+| | [JSON to TypeScript](https://tools.saadengineer.works/json-to-typescript) | `/json-to-typescript` | Generates strongly-typed TypeScript interfaces and type definitions from raw JSON. |
+| | [YAML / JSON Converter](https://tools.saadengineer.works/yaml-json) | `/yaml-json` | Bidirectional YAML ↔ JSON conversion preserving data structures with one-click swap. |
+| | [URL Encoder](https://tools.saadengineer.works/url-encoder) | `/url-encoder` | Safely encodes and decodes URL components, parameters, and full URIs. |
+| **Diff & Optimization** | [Diff Checker](https://tools.saadengineer.works/diff-checker) | `/diff-checker` | Monaco side-by-side or inline code diffing with character-level additions and deletions. |
+| | [CSS & SVG Minifier](https://tools.saadengineer.works/css-svg-minifier) | `/css-svg-minifier` | Strips comments and whitespace; displays byte savings and compression ratio. |
+| | [Markdown Previewer](https://tools.saadengineer.works/markdown-previewer) | `/markdown-previewer` | Dual-pane live Markdown preview with HTML sanitization via `marked` and `DOMPurify`. |
+| | [Regex Tester](https://tools.saadengineer.works/regex-tester) | `/regex-tester` | Real-time RegExp testing with flags (`g`, `i`, `m`, `s`), match lists, and substitution preview. |
+
+---
+
+## 🚀 Getting Started Locally
+
+### Prerequisites
+- Node.js 18.17+ or 20+
+- npm, yarn, or pnpm
+
+### Quick Setup
+
+```bash
+# 1. Clone the repository
+git clone https://github.com/Saad-web-spec/DevScratchPad.git
+
+# 2. Enter the project directory
+cd DevScratchPad
+
+# 3. Install dependencies
+npm install
+
+# 4. Start the Turbopack development server
+npm run dev
+```
+
+Open [http://localhost:3000](http://localhost:3000) in your browser.
+
+---
+
+## 🚢 One-Click Deployment
+
+Deploy your own private, customized instance of DevScratchpad for your team on Vercel:
+
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/Saad-web-spec/DevScratchPad)
+
+---
+
+## 🤝 Contributing
+
+Contributions, feature ideas, and new utility tools are very welcome! Please check out our [**Contributing Guide**](./CONTRIBUTING.md) to get started.
+
+1. Fork the Project
+2. Create your Feature Branch (`git checkout -b feature/AmazingNewTool`)
+3. Commit your Changes (`git commit -m 'feat: add amazing new developer tool'`)
+4. Push to the Branch (`git push origin feature/AmazingNewTool`)
+5. Open a Pull Request
+
+---
+
+## 💖 Support & Sponsorship
+
+If DevScratchpad has saved you time or improved your workflow, consider starring ⭐ this repository and supporting its ongoing development!
+
+---
+
+## 📄 License
+
+Distributed under the MIT License. See [`LICENSE`](./LICENSE) for more information.
+
+<div align="center">
+  <sub>Built with ❤️ by <a href="https://saadengineer.works">Saad</a> &bull; Powered by Next.js 16 &amp; Monaco Editor</sub>
+</div>
