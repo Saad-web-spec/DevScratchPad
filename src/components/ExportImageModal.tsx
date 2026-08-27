@@ -23,7 +23,7 @@ const BACKGROUNDS = [
 ];
 
 const SYNTAX_THEMES = [
-  { name: "GitHub Light", bg: "#FFFFFF", headerBg: "#F6F6F6", textClass: "text-zinc-600", themeId: "vs" },
+  { name: "GitHub Light", bg: "#FFFFFF", headerBg: "#F6F8FA", textClass: "text-zinc-600", themeId: "vs" },
   { name: "One Dark Pro", bg: "#282C34", headerBg: "#21252B", textClass: "text-white/60", themeId: "devscratchpad-dark" },
   { name: "Dark Slate", bg: "#121215", headerBg: "#09090B", textClass: "text-white/60", themeId: "devscratchpad-dark" },
   { name: "Dracula", bg: "#282A36", headerBg: "#21222C", textClass: "text-white/60", themeId: "devscratchpad-dark" },
@@ -32,9 +32,9 @@ const SYNTAX_THEMES = [
 ];
 
 const PADDINGS = [
-  { label: "16px", value: "p-4" },
-  { label: "32px", value: "p-8" },
-  { label: "64px", value: "p-16" },
+  { label: "16px", value: "p-3.5 sm:p-4 pb-7 sm:pb-8" },
+  { label: "32px", value: "p-5 sm:p-8 pb-8 sm:pb-10" },
+  { label: "64px", value: "p-7 sm:p-12 pb-10 sm:pb-14" },
 ];
 
 export function ExportImageModal({ isOpen, onClose, code, language }: ExportImageModalProps) {
@@ -53,7 +53,7 @@ export function ExportImageModal({ isOpen, onClose, code, language }: ExportImag
     if (!captureRef.current) return null;
     setIsExporting(true);
     // Wait for Monaco to fully render
-    await new Promise((resolve) => setTimeout(resolve, 500));
+    await new Promise((resolve) => setTimeout(resolve, 400));
     return captureRef.current;
   };
 
@@ -67,7 +67,7 @@ export function ExportImageModal({ isOpen, onClose, code, language }: ExportImag
         skipFonts: true,
       });
       const link = document.createElement("a");
-      link.download = `snippet-${language}.png`;
+      link.download = `snippet-${language || "code"}.png`;
       link.href = dataUrl;
       link.click();
     } catch (err) {
@@ -102,9 +102,28 @@ export function ExportImageModal({ isOpen, onClose, code, language }: ExportImag
     }
   };
 
+  const lineCount = (code || "").split("\n").length;
+  const editorHeight = Math.max(50, Math.min(lineCount * 21 + 18, 460));
+
+  const getExtension = () => {
+    switch (language) {
+      case "json": return "json";
+      case "javascript": return "js";
+      case "typescript": return "ts";
+      case "sql": return "sql";
+      case "xml": return "xml";
+      case "yaml": return "yaml";
+      case "markdown": return "md";
+      case "css": return "css";
+      case "graphql": return "gql";
+      case "bash": return "sh";
+      default: return "txt";
+    }
+  };
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-      {/* We inject a style block to force Monaco to be transparent inside this modal so it inherits our theme background */}
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 md:p-6 bg-black/70 backdrop-blur-sm animate-in fade-in duration-150">
+      {/* Dynamic override for Monaco transparent background */}
       <style>{`
         .export-monaco-container .monaco-editor,
         .export-monaco-container .monaco-editor-background,
@@ -113,106 +132,120 @@ export function ExportImageModal({ isOpen, onClose, code, language }: ExportImag
         }
       `}</style>
       
-      <div className="bg-white dark:bg-zinc-900 rounded-xl shadow-2xl w-full max-w-5xl flex flex-col border border-zinc-200 dark:border-zinc-800 overflow-hidden h-[90vh]">
+      <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl w-[95vw] sm:w-[90vw] md:w-full max-w-5xl max-h-[92vh] sm:max-h-[90vh] flex flex-col border border-zinc-200 dark:border-zinc-800 overflow-hidden animate-in zoom-in-95 duration-150">
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-zinc-200 dark:border-zinc-800 shrink-0">
-          <div className="flex items-center gap-2">
-            <ImageIcon className="w-5 h-5 text-indigo-500" />
-            <h2 className="font-semibold text-zinc-900 dark:text-zinc-100">Export Code Snippet</h2>
+        <div className="flex items-center justify-between px-4 py-3 sm:px-5 sm:py-3.5 border-b border-zinc-200 dark:border-zinc-800 shrink-0">
+          <div className="flex items-center gap-2.5">
+            <div className="p-1.5 rounded-lg bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400">
+              <ImageIcon className="w-4 h-4 sm:w-5 sm:h-5" />
+            </div>
+            <h2 className="font-semibold text-sm sm:text-base text-zinc-900 dark:text-zinc-100">Export Code Snippet</h2>
           </div>
-          <button onClick={onClose} className="p-1 text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-md transition-colors">
+          <button
+            onClick={onClose}
+            className="p-1.5 text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition-colors"
+            aria-label="Close modal"
+          >
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        {/* Content */}
-        <div className="flex flex-col md:flex-row flex-1 overflow-hidden">
+        {/* Content Body - Responsive flex */}
+        <div className="flex flex-col md:flex-row flex-1 overflow-y-auto md:overflow-hidden min-h-0">
           {/* Main Preview Area */}
-          <div className="flex-1 p-6 md:p-10 bg-zinc-100 dark:bg-zinc-950 overflow-auto flex flex-col items-center justify-center relative">
-            
-            {/* Capture Target */}
-            <div
-              ref={captureRef}
-              className={cn(
-                "w-full max-w-3xl flex flex-col items-center justify-center transition-all duration-300 relative overflow-hidden",
-                activeBg.class,
-                activePadding.value
-              )}
-            >
-              {/* Code Window Container */}
-              <div 
-                className="w-full min-w-[500px] rounded-xl shadow-2xl shadow-black/60 border border-white/10 overflow-hidden flex flex-col"
-                style={{ backgroundColor: activeTheme.bg }}
+          <div className="flex-1 p-3 sm:p-6 md:p-8 bg-zinc-100 dark:bg-zinc-950/80 flex flex-col items-center justify-center min-h-[220px] sm:min-h-[280px] md:overflow-auto overflow-hidden">
+            <div className="w-full max-w-2xl flex items-center justify-center">
+              {/* Capture Target */}
+              <div
+                ref={captureRef}
+                className={cn(
+                  "w-full flex flex-col items-center justify-center transition-all duration-300 relative rounded-xl select-none",
+                  activeBg.class,
+                  activePadding.value
+                )}
               >
-                {/* Window Header */}
+                {/* Code Window Container */}
                 <div 
-                  className="h-12 px-4 flex items-center relative shrink-0 border-b border-black/5 dark:border-white/5"
-                  style={{ backgroundColor: activeTheme.headerBg }}
+                  className="w-full rounded-xl shadow-2xl shadow-black/40 border border-white/10 overflow-hidden flex flex-col transition-colors duration-200"
+                  style={{ backgroundColor: activeTheme.bg }}
                 >
-                  {/* macOS Dots */}
-                  <div className="flex items-center gap-2 absolute left-4">
-                    <div className="w-3 h-3 rounded-full bg-[#FF5F56]"></div>
-                    <div className="w-3 h-3 rounded-full bg-[#FFBD2E]"></div>
-                    <div className="w-3 h-3 rounded-full bg-[#27C93F]"></div>
+                  {/* Window Header */}
+                  <div 
+                    className="h-9 sm:h-10 px-3 sm:px-4 flex items-center justify-between relative shrink-0 border-b border-black/5 dark:border-white/5"
+                    style={{ backgroundColor: activeTheme.headerBg }}
+                  >
+                    {/* macOS Dots */}
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-[#FF5F56]" />
+                      <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-[#FFBD2E]" />
+                      <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-[#27C93F]" />
+                    </div>
+                    {/* Filename Badge */}
+                    <div className={cn("px-2 py-0.5 rounded-md text-[11px] sm:text-xs font-mono tracking-wide truncate max-w-[140px] sm:max-w-[200px]", activeTheme.textClass)}>
+                      {`data.${getExtension()}`}
+                    </div>
+                    {/* Spacer for symmetrical centering */}
+                    <div className="w-8 sm:w-12 shrink-0" />
                   </div>
-                  {/* Filename Badge */}
-                  <div className={cn("mx-auto px-3 py-1 rounded-md text-xs font-mono tracking-wide", activeTheme.textClass)}>
-                    {`data.${language === 'json' ? 'json' : language === 'javascript' ? 'js' : language === 'typescript' ? 'ts' : 'txt'}`}
+                  
+                  {/* Editor Area */}
+                  <div className="p-3 sm:p-4 pt-2 sm:pt-2.5 pb-4 sm:pb-5 export-monaco-container w-full">
+                    <div className="pointer-events-none w-full" style={{ height: `${editorHeight}px` }}>
+                      <MonacoEditor
+                        language={language}
+                        value={code}
+                        theme={activeTheme.themeId}
+                        options={{
+                          readOnly: true,
+                          minimap: { enabled: false },
+                          lineNumbers: showLineNumbers ? "on" : "off",
+                          folding: false,
+                          scrollBeyondLastLine: false,
+                          renderLineHighlight: "none",
+                          hideCursorInOverviewRuler: true,
+                          overviewRulerBorder: false,
+                          scrollbar: { vertical: 'hidden', horizontal: 'hidden' },
+                          fontSize: 13,
+                          lineHeight: 21,
+                          fontFamily: "'JetBrains Mono', 'Fira Code', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
+                          padding: { top: 2, bottom: 2 },
+                          wordWrap: "on",
+                        }}
+                      />
+                    </div>
                   </div>
                 </div>
-                
-                {/* Editor Area */}
-                <div className="p-4 pt-2 pb-6 export-monaco-container">
-                  <div className="pointer-events-none" style={{ height: `${Math.min(code.split('\n').length * 21 + 20, 600)}px` }}>
-                    <MonacoEditor
-                      language={language}
-                      value={code}
-                      theme={activeTheme.themeId} // Override dynamically
-                      options={{
-                        readOnly: true,
-                        minimap: { enabled: false },
-                        lineNumbers: showLineNumbers ? "on" : "off",
-                        folding: false,
-                        scrollBeyondLastLine: false,
-                        renderLineHighlight: "none",
-                        hideCursorInOverviewRuler: true,
-                        overviewRulerBorder: false,
-                        scrollbar: { vertical: 'hidden', horizontal: 'hidden' },
-                        fontSize: 15,
-                        fontFamily: "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
-                        padding: { top: 0, bottom: 0 },
-                      }}
-                    />
-                  </div>
-                </div>
-              </div>
 
-              {/* Brand Watermark */}
-              <div className="absolute bottom-4 right-6 text-xs font-mono text-white/40 tracking-wider select-none">
-                tools.saadengineer.works
+                {/* Brand Watermark - Positioned in canvas bottom corner */}
+                <div className="absolute bottom-2 sm:bottom-2.5 right-3 sm:right-4 text-[10px] sm:text-xs font-mono text-white/50 tracking-wider select-none pointer-events-none drop-shadow-xs">
+                  tools.saadengineer.works
+                </div>
               </div>
             </div>
           </div>
 
           {/* Sidebar Controls */}
-          <div className="w-full md:w-80 border-t md:border-t-0 md:border-l border-zinc-200 dark:border-zinc-800 p-5 flex flex-col gap-6 bg-white dark:bg-zinc-900 shrink-0 overflow-y-auto">
+          <div className="w-full md:w-80 border-t md:border-t-0 md:border-l border-zinc-200 dark:border-zinc-800 p-4 sm:p-5 flex flex-col gap-4 sm:gap-5 bg-white dark:bg-zinc-900 shrink-0 md:overflow-y-auto">
             
             {/* Background Selector */}
             <div>
-              <h3 className="text-sm font-medium text-zinc-900 dark:text-zinc-100 mb-3">Background</h3>
+              <label className="text-xs font-semibold text-zinc-700 dark:text-zinc-300 uppercase tracking-wider block mb-2">
+                Canvas Background
+              </label>
               <div className="grid grid-cols-3 gap-2">
-                {BACKGROUNDS.map((bg, i) => (
+                {BACKGROUNDS.map((bg) => (
                   <button
-                    key={i}
+                    key={bg.name}
                     onClick={() => setActiveBg(bg)}
                     title={bg.name}
                     className={cn(
-                      "h-10 rounded-md transition-all hover:scale-105 active:scale-95 border",
+                      "h-8 sm:h-9 rounded-lg transition-all hover:scale-105 active:scale-95 border",
                       bg.class,
                       activeBg.name === bg.name 
-                        ? "ring-2 ring-indigo-500 ring-offset-2 dark:ring-offset-zinc-900 border-transparent" 
+                        ? "ring-2 ring-indigo-500 ring-offset-2 dark:ring-offset-zinc-900 border-transparent shadow-xs" 
                         : "border-zinc-200 dark:border-zinc-700/50"
                     )}
+                    aria-label={bg.name}
                   />
                 ))}
               </div>
@@ -220,11 +253,13 @@ export function ExportImageModal({ isOpen, onClose, code, language }: ExportImag
 
             {/* Syntax Theme */}
             <div>
-              <h3 className="text-sm font-medium text-zinc-900 dark:text-zinc-100 mb-3">Syntax Theme (Window)</h3>
+              <label className="text-xs font-semibold text-zinc-700 dark:text-zinc-300 uppercase tracking-wider block mb-2">
+                Syntax Theme (Window)
+              </label>
               <select 
                 value={activeTheme.name}
-                onChange={(e) => setActiveTheme(SYNTAX_THEMES.find(t => t.name === e.target.value) || SYNTAX_THEMES[1])}
-                className="w-full h-9 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-zinc-100 text-sm rounded-md px-3 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                onChange={(e) => setActiveTheme(SYNTAX_THEMES.find(t => t.name === e.target.value) || SYNTAX_THEMES[0])}
+                className="w-full h-9 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-zinc-100 text-xs sm:text-sm rounded-lg px-3 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors"
               >
                 {SYNTAX_THEMES.map((theme) => (
                   <option key={theme.name} value={theme.name}>{theme.name}</option>
@@ -234,16 +269,18 @@ export function ExportImageModal({ isOpen, onClose, code, language }: ExportImag
 
             {/* Padding */}
             <div>
-              <h3 className="text-sm font-medium text-zinc-900 dark:text-zinc-100 mb-3">Padding</h3>
+              <label className="text-xs font-semibold text-zinc-700 dark:text-zinc-300 uppercase tracking-wider block mb-2">
+                Canvas Padding
+              </label>
               <div className="flex bg-zinc-100 dark:bg-zinc-950 p-1 rounded-lg border border-zinc-200 dark:border-zinc-800">
                 {PADDINGS.map((pad) => (
                   <button
                     key={pad.label}
                     onClick={() => setActivePadding(pad)}
                     className={cn(
-                      "flex-1 py-1.5 text-xs font-medium rounded-md transition-colors text-center",
+                      "flex-1 py-1 sm:py-1.5 text-xs font-medium rounded-md transition-colors text-center",
                       activePadding.label === pad.label
-                        ? "bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white shadow-sm border border-zinc-200 dark:border-zinc-700"
+                        ? "bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white shadow-xs border border-zinc-200 dark:border-zinc-700"
                         : "text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 border border-transparent"
                     )}
                   >
@@ -254,44 +291,49 @@ export function ExportImageModal({ isOpen, onClose, code, language }: ExportImag
             </div>
 
             {/* Line Numbers Toggle */}
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-medium text-zinc-900 dark:text-zinc-100">Line Numbers</span>
+            <div className="flex items-center justify-between py-1">
+              <span className="text-xs font-semibold text-zinc-700 dark:text-zinc-300 uppercase tracking-wider">
+                Line Numbers
+              </span>
               <button
+                type="button"
+                role="switch"
+                aria-checked={showLineNumbers}
                 onClick={() => setShowLineNumbers(!showLineNumbers)}
                 className={cn(
-                  "w-10 h-5 rounded-full transition-colors relative",
-                  showLineNumbers ? "bg-indigo-500" : "bg-zinc-300 dark:bg-zinc-700"
+                  "w-10 h-5.5 rounded-full transition-colors relative focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:focus:ring-offset-zinc-900",
+                  showLineNumbers ? "bg-indigo-600" : "bg-zinc-300 dark:bg-zinc-700"
                 )}
               >
                 <div className={cn(
-                  "w-3.5 h-3.5 bg-white rounded-full absolute top-0.5 transition-transform",
-                  showLineNumbers ? "translate-x-5" : "translate-x-1"
+                  "w-4 h-4 bg-white rounded-full absolute top-0.75 transition-transform shadow-xs",
+                  showLineNumbers ? "translate-x-5" : "translate-x-0.75"
                 )} />
               </button>
             </div>
 
             {/* Export Buttons */}
-            <div className="mt-auto pt-6 flex flex-col gap-3">
+            <div className="mt-auto pt-3 sm:pt-5 flex flex-col gap-2.5">
               <button
                 onClick={handleCopyClipboard}
                 disabled={isExporting}
-                className="w-full h-10 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-900 dark:text-white border border-zinc-200 dark:border-zinc-700 rounded-lg font-medium flex items-center justify-center gap-2 transition-colors disabled:opacity-50 text-sm"
+                className="w-full h-9 sm:h-10 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-900 dark:text-white border border-zinc-200 dark:border-zinc-700 rounded-lg font-medium flex items-center justify-center gap-2 transition-colors disabled:opacity-50 text-xs sm:text-sm active:scale-[0.99]"
               >
-                {copied ? <Check className="w-4 h-4 text-emerald-500" /> : <Copy className="w-4 h-4" />}
-                {copied ? "Copied to Clipboard!" : "Copy PNG to Clipboard"}
+                {copied ? <Check className="w-4 h-4 text-emerald-500" /> : <Copy className="w-4 h-4 text-zinc-500 dark:text-zinc-400" />}
+                <span>{copied ? "Copied to Clipboard!" : "Copy PNG to Clipboard"}</span>
               </button>
               
               <button
                 onClick={handleDownload}
                 disabled={isExporting}
-                className="w-full h-10 bg-blue-600 hover:bg-blue-500 text-white rounded-lg font-medium flex items-center justify-center gap-2 transition-colors disabled:opacity-50 shadow-sm text-sm"
+                className="w-full h-9 sm:h-10 bg-blue-600 hover:bg-blue-500 active:bg-blue-700 text-white rounded-lg font-medium flex items-center justify-center gap-2 transition-colors disabled:opacity-50 shadow-sm text-xs sm:text-sm active:scale-[0.99]"
               >
                 {isExporting ? (
                   <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                 ) : (
                   <Download className="w-4 h-4" />
                 )}
-                {isExporting ? "Exporting..." : "Download PNG"}
+                <span>{isExporting ? "Exporting..." : "Download PNG"}</span>
               </button>
             </div>
           </div>
