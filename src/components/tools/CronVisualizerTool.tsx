@@ -119,7 +119,7 @@ export function CronVisualizerTool({
         </div>
       </div>
 
-      <div className="flex-1 p-4 md:p-8 max-w-4xl w-full mx-auto space-y-6 md:space-y-8">
+      <div className="flex-1 p-6 md:p-10 max-w-4xl w-full mx-auto space-y-8">
         {/* Presets */}
         <div>
           <span className="text-[11px] font-semibold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider block mb-3">

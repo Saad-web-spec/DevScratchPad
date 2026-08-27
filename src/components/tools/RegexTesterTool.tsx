@@ -326,13 +326,13 @@ export function RegexTesterTool({
             </div>
           ) : (
             /* Matches & Group List */
-            <div className="flex-1 flex flex-col min-w-0 overflow-hidden w-full max-w-full">
-              <div className="h-8 bg-[#f8fafc] dark:bg-zinc-900 border-b border-[#e2e8f0] dark:border-zinc-800 flex items-center justify-between px-3 shrink-0">
+            <div className="flex-1 flex flex-col min-w-0 overflow-hidden w-full max-w-full bg-[#09090B]">
+              <div className="h-8 bg-[#121215] border-b border-[#27272A] flex items-center justify-between px-4 shrink-0">
                 <div className="flex items-center gap-2">
-                  <span className="text-[11px] font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
+                  <span className="text-[11px] font-medium text-zinc-500 uppercase tracking-wider">
                     Match Details
                   </span>
-                  <span className="text-[10px] font-semibold bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-400 px-2 py-0.5 rounded-full">
+                  <span className="text-[10px] font-semibold bg-blue-950 text-blue-400 px-2 py-0.5 rounded-full border border-blue-800">
                     {matches.length} {matches.length === 1 ? "match" : "matches"}
                   </span>
                 </div>
@@ -343,8 +343,8 @@ export function RegexTesterTool({
                     className={cn(
                       "flex items-center gap-1 text-[11px] transition-colors",
                       copied === "all-matches"
-                        ? "text-emerald-600 dark:text-emerald-400"
-                        : "text-zinc-400 dark:text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300"
+                        ? "text-emerald-400"
+                        : "text-zinc-500 hover:text-zinc-200"
                     )}
                   >
                     {copied === "all-matches" ? (
@@ -357,7 +357,7 @@ export function RegexTesterTool({
                 )}
               </div>
 
-              <div className="flex-1 overflow-y-auto p-3 md:p-4 space-y-4">
+              <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-5">
                 {matches.length === 0 ? (
                   <div className="flex flex-col items-center justify-center h-full text-zinc-400 dark:text-zinc-500 py-12">
                     <RegexIcon className="w-8 h-8 text-zinc-300 dark:text-zinc-600 mb-2" />
@@ -371,24 +371,24 @@ export function RegexTesterTool({
                   matches.map((m, idx) => (
                     <div
                       key={idx}
-                      className="border border-[#e2e8f0] dark:border-zinc-800 rounded-lg p-3 bg-[#f8fafc]/50 dark:bg-zinc-900/50 hover:bg-[#f8fafc] dark:hover:bg-zinc-900 transition-colors group"
+                      className="border border-[#27272A] rounded-lg p-4 bg-[#121215] hover:border-zinc-600 transition-colors"
                     >
-                      <div className="flex items-center justify-between mb-2">
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs font-bold text-blue-700 dark:text-blue-400 bg-blue-50 dark:bg-blue-950 px-2 py-0.5 rounded border border-blue-200 dark:border-blue-800">
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center gap-3">
+                          <span className="text-xs font-bold text-blue-400 bg-blue-950 px-2.5 py-1 rounded border border-blue-800">
                             Match #{idx + 1}
                           </span>
-                          <span className="text-[11px] text-zinc-400 dark:text-zinc-500">
+                          <span className="text-[11px] text-zinc-500">
                             idx: {m.index}..{m.index + m.length}
                           </span>
                         </div>
                         <button
                           onClick={() => handleCopy(m.match, `match-${idx}`)}
                           className={cn(
-                            "flex items-center gap-1 text-[11px] px-2 py-1 rounded bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 transition-colors",
+                            "flex items-center gap-1.5 text-[11px] px-2.5 py-1 rounded transition-colors",
                             copied === `match-${idx}`
-                              ? "text-emerald-600 dark:text-emerald-400 border-emerald-300 dark:border-emerald-700 bg-emerald-50 dark:bg-emerald-950/50"
-                              : "text-zinc-600 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white"
+                              ? "text-emerald-400"
+                              : "text-zinc-500 hover:text-zinc-200"
                           )}
                         >
                           {copied === `match-${idx}` ? (
@@ -400,14 +400,14 @@ export function RegexTesterTool({
                         </button>
                       </div>
 
-                      <div className="p-2 bg-white dark:bg-zinc-950 rounded border border-[#e2e8f0] dark:border-zinc-800 font-mono text-xs text-zinc-800 dark:text-zinc-200 break-all select-all mb-2">
+                      <div className="px-3 py-2.5 bg-[#09090B] rounded border border-[#27272A] font-mono text-sm text-zinc-200 break-all select-all mb-3">
                         {m.match}
                       </div>
 
                       {/* Captures / Groups */}
                       {m.captures && m.captures.length > 0 && (
-                        <div className="mt-2 space-y-1.5 pl-2 border-l-2 border-blue-200 dark:border-blue-800">
-                          <span className="text-[10px] uppercase font-semibold text-zinc-400 dark:text-zinc-500">
+                        <div className="mt-3 space-y-2 pl-3 border-l-2 border-blue-800">
+                          <span className="text-[10px] uppercase font-semibold text-zinc-500">
                             Capture Groups
                           </span>
                           {m.captures.map((cap, capIdx) => (
@@ -415,10 +415,10 @@ export function RegexTesterTool({
                               key={capIdx}
                               className="flex items-start gap-2 text-xs"
                             >
-                              <span className="font-mono text-zinc-400 dark:text-zinc-500 shrink-0 text-[11px]">
+                              <span className="font-mono text-zinc-500 shrink-0 text-[11px]">
                                 ${capIdx + 1}:
                               </span>
-                              <span className="font-mono text-zinc-700 dark:text-zinc-300 bg-white dark:bg-zinc-950 px-1.5 py-0.5 rounded border border-zinc-200 dark:border-zinc-800 break-all">
+                              <span className="font-mono text-zinc-300 bg-[#09090B] px-2 py-0.5 rounded border border-[#27272A] break-all">
                                 {cap !== undefined ? cap : "undefined"}
                               </span>
                             </div>
