@@ -50,7 +50,7 @@ export function TimestampConverterTool({ onValidationChange, onStatsChange, rest
   };
 
   const ResultCard = ({ title, value, id }: { title: string; value?: string | number; id: string }) => (
-    <div className="bg-[#f8fafc] dark:bg-zinc-900 border border-[#e2e8f0] dark:border-zinc-700 rounded-lg p-3.5 md:p-4 flex items-center justify-between group hover:border-zinc-200 dark:hover:border-zinc-600 transition-colors gap-2 min-w-0">
+    <div className="bg-[#f8fafc] dark:bg-[#121215] border border-[#e2e8f0] dark:border-[#27272A] rounded-lg p-3.5 md:p-4 flex items-center justify-between group hover:border-zinc-200 dark:hover:border-zinc-600 transition-colors gap-2 min-w-0">
       <div className="flex flex-col gap-0.5 md:gap-1 min-w-0">
         <span className="text-[10px] md:text-xs font-medium text-zinc-400 dark:text-zinc-500 uppercase tracking-wider">{title}</span>
         <span className="text-xs md:text-sm font-mono text-zinc-800 dark:text-zinc-200 break-all">{value !== undefined ? value : "-"}</span>
@@ -78,30 +78,28 @@ export function TimestampConverterTool({ onValidationChange, onStatsChange, rest
         </div>
       </div>
 
-      <div className="p-4 md:p-6 max-w-4xl mx-auto w-full flex flex-col gap-6 md:gap-8">
+      <div className="p-4 md:p-8 max-w-4xl mx-auto w-full flex flex-col gap-6 md:gap-8">
         
         {/* Input Section */}
-        <div className="bg-white dark:bg-zinc-900 border border-[#e2e8f0] dark:border-zinc-700 rounded-xl p-1 shadow-2xs">
-          <div className="flex items-center bg-[#f8fafc] dark:bg-zinc-950 rounded-lg p-2 px-3 md:px-4 gap-2 md:gap-4">
-            <Clock className="w-5 h-5 text-blue-600 dark:text-blue-400 shrink-0" />
-            <input 
-              type="text" 
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              placeholder="Enter epoch (1770000000) or date string (2025-01-01)"
-              className="flex-1 min-w-0 bg-transparent text-zinc-800 dark:text-zinc-100 font-mono text-sm md:text-lg focus:outline-none placeholder:text-zinc-400 dark:placeholder:text-zinc-600"
-            />
-            <button 
-              onClick={() => setInput(Math.floor(Date.now() / 1000).toString())}
-              className="px-2.5 md:px-3 py-1.5 bg-blue-50 dark:bg-blue-950 hover:bg-blue-100 dark:hover:bg-blue-900 text-blue-600 dark:text-blue-400 rounded-md text-xs font-medium transition-colors shrink-0"
-            >
-              Now
-            </button>
-          </div>
+        <div className="flex items-center bg-[#f8fafc] dark:bg-[#121215] border border-[#E2E8F0] dark:border-[#27272A] rounded-lg p-2 px-3 md:px-4 gap-2 md:gap-4">
+          <Clock className="w-5 h-5 text-blue-600 dark:text-blue-400 shrink-0" />
+          <input 
+            type="text" 
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            placeholder="Enter epoch (1770000000) or date string (2025-01-01)"
+            className="flex-1 min-w-0 bg-transparent text-zinc-800 dark:text-zinc-100 font-mono text-sm md:text-lg focus:outline-none placeholder:text-zinc-400 dark:placeholder:text-zinc-600"
+          />
+          <button 
+            onClick={() => setInput(Math.floor(Date.now() / 1000).toString())}
+            className="px-2.5 md:px-3 py-1.5 bg-blue-50 dark:bg-blue-950 hover:bg-blue-100 dark:hover:bg-blue-900 text-blue-600 dark:text-blue-400 rounded-md text-xs font-medium transition-colors shrink-0"
+          >
+            Now
+          </button>
         </div>
 
         {/* Results Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
           <ResultCard title="Relative Time" value={result.relativeString} id="relative" />
           <ResultCard title="Local Time" value={result.localString} id="local" />
           <ResultCard title="UTC Time" value={result.utcString} id="utc" />

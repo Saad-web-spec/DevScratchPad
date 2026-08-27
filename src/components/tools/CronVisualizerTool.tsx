@@ -119,22 +119,22 @@ export function CronVisualizerTool({
         </div>
       </div>
 
-      <div className="flex-1 p-4 md:p-6 max-w-4xl w-full mx-auto space-y-4 md:space-y-6">
+      <div className="flex-1 p-4 md:p-8 max-w-4xl w-full mx-auto space-y-6 md:space-y-8">
         {/* Presets */}
         <div>
-          <span className="text-[11px] font-semibold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider block mb-2">
+          <span className="text-[11px] font-semibold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider block mb-3">
             Common Schedules
           </span>
-          <div className="flex flex-wrap gap-1.5 md:gap-2">
+          <div className="flex flex-wrap gap-2 mb-6">
             {PRESETS.map((preset) => (
               <button
                 key={preset.cron}
                 onClick={() => handleSelectPreset(preset.cron)}
                 className={cn(
-                  "px-2.5 md:px-3 py-1 md:py-1.5 rounded-full text-xs font-medium transition-colors border",
+                  "px-3 py-1.5 rounded-full text-xs font-medium transition-colors border",
                   input === preset.cron
                     ? "bg-[#2563EB] dark:bg-blue-600 text-white border-[#2563EB] dark:border-blue-600 shadow-2xs"
-                    : "bg-[#F1F5F9] dark:bg-zinc-800 text-[#0F172A] dark:text-zinc-200 hover:bg-zinc-200 dark:hover:bg-zinc-700 border-transparent dark:border-zinc-700"
+                    : "bg-[#F1F5F9] dark:bg-[#18181B] text-[#0F172A] dark:text-zinc-200 hover:bg-zinc-200 dark:hover:bg-zinc-700 border-transparent dark:border-zinc-700"
                 )}
               >
                 {preset.label}
@@ -144,8 +144,8 @@ export function CronVisualizerTool({
         </div>
 
         {/* Cron Input Field */}
-        <div className="bg-white dark:bg-zinc-900 border border-[#E2E8F0] dark:border-zinc-800 rounded-xl p-3.5 md:p-5 shadow-2xs">
-          <div className="flex items-center justify-between mb-2 md:mb-3">
+        <div>
+          <div className="flex items-center justify-between mb-3">
             <label htmlFor="cron-expression-input" className="text-xs font-semibold text-zinc-700 dark:text-zinc-300 uppercase tracking-wider">
               Cron Expression
             </label>
@@ -159,25 +159,25 @@ export function CronVisualizerTool({
             </button>
           </div>
 
-          <div className="relative mb-4 md:mb-5">
+          <div className="relative mb-6">
             <input
               id="cron-expression-input"
               type="text"
               value={input}
               onChange={(e) => setInput(e.target.value)}
               placeholder="e.g. */15 * * * * or 0 9 * * 1-5"
-              className="w-full bg-[#F8FAFC] dark:bg-zinc-950 border border-[#E2E8F0] dark:border-zinc-700 text-zinc-900 dark:text-zinc-100 font-mono text-base md:text-xl tracking-widest px-3 md:px-4 py-2.5 md:py-3 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-900 shadow-inner"
+              className="w-full bg-[#F8FAFC] dark:bg-[#121215] border border-[#E2E8F0] dark:border-[#27272A] text-zinc-900 dark:text-zinc-100 font-mono text-base md:text-xl tracking-widest px-3 md:px-4 py-2.5 md:py-3 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-900"
             />
           </div>
 
           {/* Syntax breakdown indicators */}
-          <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 md:gap-3">
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mt-4">
             {CRON_FIELDS.map((field, idx) => {
               const val = cronParts[idx] || "-";
               return (
-                <div key={field.name} className="flex flex-col items-center text-center p-2 md:p-3 rounded-lg bg-white dark:bg-zinc-950 border border-[#E2E8F0] dark:border-zinc-800 shadow-2xs">
-                  <span className="text-[10px] text-zinc-500 dark:text-zinc-400 font-semibold uppercase tracking-wider mb-0.5 md:mb-1">{field.name}</span>
-                  <span className="font-mono text-base md:text-lg font-bold text-[#2563EB] dark:text-blue-400 mb-0.5 md:mb-1">{val}</span>
+                <div key={field.name} className="flex flex-col items-center text-center p-3 md:p-4 rounded-lg bg-white dark:bg-[#121215] border border-[#E2E8F0] dark:border-[#27272A]">
+                  <span className="text-[10px] text-zinc-500 dark:text-zinc-400 font-semibold uppercase tracking-wider mb-1">{field.name}</span>
+                  <span className="font-mono text-base md:text-lg font-bold text-[#2563EB] dark:text-blue-400 mb-1">{val}</span>
                   <span className="text-[10px] text-[#94A3B8] dark:text-zinc-500 font-medium truncate max-w-full">{field.range}</span>
                 </div>
               );
@@ -187,13 +187,13 @@ export function CronVisualizerTool({
 
         {/* Result Explanation Card */}
         {output && (
-          <div className="bg-white dark:bg-zinc-900 border border-[#E2E8F0] dark:border-zinc-800 rounded-xl p-4 md:p-6 relative shadow-2xs flex flex-col md:flex-row md:items-start justify-between gap-4">
+          <div className="w-full p-6 bg-white dark:bg-[#121215] border border-[#E2E8F0] dark:border-[#27272A] rounded-xl relative flex flex-col md:flex-row md:items-start justify-between gap-4">
             <div className="flex items-start gap-3 md:gap-4">
               <div className="shrink-0 mt-0.5">
                 <Clock className="w-6 h-6 md:w-7 md:h-7 text-[#0F172A] dark:text-zinc-200" strokeWidth={1.5} />
               </div>
               <div className="min-w-0">
-                <h3 className="text-base md:text-[18px] font-bold text-zinc-900 dark:text-zinc-100 leading-snug break-words">
+                <h3 className="text-lg md:text-xl font-semibold text-zinc-900 dark:text-zinc-100 leading-snug break-words">
                   {output}
                 </h3>
                 <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-2 font-mono break-all">

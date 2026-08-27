@@ -357,7 +357,7 @@ export function RegexTesterTool({
                 )}
               </div>
 
-              <div className="flex-1 overflow-y-auto p-3 md:p-4 space-y-3">
+              <div className="flex-1 overflow-y-auto p-3 md:p-4 space-y-4">
                 {matches.length === 0 ? (
                   <div className="flex flex-col items-center justify-center h-full text-zinc-400 dark:text-zinc-500 py-12">
                     <RegexIcon className="w-8 h-8 text-zinc-300 dark:text-zinc-600 mb-2" />
