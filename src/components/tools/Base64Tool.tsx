@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { MonacoEditor } from "@/components/MonacoEditor";
 import { encodeBase64, decodeBase64, validateBase64 } from "@/lib/tools/base64";
 import { ShareButton } from "@/components/ShareButton";
+import { EmbedButton } from "@/components/EmbedButton";
 import { Play, Copy, Trash2, ArrowLeftRight, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { addSnapshot } from "@/lib/storage";
@@ -122,6 +123,7 @@ export function Base64Tool({
         </div>
 
         <div className="flex items-center gap-1.5 md:gap-3 flex-wrap">
+          <EmbedButton toolSlug="base64-decoder" data={input} />
           <ShareButton toolSlug="base64-decoder" data={input} />
 
           {/* Mode Switcher */}

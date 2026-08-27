@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { MonacoEditor } from "@/components/MonacoEditor";
 import { renderMarkdown } from "@/lib/tools/markdown";
 import { ShareButton } from "@/components/ShareButton";
+import { EmbedButton } from "@/components/EmbedButton";
 import { ExportImageButton } from "@/components/ExportImageButton";
 import { Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -84,6 +85,7 @@ export function MarkdownPreviewerTool({ onValidationChange, onStatsChange, onLog
         
         <div className="flex items-center gap-1.5 md:gap-2 flex-wrap">
           <ExportImageButton code={input} language="markdown" />
+          <EmbedButton toolSlug="markdown-previewer" data={input} />
           <ShareButton toolSlug="markdown-previewer" data={input} />
         </div>
       </div>

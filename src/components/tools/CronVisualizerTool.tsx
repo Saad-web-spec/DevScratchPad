@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { explainCron, validateCron } from "@/lib/tools/cron";
 import { ShareButton } from "@/components/ShareButton";
+import { EmbedButton } from "@/components/EmbedButton";
 import { ExportImageButton } from "@/components/ExportImageButton";
 import { Clock, Copy, Trash2, Check, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -122,6 +123,7 @@ export function CronVisualizerTool({
         <div className="flex items-center gap-2 flex-wrap">
           <ValidationBadge isValid={isValid} />
           <ExportImageButton code={output || input} language="plaintext" />
+          <EmbedButton toolSlug="cron-visualizer" data={input} />
           <ShareButton toolSlug="cron-visualizer" data={input} />
         </div>
       </div>

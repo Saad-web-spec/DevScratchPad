@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { MonacoEditor } from "@/components/MonacoEditor";
 import { yamlToJson, jsonToYaml, validateYaml, validateJsonForYaml } from "@/lib/tools/yaml";
 import { ShareButton } from "@/components/ShareButton";
+import { EmbedButton } from "@/components/EmbedButton";
 import { ExportImageButton } from "@/components/ExportImageButton";
 import { Play, Copy, Trash2, ArrowLeftRight, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -150,6 +151,7 @@ export function YamlConverterTool({
 
         <div className="flex items-center gap-1.5 md:gap-3 flex-wrap">
           <ExportImageButton code={output || input} language="yaml" />
+          <EmbedButton toolSlug="yaml-json" data={input} />
           <ShareButton toolSlug="yaml-json" data={input} />
           {/* Mode Switcher */}
           <div className="flex items-center bg-zinc-200/80 dark:bg-zinc-800 p-0.5 rounded-lg">

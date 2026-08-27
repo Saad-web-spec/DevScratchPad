@@ -7,6 +7,7 @@ import { Play, Copy, Trash2, Minimize2, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { addSnapshot } from "@/lib/storage";
 import { ShareButton } from "@/components/ShareButton";
+import { EmbedButton } from "@/components/EmbedButton";
 import { ExportImageButton } from "@/components/ExportImageButton";
 import { StatusBar } from "@/components/layout/StatusBar";
 
@@ -104,6 +105,7 @@ export function JsonFormatterTool({ onValidationChange, onStatsChange, onLogHist
         
         <div className="flex items-center gap-1.5 md:gap-2 flex-wrap">
           <ExportImageButton code={output || input} language="json" />
+          <EmbedButton toolSlug="json-formatter" data={input} />
           <ShareButton toolSlug="json-formatter" data={input} />
           <select 
             value={indent}

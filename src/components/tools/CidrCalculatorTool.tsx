@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { parseCidr, CidrInfo } from "@/lib/tools/cidr";
 import { ShareButton } from "@/components/ShareButton";
+import { EmbedButton } from "@/components/EmbedButton";
 import { ExportImageButton } from "@/components/ExportImageButton";
 import { cn } from "@/lib/utils";
 import { ValidationBadge } from "@/components/layout/StatusBar";
@@ -75,6 +76,7 @@ export function CidrCalculatorTool({ onValidationChange, onStatsChange, onLogHis
         <div className="flex items-center gap-1.5 md:gap-2 flex-wrap">
           <ValidationBadge isValid={isValid} />
           <ExportImageButton code={info ? JSON.stringify(info, null, 2) : input} language="json" />
+          <EmbedButton toolSlug="cidr-calculator" data={input} />
           <ShareButton toolSlug="cidr-calculator" data={input} />
         </div>
       </div>

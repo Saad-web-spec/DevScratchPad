@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { MonacoEditor } from "@/components/MonacoEditor";
 import { formatSql, validateSql, type SqlDialect } from "@/lib/tools/sql";
 import { ShareButton } from "@/components/ShareButton";
+import { EmbedButton } from "@/components/EmbedButton";
 import { ExportImageButton } from "@/components/ExportImageButton";
 import { Play, Copy, Trash2, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -126,6 +127,7 @@ export function SqlFormatterTool({
 
         <div className="flex items-center gap-1.5 md:gap-2 flex-wrap">
           <ExportImageButton code={output || input} language="sql" />
+          <EmbedButton toolSlug="sql-formatter" data={input} />
           <ShareButton toolSlug="sql-formatter" data={input} />
 
           {/* Dialect Selector */}

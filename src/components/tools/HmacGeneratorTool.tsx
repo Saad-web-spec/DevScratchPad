@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { generateHmac } from "@/lib/tools/hmac";
 import { ShareButton } from "@/components/ShareButton";
+import { EmbedButton } from "@/components/EmbedButton";
 import { ExportImageButton } from "@/components/ExportImageButton";
 import { Copy, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -98,6 +99,7 @@ export function HmacGeneratorTool({ onValidationChange, onStatsChange, onLogHist
         <div className="flex items-center gap-1.5 md:gap-2 flex-wrap">
           <ValidationBadge isValid={isValid} />
           <ExportImageButton code={hexOutput || payload} language="plaintext" />
+          <EmbedButton toolSlug="hmac-generator" data={{ secret, payload }} />
           <ShareButton toolSlug="hmac-generator" data={{ secret, payload }} />
         </div>
       </div>

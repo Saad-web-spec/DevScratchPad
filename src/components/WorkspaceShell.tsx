@@ -102,9 +102,16 @@ export function WorkspaceShell({ initialToolSlug, toolMeta }: WorkspaceShellProp
   const [errorLine, setErrorLine] = useState<number | undefined>();
   const [inputLength, setInputLength] = useState(0);
   const [execMs, setExecMs] = useState(0);
+  const [isEmbed, setIsEmbed] = useState(false);
 
   // Global Ctrl/Cmd + K shortcut
   useEffect(() => {
+    // Check if we are in embed mode
+    const searchParams = new URLSearchParams(window.location.search);
+    if (searchParams.get("embed") === "true") {
+      setIsEmbed(true);
+    }
+
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key === "k") {
         e.preventDefault();
@@ -214,22 +221,26 @@ export function WorkspaceShell({ initialToolSlug, toolMeta }: WorkspaceShellProp
 
   return (
     <div className="flex flex-col h-screen w-full bg-white dark:bg-zinc-950 overflow-hidden relative">
-      <TopBar
-        onOpenCommandPalette={() => setCommandPaletteOpen(true)}
-        onOpenMobileMenu={() => setIsMobileDrawerOpen(true)}
-      />
+      {!isEmbed && (
+        <TopBar
+          onOpenCommandPalette={() => setCommandPaletteOpen(true)}
+          onOpenMobileMenu={() => setIsMobileDrawerOpen(true)}
+        />
+      )}
 
       <div className="flex flex-1 overflow-hidden relative">
         {/* Desktop Left Sidebar: hidden on mobile (< 768px), visible on md+ */}
-        <Sidebar
-          activeToolId={activeTool}
-          onSelectTool={handleToolChange}
-          onRestoreHistory={handleRestoreHistory}
-          className="hidden md:flex"
-        />
+        {!isEmbed && (
+          <Sidebar
+            activeToolId={activeTool}
+            onSelectTool={handleToolChange}
+            onRestoreHistory={handleRestoreHistory}
+            className="hidden md:flex"
+          />
+        )}
 
         {/* Mobile Slide-over Drawer / Sheet Component */}
-        {isMobileDrawerOpen && (
+        {isMobileDrawerOpen && !isEmbed && (
           <div className="fixed inset-0 z-50 md:hidden flex">
             {/* Backdrop */}
             <div
@@ -441,16 +452,29 @@ export function WorkspaceShell({ initialToolSlug, toolMeta }: WorkspaceShellProp
               )}
             </div>
 
-            {currentMeta && <SeoContent tool={currentMeta} />}
+            {!isEmbed && currentMeta && <SeoContent tool={currentMeta} />}
+            {isEmbed && (
+              <a
+                href={`https://tools.saadengineer.works/${currentSlug || ''}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="absolute bottom-10 right-4 bg-zinc-900/90 hover:bg-black text-white px-3 py-1.5 rounded-full text-xs font-medium shadow-lg backdrop-blur-sm border border-white/10 transition-transform hover:scale-105 z-50 flex items-center gap-1.5"
+              >
+                <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                Powered by DevScratchpad
+              </a>
+            )}
           </div>
         </main>
       </div>
 
-      <CommandPalette
-        isOpen={isCommandPaletteOpen}
-        onClose={() => setCommandPaletteOpen(false)}
-        onSelectTool={handleToolChange}
-      />
+      {!isEmbed && (
+        <CommandPalette
+          isOpen={isCommandPaletteOpen}
+          onClose={() => setCommandPaletteOpen(false)}
+          onSelectTool={handleToolChange}
+        />
+      )}
     </div>
   );
 }

@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { parseTimestamp, TimestampResult } from "@/lib/tools/timestamp";
 import { ShareButton } from "@/components/ShareButton";
+import { EmbedButton } from "@/components/EmbedButton";
 import { ExportImageButton } from "@/components/ExportImageButton";
 import { Clock, Copy, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -79,6 +80,7 @@ export function TimestampConverterTool({ onValidationChange, onStatsChange, rest
         <div className="flex items-center gap-1.5 md:gap-2 flex-wrap">
           <ValidationBadge isValid={result.valid} />
           <ExportImageButton code={input} language="plaintext" />
+          <EmbedButton toolSlug="unix-timestamp" data={input} />
           <ShareButton toolSlug="unix-timestamp" data={input} />
         </div>
       </div>

@@ -5,6 +5,7 @@ import { MonacoDiffEditor } from "@/components/MonacoEditor";
 import { Trash2 } from "lucide-react";
 import { addSnapshot } from "@/lib/storage";
 import { ShareButton } from "@/components/ShareButton";
+import { EmbedButton } from "@/components/EmbedButton";
 import { StatusBar } from "@/components/layout/StatusBar";
 
 interface DiffCheckerToolProps {
@@ -59,6 +60,7 @@ export function DiffCheckerTool({ restoredInput }: DiffCheckerToolProps) {
         </div>
         
         <div className="flex items-center gap-1.5 md:gap-2 flex-wrap">
+          <EmbedButton toolSlug="diff-checker" data={{ original, modified }} />
           <ShareButton toolSlug="diff-checker" data={{ original, modified }} />
           <button 
             onClick={() => { setOriginal(""); setModified(""); }}
