@@ -6,7 +6,7 @@ import { generateAllHashes, type HashResults } from "@/lib/tools/hash";
 import { ShareButton } from "@/components/ShareButton";
 import { EmbedButton } from "@/components/EmbedButton";
 import { ExportImageButton } from "@/components/ExportImageButton";
-import { Copy, Trash2, Check } from "lucide-react";
+import { Hash,  Copy, Trash2, Check  } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { addSnapshot } from "@/lib/storage";
 import { ValidationBadge } from "@/components/layout/StatusBar";
@@ -107,14 +107,14 @@ export function HashGeneratorTool({
       name: "SHA-1",
       bits: "160-bit",
       value: hashes.sha1,
-      color: "text-blue-600 bg-blue-50 border-blue-200 dark:bg-blue-950/50 dark:text-blue-400 dark:border-blue-800",
+      color: "text-zinc-100 bg-blue-50 border-blue-200 dark:bg-blue-950/50 dark:text-zinc-100 dark:border-blue-800",
     },
     {
       id: "sha256",
       name: "SHA-256",
       bits: "256-bit",
       value: hashes.sha256,
-      color: "text-emerald-600 bg-emerald-50 border-emerald-200 dark:bg-emerald-950/50 dark:text-emerald-400 dark:border-emerald-800",
+      color: "text-zinc-900 dark:text-zinc-100 bg-emerald-50 border-emerald-200 dark:bg-emerald-950/50 dark:text-zinc-900 dark:text-zinc-100 dark:border-emerald-800",
     },
     {
       id: "sha512",
@@ -128,10 +128,10 @@ export function HashGeneratorTool({
   return (
     <div className="flex flex-col h-full bg-white dark:bg-zinc-950 overflow-y-auto w-full overflow-x-hidden">
       {/* Tool Header */}
-      <div className="min-h-14 border-b border-[#e2e8f0] dark:border-zinc-800 flex flex-wrap md:flex-nowrap items-center justify-between px-3 md:px-4 py-2 md:py-0 bg-[#f8fafc] dark:bg-zinc-900 shrink-0 gap-2">
-        <div>
+      <div className="min-h-14 border-b border-[#e2e8f0] dark:border-zinc-800 flex min-w-0 flex-wrap md:flex-nowrap items-center justify-between px-3 md:px-4 py-2 md:py-0 bg-[#f8fafc] dark:bg-zinc-900 shrink-0 gap-2">
+        <div className="flex items-center gap-2">
+          <Hash className="w-4 h-4 text-zinc-100" />
           <h2 className="text-sm font-semibold text-zinc-800 dark:text-zinc-200">Hash Generator</h2>
-          <p className="text-[11px] text-zinc-400 dark:text-zinc-500 hidden sm:block">Generate cryptographic hashes (MD5, SHA-1, SHA-256, SHA-512)</p>
         </div>
 
         <div className="flex items-center gap-1.5 md:gap-2 flex-wrap">
@@ -144,7 +144,7 @@ export function HashGeneratorTool({
             className={cn(
               "h-9 px-3 rounded-md text-xs font-medium transition-colors border",
               isUppercase
-                ? "bg-blue-500/10 border-blue-500/30 text-blue-600 dark:text-blue-400 font-semibold"
+                ? "bg-blue-500/10 border-blue-500/30 text-zinc-100 dark:text-zinc-100 font-semibold"
                 : "bg-[#18181B] hover:bg-[#27272A] border-[#27272A] text-zinc-300"
             )}
           >
@@ -155,11 +155,11 @@ export function HashGeneratorTool({
             onClick={handleCopyAll}
             className={cn(
               "h-9 px-3 bg-[#18181B] hover:bg-[#27272A] border border-[#27272A] text-zinc-300 text-xs font-medium rounded-md transition-colors flex items-center gap-1.5",
-              copiedKey === "all" && "text-emerald-400 border-emerald-500/40"
+              copiedKey === "all" && "text-zinc-900 dark:text-zinc-100 border-emerald-500/40"
             )}
           >
             {copiedKey === "all" ? (
-              <Check className="w-3.5 h-3.5 text-emerald-400" />
+              <Check className="w-3.5 h-3.5 text-zinc-900 dark:text-zinc-100" />
             ) : (
               <Copy className="w-3.5 h-3.5 text-zinc-400" />
             )}
@@ -251,11 +251,11 @@ export function HashGeneratorTool({
                     disabled={!card.value}
                     className={cn(
                       "h-9 px-3 bg-[#18181B] hover:bg-[#27272A] border border-[#27272A] text-zinc-300 text-xs font-medium rounded-md transition-colors flex items-center gap-1.5 shrink-0",
-                      copiedKey === card.id && "text-emerald-400 border-emerald-500/40"
+                      copiedKey === card.id && "text-zinc-900 dark:text-zinc-100 border-emerald-500/40"
                     )}
                   >
                     {copiedKey === card.id ? (
-                      <Check className="w-3.5 h-3.5 text-emerald-400" />
+                      <Check className="w-3.5 h-3.5 text-zinc-900 dark:text-zinc-100" />
                     ) : (
                       <Copy className="w-3.5 h-3.5 text-zinc-400" />
                     )}

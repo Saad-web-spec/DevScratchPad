@@ -136,10 +136,10 @@ export function MinifierTool({
   return (
     <div className="flex flex-col h-full bg-white dark:bg-zinc-950 w-full overflow-x-hidden">
       {/* Tool Header */}
-      <div className="min-h-14 border-b border-[#e2e8f0] dark:border-zinc-700 flex flex-wrap md:flex-nowrap items-center justify-between px-3 md:px-4 py-2 md:py-0 bg-[#f8fafc] dark:bg-zinc-900 shrink-0 gap-2">
-        <div>
+      <div className="min-h-14 border-b border-[#e2e8f0] dark:border-zinc-700 flex min-w-0 flex-wrap md:flex-nowrap items-center justify-between px-3 md:px-4 py-2 md:py-0 bg-[#f8fafc] dark:bg-zinc-900 shrink-0 gap-2">
+        <div className="flex items-center gap-2">
+          <Minimize2 className="w-4 h-4 text-zinc-100" />
           <h2 className="text-sm font-semibold text-zinc-800 dark:text-zinc-200">CSS & SVG Minifier</h2>
-          <p className="text-[11px] text-zinc-400 dark:text-zinc-500 hidden sm:block">Fast client-side minification removing whitespace, comments, and newlines</p>
         </div>
 
         <div className="flex items-center gap-1.5 md:gap-3 flex-wrap">
@@ -165,7 +165,7 @@ export function MinifierTool({
           {/* Compression savings badge */}
           {output && (
             <span className="hidden sm:inline-flex items-center gap-1 text-[11px] font-medium text-emerald-300 bg-emerald-950/60 border border-emerald-800/60 px-2 py-1 rounded">
-              <Zap className="w-3 h-3 text-emerald-400" />
+              <Zap className="w-3 h-3 text-zinc-900 dark:text-zinc-100" />
               Saved {savedBytes > 0 ? savedBytes : 0} B ({savingsPercent}%)
             </span>
           )}
@@ -173,7 +173,7 @@ export function MinifierTool({
           {/* Action Button */}
           <button
             onClick={handleMinify}
-            className="h-9 px-3 bg-blue-600 dark:bg-blue-600 hover:bg-blue-700 dark:hover:bg-blue-500 text-white rounded-md text-xs font-medium transition-colors flex items-center gap-1.5 shadow-2xs"
+            className="h-9 px-3 bg-zinc-900 dark:bg-zinc-100 hover:bg-zinc-800 dark:hover:bg-zinc-200 text-white dark:text-zinc-900 rounded-md text-xs font-medium transition-colors flex items-center gap-1.5 shadow-2xs"
           >
             <Minimize2 className="w-3.5 h-3.5" />
             <span>Minify {mode.toUpperCase()}</span>
@@ -252,10 +252,10 @@ export function MinifierTool({
               onClick={handleCopy}
               className={cn(
                 "flex items-center gap-1 text-[11px] transition-colors",
-                copied ? "text-emerald-400 font-medium" : "text-zinc-400 dark:text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300"
+                copied ? "text-zinc-900 dark:text-zinc-100 font-medium" : "text-zinc-400 dark:text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300"
               )}
             >
-              {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+              {copied ? <Check className="w-3.5 h-3.5 text-zinc-900 dark:text-zinc-100" /> : <Copy className="w-3.5 h-3.5" />}
               <span>{copied ? "Copied!" : "Copy"}</span>
             </button>
           </div>

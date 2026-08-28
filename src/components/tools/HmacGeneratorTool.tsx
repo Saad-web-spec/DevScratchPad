@@ -20,7 +20,7 @@ import {
   ArrowRightLeft,
   CheckCircle2,
   XCircle,
-} from "lucide-react";
+  Shield } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ValidationBadge } from "@/components/layout/StatusBar";
 
@@ -180,15 +180,10 @@ export function HmacGeneratorTool({
   return (
     <div className="flex flex-col h-full bg-white dark:bg-zinc-950 overflow-y-auto w-full overflow-x-hidden">
       {/* Tool Header */}
-      <div className="min-h-14 border-b border-[#e2e8f0] dark:border-zinc-800 flex flex-wrap md:flex-nowrap items-center justify-between px-3 md:px-6 py-2.5 md:py-0 bg-[#f8fafc] dark:bg-[#101013] shrink-0 sticky top-0 z-20 gap-2">
-        <div className="flex items-center gap-2.5">
-          <ShieldCheck className="w-6 h-6 text-emerald-500" />
-          <div className="flex items-center gap-2">
-            <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">HMAC Generator</h2>
-            <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-zinc-200/50 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400 border border-zinc-200 dark:border-zinc-700/50">
-              100% Client-Side
-            </span>
-          </div>
+      <div className="min-h-14 border-b border-[#e2e8f0] dark:border-zinc-800 flex min-w-0 flex-wrap md:flex-nowrap items-center justify-between px-3 md:px-6 py-2.5 md:py-0 bg-[#f8fafc] dark:bg-[#101013] shrink-0 sticky top-0 z-20 gap-2">
+        <div className="flex items-center gap-2">
+          <Shield className="w-4 h-4 text-zinc-100" />
+          <h2 className="text-sm font-semibold text-zinc-800 dark:text-zinc-200">HMAC Generator</h2>
         </div>
 
         <div className="flex items-center gap-1.5 md:gap-2 overflow-x-auto hide-scrollbar pb-0.5 md:pb-0">
@@ -216,8 +211,8 @@ export function HmacGeneratorTool({
               "h-9 px-4 text-xs font-semibold rounded-lg shadow-sm transition-all flex items-center gap-1.5 shrink-0",
               hexOutput
                 ? copiedType === "primary"
-                  ? "bg-emerald-600 text-white shadow-emerald-600/20"
-                  : "bg-emerald-600 hover:bg-emerald-500 text-white shadow-emerald-600/20 active:scale-95"
+                  ? "bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 shadow-zinc-900/20"
+                  : "bg-zinc-900 hover:bg-zinc-800 dark:bg-zinc-100 dark:hover:bg-zinc-200 text-white dark:text-zinc-900 shadow-zinc-900/20 active:scale-95"
                 : "bg-zinc-200 dark:bg-zinc-800 text-zinc-400 dark:text-zinc-500 cursor-not-allowed opacity-60"
             )}
           >
@@ -248,7 +243,7 @@ export function HmacGeneratorTool({
                 <select
                   value={algo}
                   onChange={(e) => setAlgo(e.target.value as HmacAlgorithm)}
-                  className="bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-sm font-medium rounded-lg p-2.5 w-full focus:outline-none focus:border-emerald-500/80 focus:ring-1 focus:ring-emerald-500/20 text-zinc-900 dark:text-zinc-100"
+                  className="bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-sm font-medium rounded-lg p-2.5 w-full focus:outline-none focus:border-zinc-900 dark:focus:border-zinc-100 focus:ring-1 focus:ring-zinc-900 dark:focus:ring-zinc-100 text-zinc-900 dark:text-zinc-100"
                 >
                   {ALGORITHM_OPTIONS.map((opt) => (
                     <option key={opt.value} value={opt.value}>
@@ -274,7 +269,7 @@ export function HmacGeneratorTool({
                     onChange={(e) => setSecret(e.target.value)}
                     placeholder="Enter secret key..."
                     className={cn(
-                      "w-full font-mono text-sm tracking-wide bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg p-2.5 pr-20 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-emerald-500/80 focus:ring-1 focus:ring-emerald-500/20",
+                      "w-full font-mono text-sm tracking-wide bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg p-2.5 pr-20 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-zinc-900 dark:focus:border-zinc-100 focus:ring-1 focus:ring-zinc-900 dark:focus:ring-zinc-100",
                       hasMissingSecret && "border-amber-500/80 dark:border-amber-500/70"
                     )}
                   />
@@ -283,7 +278,7 @@ export function HmacGeneratorTool({
                     <button
                       type="button"
                       onClick={handleGenerateRandomKey}
-                      className="p-1.5 text-zinc-400 hover:text-emerald-500 transition-colors rounded-md hover:bg-emerald-50 dark:hover:bg-emerald-500/10"
+                      className="p-1.5 text-zinc-400 hover:text-zinc-900 dark:text-zinc-100 transition-colors rounded-md hover:bg-emerald-50 dark:hover:bg-zinc-100 dark:bg-zinc-800"
                       title="Random Key"
                     >
                       <Sparkles className="w-3.5 h-3.5" />
@@ -313,7 +308,7 @@ export function HmacGeneratorTool({
                   <span>Payload Text</span>
                 </label>
                 
-                <div className="relative border border-zinc-200 dark:border-zinc-800 rounded-lg bg-zinc-50 dark:bg-zinc-900 flex flex-col focus-within:border-emerald-500/80 focus-within:ring-1 focus-within:ring-emerald-500/20 transition-all">
+                <div className="relative border border-zinc-200 dark:border-zinc-800 rounded-lg bg-zinc-50 dark:bg-zinc-900 flex flex-col focus-within:border-zinc-900 dark:focus-within:border-zinc-100 focus-within:ring-1 focus-within:ring-zinc-900 dark:focus-within:ring-zinc-100 transition-all">
                   <textarea
                     value={payload}
                     onChange={(e) => setPayload(e.target.value)}
@@ -341,7 +336,7 @@ export function HmacGeneratorTool({
               {/* Header & Switcher */}
               <div className="flex items-center justify-between">
                 <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
-                  <ShieldCheck className="w-4 h-4 text-emerald-500" />
+                  <ShieldCheck className="w-4 h-4 text-zinc-900 dark:text-zinc-100" />
                   Computed Digest
                 </h3>
                 
@@ -387,7 +382,7 @@ export function HmacGeneratorTool({
                 {(outputFormat === "hex" || outputFormat === "both") && (
                   <div className="space-y-2">
                     <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider">Hex Output</span>
-                    <div className="bg-zinc-900 dark:bg-zinc-950/80 border border-zinc-800 rounded-lg p-4 font-mono text-sm tracking-wide text-emerald-400 dark:text-emerald-300 break-all select-all shadow-inner relative group min-h-[64px] flex items-center">
+                    <div className="bg-zinc-900 dark:bg-zinc-950 border border-zinc-800 text-zinc-100 rounded-lg p-4 font-mono text-sm tracking-wide text-zinc-900 dark:text-zinc-100 dark:text-emerald-300 break-all select-all shadow-inner relative group min-h-[64px] flex items-center">
                       {hexOutput || <span className="text-zinc-600">Waiting for input...</span>}
                       
                       {hexOutput && (
@@ -396,7 +391,7 @@ export function HmacGeneratorTool({
                           className="absolute top-2 right-2 p-1.5 rounded-md bg-zinc-800/80 hover:bg-zinc-700 text-zinc-400 hover:text-white opacity-0 group-hover:opacity-100 transition-all backdrop-blur border border-zinc-700/50"
                           title="Copy Hex"
                         >
-                          {copiedType === "hex" ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                          {copiedType === "hex" ? <Check className="w-3.5 h-3.5 text-zinc-900 dark:text-zinc-100" /> : <Copy className="w-3.5 h-3.5" />}
                         </button>
                       )}
                     </div>
@@ -406,7 +401,7 @@ export function HmacGeneratorTool({
                 {(outputFormat === "base64" || outputFormat === "both") && (
                   <div className="space-y-2">
                     <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider">Base64 Output</span>
-                    <div className="bg-zinc-900 dark:bg-zinc-950/80 border border-zinc-800 rounded-lg p-4 font-mono text-sm tracking-wide text-blue-400 dark:text-blue-300 break-all select-all shadow-inner relative group min-h-[64px] flex items-center">
+                    <div className="bg-zinc-900 dark:bg-zinc-950 border border-zinc-800 text-zinc-100 rounded-lg p-4 font-mono text-sm tracking-wide text-zinc-100 dark:text-blue-300 break-all select-all shadow-inner relative group min-h-[64px] flex items-center">
                       {base64Output || <span className="text-zinc-600">Waiting for input...</span>}
                       
                       {base64Output && (
@@ -415,7 +410,7 @@ export function HmacGeneratorTool({
                           className="absolute top-2 right-2 p-1.5 rounded-md bg-zinc-800/80 hover:bg-zinc-700 text-zinc-400 hover:text-white opacity-0 group-hover:opacity-100 transition-all backdrop-blur border border-zinc-700/50"
                           title="Copy Base64"
                         >
-                          {copiedType === "base64" ? <Check className="w-3.5 h-3.5 text-blue-400" /> : <Copy className="w-3.5 h-3.5" />}
+                          {copiedType === "base64" ? <Check className="w-3.5 h-3.5 text-zinc-100" /> : <Copy className="w-3.5 h-3.5" />}
                         </button>
                       )}
                     </div>
@@ -428,13 +423,13 @@ export function HmacGeneratorTool({
                 <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider">Integration Tip (Node.js)</span>
                 <div className="bg-[#09090B] border border-zinc-800 rounded-lg p-3 font-mono text-xs overflow-x-auto">
                   <span className="text-zinc-300">crypto.</span>
-                  <span className="text-blue-400">createHmac</span>
+                  <span className="text-zinc-100">createHmac</span>
                   <span className="text-zinc-300">(</span>
                   <span className="text-amber-300">&apos;{algo.toLowerCase()}&apos;</span>
                   <span className="text-zinc-300">, secret).</span>
-                  <span className="text-blue-400">update</span>
+                  <span className="text-zinc-100">update</span>
                   <span className="text-zinc-300">(payload).</span>
-                  <span className="text-blue-400">digest</span>
+                  <span className="text-zinc-100">digest</span>
                   <span className="text-zinc-300">(</span>
                   <span className="text-amber-300">&apos;hex&apos;</span>
                   <span className="text-zinc-300">)</span>
@@ -451,7 +446,7 @@ export function HmacGeneratorTool({
                 className="w-full flex items-center justify-between p-4 bg-zinc-50/50 dark:bg-zinc-900/30 hover:bg-zinc-50 dark:hover:bg-zinc-900/70 transition-colors"
               >
                 <span className="text-sm font-semibold text-zinc-800 dark:text-zinc-200 flex items-center gap-2">
-                  <ArrowRightLeft className="w-4 h-4 text-emerald-500" />
+                  <ArrowRightLeft className="w-4 h-4 text-zinc-900 dark:text-zinc-100" />
                   Verify Expected Signature
                 </span>
                 <span className="text-[10px] font-medium px-2 py-0.5 rounded bg-zinc-200/50 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 border border-zinc-200 dark:border-zinc-700/50">
@@ -470,7 +465,7 @@ export function HmacGeneratorTool({
                     value={compareSignature}
                     onChange={(e) => setCompareSignature(e.target.value)}
                     placeholder="e.g. t=1718...,v1=0045c... or sha256=..."
-                    className="w-full font-mono text-xs tracking-wide bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg p-2.5 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-emerald-500/80 focus:ring-1 focus:ring-emerald-500/20"
+                    className="w-full font-mono text-xs tracking-wide bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg p-2.5 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-zinc-900 dark:focus:border-zinc-100 focus:ring-1 focus:ring-zinc-900 dark:focus:ring-zinc-100"
                   />
 
                   {verificationResult && (
@@ -478,7 +473,7 @@ export function HmacGeneratorTool({
                       className={cn(
                         "p-3 rounded-lg text-xs font-semibold flex items-center gap-2 border",
                         verificationResult.match
-                          ? "bg-emerald-50 dark:bg-emerald-500/10 border-emerald-200 dark:border-emerald-500/30 text-emerald-700 dark:text-emerald-400"
+                          ? "bg-emerald-50 dark:bg-zinc-100 dark:bg-zinc-800 border-emerald-200 dark:border-zinc-200 dark:border-zinc-700 text-emerald-700 dark:text-zinc-900 dark:text-zinc-100"
                           : "bg-red-50 dark:bg-red-500/10 border-red-200 dark:border-red-500/30 text-red-700 dark:text-red-400"
                       )}
                     >

@@ -1,5 +1,7 @@
 "use client";
 
+import { CheckCircle2, ShieldCheck, XCircle } from "lucide-react";
+
 interface StatusBarProps {
   isValid: boolean;
   errorMessage?: string;
@@ -19,8 +21,8 @@ export function StatusBar({
       <div className="flex items-center gap-4 min-w-0 flex-1">
         {isValid ? (
           <div className="flex items-center gap-2">
-            <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)]" />
-            <span className="text-xs text-zinc-600 dark:text-zinc-400 font-medium">Valid</span>
+            <CheckCircle2 className="w-3.5 h-3.5 text-zinc-900 dark:text-zinc-100" />
+            <span className="text-xs text-zinc-600 dark:text-zinc-400 font-medium">Ready</span>
           </div>
         ) : (
           <div className="bg-red-500/10 text-red-600 dark:text-red-400 border border-red-500/20 px-2 py-0.5 rounded text-xs flex items-center">
@@ -40,13 +42,13 @@ export function StatusBar({
 
 export function ValidationBadge({ isValid }: { isValid: boolean }) {
   return isValid ? (
-    <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
-      <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.8)]" />
-      <span>Valid</span>
+    <div className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-zinc-100 dark:bg-zinc-800/80 border border-zinc-200 dark:border-zinc-700 text-zinc-800 dark:text-zinc-200">
+      <CheckCircle2 className="w-3.5 h-3.5 text-zinc-900 dark:text-zinc-100" />
+      <span>Verified</span>
     </div>
   ) : (
-    <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-red-500/10 text-red-600 dark:text-red-400 border border-red-500/20">
-      <div className="w-1.5 h-1.5 rounded-full bg-red-500 shadow-[0_0_6px_rgba(239,68,68,0.8)]" />
+    <div className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-500/10 text-red-600 dark:text-red-400 border border-red-500/20">
+      <XCircle className="w-3.5 h-3.5 text-red-500" />
       <span>Invalid</span>
     </div>
   );

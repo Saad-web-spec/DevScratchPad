@@ -60,10 +60,10 @@ export function TimestampConverterTool({ onValidationChange, onStatsChange, rest
       </div>
       <button 
         onClick={() => value && handleCopy(value.toString(), id)} 
-        className={cn("p-1.5 md:p-2 rounded-md transition-colors shrink-0", copied === id ? "bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400" : "bg-[#f8fafc] dark:bg-zinc-900 text-zinc-500 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-800 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 focus:opacity-100")}
+        className={cn("p-1.5 md:p-2 rounded-md transition-colors shrink-0", copied === id ? "bg-emerald-50 dark:bg-emerald-950/50 text-zinc-900 dark:text-zinc-100 dark:text-zinc-900 dark:text-zinc-100" : "bg-[#f8fafc] dark:bg-zinc-900 text-zinc-500 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-800 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 focus:opacity-100")}
         title={copied === id ? "Copied!" : "Copy"}
       >
-        {copied === id ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
+        {copied === id ? <Check className="w-4 h-4 text-zinc-900 dark:text-zinc-100" /> : <Copy className="w-4 h-4" />}
       </button>
     </div>
   );
@@ -71,10 +71,10 @@ export function TimestampConverterTool({ onValidationChange, onStatsChange, rest
   return (
     <div className="flex flex-col h-full bg-white dark:bg-zinc-950 overflow-y-auto w-full overflow-x-hidden">
       {/* Tool Header */}
-      <div className="min-h-14 border-b border-[#e2e8f0] dark:border-zinc-700 flex flex-wrap md:flex-nowrap items-center justify-between px-3 md:px-4 py-2 md:py-0 bg-[#f8fafc] dark:bg-zinc-900 shrink-0 gap-2">
-        <div>
+      <div className="min-h-14 border-b border-[#e2e8f0] dark:border-zinc-700 flex min-w-0 flex-wrap md:flex-nowrap items-center justify-between px-3 md:px-4 py-2 md:py-0 bg-[#f8fafc] dark:bg-zinc-900 shrink-0 gap-2">
+        <div className="flex items-center gap-2">
+          <Clock className="w-4 h-4 text-zinc-100" />
           <h2 className="text-sm font-semibold text-zinc-800 dark:text-zinc-200">Unix Timestamp Converter</h2>
-          <p className="text-[11px] text-zinc-400 dark:text-zinc-500 hidden sm:block">Convert Epoch to human-readable dates and vice versa</p>
         </div>
         
         <div className="flex items-center gap-1.5 md:gap-2 flex-wrap">

@@ -5,7 +5,7 @@ import { explainCron, validateCron } from "@/lib/tools/cron";
 import { ShareButton } from "@/components/ShareButton";
 import { EmbedButton } from "@/components/EmbedButton";
 import { ExportImageButton } from "@/components/ExportImageButton";
-import { Clock, Copy, Trash2, Check, AlertCircle } from "lucide-react";
+import { Clock, Copy, Trash2, Check, AlertCircle , Calendar } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ValidationBadge } from "@/components/layout/StatusBar";
 
@@ -114,10 +114,10 @@ export function CronVisualizerTool({
   return (
     <div className="flex flex-col h-full bg-white dark:bg-zinc-950 overflow-y-auto w-full overflow-x-hidden">
       {/* Tool Header */}
-      <div className="min-h-14 border-b border-[#e2e8f0] dark:border-zinc-800 flex flex-wrap md:flex-nowrap items-center justify-between px-3 md:px-6 py-2 md:py-0 bg-[#f8fafc] dark:bg-zinc-900 shrink-0 gap-2">
-        <div>
+      <div className="min-h-14 border-b border-[#e2e8f0] dark:border-zinc-800 flex min-w-0 flex-wrap md:flex-nowrap items-center justify-between px-3 md:px-6 py-2 md:py-0 bg-[#f8fafc] dark:bg-zinc-900 shrink-0 gap-2">
+        <div className="flex items-center gap-2">
+          <Calendar className="w-4 h-4 text-zinc-100" />
           <h2 className="text-sm font-semibold text-zinc-800 dark:text-zinc-200">Cron Expression Visualizer</h2>
-          <p className="text-[11px] text-zinc-400 dark:text-zinc-500 hidden sm:block">Convert cron schedule syntax into clear, human-readable English</p>
         </div>
 
         <div className="flex items-center gap-2 flex-wrap">
@@ -186,7 +186,7 @@ export function CronVisualizerTool({
               return (
                 <div key={field.name} className="flex flex-col items-center text-center p-3 md:p-4 rounded-lg bg-white dark:bg-[#121215] border border-[#E2E8F0] dark:border-[#27272A]">
                   <span className="text-[10px] text-zinc-500 dark:text-zinc-400 font-semibold uppercase tracking-wider mb-1">{field.name}</span>
-                  <span className="font-mono text-base md:text-lg font-bold text-[#2563EB] dark:text-blue-400 mb-1">{val}</span>
+                  <span className="font-mono text-base md:text-lg font-bold text-[#2563EB] dark:text-zinc-100 mb-1">{val}</span>
                   <span className="text-[10px] text-[#94A3B8] dark:text-zinc-500 font-medium truncate max-w-full">{field.range}</span>
                 </div>
               );
@@ -216,10 +216,10 @@ export function CronVisualizerTool({
                 onClick={handleCopy}
                 className={cn(
                   "h-9 px-3 bg-[#18181B] hover:bg-[#27272A] border border-[#27272A] text-zinc-300 text-xs font-medium rounded-md transition-colors flex items-center gap-1.5",
-                  copied && "text-emerald-400 border-emerald-500/40"
+                  copied && "text-zinc-900 dark:text-zinc-100 border-emerald-500/40"
                 )}
               >
-                {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5 text-zinc-400" />}
+                {copied ? <Check className="w-3.5 h-3.5 text-zinc-900 dark:text-zinc-100" /> : <Copy className="w-3.5 h-3.5 text-zinc-400" />}
                 <span>{copied ? "Copied!" : "Copy"}</span>
               </button>
             </div>

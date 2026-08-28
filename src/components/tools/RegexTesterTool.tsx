@@ -6,7 +6,7 @@ import { testRegex, replaceRegex, type RegexMatch } from "@/lib/tools/regex";
 import { ShareButton } from "@/components/ShareButton";
 import { EmbedButton } from "@/components/EmbedButton";
 import { ExportImageButton } from "@/components/ExportImageButton";
-import { Copy, Trash2, Check, Regex as RegexIcon, Replace, AlertCircle } from "lucide-react";
+import { Code2, Settings2, Terminal, Copy, Trash2, Check, Regex as RegexIcon, Replace, AlertCircle, Info, AlertTriangle, ListFilter } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { addSnapshot } from "@/lib/storage";
 import { ValidationBadge } from "@/components/layout/StatusBar";
@@ -124,12 +124,10 @@ export function RegexTesterTool({
   return (
     <div className="flex flex-col h-full bg-white dark:bg-[#09090B] w-full overflow-x-hidden">
       {/* Tool Header */}
-      <div className="min-h-14 border-b border-zinc-200 dark:border-zinc-800 flex flex-wrap md:flex-nowrap items-center justify-between px-4 md:px-6 py-2 md:py-0 bg-white dark:bg-[#09090B] shrink-0 gap-2">
-        <div>
-          <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">Regex Tester</h2>
-          <p className="text-[11px] text-zinc-500 dark:text-zinc-400 hidden sm:block">
-            Test regular expressions, inspect capture groups, and preview substitutions
-          </p>
+      <div className="min-h-14 border-b border-zinc-200 dark:border-zinc-800 flex min-w-0 flex-wrap md:flex-nowrap items-center justify-between px-4 md:px-6 py-2 md:py-0 bg-white dark:bg-[#09090B] shrink-0 gap-2">
+        <div className="flex items-center gap-2">
+          <RegexIcon className="w-4 h-4 text-blue-500" />
+          <h2 className="text-sm font-semibold text-zinc-800 dark:text-zinc-200">Regex Tester</h2>
         </div>
 
         <div className="flex items-center gap-2 flex-wrap">
@@ -144,7 +142,7 @@ export function RegexTesterTool({
             className={cn(
               "h-9 px-3 rounded-md text-xs font-medium transition-colors border flex items-center gap-1.5",
               replaceMode
-                ? "bg-blue-500/10 border-blue-500/30 text-blue-600 dark:text-blue-400 font-semibold"
+                ? "bg-blue-500/10 border-blue-500/30 text-zinc-100 dark:text-zinc-100 font-semibold"
                 : "bg-[#18181B] hover:bg-[#27272A] border-[#27272A] text-zinc-300"
             )}
           >
@@ -187,7 +185,7 @@ export function RegexTesterTool({
                 className={cn(
                   "transition-colors",
                   flags[f.id]
-                    ? "bg-blue-500/10 text-blue-600 dark:text-blue-400 font-bold px-2 py-0.5 rounded text-xs"
+                    ? "bg-blue-500/10 text-zinc-100 dark:text-zinc-100 font-bold px-2 py-0.5 rounded text-xs"
                     : "text-zinc-400 dark:text-zinc-500 hover:text-zinc-200 font-medium px-2 py-0.5 rounded text-xs"
                 )}
               >
@@ -311,7 +309,7 @@ export function RegexTesterTool({
                   className={cn(
                     "flex items-center gap-1.5 text-xs font-medium transition-colors",
                     copied === "replaced"
-                      ? "text-emerald-600 dark:text-emerald-400"
+                      ? "text-zinc-900 dark:text-zinc-100 dark:text-zinc-900 dark:text-zinc-100"
                       : "text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100"
                   )}
                 >
@@ -348,7 +346,7 @@ export function RegexTesterTool({
                   <span className="text-[11px] font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
                     Match Details
                   </span>
-                  <span className="text-xs font-medium text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-0.5 rounded-full">
+                  <span className="text-xs font-medium text-zinc-900 dark:text-zinc-100 dark:text-zinc-900 dark:text-zinc-100 bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 px-2.5 py-0.5 rounded-full">
                     {matches.length} {matches.length === 1 ? "Match" : "Matches"}
                   </span>
                 </div>
@@ -358,11 +356,11 @@ export function RegexTesterTool({
                     onClick={handleCopyAllMatches}
                     className={cn(
                       "h-9 px-3 bg-[#18181B] hover:bg-[#27272A] border border-[#27272A] text-zinc-300 text-xs font-medium rounded-md transition-colors flex items-center gap-1.5",
-                      copied === "all-matches" && "text-emerald-400 border-emerald-500/40"
+                      copied === "all-matches" && "text-zinc-900 dark:text-zinc-100 border-emerald-500/40"
                     )}
                   >
                     {copied === "all-matches" ? (
-                      <Check className="w-3.5 h-3.5 text-emerald-400" />
+                      <Check className="w-3.5 h-3.5 text-zinc-900 dark:text-zinc-100" />
                     ) : (
                       <Copy className="w-3.5 h-3.5 text-zinc-400" />
                     )}
@@ -389,7 +387,7 @@ export function RegexTesterTool({
                     >
                       <div className="flex items-center justify-between mb-2">
                         <div className="flex items-center gap-2.5">
-                          <span className="text-xs font-bold text-blue-600 dark:text-blue-400 bg-blue-500/10 border border-blue-500/20 px-2 py-0.5 rounded">
+                          <span className="text-xs font-bold text-zinc-100 dark:text-zinc-100 bg-blue-500/10 border border-blue-500/20 px-2 py-0.5 rounded">
                             Match #{idx + 1}
                           </span>
                           <span className="text-[11px] text-zinc-400 dark:text-zinc-500 font-mono">
@@ -400,11 +398,11 @@ export function RegexTesterTool({
                           onClick={() => handleCopy(m.match, `match-${idx}`)}
                           className={cn(
                             "h-9 px-3 bg-[#18181B] hover:bg-[#27272A] border border-[#27272A] text-zinc-300 text-xs font-medium rounded-md transition-colors flex items-center gap-1.5",
-                            copied === `match-${idx}` && "text-emerald-400 border-emerald-500/40"
+                            copied === `match-${idx}` && "text-zinc-900 dark:text-zinc-100 border-emerald-500/40"
                           )}
                         >
                           {copied === `match-${idx}` ? (
-                            <Check className="w-3.5 h-3.5 text-emerald-400" />
+                            <Check className="w-3.5 h-3.5 text-zinc-900 dark:text-zinc-100" />
                           ) : (
                             <Copy className="w-3.5 h-3.5 text-zinc-400" />
                           )}

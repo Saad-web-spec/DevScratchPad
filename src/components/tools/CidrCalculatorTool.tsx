@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { Network } from "lucide-react";
 import { parseCidr, CidrInfo } from "@/lib/tools/cidr";
 import { ShareButton } from "@/components/ShareButton";
 import { EmbedButton } from "@/components/EmbedButton";
@@ -67,10 +68,10 @@ export function CidrCalculatorTool({ onValidationChange, onStatsChange, onLogHis
   return (
     <div className="flex flex-col h-full bg-white dark:bg-zinc-950 overflow-y-auto w-full overflow-x-hidden">
       {/* Tool Header */}
-      <div className="min-h-14 border-b border-[#e2e8f0] dark:border-zinc-800 flex flex-wrap md:flex-nowrap items-center justify-between px-3 md:px-4 py-2 md:py-0 bg-[#f8fafc] dark:bg-zinc-900 shrink-0 sticky top-0 z-10 gap-2">
-        <div>
+      <div className="min-h-14 border-b border-[#e2e8f0] dark:border-zinc-800 flex min-w-0 flex-wrap md:flex-nowrap items-center justify-between px-3 md:px-4 py-2 md:py-0 bg-[#f8fafc] dark:bg-zinc-900 shrink-0 sticky top-0 z-10 gap-2">
+        <div className="flex items-center gap-2">
+          <Network className="w-4 h-4 text-zinc-100" />
           <h2 className="text-sm font-semibold text-zinc-800 dark:text-zinc-200">CIDR Calculator</h2>
-          <p className="text-[11px] text-zinc-400 dark:text-zinc-500 hidden sm:block">Calculate IP ranges and subnets</p>
         </div>
         
         <div className="flex items-center gap-1.5 md:gap-2 flex-wrap">
@@ -117,7 +118,7 @@ function MetricCard({ label, value }: { label: string; value: string | number })
   return (
     <div className="bg-[#121215] border border-[#27272A] rounded-xl p-4 md:p-5 flex flex-col justify-center">
       <span className="text-xs font-medium text-zinc-400 uppercase tracking-wider mb-1.5 md:mb-2">{label}</span>
-      <span className="text-base md:text-lg font-semibold text-blue-400 font-mono break-all">{value}</span>
+      <span className="text-base md:text-lg font-semibold text-zinc-100 font-mono break-all">{value}</span>
     </div>
   );
 }

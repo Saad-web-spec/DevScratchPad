@@ -143,10 +143,10 @@ export function YamlConverterTool({
   return (
     <div className="flex flex-col h-full bg-white dark:bg-zinc-950 w-full overflow-x-hidden">
       {/* Tool Header */}
-      <div className="min-h-14 border-b border-[#e2e8f0] dark:border-zinc-700 flex flex-wrap md:flex-nowrap items-center justify-between px-3 md:px-4 py-2 md:py-0 bg-[#f8fafc] dark:bg-zinc-900 shrink-0 gap-2">
-        <div>
+      <div className="min-h-14 border-b border-[#e2e8f0] dark:border-zinc-700 flex min-w-0 flex-wrap md:flex-nowrap items-center justify-between px-3 md:px-4 py-2 md:py-0 bg-[#f8fafc] dark:bg-zinc-900 shrink-0 gap-2">
+        <div className="flex items-center gap-2">
+          <ArrowLeftRight className="w-4 h-4 text-zinc-100" />
           <h2 className="text-sm font-semibold text-zinc-800 dark:text-zinc-200">YAML / JSON Converter</h2>
-          <p className="text-[11px] text-zinc-400 dark:text-zinc-500 hidden sm:block">Convert YAML to JSON and JSON to YAML bidirectionally</p>
         </div>
 
         <div className="flex items-center gap-1.5 md:gap-3 flex-wrap">
@@ -160,7 +160,7 @@ export function YamlConverterTool({
               className={cn(
                 "px-2.5 py-1 text-xs font-medium rounded-md transition-all",
                 mode === "yaml-to-json"
-                  ? "bg-white dark:bg-zinc-950 text-blue-600 dark:text-blue-400 shadow-2xs"
+                  ? "bg-white dark:bg-zinc-950 text-zinc-100 dark:text-zinc-100 shadow-2xs"
                   : "text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white"
               )}
             >
@@ -171,7 +171,7 @@ export function YamlConverterTool({
               className={cn(
                 "px-2.5 py-1 text-xs font-medium rounded-md transition-all",
                 mode === "json-to-yaml"
-                  ? "bg-white dark:bg-zinc-950 text-blue-600 dark:text-blue-400 shadow-2xs"
+                  ? "bg-white dark:bg-zinc-950 text-zinc-100 dark:text-zinc-100 shadow-2xs"
                   : "text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white"
               )}
             >
@@ -205,7 +205,7 @@ export function YamlConverterTool({
           {/* Convert Button */}
           <button
             onClick={handleConvert}
-            className="h-9 px-3 bg-blue-600 dark:bg-blue-600 hover:bg-blue-700 dark:hover:bg-blue-500 text-white rounded-md text-xs font-medium transition-colors flex items-center gap-1.5 shadow-2xs"
+            className="h-9 px-3 bg-zinc-900 dark:bg-zinc-100 hover:bg-zinc-800 dark:hover:bg-zinc-200 text-white dark:text-zinc-900 rounded-md text-xs font-medium transition-colors flex items-center gap-1.5 shadow-2xs"
           >
             <Play className="w-3.5 h-3.5" />
             <span>Convert</span>
@@ -284,10 +284,10 @@ export function YamlConverterTool({
               onClick={handleCopy}
               className={cn(
                 "flex items-center gap-1 text-[11px] transition-colors",
-                copied ? "text-emerald-400 font-medium" : "text-zinc-400 dark:text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-200"
+                copied ? "text-zinc-900 dark:text-zinc-100 font-medium" : "text-zinc-400 dark:text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-200"
               )}
             >
-              {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+              {copied ? <Check className="w-3.5 h-3.5 text-zinc-900 dark:text-zinc-100" /> : <Copy className="w-3.5 h-3.5" />}
               <span>{copied ? "Copied!" : "Copy"}</span>
             </button>
           </div>

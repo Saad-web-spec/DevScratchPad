@@ -6,7 +6,7 @@ import { formatGraphQL } from "@/lib/tools/graphql";
 import { ShareButton } from "@/components/ShareButton";
 import { EmbedButton } from "@/components/EmbedButton";
 import { ExportImageButton } from "@/components/ExportImageButton";
-import { Play, Copy, Trash2, Check } from "lucide-react";
+import { Play, Copy, Trash2, Check , Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { StatusBar } from "@/components/layout/StatusBar";
 
@@ -75,10 +75,10 @@ export function GraphqlFormatterTool({ onValidationChange, onStatsChange, onLogH
   return (
     <div className="flex flex-col h-full bg-white dark:bg-zinc-950 w-full overflow-x-hidden">
       {/* Tool Header */}
-      <div className="min-h-14 border-b border-[#e2e8f0] dark:border-zinc-700 flex flex-wrap md:flex-nowrap items-center justify-between px-3 md:px-4 py-2 md:py-0 bg-[#f8fafc] dark:bg-zinc-900 shrink-0 gap-2">
-        <div>
+      <div className="min-h-14 border-b border-[#e2e8f0] dark:border-zinc-700 flex min-w-0 flex-wrap md:flex-nowrap items-center justify-between px-3 md:px-4 py-2 md:py-0 bg-[#f8fafc] dark:bg-zinc-900 shrink-0 gap-2">
+        <div className="flex items-center gap-2">
+          <Sparkles className="w-4 h-4 text-zinc-100" />
           <h2 className="text-sm font-semibold text-zinc-800 dark:text-zinc-200">GraphQL Formatter</h2>
-          <p className="text-[11px] text-zinc-400 dark:text-zinc-500 hidden sm:block">Format and validate GraphQL queries</p>
         </div>
         
         <div className="flex items-center gap-1.5 md:gap-2 overflow-x-auto hide-scrollbar pb-1 md:pb-0">
@@ -88,7 +88,7 @@ export function GraphqlFormatterTool({ onValidationChange, onStatsChange, onLogH
           
           <div className="h-5 w-px bg-zinc-200 dark:bg-zinc-800 mx-1 shrink-0" />
 
-          <button onClick={handleFormat} className="h-9 px-3 bg-blue-600 dark:bg-blue-600 hover:bg-blue-700 dark:hover:bg-blue-500 text-white rounded-md text-xs font-medium transition-colors flex items-center gap-1.5 shadow-2xs shrink-0">
+          <button onClick={handleFormat} className="h-9 px-3 bg-zinc-900 dark:bg-zinc-100 hover:bg-zinc-800 dark:hover:bg-zinc-200 text-white dark:text-zinc-900 rounded-md text-xs font-medium transition-colors flex items-center gap-1.5 shadow-2xs shrink-0">
             <Play className="w-3.5 h-3.5" />
             <span>Format</span>
           </button>
@@ -153,8 +153,8 @@ export function GraphqlFormatterTool({ onValidationChange, onStatsChange, onLogH
         <div className={cn("flex-1 flex flex-col min-w-0 w-full overflow-x-hidden", activeTab !== "output" && "hidden md:flex")}>
           <div className="h-8 bg-[#f8fafc] dark:bg-zinc-900 border-b border-[#e2e8f0] dark:border-zinc-700 flex items-center justify-between px-3 shrink-0">
             <span className="text-[11px] font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">Output</span>
-            <button onClick={handleCopy} className={cn("flex items-center gap-1 text-[11px] transition-colors", copied ? "text-emerald-400 font-medium" : "text-zinc-400 dark:text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300")}>
-              {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+            <button onClick={handleCopy} className={cn("flex items-center gap-1 text-[11px] transition-colors", copied ? "text-zinc-900 dark:text-zinc-100 font-medium" : "text-zinc-400 dark:text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300")}>
+              {copied ? <Check className="w-3.5 h-3.5 text-zinc-900 dark:text-zinc-100" /> : <Copy className="w-3.5 h-3.5" />}
               <span>{copied ? "Copied!" : "Copy"}</span>
             </button>
           </div>

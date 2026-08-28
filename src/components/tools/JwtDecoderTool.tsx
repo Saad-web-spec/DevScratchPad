@@ -6,7 +6,7 @@ import { decodeJwt } from "@/lib/tools/jwt";
 import { ShareButton } from "@/components/ShareButton";
 import { EmbedButton } from "@/components/EmbedButton";
 import { ExportImageButton } from "@/components/ExportImageButton";
-import { Copy, Trash2, Check } from "lucide-react";
+import { Copy, Trash2, Check , Key } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { addSnapshot } from "@/lib/storage";
 import { StatusBar } from "@/components/layout/StatusBar";
@@ -73,10 +73,10 @@ export function JwtDecoderTool({ onValidationChange, onStatsChange, restoredInpu
   return (
     <div className="flex flex-col h-full bg-white dark:bg-zinc-950 w-full overflow-x-hidden">
       {/* Tool Header */}
-      <div className="min-h-14 border-b border-[#e2e8f0] dark:border-zinc-700 flex flex-wrap md:flex-nowrap items-center justify-between px-3 md:px-4 py-2 md:py-0 bg-[#f8fafc] dark:bg-zinc-900 shrink-0 gap-2">
-        <div>
+      <div className="min-h-14 border-b border-[#e2e8f0] dark:border-zinc-700 flex min-w-0 flex-wrap md:flex-nowrap items-center justify-between px-3 md:px-4 py-2 md:py-0 bg-[#f8fafc] dark:bg-zinc-900 shrink-0 gap-2">
+        <div className="flex items-center gap-2">
+          <Key className="w-4 h-4 text-zinc-100" />
           <h2 className="text-sm font-semibold text-zinc-800 dark:text-zinc-200">JWT Decoder</h2>
-          <p className="text-[11px] text-zinc-400 dark:text-zinc-500 hidden sm:block">Decode JSON Web Tokens instantly and securely</p>
         </div>
         
         <div className="flex items-center gap-1.5 md:gap-2 flex-wrap">
@@ -139,8 +139,8 @@ export function JwtDecoderTool({ onValidationChange, onStatsChange, restoredInpu
           <div className="flex flex-col min-h-[160px] border-b border-[#e2e8f0] dark:border-zinc-700">
             <div className="h-8 bg-[#f8fafc] dark:bg-zinc-900 border-b border-[#e2e8f0] dark:border-zinc-700 flex items-center justify-between px-3 shrink-0">
               <span className="text-[11px] font-medium text-pink-600 dark:text-pink-400 uppercase tracking-wider">Header (Algorithm & Token Type)</span>
-              <button onClick={() => handleCopy(headerOutput, 'header')} className={cn("flex items-center gap-1 text-[11px] transition-colors", copied === 'header' ? "text-emerald-400 font-medium" : "text-zinc-400 dark:text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-200")}>
-                {copied === 'header' ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+              <button onClick={() => handleCopy(headerOutput, 'header')} className={cn("flex items-center gap-1 text-[11px] transition-colors", copied === 'header' ? "text-zinc-900 dark:text-zinc-100 font-medium" : "text-zinc-400 dark:text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-200")}>
+                {copied === 'header' ? <Check className="w-3.5 h-3.5 text-zinc-900 dark:text-zinc-100" /> : <Copy className="w-3.5 h-3.5" />}
                 <span>{copied === 'header' ? "Copied!" : "Copy"}</span>
               </button>
             </div>
@@ -157,9 +157,9 @@ export function JwtDecoderTool({ onValidationChange, onStatsChange, restoredInpu
           {/* Payload Section */}
           <div className="flex flex-col min-h-[220px] border-b border-[#e2e8f0] dark:border-zinc-700">
             <div className="h-8 bg-[#f8fafc] dark:bg-zinc-900 border-b border-[#e2e8f0] dark:border-zinc-700 flex items-center justify-between px-3 shrink-0">
-              <span className="text-[11px] font-medium text-blue-600 dark:text-blue-400 uppercase tracking-wider">Payload (Data & Claims)</span>
-              <button onClick={() => handleCopy(payloadOutput, 'payload')} className={cn("flex items-center gap-1 text-[11px] transition-colors", copied === 'payload' ? "text-emerald-400 font-medium" : "text-zinc-400 dark:text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-200")}>
-                {copied === 'payload' ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+              <span className="text-[11px] font-medium text-zinc-100 dark:text-zinc-100 uppercase tracking-wider">Payload (Data & Claims)</span>
+              <button onClick={() => handleCopy(payloadOutput, 'payload')} className={cn("flex items-center gap-1 text-[11px] transition-colors", copied === 'payload' ? "text-zinc-900 dark:text-zinc-100 font-medium" : "text-zinc-400 dark:text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-200")}>
+                {copied === 'payload' ? <Check className="w-3.5 h-3.5 text-zinc-900 dark:text-zinc-100" /> : <Copy className="w-3.5 h-3.5" />}
                 <span>{copied === 'payload' ? "Copied!" : "Copy"}</span>
               </button>
             </div>
@@ -176,7 +176,7 @@ export function JwtDecoderTool({ onValidationChange, onStatsChange, restoredInpu
           {/* Signature Section */}
           <div className="flex flex-col min-h-[80px]">
             <div className="h-8 bg-[#f8fafc] dark:bg-zinc-900 border-b border-[#e2e8f0] dark:border-zinc-700 flex items-center justify-between px-3 shrink-0">
-              <span className="text-[11px] font-medium text-emerald-600 dark:text-emerald-400 uppercase tracking-wider">Signature</span>
+              <span className="text-[11px] font-medium text-zinc-900 dark:text-zinc-100 dark:text-zinc-900 dark:text-zinc-100 uppercase tracking-wider">Signature</span>
             </div>
             <div className="flex-1 p-3">
               <p className="text-xs text-zinc-500 dark:text-zinc-400 font-mono break-all">{signature || "Waiting for token..."}</p>

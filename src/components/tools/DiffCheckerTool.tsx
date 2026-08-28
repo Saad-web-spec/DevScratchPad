@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { MonacoDiffEditor } from "@/components/MonacoEditor";
-import { Trash2 } from "lucide-react";
+import { Trash2 , SplitSquareHorizontal } from "lucide-react";
 import { addSnapshot } from "@/lib/storage";
 import { ShareButton } from "@/components/ShareButton";
 import { EmbedButton } from "@/components/EmbedButton";
@@ -53,10 +53,10 @@ export function DiffCheckerTool({ restoredInput }: DiffCheckerToolProps) {
   return (
     <div className="flex flex-col h-full bg-white dark:bg-zinc-950 w-full overflow-x-hidden">
       {/* Tool Header */}
-      <div className="min-h-14 border-b border-[#e2e8f0] dark:border-zinc-800 flex flex-wrap md:flex-nowrap items-center justify-between px-3 md:px-4 py-2 md:py-0 bg-[#f8fafc] dark:bg-zinc-900 shrink-0 gap-2">
-        <div>
+      <div className="min-h-14 border-b border-[#e2e8f0] dark:border-zinc-800 flex min-w-0 flex-wrap md:flex-nowrap items-center justify-between px-3 md:px-4 py-2 md:py-0 bg-[#f8fafc] dark:bg-zinc-900 shrink-0 gap-2">
+        <div className="flex items-center gap-2">
+          <SplitSquareHorizontal className="w-4 h-4 text-zinc-100" />
           <h2 className="text-sm font-semibold text-zinc-800 dark:text-zinc-200">Diff Checker</h2>
-          <p className="text-[11px] text-zinc-400 dark:text-zinc-500 hidden sm:block">Compare text and code side-by-side or inline</p>
         </div>
         
         <div className="flex items-center gap-1.5 md:gap-2 flex-wrap">
