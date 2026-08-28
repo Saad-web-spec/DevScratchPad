@@ -14,7 +14,7 @@ import { ExportImageButton } from "@/components/ExportImageButton";
 import { Play, Copy, Trash2, ArrowLeftRight, Check , Type } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { addSnapshot } from "@/lib/storage";
-import { StatusBar } from "@/components/layout/StatusBar";
+import { StatusBar, ValidationBadge, FloatingErrorBadge } from '@/components/layout/StatusBar';
 
 interface UrlEncoderToolProps {
   onValidationChange: (isValid: boolean, error?: string) => void;
@@ -39,6 +39,7 @@ export function UrlEncoderTool({
   const [copied, setCopied] = useState(false);
   const [activeTab, setActiveTab] = useState<"input" | "output">("input");
   const [isValid, setIsValid] = useState(true);
+  const [errorMsg, setErrorMsg] = useState<string | undefined>();
   const [execMs, setExecMs] = useState(0);
 
   // Save workspace snapshot
@@ -92,11 +93,13 @@ export function UrlEncoderTool({
           : decodeUrl(input, encodeMode);
       setOutput(res);
       setIsValid(true);
+      setErrorMsg(undefined);
       onValidationChange(true);
       onLogHistory?.(input);
       setActiveTab("output");
     } catch (err: any) {
       setIsValid(false);
+      setErrorMsg(err.message);
       onValidationChange(false, err.message);
     }
     const end = performance.now();

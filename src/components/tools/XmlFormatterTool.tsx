@@ -9,7 +9,7 @@ import { ExportImageButton } from "@/components/ExportImageButton";
 import { Play, Copy, Trash2, Minimize2, Check , Code } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { addSnapshot } from "@/lib/storage";
-import { StatusBar } from "@/components/layout/StatusBar";
+import { StatusBar, ValidationBadge, EditorPanelFooter } from '@/components/layout/StatusBar';
 
 interface XmlFormatterToolProps {
   onValidationChange: (isValid: boolean, error?: string, line?: number) => void;
@@ -38,6 +38,7 @@ export function XmlFormatterTool({
   const [copied, setCopied] = useState(false);
   const [activeTab, setActiveTab] = useState<"input" | "output">("input");
   const [isValid, setIsValid] = useState(true);
+  const [errorMsg, setErrorMsg] = useState<string | undefined>();
   const [errorLine, setErrorLine] = useState<number | undefined>();
   const [execMs, setExecMs] = useState(0);
 
@@ -63,6 +64,7 @@ export function XmlFormatterTool({
     const ms = end - start;
 
     setIsValid(valid);
+    setErrorMsg(error);
     setErrorLine(line);
     setExecMs(ms);
     onValidationChange(valid, error, line);
@@ -200,6 +202,7 @@ export function XmlFormatterTool({
               }}
             />
           </div>
+          <EditorPanelFooter isValid={isValid} errorMessage={errorMsg} errorLine={typeof errorLine !== 'undefined' ? errorLine : undefined} />
         </div>
 
         {/* Right: Output */}
@@ -236,13 +239,7 @@ export function XmlFormatterTool({
         </div>
       </div>
 
-      {/* Embedded 32px Status Bar */}
-      <StatusBar
-        isValid={isValid}
-        errorLine={errorLine}
-        inputLength={input.length}
-        executionMs={execMs}
-      />
+      
     </div>
   );
 }

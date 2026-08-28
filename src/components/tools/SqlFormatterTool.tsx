@@ -9,7 +9,7 @@ import { ExportImageButton } from "@/components/ExportImageButton";
 import { Play, Copy, Trash2, Check , Database } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { addSnapshot } from "@/lib/storage";
-import { StatusBar } from "@/components/layout/StatusBar";
+import { StatusBar, ValidationBadge, EditorPanelFooter } from '@/components/layout/StatusBar';
 
 interface SqlFormatterToolProps {
   onValidationChange: (isValid: boolean, error?: string, line?: number) => void;
@@ -53,6 +53,7 @@ export function SqlFormatterTool({
   const [copied, setCopied] = useState(false);
   const [activeTab, setActiveTab] = useState<"input" | "output">("input");
   const [isValid, setIsValid] = useState(true);
+  const [errorMsg, setErrorMsg] = useState<string | undefined>();
   const [errorLine, setErrorLine] = useState<number | undefined>();
   const [execMs, setExecMs] = useState(0);
 
@@ -82,6 +83,7 @@ export function SqlFormatterTool({
     const ms = end - start;
 
     setIsValid(valid);
+    setErrorMsg(error);
     setErrorLine(undefined);
     setExecMs(ms);
     onValidationChange(valid, error);
@@ -232,6 +234,7 @@ export function SqlFormatterTool({
               }}
             />
           </div>
+          <EditorPanelFooter isValid={isValid} errorMessage={errorMsg} errorLine={typeof errorLine !== 'undefined' ? errorLine : undefined} />
         </div>
 
         {/* Right: Output */}
@@ -268,13 +271,7 @@ export function SqlFormatterTool({
         </div>
       </div>
 
-      {/* Embedded 32px Status Bar */}
-      <StatusBar
-        isValid={isValid}
-        errorLine={errorLine}
-        inputLength={input.length}
-        executionMs={execMs}
-      />
+      
     </div>
   );
 }

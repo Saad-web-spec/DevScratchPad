@@ -9,7 +9,7 @@ import { addSnapshot } from "@/lib/storage";
 import { ShareButton } from "@/components/ShareButton";
 import { EmbedButton } from "@/components/EmbedButton";
 import { ExportImageButton } from "@/components/ExportImageButton";
-import { StatusBar } from "@/components/layout/StatusBar";
+import { StatusBar, ValidationBadge, EditorPanelFooter } from '@/components/layout/StatusBar';
 
 interface JsonFormatterToolProps {
   onValidationChange: (isValid: boolean, error?: string, line?: number) => void;
@@ -135,11 +135,7 @@ export function JsonFormatterTool({ onValidationChange, onStatsChange, onLogHist
       </div>
 
       {/* Error Banner */}
-      {!isValid && errorMsg && (
-        <div className="w-full bg-red-50 dark:bg-red-950/40 border-b border-red-200 dark:border-red-900/50 px-4 py-2 text-xs font-mono text-red-600 dark:text-red-400 flex items-center gap-2">
-          <span>Syntax Error {errorLine ? `(Line ${errorLine})` : ''}: {errorMsg}</span>
-        </div>
-      )}
+      
 
       {/* Mobile Segmented Tab Control */}
       <div className="flex md:hidden bg-[#f1f5f9] dark:bg-zinc-800 p-1 border-b border-[#e2e8f0] dark:border-zinc-700 shrink-0">
@@ -193,6 +189,7 @@ export function JsonFormatterTool({ onValidationChange, onStatsChange, onLogHist
               }}
             />
           </div>
+          <EditorPanelFooter isValid={isValid} errorMessage={errorMsg} errorLine={typeof errorLine !== 'undefined' ? errorLine : undefined} />
         </div>
 
         {/* Right: Output */}
@@ -223,13 +220,7 @@ export function JsonFormatterTool({ onValidationChange, onStatsChange, onLogHist
         </div>
       </div>
 
-      {/* Embedded 32px Status Bar */}
-      <StatusBar
-        isValid={isValid}
-        errorLine={errorLine}
-        inputLength={input.length}
-        executionMs={execMs}
-      />
+      
     </div>
   );
 }

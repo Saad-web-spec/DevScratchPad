@@ -8,7 +8,7 @@ import { EmbedButton } from "@/components/EmbedButton";
 import { ExportImageButton } from "@/components/ExportImageButton";
 import { Play, Copy, Trash2, Check , Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { StatusBar } from "@/components/layout/StatusBar";
+import { StatusBar, ValidationBadge, EditorPanelFooter } from '@/components/layout/StatusBar';
 
 interface GraphqlFormatterToolProps {
   onValidationChange: (isValid: boolean, error?: string, line?: number) => void;
@@ -23,6 +23,7 @@ export function GraphqlFormatterTool({ onValidationChange, onStatsChange, onLogH
   const [copied, setCopied] = useState(false);
   const [activeTab, setActiveTab] = useState<"input" | "output">("input");
   const [isValid, setIsValid] = useState(true);
+  const [errorMsg, setErrorMsg] = useState<string | undefined>();
   const [execMs, setExecMs] = useState(0);
 
   // Dispatch workspace state
@@ -48,6 +49,7 @@ export function GraphqlFormatterTool({ onValidationChange, onStatsChange, onLogH
       if (result.valid) {
         setOutput(result.formatted || "");
         setIsValid(true);
+    setErrorMsg(undefined);
         onValidationChange(true);
         onLogHistory?.(input);
         setActiveTab("output");
@@ -57,6 +59,7 @@ export function GraphqlFormatterTool({ onValidationChange, onStatsChange, onLogH
       }
     } catch (err: any) {
       setIsValid(false);
+      setErrorMsg(err.message);
       onValidationChange(false, err.message);
     }
     const end = performance.now();
@@ -147,6 +150,7 @@ export function GraphqlFormatterTool({ onValidationChange, onStatsChange, onLogH
               }}
             />
           </div>
+          <EditorPanelFooter isValid={isValid} errorMessage={errorMsg}  />
         </div>
 
         {/* Right: Output */}
@@ -177,12 +181,7 @@ export function GraphqlFormatterTool({ onValidationChange, onStatsChange, onLogH
         </div>
       </div>
 
-      {/* Embedded 32px Status Bar */}
-      <StatusBar
-        isValid={isValid}
-        inputLength={input.length}
-        executionMs={execMs}
-      />
+      
     </div>
   );
 }

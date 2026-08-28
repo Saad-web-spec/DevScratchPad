@@ -8,7 +8,7 @@ import { EmbedButton } from "@/components/EmbedButton";
 import { ExportImageButton } from "@/components/ExportImageButton";
 import { Play, Copy, Trash2, ArrowLeftRight, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { StatusBar } from "@/components/layout/StatusBar";
+import { StatusBar, ValidationBadge, EditorPanelFooter } from '@/components/layout/StatusBar';
 
 interface YamlConverterToolProps {
   onValidationChange: (isValid: boolean, error?: string, line?: number) => void;
@@ -47,6 +47,7 @@ export function YamlConverterTool({
   const [copied, setCopied] = useState(false);
   const [activeTab, setActiveTab] = useState<"input" | "output">("input");
   const [isValid, setIsValid] = useState(true);
+  const [errorMsg, setErrorMsg] = useState<string | undefined>();
   const [errorLine, setErrorLine] = useState<number | undefined>();
   const [execMs, setExecMs] = useState(0);
 
@@ -75,7 +76,8 @@ export function YamlConverterTool({
       } catch (err: any) {
         setOutput("");
         setIsValid(false);
-        onValidationChange(false, err.message);
+      setErrorMsg(err.message);
+      onValidationChange(false, err.message);
       }
     } else if (!input.trim()) {
       setOutput("");
@@ -109,11 +111,13 @@ export function YamlConverterTool({
       const result = isYamlMode ? yamlToJson(input, indent) : jsonToYaml(input);
       setOutput(result);
       setIsValid(true);
+    setErrorMsg(undefined);
       onValidationChange(true);
       onLogHistory?.(input);
       setActiveTab("output");
     } catch (err: any) {
       setIsValid(false);
+      setErrorMsg(err.message);
       onValidationChange(false, err.message);
     }
     const end = performance.now();
@@ -272,6 +276,7 @@ export function YamlConverterTool({
               }}
             />
           </div>
+          <EditorPanelFooter isValid={isValid} errorMessage={errorMsg} errorLine={typeof errorLine !== 'undefined' ? errorLine : undefined} />
         </div>
 
         {/* Right: Output */}
@@ -311,13 +316,7 @@ export function YamlConverterTool({
         </div>
       </div>
 
-      {/* Embedded 32px Status Bar */}
-      <StatusBar
-        isValid={isValid}
-        errorLine={errorLine}
-        inputLength={input.length}
-        executionMs={execMs}
-      />
+      
     </div>
   );
 }

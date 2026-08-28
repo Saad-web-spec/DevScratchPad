@@ -8,7 +8,7 @@ import { EmbedButton } from "@/components/EmbedButton";
 import { Play, Copy, Trash2, ArrowLeftRight, Check , Binary } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { addSnapshot } from "@/lib/storage";
-import { StatusBar } from "@/components/layout/StatusBar";
+import { StatusBar, ValidationBadge, FloatingErrorBadge } from '@/components/layout/StatusBar';
 
 interface Base64ToolProps {
   onValidationChange: (isValid: boolean, error?: string) => void;
@@ -196,11 +196,7 @@ export function Base64Tool({
       </div>
 
       {/* Error Banner */}
-      {!isValid && errorMsg && (
-        <div className="w-full bg-red-50 dark:bg-red-950/40 border-b border-red-200 dark:border-red-900/50 px-4 py-2 text-xs font-mono text-red-600 dark:text-red-400 flex items-center gap-2">
-          <span>{errorMsg}</span>
-        </div>
-      )}
+      
 
       {/* Mobile Segmented Tab Control */}
       <div className="flex md:hidden bg-[#f1f5f9] dark:bg-zinc-800 p-1 border-b border-[#e2e8f0] dark:border-zinc-700 shrink-0">

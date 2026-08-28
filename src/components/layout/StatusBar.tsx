@@ -1,21 +1,79 @@
 "use client";
 
-import { AlertCircle, AlertTriangle, CheckCircle2, Check, XCircle } from "lucide-react";
+import { AlertCircle, CheckCircle2, Check, XCircle } from "lucide-react";
 
-interface StatusBarProps {
+export function cleanErrorMessage(msg: string): string {
+  if (!msg) return "Syntax Error";
+  
+  // Clean JSON V8 errors
+  let cleaned = msg.replace(/^SyntaxError:\s*/, '');
+  cleaned = cleaned.replace(/Unexpected non-whitespace character after JSON at position \d+/, 'Multiple JSON root objects detected');
+  cleaned = cleaned.replace(/Unexpected token (.) in JSON at position \d+/, 'Unexpected token $1');
+  cleaned = cleaned.replace(/Expected double-quoted property name in JSON at position \d+/, 'Expected double-quoted property name');
+  
+  // Strip GraphQL/XML specific verbose prefixes if any
+  cleaned = cleaned.replace(/^Syntax Error: /, '');
+  cleaned = cleaned.replace(/GraphQL request \(\d+:\d+\)\s*/, '');
+
+  return cleaned.length > 60 ? cleaned.substring(0, 60) + '...' : cleaned;
+}
+
+interface EditorPanelFooterProps {
   isValid: boolean;
   errorMessage?: string;
   errorLine?: number;
-  inputLength: number;
-  executionMs: number;
+  errorCol?: number;
 }
 
+export function EditorPanelFooter({
+  isValid,
+  errorMessage,
+  errorLine,
+  errorCol,
+}: EditorPanelFooterProps) {
+  const shortMessage = errorMessage ? cleanErrorMessage(errorMessage) : 'Syntax Error';
+  const line = errorLine || 1;
+  const col = errorCol || 1;
+
+  return (
+    <div className="h-7 bg-[#121215] border-t border-[#27272A] px-3 flex items-center justify-between text-xs font-mono shrink-0 w-full z-10">
+      {isValid ? (
+        <span className="flex items-center gap-1.5 text-zinc-400">
+          <CheckCircle2 className="w-3.5 h-3.5 text-zinc-100" /> Ready
+        </span>
+      ) : (
+        <span className="flex items-center gap-1.5 text-red-400 font-medium truncate max-w-md">
+          <AlertCircle className="w-3.5 h-3.5 text-red-500 shrink-0" />
+          Line {line}, Col {col}: {shortMessage}
+        </span>
+      )}
+    </div>
+  );
+}
+
+export function FloatingErrorBadge({ errorMessage }: { errorMessage?: string }) {
+  if (!errorMessage) return null;
+  const shortMessage = cleanErrorMessage(errorMessage);
+  return (
+    <div className="absolute bottom-3 left-3 bg-red-950/80 border border-red-900/60 text-red-300 text-xs font-mono px-3 py-1.5 rounded-lg backdrop-blur-md shadow-lg flex items-center gap-2 z-10 pointer-events-none">
+      <AlertCircle className="w-3.5 h-3.5 shrink-0 text-red-500" />
+      <span className="truncate max-w-[250px]">{shortMessage}</span>
+    </div>
+  );
+}
+
+// Deprecated: Keeping for backward compatibility with tools that haven't migrated yet
 export function StatusBar({
   isValid,
   errorLine,
   inputLength,
   executionMs,
-}: StatusBarProps) {
+}: {
+  isValid: boolean;
+  errorLine?: number;
+  inputLength: number;
+  executionMs: number;
+}) {
   return (
     <div className="h-8 border-t border-zinc-200 dark:border-[#27272A] bg-zinc-50 dark:bg-[#121215] flex items-center justify-between px-4 shrink-0 transition-colors">
       <div className="flex items-center gap-4 min-w-0 flex-1">

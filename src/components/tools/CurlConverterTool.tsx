@@ -9,7 +9,7 @@ import { ExportImageButton } from "@/components/ExportImageButton";
 import { Copy, Trash2, Check , Terminal } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { addSnapshot } from "@/lib/storage";
-import { StatusBar } from "@/components/layout/StatusBar";
+import { StatusBar, ValidationBadge, EditorPanelFooter } from '@/components/layout/StatusBar';
 
 interface CurlConverterToolProps {
   onValidationChange: (isValid: boolean, error?: string) => void;
@@ -26,6 +26,7 @@ export function CurlConverterTool({ onValidationChange, onStatsChange, restoredI
   const [copied, setCopied] = useState(false);
   const [activeTab, setActiveTab] = useState<"input" | "output">("input");
   const [isValid, setIsValid] = useState(true);
+  const [errorMsg, setErrorMsg] = useState<string | undefined>();
   const [execMs, setExecMs] = useState(0);
 
   // Restore from history / share URL
@@ -52,6 +53,7 @@ export function CurlConverterTool({ onValidationChange, onStatsChange, restoredI
       onValidationChange(false, parsed.error);
     } else {
       setIsValid(true);
+    setErrorMsg(undefined);
       onValidationChange(true);
       if (target === 'javascript') code = generateFetch(parsed);
       if (target === 'python') code = generatePythonRequests(parsed);
@@ -142,6 +144,7 @@ export function CurlConverterTool({ onValidationChange, onStatsChange, restoredI
               options={{ minimap: { enabled: false }, fontSize: 13, wordWrap: "on", padding: { top: 16 } }}
             />
           </div>
+          <EditorPanelFooter isValid={isValid} errorMessage={errorMsg}  />
         </div>
 
         {/* Right: Output */}
@@ -164,12 +167,7 @@ export function CurlConverterTool({ onValidationChange, onStatsChange, restoredI
         </div>
       </div>
 
-      {/* Embedded 32px Status Bar */}
-      <StatusBar
-        isValid={isValid}
-        inputLength={input.length}
-        executionMs={execMs}
-      />
+      
     </div>
   );
 }
