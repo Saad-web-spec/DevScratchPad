@@ -125,16 +125,18 @@ export function SqlFormatterTool({
           <p className="text-[11px] text-zinc-400 dark:text-zinc-500 hidden sm:block">Format and beautify SQL queries with multi-dialect support</p>
         </div>
 
-        <div className="flex items-center gap-1.5 md:gap-2 flex-wrap">
+        <div className="flex items-center gap-1.5 md:gap-2 overflow-x-auto hide-scrollbar pb-1 md:pb-0">
           <ExportImageButton code={output || input} language="sql" />
           <EmbedButton toolSlug="sql-formatter" data={input} />
           <ShareButton toolSlug="sql-formatter" data={input} />
+          
+          <div className="h-5 w-px bg-zinc-200 dark:bg-zinc-800 mx-1 shrink-0" />
 
           {/* Dialect Selector */}
           <select
             value={dialect}
             onChange={(e) => setDialect(e.target.value as SqlDialect)}
-            className="h-9 bg-[#18181B] border border-[#27272A] text-zinc-300 text-xs rounded-md px-2 focus:outline-none font-medium"
+            className="h-9 bg-[#18181B] border border-[#27272A] text-zinc-300 text-xs rounded-md px-2 focus:outline-none font-medium shrink-0"
           >
             {DIALECT_OPTIONS.map((opt) => (
               <option key={opt.value} value={opt.value}>
@@ -147,7 +149,7 @@ export function SqlFormatterTool({
           <select
             value={indent}
             onChange={(e) => setIndent(Number(e.target.value))}
-            className="h-9 bg-[#18181B] border border-[#27272A] text-zinc-300 text-xs rounded-md px-2 focus:outline-none"
+            className="h-9 bg-[#18181B] border border-[#27272A] text-zinc-300 text-xs rounded-md px-2 focus:outline-none shrink-0"
           >
             <option value={2}>2 Spaces</option>
             <option value={4}>4 Spaces</option>
@@ -157,7 +159,7 @@ export function SqlFormatterTool({
           <select
             value={keywordCase}
             onChange={(e) => setKeywordCase(e.target.value as "upper" | "lower" | "preserve")}
-            className="h-9 bg-[#18181B] border border-[#27272A] text-zinc-300 text-xs rounded-md px-2 focus:outline-none"
+            className="h-9 bg-[#18181B] border border-[#27272A] text-zinc-300 text-xs rounded-md px-2 focus:outline-none shrink-0"
           >
             <option value="upper">UPPERCASE</option>
             <option value="lower">lowercase</option>
@@ -166,7 +168,7 @@ export function SqlFormatterTool({
 
           <button
             onClick={handleFormat}
-            className="h-9 px-3 bg-blue-600 dark:bg-blue-600 hover:bg-blue-700 dark:hover:bg-blue-500 text-white rounded-md text-xs font-medium transition-colors flex items-center gap-1.5 shadow-2xs"
+            className="h-9 px-3 bg-blue-600 dark:bg-blue-600 hover:bg-blue-700 dark:hover:bg-blue-500 text-white rounded-md text-xs font-medium transition-colors flex items-center gap-1.5 shadow-2xs shrink-0"
           >
             <Play className="w-3.5 h-3.5" />
             <span>Format</span>

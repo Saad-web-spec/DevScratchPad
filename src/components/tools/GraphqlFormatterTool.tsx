@@ -81,12 +81,14 @@ export function GraphqlFormatterTool({ onValidationChange, onStatsChange, onLogH
           <p className="text-[11px] text-zinc-400 dark:text-zinc-500 hidden sm:block">Format and validate GraphQL queries</p>
         </div>
         
-        <div className="flex items-center gap-1.5 md:gap-2 flex-wrap">
+        <div className="flex items-center gap-1.5 md:gap-2 overflow-x-auto hide-scrollbar pb-1 md:pb-0">
           <ExportImageButton code={output || input} language="graphql" />
           <EmbedButton toolSlug="graphql-formatter" data={input} />
           <ShareButton toolSlug="graphql-formatter" data={input} />
           
-          <button onClick={handleFormat} className="h-9 px-3 bg-blue-600 dark:bg-blue-600 hover:bg-blue-700 dark:hover:bg-blue-500 text-white rounded-md text-xs font-medium transition-colors flex items-center gap-1.5 shadow-2xs">
+          <div className="h-5 w-px bg-zinc-200 dark:bg-zinc-800 mx-1 shrink-0" />
+
+          <button onClick={handleFormat} className="h-9 px-3 bg-blue-600 dark:bg-blue-600 hover:bg-blue-700 dark:hover:bg-blue-500 text-white rounded-md text-xs font-medium transition-colors flex items-center gap-1.5 shadow-2xs shrink-0">
             <Play className="w-3.5 h-3.5" />
             <span>Format</span>
           </button>

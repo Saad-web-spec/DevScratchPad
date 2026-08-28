@@ -103,25 +103,28 @@ export function JsonFormatterTool({ onValidationChange, onStatsChange, onLogHist
           <p className="text-[11px] text-zinc-400 dark:text-zinc-500 hidden sm:block">Format, validate, and minify JSON data</p>
         </div>
         
-        <div className="flex items-center gap-1.5 md:gap-2 flex-wrap">
+        <div className="flex items-center gap-1.5 md:gap-2 overflow-x-auto hide-scrollbar pb-1 md:pb-0">
           <ExportImageButton code={output || input} language="json" />
           <EmbedButton toolSlug="json-formatter" data={input} />
           <ShareButton toolSlug="json-formatter" data={input} />
+          
+          <div className="h-5 w-px bg-zinc-200 dark:bg-zinc-800 mx-1 shrink-0" />
+
           <select 
             value={indent}
             onChange={(e) => setIndent(Number(e.target.value))}
-            className="h-9 bg-[#18181B] border border-[#27272A] text-zinc-300 text-xs rounded-md px-2 focus:outline-none"
+            className="h-9 bg-[#18181B] border border-[#27272A] text-zinc-300 text-xs rounded-md px-2 focus:outline-none shrink-0"
           >
             <option value={2}>2 Spaces</option>
             <option value={4}>4 Spaces</option>
           </select>
 
-          <button onClick={handleMinify} className="h-9 px-3 bg-[#18181B] hover:bg-[#27272A] border border-[#27272A] text-zinc-300 text-xs font-medium rounded-md transition-colors flex items-center gap-1.5">
+          <button onClick={handleMinify} className="h-9 px-3 bg-[#18181B] hover:bg-[#27272A] border border-[#27272A] text-zinc-300 text-xs font-medium rounded-md transition-colors flex items-center gap-1.5 shrink-0">
             <Minimize2 className="w-3.5 h-3.5" />
             <span>Minify</span>
           </button>
           
-          <button onClick={handleFormat} className="h-9 px-3 bg-blue-600 dark:bg-blue-600 hover:bg-blue-700 dark:hover:bg-blue-500 text-white rounded-md text-xs font-medium transition-colors flex items-center gap-1.5 shadow-2xs">
+          <button onClick={handleFormat} className="h-9 px-3 bg-blue-600 dark:bg-blue-600 hover:bg-blue-700 dark:hover:bg-blue-500 text-white rounded-md text-xs font-medium transition-colors flex items-center gap-1.5 shadow-2xs shrink-0">
             <Play className="w-3.5 h-3.5" />
             <span>Format</span>
           </button>
