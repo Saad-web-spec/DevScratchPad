@@ -1,15 +1,13 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { MonacoEditor } from "@/components/MonacoEditor";
 import { generateAllHashes, type HashResults } from "@/lib/tools/hash";
 import { ShareButton } from "@/components/ShareButton";
 import { EmbedButton } from "@/components/EmbedButton";
 import { ExportImageButton } from "@/components/ExportImageButton";
-import { Hash,  Copy, Trash2, Check  } from "lucide-react";
+import { Hash, Copy, Trash2, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { addSnapshot } from "@/lib/storage";
-import { ValidationBadge } from "@/components/layout/StatusBar";
 
 interface HashGeneratorToolProps {
   onValidationChange: (isValid: boolean, error?: string) => void;
@@ -95,120 +93,92 @@ export function HashGeneratorTool({
   };
 
   const HASH_CARDS = [
-    {
-      id: "md5",
-      name: "MD5",
-      bits: "128-bit",
-      value: hashes.md5,
-      color: "text-amber-600 bg-amber-50 border-amber-200 dark:bg-amber-950/50 dark:text-amber-400 dark:border-amber-800",
-    },
-    {
-      id: "sha1",
-      name: "SHA-1",
-      bits: "160-bit",
-      value: hashes.sha1,
-      color: "text-zinc-100 bg-blue-50 border-blue-200 dark:bg-blue-950/50 dark:text-zinc-100 dark:border-blue-800",
-    },
-    {
-      id: "sha256",
-      name: "SHA-256",
-      bits: "256-bit",
-      value: hashes.sha256,
-      color: "text-zinc-900 dark:text-zinc-100 bg-emerald-50 border-emerald-200 dark:bg-emerald-950/50 dark:text-zinc-900 dark:text-zinc-100 dark:border-emerald-800",
-    },
-    {
-      id: "sha512",
-      name: "SHA-512",
-      bits: "512-bit",
-      value: hashes.sha512,
-      color: "text-purple-600 bg-purple-50 border-purple-200 dark:bg-purple-950/50 dark:text-purple-400 dark:border-purple-800",
-    },
+    { id: "md5", name: "MD5", bits: "128-bit", value: hashes.md5 },
+    { id: "sha1", name: "SHA-1", bits: "160-bit", value: hashes.sha1 },
+    { id: "sha256", name: "SHA-256", bits: "256-bit", value: hashes.sha256 },
+    { id: "sha512", name: "SHA-512", bits: "512-bit", value: hashes.sha512 },
   ];
 
   return (
-    <div className="flex flex-col h-full bg-white dark:bg-zinc-950 overflow-y-auto w-full overflow-x-hidden">
+    <div className="flex flex-col h-full bg-[#09090B] overflow-y-auto w-full overflow-x-hidden relative">
       {/* Tool Header */}
-      <div className="min-h-14 border-b border-[#e2e8f0] dark:border-zinc-800 flex items-center justify-between gap-2 overflow-x-auto no-scrollbar py-2 px-3 md:px-4 px-3 md:px-4 py-2 md:py-0 bg-[#f8fafc] dark:bg-zinc-900 shrink-0">
+      <div className="min-h-14 border-b border-zinc-200 dark:border-zinc-800 flex items-center justify-between gap-2 overflow-x-auto no-scrollbar py-2 px-3 md:px-4 bg-white dark:bg-zinc-950 shrink-0 sticky top-0 z-10">
         <div className="flex items-center gap-2">
-          <Hash className="w-4 h-4 text-zinc-100" />
-          <h2 className="text-sm font-semibold text-zinc-800 dark:text-zinc-200">Hash Generator</h2>
+          <Hash className="w-4 h-4 text-zinc-900 dark:text-zinc-100" />
+          <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">Hash Generator</h2>
         </div>
 
-        <div className="flex items-center gap-1.5 md:gap-2 flex-wrap">
-          <ValidationBadge isValid={true} />
+        <div className="flex items-center gap-2">
           <ExportImageButton code={JSON.stringify(hashes, null, 2) || input} language="plaintext" />
           <EmbedButton toolSlug="hash-generator" data={input} />
           <ShareButton toolSlug="hash-generator" data={input} />
-          <button
-            onClick={() => setIsUppercase(!isUppercase)}
-            className={cn(
-              "h-9 px-3 rounded-md text-xs font-medium transition-colors border",
-              isUppercase
-                ? "bg-blue-500/10 border-blue-500/30 text-zinc-100 dark:text-zinc-100 font-semibold"
-                : "bg-[#18181B] hover:bg-[#27272A] border-[#27272A] text-zinc-300"
-            )}
-          >
-            {isUppercase ? "UPPERCASE" : "lowercase"}
-          </button>
+          
+          <div className="bg-zinc-100 dark:bg-zinc-800/80 p-0.5 rounded-lg flex items-center h-8 ml-1">
+            <button
+              onClick={() => setIsUppercase(false)}
+              className={cn(
+                "px-2.5 py-1 text-xs font-medium rounded-md transition-all",
+                !isUppercase
+                  ? "bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 font-semibold shadow-xs"
+                  : "text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200"
+              )}
+            >
+              lowercase
+            </button>
+            <button
+              onClick={() => setIsUppercase(true)}
+              className={cn(
+                "px-2.5 py-1 text-xs font-medium rounded-md transition-all",
+                isUppercase
+                  ? "bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 font-semibold shadow-xs"
+                  : "text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200"
+              )}
+            >
+              UPPERCASE
+            </button>
+          </div>
 
           <button
             onClick={handleCopyAll}
-            className={cn(
-              "h-9 px-3 bg-[#18181B] hover:bg-[#27272A] border border-[#27272A] text-zinc-300 text-xs font-medium rounded-md transition-colors flex items-center gap-1.5",
-              copiedKey === "all" && "text-zinc-900 dark:text-zinc-100 border-emerald-500/40"
-            )}
+            className="bg-zinc-900 hover:bg-zinc-800 text-white dark:bg-zinc-100 dark:hover:bg-zinc-200 dark:text-zinc-900 h-8 px-3 text-xs font-semibold rounded-md flex items-center gap-1.5 ml-1 shrink-0 transition-colors shadow-xs"
           >
             {copiedKey === "all" ? (
-              <Check className="w-3.5 h-3.5 text-zinc-900 dark:text-zinc-100" />
+              <Check className="w-3.5 h-3.5" />
             ) : (
-              <Copy className="w-3.5 h-3.5 text-zinc-400" />
+              <Copy className="w-3.5 h-3.5" />
             )}
-            <span>{copiedKey === "all" ? "Copied!" : "Copy All"}</span>
+            <span>{copiedKey === "all" ? "Copied!" : "Copy All Hashes"}</span>
           </button>
         </div>
       </div>
 
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col p-6 md:p-10 max-w-5xl mx-auto w-full gap-8">
-        {/* Input - flat on canvas, no card wrapper */}
-        <div>
+      <div className="flex-1 flex flex-col p-4 md:p-8 max-w-5xl mx-auto w-full gap-8 bg-white dark:bg-[#09090B]">
+        {/* Input Box Container */}
+        <div className="bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 rounded-xl p-4 shadow-sm">
           <div className="flex items-center justify-between mb-3">
-            <span className="text-[11px] font-semibold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider">
+            <span className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
               Input Text
             </span>
             <button
               onClick={() => setInput("")}
-              className="h-9 px-3 bg-[#18181B] hover:bg-[#27272A] border border-[#27272A] text-zinc-300 text-xs font-medium rounded-md transition-colors flex items-center gap-1.5"
+              className="p-1 rounded-md transition-colors"
               title="Clear input"
             >
-              <Trash2 className="w-3.5 h-3.5" />
-              <span>Clear</span>
+              <Trash2 className="w-3.5 h-3.5 text-zinc-400 hover:text-red-500" />
             </button>
           </div>
-          <div className="min-h-[120px] rounded-lg overflow-hidden border border-[#27272A] bg-[#09090B]">
-            <MonacoEditor
-              height="120px"
-              defaultLanguage="plaintext"
-              value={input}
-              onChange={(value) => setInput(value || "")}
-              options={{
-                minimap: { enabled: false },
-                fontSize: 13,
-                wordWrap: "on",
-                scrollBeyondLastLine: false,
-                lineNumbers: "off",
-                glyphMargin: false,
-                folding: false,
-                padding: { top: 16, bottom: 16 },
-                fontFamily: "'JetBrains Mono', 'Fira Code', Consolas, monospace",
-              }}
-            />
-          </div>
+          <textarea
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            placeholder="Type or paste your text here..."
+            className="font-mono text-sm bg-transparent border-0 outline-none focus:ring-0 text-zinc-900 dark:text-zinc-100 w-full min-h-[100px] resize-y placeholder:text-zinc-400 dark:placeholder:text-zinc-600"
+          />
         </div>
 
-        {/* Hashes Output — clean stacked rows */}
+        {/* Generated Hashes List */}
         <div>
-          <span className="text-[11px] font-semibold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider block mb-5">
+          <span className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider block mb-4">
             Generated Hashes
           </span>
 
@@ -223,43 +193,35 @@ export function HashGeneratorTool({
               return (
                 <div
                   key={card.id}
-                  className="group bg-[#121215] border border-[#27272A] rounded-lg px-5 py-4 flex flex-col sm:flex-row sm:items-center gap-4 hover:border-zinc-600 transition-colors"
+                  className="flex flex-col sm:flex-row sm:items-center justify-between p-3.5 bg-white dark:bg-zinc-900/40 border border-zinc-200/80 dark:border-zinc-800 rounded-xl mb-3 shadow-xs hover:border-zinc-300 dark:hover:border-zinc-700 transition-all gap-3 sm:gap-0"
                 >
-                  {/* Label */}
-                  <div className="flex items-center gap-3 sm:w-[140px] shrink-0">
-                    <span className="text-sm font-semibold text-zinc-200">
+                  {/* Algorithm Tag & Bit Badge */}
+                  <div className="flex items-center gap-3">
+                    <span className="font-mono font-bold text-xs text-zinc-900 dark:text-zinc-100 min-w-[70px]">
                       {card.name}
                     </span>
-                    <span
-                      className={cn(
-                        "text-[10px] font-semibold px-2 py-0.5 rounded-full border",
-                        card.color
-                      )}
-                    >
+                    <span className="bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 border border-zinc-200 dark:border-zinc-700 px-2 py-0.5 rounded text-[10px] font-mono">
                       {card.bits}
                     </span>
                   </div>
 
-                  {/* Hash value — flat, no inner border */}
-                  <div className="flex-1 min-w-0 font-mono text-[13px] text-zinc-400 break-all select-all leading-relaxed">
+                  {/* Hash Output Text */}
+                  <div className="font-mono text-sm text-zinc-800 dark:text-zinc-200 truncate mx-0 sm:mx-4 select-all flex-1">
                     {displayVal}
                   </div>
 
-                  {/* Copy */}
+                  {/* Copy Button */}
                   <button
                     onClick={() => handleCopy(card.value, card.id)}
-                    disabled={!card.value}
-                    className={cn(
-                      "h-9 px-3 bg-[#18181B] hover:bg-[#27272A] border border-[#27272A] text-zinc-300 text-xs font-medium rounded-md transition-colors flex items-center gap-1.5 shrink-0",
-                      copiedKey === card.id && "text-zinc-900 dark:text-zinc-100 border-emerald-500/40"
-                    )}
+                    className="h-8 px-2.5 text-xs bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-300 rounded-md font-medium transition-colors flex items-center justify-center gap-1 shrink-0"
+                    title={`Copy ${card.name} hash`}
                   >
                     {copiedKey === card.id ? (
                       <Check className="w-3.5 h-3.5 text-zinc-900 dark:text-zinc-100" />
                     ) : (
-                      <Copy className="w-3.5 h-3.5 text-zinc-400" />
+                      <Copy className="w-3.5 h-3.5" />
                     )}
-                    <span>{copiedKey === card.id ? "Copied!" : "Copy"}</span>
+                    <span>{copiedKey === card.id ? "Copied" : "Copy"}</span>
                   </button>
                 </div>
               );
@@ -270,5 +232,3 @@ export function HashGeneratorTool({
     </div>
   );
 }
-
-export const HashTool = HashGeneratorTool;
