@@ -3,7 +3,12 @@
 import { useState } from "react";
 import { Image as ImageIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { ExportImageModal } from "./ExportImageModal";
+import dynamic from "next/dynamic";
+
+const ExportImageModal = dynamic(
+  () => import("./ExportImageModal").then((mod) => mod.ExportImageModal),
+  { ssr: false }
+);
 
 interface ExportImageButtonProps {
   code: string | object;
