@@ -292,13 +292,6 @@ export function WorkspaceShell({ initialToolSlug, toolMeta }: WorkspaceShellProp
         <main className="flex-1 flex flex-col min-w-0 bg-white dark:bg-zinc-950 overflow-y-auto">
           <div className="flex-1 min-h-0 relative flex flex-col">
             <div className="flex-1 min-h-[500px] relative flex flex-col">
-              {!isValid && errorMsg && (
-                <div className="absolute top-14 left-0 right-0 z-20 bg-red-950/40 border-b border-red-900/50 px-4 py-1.5 pointer-events-none flex items-center">
-                  <span className="text-red-300 text-xs font-mono">
-                    Syntax Error {errorLine ? `(Line ${errorLine})` : ''}: {errorMsg}
-                  </span>
-                </div>
-              )}
               {activeTool === "json-formatter" && (
                 <JsonFormatterTool
                   onValidationChange={handleValidationChange}

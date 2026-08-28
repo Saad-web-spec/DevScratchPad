@@ -1,6 +1,6 @@
 "use client";
 
-import { CheckCircle2, ShieldCheck, XCircle } from "lucide-react";
+import { AlertCircle, AlertTriangle, CheckCircle2, Check, XCircle } from "lucide-react";
 
 interface StatusBarProps {
   isValid: boolean;
@@ -42,9 +42,9 @@ export function StatusBar({
 
 export function ValidationBadge({ isValid }: { isValid: boolean }) {
   return isValid ? (
-    <div className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-zinc-100 dark:bg-zinc-800/80 border border-zinc-200 dark:border-zinc-700 text-zinc-800 dark:text-zinc-200">
-      <CheckCircle2 className="w-3.5 h-3.5 text-zinc-900 dark:text-zinc-100" />
-      <span>Verified</span>
+    <div className="bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-700 px-2 py-0.5 rounded-md text-xs font-mono flex items-center gap-1">
+      <Check className="w-3 h-3 text-zinc-900 dark:text-zinc-100" />
+      <span>Valid</span>
     </div>
   ) : (
     <div className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-500/10 text-red-600 dark:text-red-400 border border-red-500/20">

@@ -42,6 +42,8 @@ export function JsonFormatterTool({ onValidationChange, onStatsChange, onLogHist
     if (restoredInput) setInput(restoredInput);
   }, [restoredInput]);
 
+  const [errorMsg, setErrorMsg] = useState<string | undefined>();
+
   // Real-time validation
   useEffect(() => {
     const start = performance.now();
@@ -50,6 +52,7 @@ export function JsonFormatterTool({ onValidationChange, onStatsChange, onLogHist
     const ms = end - start;
     
     setIsValid(valid);
+    setErrorMsg(error);
     setErrorLine(line);
     setExecMs(ms);
     onValidationChange(valid, error, line);
@@ -97,13 +100,13 @@ export function JsonFormatterTool({ onValidationChange, onStatsChange, onLogHist
   return (
     <div className="flex flex-col h-full bg-white dark:bg-zinc-950 w-full overflow-x-hidden">
       {/* Tool Header */}
-      <div className="min-h-14 border-b border-[#e2e8f0] dark:border-zinc-700 flex min-w-0 flex-wrap md:flex-nowrap items-center justify-between px-3 md:px-4 py-2 md:py-0 bg-[#f8fafc] dark:bg-zinc-900 shrink-0 gap-2">
+      <div className="min-h-14 border-b border-[#e2e8f0] dark:border-zinc-700 flex items-center justify-between gap-2 overflow-x-auto no-scrollbar py-2 px-3 md:px-4 px-3 md:px-4 py-2 md:py-0 bg-[#f8fafc] dark:bg-zinc-900 shrink-0">
         <div className="flex items-center gap-2">
           <FileJson className="w-4 h-4 text-zinc-100" />
           <h2 className="text-sm font-semibold text-zinc-800 dark:text-zinc-200">JSON Formatter & Validator</h2>
         </div>
         
-        <div className="flex items-center gap-1.5 md:gap-2 overflow-x-auto hide-scrollbar pb-1 md:pb-0">
+        <div className="flex items-center gap-2">
           <ExportImageButton code={output || input} language="json" />
           <EmbedButton toolSlug="json-formatter" data={input} />
           <ShareButton toolSlug="json-formatter" data={input} />
@@ -124,12 +127,19 @@ export function JsonFormatterTool({ onValidationChange, onStatsChange, onLogHist
             <span>Minify</span>
           </button>
           
-          <button onClick={handleFormat} className="h-9 px-3 bg-zinc-900 dark:bg-zinc-100 hover:bg-zinc-800 dark:hover:bg-zinc-200 text-white dark:text-zinc-900 rounded-md text-xs font-medium transition-colors flex items-center gap-1.5 shadow-2xs shrink-0">
+          <button onClick={handleFormat} className="h-8 px-3 text-xs font-semibold rounded-md shadow-xs transition-colors flex items-center gap-1.5 bg-zinc-900 hover:bg-zinc-800 text-white dark:bg-zinc-100 dark:hover:bg-zinc-200 dark:text-zinc-900 shrink-0">
             <Play className="w-3.5 h-3.5" />
             <span>Format</span>
           </button>
         </div>
       </div>
+
+      {/* Error Banner */}
+      {!isValid && errorMsg && (
+        <div className="w-full bg-red-50 dark:bg-red-950/40 border-b border-red-200 dark:border-red-900/50 px-4 py-2 text-xs font-mono text-red-600 dark:text-red-400 flex items-center gap-2">
+          <span>Syntax Error {errorLine ? `(Line ${errorLine})` : ''}: {errorMsg}</span>
+        </div>
+      )}
 
       {/* Mobile Segmented Tab Control */}
       <div className="flex md:hidden bg-[#f1f5f9] dark:bg-zinc-800 p-1 border-b border-[#e2e8f0] dark:border-zinc-700 shrink-0">
@@ -138,8 +148,8 @@ export function JsonFormatterTool({ onValidationChange, onStatsChange, onLogHist
           className={cn(
             "flex-1 py-1.5 text-xs font-medium rounded-md transition-colors text-center",
             activeTab === "input"
-              ? "bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white shadow-2xs"
-              : "text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200"
+                  ? "bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 font-semibold shadow-xs rounded-md px-2.5 py-1 text-xs"
+                  : "text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200 px-2.5 py-1 text-xs"
           )}
         >
           Input Editor
@@ -149,8 +159,8 @@ export function JsonFormatterTool({ onValidationChange, onStatsChange, onLogHist
           className={cn(
             "flex-1 py-1.5 text-xs font-medium rounded-md transition-colors text-center",
             activeTab === "output"
-              ? "bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white shadow-2xs"
-              : "text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200"
+                  ? "bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 font-semibold shadow-xs rounded-md px-2.5 py-1 text-xs"
+                  : "text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200 px-2.5 py-1 text-xs"
           )}
         >
           Output Result

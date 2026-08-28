@@ -143,25 +143,25 @@ export function YamlConverterTool({
   return (
     <div className="flex flex-col h-full bg-white dark:bg-zinc-950 w-full overflow-x-hidden">
       {/* Tool Header */}
-      <div className="min-h-14 border-b border-[#e2e8f0] dark:border-zinc-700 flex min-w-0 flex-wrap md:flex-nowrap items-center justify-between px-3 md:px-4 py-2 md:py-0 bg-[#f8fafc] dark:bg-zinc-900 shrink-0 gap-2">
+      <div className="min-h-14 border-b border-[#e2e8f0] dark:border-zinc-700 flex items-center justify-between gap-2 overflow-x-auto no-scrollbar py-2 px-3 md:px-4 px-3 md:px-4 py-2 md:py-0 bg-[#f8fafc] dark:bg-zinc-900 shrink-0">
         <div className="flex items-center gap-2">
           <ArrowLeftRight className="w-4 h-4 text-zinc-100" />
           <h2 className="text-sm font-semibold text-zinc-800 dark:text-zinc-200">YAML / JSON Converter</h2>
         </div>
 
-        <div className="flex items-center gap-1.5 md:gap-3 flex-wrap">
+        <div className="flex items-center gap-2">
           <ExportImageButton code={output || input} language="yaml" />
           <EmbedButton toolSlug="yaml-json" data={input} />
           <ShareButton toolSlug="yaml-json" data={input} />
           {/* Mode Switcher */}
-          <div className="flex items-center bg-zinc-200/80 dark:bg-zinc-800 p-0.5 rounded-lg">
+          <div className="bg-zinc-100 dark:bg-zinc-800/80 p-0.5 rounded-lg flex items-center h-8">
             <button
               onClick={() => setMode("yaml-to-json")}
               className={cn(
                 "px-2.5 py-1 text-xs font-medium rounded-md transition-all",
                 mode === "yaml-to-json"
-                  ? "bg-white dark:bg-zinc-950 text-zinc-100 dark:text-zinc-100 shadow-2xs"
-                  : "text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white"
+                  ? "bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 font-semibold shadow-xs rounded-md px-2.5 py-1 text-xs"
+                  : "text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200 px-2.5 py-1 text-xs"
               )}
             >
               YAML to JSON
@@ -171,8 +171,8 @@ export function YamlConverterTool({
               className={cn(
                 "px-2.5 py-1 text-xs font-medium rounded-md transition-all",
                 mode === "json-to-yaml"
-                  ? "bg-white dark:bg-zinc-950 text-zinc-100 dark:text-zinc-100 shadow-2xs"
-                  : "text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white"
+                  ? "bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 font-semibold shadow-xs rounded-md px-2.5 py-1 text-xs"
+                  : "text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200 px-2.5 py-1 text-xs"
               )}
             >
               JSON to YAML
@@ -205,7 +205,7 @@ export function YamlConverterTool({
           {/* Convert Button */}
           <button
             onClick={handleConvert}
-            className="h-9 px-3 bg-zinc-900 dark:bg-zinc-100 hover:bg-zinc-800 dark:hover:bg-zinc-200 text-white dark:text-zinc-900 rounded-md text-xs font-medium transition-colors flex items-center gap-1.5 shadow-2xs"
+            className="h-8 px-3 text-xs font-semibold rounded-md shadow-xs transition-colors flex items-center gap-1.5 bg-zinc-900 hover:bg-zinc-800 text-white dark:bg-zinc-100 dark:hover:bg-zinc-200 dark:text-zinc-900"
           >
             <Play className="w-3.5 h-3.5" />
             <span>Convert</span>
@@ -220,8 +220,8 @@ export function YamlConverterTool({
           className={cn(
             "flex-1 py-1.5 text-xs font-medium rounded-md transition-colors text-center",
             activeTab === "input"
-              ? "bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 shadow-2xs"
-              : "text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200"
+                  ? "bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 font-semibold shadow-xs rounded-md px-2.5 py-1 text-xs"
+                  : "text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200 px-2.5 py-1 text-xs"
           )}
         >
           {mode === "yaml-to-json" ? "YAML Input" : "JSON Input"}
@@ -231,8 +231,8 @@ export function YamlConverterTool({
           className={cn(
             "flex-1 py-1.5 text-xs font-medium rounded-md transition-colors text-center",
             activeTab === "output"
-              ? "bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 shadow-2xs"
-              : "text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200"
+                  ? "bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 font-semibold shadow-xs rounded-md px-2.5 py-1 text-xs"
+                  : "text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200 px-2.5 py-1 text-xs"
           )}
         >
           {mode === "yaml-to-json" ? "JSON Output" : "YAML Output"}

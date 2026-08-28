@@ -73,7 +73,7 @@ export function JwtDecoderTool({ onValidationChange, onStatsChange, restoredInpu
   return (
     <div className="flex flex-col h-full bg-white dark:bg-zinc-950 w-full overflow-x-hidden">
       {/* Tool Header */}
-      <div className="min-h-14 border-b border-[#e2e8f0] dark:border-zinc-700 flex min-w-0 flex-wrap md:flex-nowrap items-center justify-between px-3 md:px-4 py-2 md:py-0 bg-[#f8fafc] dark:bg-zinc-900 shrink-0 gap-2">
+      <div className="min-h-14 border-b border-[#e2e8f0] dark:border-zinc-700 flex items-center justify-between gap-2 overflow-x-auto no-scrollbar py-2 px-3 md:px-4 px-3 md:px-4 py-2 md:py-0 bg-[#f8fafc] dark:bg-zinc-900 shrink-0">
         <div className="flex items-center gap-2">
           <Key className="w-4 h-4 text-zinc-100" />
           <h2 className="text-sm font-semibold text-zinc-800 dark:text-zinc-200">JWT Decoder</h2>
@@ -93,8 +93,8 @@ export function JwtDecoderTool({ onValidationChange, onStatsChange, restoredInpu
           className={cn(
             "flex-1 py-1.5 text-xs font-medium rounded-md transition-colors text-center",
             activeTab === "input"
-              ? "bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 shadow-2xs"
-              : "text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200"
+                  ? "bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 font-semibold shadow-xs rounded-md px-2.5 py-1 text-xs"
+                  : "text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200 px-2.5 py-1 text-xs"
           )}
         >
           Encoded JWT
@@ -104,8 +104,8 @@ export function JwtDecoderTool({ onValidationChange, onStatsChange, restoredInpu
           className={cn(
             "flex-1 py-1.5 text-xs font-medium rounded-md transition-colors text-center",
             activeTab === "output"
-              ? "bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 shadow-2xs"
-              : "text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200"
+                  ? "bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 font-semibold shadow-xs rounded-md px-2.5 py-1 text-xs"
+                  : "text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200 px-2.5 py-1 text-xs"
           )}
         >
           Decoded Token
