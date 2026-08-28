@@ -3,6 +3,7 @@ export interface ToolMeta {
   name: string;
   shortName: string;
   description: string;
+  seoTitle: string;
   seoDescription: string;
   howToUse: string[];
   edgeCases: string[];
@@ -15,8 +16,10 @@ export const TOOLS_REGISTRY: Record<string, ToolMeta> = {
     name: "JSON Formatter, Minifier & Validator",
     shortName: "JSON Formatter",
     description: "Format, validate, and minify JSON data",
+    seoTitle:
+      "JSON Formatter Online — Format, Validate & Minify | DevScratchpad",
     seoDescription:
-      "Fast, client-side JSON Formatter. 100% private, zero server transmission. Format, validate, and minify JSON data instantly in your browser.",
+      "Free online JSON formatter and validator — paste your JSON, format with 2 or 4 space indent, minify, and detect syntax errors instantly. No data sent to any server.",
     howToUse: [
       "Paste or type raw JSON into the left Input panel.",
       "Select your preferred indentation (2 spaces or 4 spaces) from the dropdown.",
@@ -38,8 +41,10 @@ export const TOOLS_REGISTRY: Record<string, ToolMeta> = {
     name: "JWT Decoder",
     shortName: "JWT Decoder",
     description: "Decode JSON Web Tokens instantly and securely",
+    seoTitle:
+      "JWT Decoder Online — Decode Tokens Safely | DevScratchpad",
     seoDescription:
-      "Fast, client-side JWT Decoder. 100% private, zero server transmission. Decode JWT headers, payloads, and signatures instantly in your browser.",
+      "Free online JWT decoder — paste any JSON Web Token to decode header, payload, and signature. Auto-converts exp/iat timestamps to readable dates. 100% client-side.",
     howToUse: [
       "Paste a standard JWT string (starting with 'eyJ...') into the left input area.",
       "The token is automatically split into Header, Payload, and Signature sections.",
@@ -60,8 +65,10 @@ export const TOOLS_REGISTRY: Record<string, ToolMeta> = {
     name: "Unix Timestamp Converter",
     shortName: "Unix Timestamp",
     description: "Convert Epoch to human-readable dates and vice versa",
+    seoTitle:
+      "Unix Timestamp Converter — Epoch to Date Online | DevScratchpad",
     seoDescription:
-      "Fast, client-side Unix Timestamp Converter. 100% private, zero server transmission. Convert epoch integers and ISO dates instantly in your browser.",
+      "Free online Unix timestamp converter — convert epoch seconds or milliseconds to UTC, local time, and ISO 8601. Also converts dates back to epoch. Runs in your browser.",
     howToUse: [
       "Enter a Unix epoch integer (e.g. 1770000000) to convert it to UTC, Local Time, and ISO 8601 formats.",
       "Enter a date string (e.g. '2025-01-01') to convert it to a Unix epoch integer.",
@@ -83,8 +90,10 @@ export const TOOLS_REGISTRY: Record<string, ToolMeta> = {
     name: "cURL Command Converter",
     shortName: "cURL Converter",
     description: "Transform cURL commands into executable code",
+    seoTitle:
+      "cURL to Python/JavaScript/Go Converter | DevScratchpad",
     seoDescription:
-      "Fast, client-side cURL Converter. 100% private, zero server transmission. Convert cURL commands to JavaScript, Python, and Go code instantly in your browser.",
+      "Free online cURL to code converter — paste any cURL command and generate clean JavaScript fetch, Python requests, or Go net/http code. No API keys sent to any server.",
     howToUse: [
       "Paste a full cURL command (e.g. 'curl -X POST https://api.com -H \"Auth: Bearer xyz\"') into the left panel.",
       "Select your target language from the dropdown: JavaScript (fetch), Python (requests), or Go (net/http).",
@@ -105,8 +114,10 @@ export const TOOLS_REGISTRY: Record<string, ToolMeta> = {
     name: "Diff Checker",
     shortName: "Diff Checker",
     description: "Compare text and code side-by-side",
+    seoTitle:
+      "Diff Checker Online — Compare Code Side by Side | DevScratchpad",
     seoDescription:
-      "Fast, client-side Diff Checker. 100% private, zero server transmission. Compare text side-by-side with precise insertion and deletion highlights in your browser.",
+      "Free online diff checker — compare two texts or code blocks side by side with character-level additions and deletions highlighted. Works entirely in your browser.",
     howToUse: [
       "Paste or type 'Original Text' in the left panel and 'Modified Text' in the right panel.",
       "Insertions are highlighted in green and deletions in red, with line numbers.",
@@ -127,8 +138,10 @@ export const TOOLS_REGISTRY: Record<string, ToolMeta> = {
     name: "XML Formatter & Minifier",
     shortName: "XML Formatter",
     description: "Format, beautify, and minify XML data",
+    seoTitle:
+      "XML Formatter Online — Beautify & Minify XML | DevScratchpad",
     seoDescription:
-      "Fast, client-side XML Formatter. 100% private, zero server transmission. Format, beautify, and minify XML data instantly in your browser.",
+      "Free online XML formatter — beautify, indent, and minify XML documents with customizable indentation. No data transmitted to any server.",
     howToUse: [
       "Paste or type raw XML into the left Input panel.",
       "Select your preferred indentation (2 spaces or 4 spaces) from the dropdown.",
@@ -147,8 +160,10 @@ export const TOOLS_REGISTRY: Record<string, ToolMeta> = {
     name: "SQL Formatter",
     shortName: "SQL Formatter",
     description: "Format and beautify SQL queries",
+    seoTitle:
+      "SQL Formatter Online — Beautify SQL Queries | DevScratchpad",
     seoDescription:
-      "Fast, client-side SQL Formatter. 100% private, zero server transmission. Format and beautify complex SQL queries instantly in your browser.",
+      "Free online SQL formatter — beautify complex queries across PostgreSQL, MySQL, SQLite, T-SQL dialects with uppercase keywords and clean indentation. 100% private.",
     howToUse: [
       "Paste your raw SQL query into the left Input panel.",
       "Select your preferred SQL dialect (Standard SQL, PostgreSQL, MySQL, etc.) from the dropdown if applicable.",
@@ -167,8 +182,10 @@ export const TOOLS_REGISTRY: Record<string, ToolMeta> = {
     name: "Base64 Encoder & Decoder",
     shortName: "Base64 Decoder",
     description: "Encode and decode Base64 strings securely",
+    seoTitle:
+      "Base64 Encoder & Decoder Online | DevScratchpad",
     seoDescription:
-      "Fast, client-side Base64 Encoder & Decoder. 100% private, zero server transmission. Convert strings to Base64 and back instantly in your browser.",
+      "Free online Base64 encoder and decoder — convert strings to Base64 and back with UTF-8 support and URL-safe toggle. Runs entirely in your browser.",
     howToUse: [
       "Type or paste your text into the left Input panel.",
       "Select 'Encode' or 'Decode' mode using the toggle.",
@@ -186,8 +203,10 @@ export const TOOLS_REGISTRY: Record<string, ToolMeta> = {
     name: "URL Encoder & Decoder",
     shortName: "URL Encoder",
     description: "Safely encode and decode URL components",
+    seoTitle:
+      "URL Encoder & Decoder Online | DevScratchpad",
     seoDescription:
-      "Fast, client-side URL Encoder & Decoder. 100% private, zero server transmission. Encode special characters or decode URL parameters instantly in your browser.",
+      "Free online URL encoder and decoder — encode special characters or decode URL parameters and query strings instantly. No data leaves your browser.",
     howToUse: [
       "Type or paste your URL or query string into the left Input panel.",
       "Select 'Encode' or 'Decode' mode using the toggle.",
@@ -205,8 +224,10 @@ export const TOOLS_REGISTRY: Record<string, ToolMeta> = {
     name: "Hash Generator",
     shortName: "Hash Generator",
     description: "Generate MD5, SHA-1, SHA-256, and SHA-512 hashes",
+    seoTitle:
+      "Hash Generator — MD5, SHA-1, SHA-256, SHA-512 | DevScratchpad",
     seoDescription:
-      "Fast, client-side Hash Generator. 100% private, zero server transmission. Compute MD5, SHA-1, SHA-256, and SHA-512 hashes instantly in your browser.",
+      "Free online hash generator — compute MD5, SHA-1, SHA-256, and SHA-512 hashes simultaneously from any text input. All processing runs in your browser.",
     howToUse: [
       "Type or paste any text into the Input field.",
       "The MD5, SHA-1, SHA-256, and SHA-512 hashes are computed instantly.",
@@ -224,8 +245,10 @@ export const TOOLS_REGISTRY: Record<string, ToolMeta> = {
     name: "Regex Tester",
     shortName: "Regex Tester",
     description: "Test and debug regular expressions in real-time",
+    seoTitle:
+      "Regex Tester Online — Test Regular Expressions | DevScratchpad",
     seoDescription:
-      "Fast, client-side Regex Tester. 100% private, zero server transmission. Test and debug regular expressions against custom text instantly in your browser.",
+      "Free online regex tester — write and test regular expressions in real-time with match highlighting, flag controls, and substitution preview. 100% client-side.",
     howToUse: [
       "Enter your regular expression pattern in the Regex field.",
       "Add any flags (e.g. g, i, m) in the Flags field.",
@@ -245,8 +268,10 @@ export const TOOLS_REGISTRY: Record<string, ToolMeta> = {
     name: "JSON to TypeScript Converter",
     shortName: "JSON to TypeScript",
     description: "Generate TypeScript interfaces and types from JSON data",
+    seoTitle:
+      "JSON to TypeScript Converter Online | DevScratchpad",
     seoDescription:
-      "Fast, client-side JSON to TypeScript converter. 100% private, zero server transmission. Generate clean TypeScript interfaces and type definitions from JSON data instantly in your browser.",
+      "Free online JSON to TypeScript converter — paste JSON and generate clean interfaces with nested type extraction and union type detection. No data sent to servers.",
     howToUse: [
       "Paste or type raw JSON data into the left Input panel.",
       "Optionally customize the root interface name using the Root Interface input field.",
@@ -267,8 +292,10 @@ export const TOOLS_REGISTRY: Record<string, ToolMeta> = {
     name: "Cron Expression Visualizer",
     shortName: "Cron Visualizer",
     description: "Convert cron expressions into human-readable English descriptions",
+    seoTitle:
+      "Cron Expression Parser — Human-Readable Cron | DevScratchpad",
     seoDescription:
-      "Fast, client-side Cron Expression Visualizer. 100% private, zero server transmission. Understand and debug crontab schedules in plain English instantly in your browser.",
+      "Free online cron expression parser — translate complex cron schedules into plain English with individual field breakdowns. Works offline in your browser.",
     howToUse: [
       "Type or paste a cron schedule expression (e.g. '*/15 * * * *') into the input field.",
       "Select any common preset schedule from the top chips for quick inspection.",
@@ -289,8 +316,10 @@ export const TOOLS_REGISTRY: Record<string, ToolMeta> = {
     name: "YAML / JSON Converter",
     shortName: "YAML Converter",
     description: "Convert between YAML and JSON formats bidirectionally",
+    seoTitle:
+      "YAML to JSON Converter Online | DevScratchpad",
     seoDescription:
-      "Fast, client-side YAML to JSON and JSON to YAML Converter. 100% private, zero server transmission. Convert and format YAML and JSON documents instantly in your browser.",
+      "Free online YAML to JSON and JSON to YAML converter — bidirectional conversion preserving data structures. One-click swap, runs in your browser.",
     howToUse: [
       "Select your conversion mode: 'YAML to JSON' or 'JSON to YAML' using the toggle button.",
       "Paste or type your source content in the left Input panel.",
@@ -311,8 +340,10 @@ export const TOOLS_REGISTRY: Record<string, ToolMeta> = {
     name: "CSS & SVG Minifier",
     shortName: "CSS & SVG Minifier",
     description: "Minify and compress CSS stylesheets and SVG vector graphics",
+    seoTitle:
+      "CSS & SVG Minifier Online | DevScratchpad",
     seoDescription:
-      "Fast, client-side CSS and SVG Minifier. 100% private, zero server transmission. Strip comments, whitespace, and newlines to optimize web assets instantly in your browser.",
+      "Free online CSS and SVG minifier — strip comments, whitespace, and newlines with compression ratio display. No files uploaded to any server.",
     howToUse: [
       "Select 'CSS' or 'SVG' mode from the dropdown menu in the header.",
       "Paste your unminified CSS or SVG code into the left Input editor.",
@@ -333,8 +364,10 @@ export const TOOLS_REGISTRY: Record<string, ToolMeta> = {
     name: "GraphQL Formatter",
     shortName: "GraphQL Formatter",
     description: "Format and beautify GraphQL queries",
+    seoTitle:
+      "GraphQL Formatter Online — Beautify Queries | DevScratchpad",
     seoDescription:
-      "Fast, client-side GraphQL Formatter. 100% private, zero server transmission. Format and beautify GraphQL queries and schemas instantly in your browser.",
+      "Free online GraphQL formatter — beautify and validate GraphQL queries and schemas using the official AST parser. Zero data transmission.",
     howToUse: [
       "Paste your raw GraphQL query into the left Input panel.",
       "Click 'Format' to generate a cleanly indented, readable query.",
@@ -352,8 +385,10 @@ export const TOOLS_REGISTRY: Record<string, ToolMeta> = {
     name: "Markdown Previewer",
     shortName: "Markdown Previewer",
     description: "Live preview Markdown with sanitized HTML",
+    seoTitle:
+      "Markdown Preview Online — Live Editor | DevScratchpad",
     seoDescription:
-      "Fast, client-side Markdown Previewer. 100% private, zero server transmission. Write Markdown and view live sanitized HTML renders instantly in your browser.",
+      "Free online Markdown editor with live preview — write Markdown and see sanitized HTML render instantly. DOMPurify protection, no server processing.",
     howToUse: [
       "Type or paste your Markdown content into the left editor.",
       "Watch the live HTML preview render instantly on the right side.",
@@ -370,8 +405,10 @@ export const TOOLS_REGISTRY: Record<string, ToolMeta> = {
     name: "HMAC Webhook Generator",
     shortName: "HMAC Generator",
     description: "Compute HMAC signatures for webhook testing",
+    seoTitle:
+      "HMAC Generator — SHA-256/SHA-512 for Webhooks | DevScratchpad",
     seoDescription:
-      "Fast, client-side HMAC Generator. 100% private, zero server transmission. Compute SHA256 and SHA512 signatures for Stripe or GitHub webhook testing instantly in your browser.",
+      "Free online HMAC generator — compute SHA-256 and SHA-512 HMAC signatures in Hex and Base64 for Stripe and GitHub webhook testing. 100% client-side.",
     howToUse: [
       "Enter your secret key in the Secret field.",
       "Paste your payload data into the Payload field.",
@@ -390,8 +427,10 @@ export const TOOLS_REGISTRY: Record<string, ToolMeta> = {
     name: "IP / CIDR Calculator",
     shortName: "CIDR Calculator",
     description: "Calculate network address, broadcast, and host range",
+    seoTitle:
+      "CIDR Calculator — IPv4 Subnet Calculator Online | DevScratchpad",
     seoDescription:
-      "Fast, client-side IP CIDR Calculator. 100% private, zero server transmission. Parse IPv4 CIDR blocks and calculate network bounds instantly in your browser.",
+      "Free online CIDR calculator — parse IPv4 CIDR blocks to get network address, broadcast, wildcard mask, and usable host range. Runs in your browser.",
     howToUse: [
       "Type a valid IPv4 CIDR notation (e.g. 192.168.1.0/24) into the input field.",
       "View the calculated Network Address, Broadcast Address, Wildcard Mask, and Host Range.",

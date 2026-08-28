@@ -89,6 +89,13 @@ export function SeoContent({ tool }: { tool: ToolMeta }) {
             }
           }
         ]
+      },
+      {
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+          { "@type": "ListItem", "position": 1, "name": "DevScratchpad", "item": "https://tools.saadengineer.works" },
+          { "@type": "ListItem", "position": 2, "name": tool.name, "item": `https://tools.saadengineer.works/${tool.slug}` }
+        ]
       }
     ]
   };

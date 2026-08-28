@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getToolMeta, TOOL_SLUGS } from "@/lib/tools/registry";
 import { WorkspaceShell } from "@/components/WorkspaceShell";
+import { SeoContent } from "@/components/seo/SeoContent";
 
 const SITE_URL = "https://tools.saadengineer.works";
 
@@ -24,19 +25,19 @@ export async function generateMetadata({
   }
 
   return {
-    title: `${tool.name} – Free Online Developer Utility`,
-    description: `Fast, client-side ${tool.name}. 100% private, zero server transmission. Process data instantly in browser memory.`,
+    title: tool.seoTitle,
+    description: tool.seoDescription,
     openGraph: {
-      title: `${tool.name} – Free Online Developer Utility`,
-      description: `Fast, client-side ${tool.name}. 100% private, zero server transmission. Process data instantly in browser memory.`,
+      title: tool.seoTitle,
+      description: tool.seoDescription,
       url: `${SITE_URL}/${slug}`,
       type: "website",
       siteName: "DevScratchpad",
     },
     twitter: {
       card: "summary_large_image",
-      title: `${tool.name} – Free Online Developer Utility`,
-      description: `Fast, client-side ${tool.name}. 100% private, zero server transmission. Process data instantly in browser memory.`,
+      title: tool.seoTitle,
+      description: tool.seoDescription,
     },
     alternates: {
       canonical: `${SITE_URL}/${slug}`,
@@ -56,5 +57,10 @@ export default async function ToolPage({
     notFound();
   }
 
-  return <WorkspaceShell initialToolSlug={slug} toolMeta={toolMeta} />;
+  return (
+    <>
+      <WorkspaceShell initialToolSlug={slug} toolMeta={toolMeta} />
+      <SeoContent tool={toolMeta} />
+    </>
+  );
 }

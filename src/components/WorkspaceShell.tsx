@@ -23,7 +23,6 @@ import { MarkdownPreviewerTool } from "@/components/tools/MarkdownPreviewerTool"
 import { HmacGeneratorTool } from "@/components/tools/HmacGeneratorTool";
 import { CidrCalculatorTool } from "@/components/tools/CidrCalculatorTool";
 import { CommandPalette } from "@/components/modals/CommandPalette";
-import { SeoContent } from "@/components/seo/SeoContent";
 import { getToolMeta, type ToolMeta } from "@/lib/tools/registry";
 import { addHistoryEntry, type HistoryEntry } from "@/lib/storage";
 import { X } from "lucide-react";
@@ -452,7 +451,6 @@ export function WorkspaceShell({ initialToolSlug, toolMeta }: WorkspaceShellProp
               )}
             </div>
 
-            {!isEmbed && currentMeta && <SeoContent tool={currentMeta} />}
             {isEmbed && (
               <a
                 href={`https://tools.saadengineer.works/${currentSlug || ''}`}
