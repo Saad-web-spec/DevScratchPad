@@ -3,9 +3,8 @@ import { HomeSeoContent } from "@/components/seo/HomeSeoContent";
 
 export default function HomePage() {
   return (
-    <>
-      <WorkspaceShell />
+    <WorkspaceShell>
       <HomeSeoContent />
-    </>
+    </WorkspaceShell>
   );
 }

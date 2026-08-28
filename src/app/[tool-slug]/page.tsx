@@ -25,6 +25,7 @@ export async function generateMetadata({
   }
 
   return {
+    metadataBase: new URL(SITE_URL),
     title: tool.seoTitle,
     description: tool.seoDescription,
     openGraph: {
@@ -58,9 +59,8 @@ export default async function ToolPage({
   }
 
   return (
-    <>
-      <WorkspaceShell initialToolSlug={slug} toolMeta={toolMeta} />
+    <WorkspaceShell initialToolSlug={slug} toolMeta={toolMeta}>
       <SeoContent tool={toolMeta} />
-    </>
+    </WorkspaceShell>
   );
 }

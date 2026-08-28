@@ -22,7 +22,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
   const blogRoutes = BLOG_SLUGS.map((slug) => ({
     url: `${SITE_URL}/blog/${slug}`,
     lastModified: new Date(),
-    changeFrequency: "monthly" as const,
+    changeFrequency: "weekly" as const,
     priority: 0.6,
   }));
 

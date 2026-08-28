@@ -84,9 +84,10 @@ const SLUG_TO_SIDEBAR: Record<string, string> = Object.fromEntries(
 interface WorkspaceShellProps {
   initialToolSlug?: string;
   toolMeta?: ToolMeta | null;
+  children?: React.ReactNode;
 }
 
-export function WorkspaceShell({ initialToolSlug, toolMeta }: WorkspaceShellProps) {
+export function WorkspaceShell({ initialToolSlug, toolMeta, children }: WorkspaceShellProps) {
   const router = useRouter();
 
   const initialSidebarId = initialToolSlug
@@ -446,6 +447,8 @@ export function WorkspaceShell({ initialToolSlug, toolMeta }: WorkspaceShellProp
                 </div>
               )}
             </div>
+
+            {!isEmbed && children}
 
             {isEmbed && (
               <a
