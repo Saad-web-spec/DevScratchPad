@@ -45,10 +45,6 @@ export const metadata: Metadata = {
   alternates: {
     canonical: SITE_URL,
   },
-  verification: {
-    // Replace with your actual Google Search Console verification code
-    google: "YOUR_GOOGLE_SITE_VERIFICATION_CODE",
-  },
 };
 
 export default function RootLayout({
