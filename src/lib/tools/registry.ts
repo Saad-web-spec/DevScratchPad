@@ -5,6 +5,7 @@ export interface ToolMeta {
   description: string;
   seoTitle: string;
   seoDescription: string;
+  keywords: string[];
   howToUse: string[];
   edgeCases: string[];
   shortcuts: string[];
@@ -17,9 +18,21 @@ export const TOOLS_REGISTRY: Record<string, ToolMeta> = {
     shortName: "JSON Formatter",
     description: "Format, validate, and minify JSON data",
     seoTitle:
-      "JSON Formatter Online — Format, Validate & Minify | DevScratchpad",
+      "JSON Formatter Online — Format, Validate & Minify Free",
     seoDescription:
       "Free online JSON formatter and validator — paste your JSON, format with 2 or 4 space indent, minify, and detect syntax errors instantly. No data sent to any server.",
+    keywords: [
+      "json formatter",
+      "json formatter online",
+      "json validator",
+      "json beautifier",
+      "json minifier",
+      "format json online",
+      "pretty print json",
+      "json lint",
+      "validate json",
+      "json syntax checker",
+    ],
     howToUse: [
       "Paste or type raw JSON into the left Input panel.",
       "Select your preferred indentation (2 spaces or 4 spaces) from the dropdown.",
@@ -42,9 +55,21 @@ export const TOOLS_REGISTRY: Record<string, ToolMeta> = {
     shortName: "JWT Decoder",
     description: "Decode JSON Web Tokens instantly and securely",
     seoTitle:
-      "JWT Decoder Online — Decode Tokens Safely | DevScratchpad",
+      "JWT Decoder Online — Decode Tokens Safely & Privately",
     seoDescription:
       "Free online JWT decoder — paste any JSON Web Token to decode header, payload, and signature. Auto-converts exp/iat timestamps to readable dates. 100% client-side.",
+    keywords: [
+      "jwt decoder",
+      "jwt decoder online",
+      "decode jwt token",
+      "json web token decoder",
+      "jwt parser",
+      "jwt debugger",
+      "jwt.io alternative",
+      "decode jwt without server",
+      "jwt payload decoder",
+      "jwt header decoder",
+    ],
     howToUse: [
       "Paste a standard JWT string (starting with 'eyJ...') into the left input area.",
       "The token is automatically split into Header, Payload, and Signature sections.",
@@ -66,9 +91,20 @@ export const TOOLS_REGISTRY: Record<string, ToolMeta> = {
     shortName: "Unix Timestamp",
     description: "Convert Epoch to human-readable dates and vice versa",
     seoTitle:
-      "Unix Timestamp Converter — Epoch to Date Online | DevScratchpad",
+      "Unix Timestamp Converter — Epoch to Date Online Free",
     seoDescription:
       "Free online Unix timestamp converter — convert epoch seconds or milliseconds to UTC, local time, and ISO 8601. Also converts dates back to epoch. Runs in your browser.",
+    keywords: [
+      "unix timestamp converter",
+      "epoch converter",
+      "epoch to date",
+      "unix time converter",
+      "timestamp to date",
+      "date to epoch",
+      "unix timestamp to human readable",
+      "epoch time converter online",
+      "convert timestamp online",
+    ],
     howToUse: [
       "Enter a Unix epoch integer (e.g. 1770000000) to convert it to UTC, Local Time, and ISO 8601 formats.",
       "Enter a date string (e.g. '2025-01-01') to convert it to a Unix epoch integer.",
@@ -91,9 +127,21 @@ export const TOOLS_REGISTRY: Record<string, ToolMeta> = {
     shortName: "cURL Converter",
     description: "Transform cURL commands into executable code",
     seoTitle:
-      "cURL to Python/JavaScript/Go Converter | DevScratchpad",
+      "cURL to Python, JavaScript & Go Converter Online Free",
     seoDescription:
       "Free online cURL to code converter — paste any cURL command and generate clean JavaScript fetch, Python requests, or Go net/http code. No API keys sent to any server.",
+    keywords: [
+      "curl to python",
+      "curl converter",
+      "curl to javascript",
+      "curl to fetch",
+      "curl to go",
+      "convert curl command",
+      "curl to python requests",
+      "curl to code",
+      "curl command converter online",
+      "curl to node.js",
+    ],
     howToUse: [
       "Paste a full cURL command (e.g. 'curl -X POST https://api.com -H \"Auth: Bearer xyz\"') into the left panel.",
       "Select your target language from the dropdown: JavaScript (fetch), Python (requests), or Go (net/http).",
@@ -115,9 +163,21 @@ export const TOOLS_REGISTRY: Record<string, ToolMeta> = {
     shortName: "Diff Checker",
     description: "Compare text and code side-by-side",
     seoTitle:
-      "Diff Checker Online — Compare Code Side by Side | DevScratchpad",
+      "Diff Checker Online — Compare Code & Text Side by Side",
     seoDescription:
       "Free online diff checker — compare two texts or code blocks side by side with character-level additions and deletions highlighted. Works entirely in your browser.",
+    keywords: [
+      "diff checker",
+      "diff checker online",
+      "compare text online",
+      "code diff tool",
+      "text compare",
+      "online diff tool",
+      "compare two files online",
+      "side by side diff",
+      "text difference checker",
+      "code comparison tool",
+    ],
     howToUse: [
       "Paste or type 'Original Text' in the left panel and 'Modified Text' in the right panel.",
       "Insertions are highlighted in green and deletions in red, with line numbers.",
@@ -139,9 +199,19 @@ export const TOOLS_REGISTRY: Record<string, ToolMeta> = {
     shortName: "XML Formatter",
     description: "Format, beautify, and minify XML data",
     seoTitle:
-      "XML Formatter Online — Beautify & Minify XML | DevScratchpad",
+      "XML Formatter Online — Beautify & Minify XML Free",
     seoDescription:
       "Free online XML formatter — beautify, indent, and minify XML documents with customizable indentation. No data transmitted to any server.",
+    keywords: [
+      "xml formatter",
+      "xml formatter online",
+      "xml beautifier",
+      "xml minifier",
+      "format xml online",
+      "pretty print xml",
+      "xml viewer online",
+      "xml indenter",
+    ],
     howToUse: [
       "Paste or type raw XML into the left Input panel.",
       "Select your preferred indentation (2 spaces or 4 spaces) from the dropdown.",
@@ -161,9 +231,20 @@ export const TOOLS_REGISTRY: Record<string, ToolMeta> = {
     shortName: "SQL Formatter",
     description: "Format and beautify SQL queries",
     seoTitle:
-      "SQL Formatter Online — Beautify SQL Queries | DevScratchpad",
+      "SQL Formatter Online — Beautify SQL Queries Free",
     seoDescription:
       "Free online SQL formatter — beautify complex queries across PostgreSQL, MySQL, SQLite, T-SQL dialects with uppercase keywords and clean indentation. 100% private.",
+    keywords: [
+      "sql formatter",
+      "sql formatter online",
+      "sql beautifier",
+      "format sql online",
+      "sql query formatter",
+      "pretty print sql",
+      "sql indent tool",
+      "postgresql formatter",
+      "mysql formatter",
+    ],
     howToUse: [
       "Paste your raw SQL query into the left Input panel.",
       "Select your preferred SQL dialect (Standard SQL, PostgreSQL, MySQL, etc.) from the dropdown if applicable.",
@@ -183,9 +264,20 @@ export const TOOLS_REGISTRY: Record<string, ToolMeta> = {
     shortName: "Base64 Decoder",
     description: "Encode and decode Base64 strings securely",
     seoTitle:
-      "Base64 Encoder & Decoder Online | DevScratchpad",
+      "Base64 Encoder & Decoder Online — Encode & Decode Free",
     seoDescription:
       "Free online Base64 encoder and decoder — convert strings to Base64 and back with UTF-8 support and URL-safe toggle. Runs entirely in your browser.",
+    keywords: [
+      "base64 decoder",
+      "base64 encoder",
+      "base64 decode online",
+      "base64 encode online",
+      "base64 converter",
+      "decode base64 string",
+      "encode to base64",
+      "base64 url safe",
+      "base64 to text",
+    ],
     howToUse: [
       "Type or paste your text into the left Input panel.",
       "Select 'Encode' or 'Decode' mode using the toggle.",
@@ -204,9 +296,20 @@ export const TOOLS_REGISTRY: Record<string, ToolMeta> = {
     shortName: "URL Encoder",
     description: "Safely encode and decode URL components",
     seoTitle:
-      "URL Encoder & Decoder Online | DevScratchpad",
+      "URL Encoder & Decoder Online — Encode URLs Free",
     seoDescription:
       "Free online URL encoder and decoder — encode special characters or decode URL parameters and query strings instantly. No data leaves your browser.",
+    keywords: [
+      "url encoder",
+      "url decoder",
+      "url encode online",
+      "url decode online",
+      "percent encoding",
+      "encode url characters",
+      "decode query string",
+      "url encoding tool",
+      "urlencode online",
+    ],
     howToUse: [
       "Type or paste your URL or query string into the left Input panel.",
       "Select 'Encode' or 'Decode' mode using the toggle.",
@@ -225,9 +328,20 @@ export const TOOLS_REGISTRY: Record<string, ToolMeta> = {
     shortName: "Hash Generator",
     description: "Generate MD5, SHA-1, SHA-256, and SHA-512 hashes",
     seoTitle:
-      "Hash Generator — MD5, SHA-1, SHA-256, SHA-512 | DevScratchpad",
+      "Hash Generator — MD5, SHA-1, SHA-256, SHA-512 Online Free",
     seoDescription:
       "Free online hash generator — compute MD5, SHA-1, SHA-256, and SHA-512 hashes simultaneously from any text input. All processing runs in your browser.",
+    keywords: [
+      "hash generator",
+      "md5 hash generator",
+      "sha256 hash generator",
+      "sha1 hash generator",
+      "sha512 hash generator",
+      "online hash calculator",
+      "generate hash online",
+      "md5 checksum generator",
+      "hash text online",
+    ],
     howToUse: [
       "Type or paste any text into the Input field.",
       "The MD5, SHA-1, SHA-256, and SHA-512 hashes are computed instantly.",
@@ -246,9 +360,20 @@ export const TOOLS_REGISTRY: Record<string, ToolMeta> = {
     shortName: "Regex Tester",
     description: "Test and debug regular expressions in real-time",
     seoTitle:
-      "Regex Tester Online — Test Regular Expressions | DevScratchpad",
+      "Regex Tester Online — Test Regular Expressions Free",
     seoDescription:
       "Free online regex tester — write and test regular expressions in real-time with match highlighting, flag controls, and substitution preview. 100% client-side.",
+    keywords: [
+      "regex tester",
+      "regex tester online",
+      "regular expression tester",
+      "regex debugger",
+      "test regex online",
+      "regex match tester",
+      "regex101 alternative",
+      "regex validator",
+      "regex pattern tester",
+    ],
     howToUse: [
       "Enter your regular expression pattern in the Regex field.",
       "Add any flags (e.g. g, i, m) in the Flags field.",
@@ -269,9 +394,20 @@ export const TOOLS_REGISTRY: Record<string, ToolMeta> = {
     shortName: "JSON to TypeScript",
     description: "Generate TypeScript interfaces and types from JSON data",
     seoTitle:
-      "JSON to TypeScript Converter Online | DevScratchpad",
+      "JSON to TypeScript Converter Online — Generate Interfaces",
     seoDescription:
       "Free online JSON to TypeScript converter — paste JSON and generate clean interfaces with nested type extraction and union type detection. No data sent to servers.",
+    keywords: [
+      "json to typescript",
+      "json to typescript converter",
+      "json to ts",
+      "generate typescript interfaces",
+      "json to interface",
+      "json to type",
+      "convert json to typescript online",
+      "typescript interface generator",
+      "json2ts",
+    ],
     howToUse: [
       "Paste or type raw JSON data into the left Input panel.",
       "Optionally customize the root interface name using the Root Interface input field.",
@@ -293,9 +429,20 @@ export const TOOLS_REGISTRY: Record<string, ToolMeta> = {
     shortName: "Cron Visualizer",
     description: "Convert cron expressions into human-readable English descriptions",
     seoTitle:
-      "Cron Expression Parser — Human-Readable Cron | DevScratchpad",
+      "Cron Expression Parser & Visualizer — Human-Readable Cron",
     seoDescription:
       "Free online cron expression parser — translate complex cron schedules into plain English with individual field breakdowns. Works offline in your browser.",
+    keywords: [
+      "cron expression",
+      "cron visualizer",
+      "cron parser",
+      "cron expression generator",
+      "cron to human readable",
+      "crontab guru alternative",
+      "cron schedule builder",
+      "cron expression tester",
+      "cron syntax checker",
+    ],
     howToUse: [
       "Type or paste a cron schedule expression (e.g. '*/15 * * * *') into the input field.",
       "Select any common preset schedule from the top chips for quick inspection.",
@@ -317,9 +464,19 @@ export const TOOLS_REGISTRY: Record<string, ToolMeta> = {
     shortName: "YAML Converter",
     description: "Convert between YAML and JSON formats bidirectionally",
     seoTitle:
-      "YAML to JSON Converter Online | DevScratchpad",
+      "YAML to JSON Converter Online — Bidirectional & Free",
     seoDescription:
       "Free online YAML to JSON and JSON to YAML converter — bidirectional conversion preserving data structures. One-click swap, runs in your browser.",
+    keywords: [
+      "yaml to json",
+      "json to yaml",
+      "yaml converter",
+      "yaml to json converter online",
+      "convert yaml to json",
+      "json to yaml converter",
+      "yaml json online",
+      "yaml parser online",
+    ],
     howToUse: [
       "Select your conversion mode: 'YAML to JSON' or 'JSON to YAML' using the toggle button.",
       "Paste or type your source content in the left Input panel.",
@@ -341,9 +498,20 @@ export const TOOLS_REGISTRY: Record<string, ToolMeta> = {
     shortName: "CSS & SVG Minifier",
     description: "Minify and compress CSS stylesheets and SVG vector graphics",
     seoTitle:
-      "CSS & SVG Minifier Online | DevScratchpad",
+      "CSS & SVG Minifier Online — Compress & Optimize Free",
     seoDescription:
       "Free online CSS and SVG minifier — strip comments, whitespace, and newlines with compression ratio display. No files uploaded to any server.",
+    keywords: [
+      "css minifier",
+      "svg minifier",
+      "css minifier online",
+      "minify css online",
+      "compress css",
+      "svg optimizer",
+      "css compressor",
+      "minify svg online",
+      "css minify tool",
+    ],
     howToUse: [
       "Select 'CSS' or 'SVG' mode from the dropdown menu in the header.",
       "Paste your unminified CSS or SVG code into the left Input editor.",
@@ -365,9 +533,18 @@ export const TOOLS_REGISTRY: Record<string, ToolMeta> = {
     shortName: "GraphQL Formatter",
     description: "Format and beautify GraphQL queries",
     seoTitle:
-      "GraphQL Formatter Online — Beautify Queries | DevScratchpad",
+      "GraphQL Formatter Online — Beautify Queries Free",
     seoDescription:
       "Free online GraphQL formatter — beautify and validate GraphQL queries and schemas using the official AST parser. Zero data transmission.",
+    keywords: [
+      "graphql formatter",
+      "graphql formatter online",
+      "graphql beautifier",
+      "format graphql query",
+      "graphql pretty print",
+      "graphql linter",
+      "graphql query formatter",
+    ],
     howToUse: [
       "Paste your raw GraphQL query into the left Input panel.",
       "Click 'Format' to generate a cleanly indented, readable query.",
@@ -386,9 +563,19 @@ export const TOOLS_REGISTRY: Record<string, ToolMeta> = {
     shortName: "Markdown Previewer",
     description: "Live preview Markdown with sanitized HTML",
     seoTitle:
-      "Markdown Preview Online — Live Editor | DevScratchpad",
+      "Markdown Preview Online — Live Editor & Renderer Free",
     seoDescription:
       "Free online Markdown editor with live preview — write Markdown and see sanitized HTML render instantly. DOMPurify protection, no server processing.",
+    keywords: [
+      "markdown previewer",
+      "markdown editor online",
+      "markdown preview online",
+      "markdown to html",
+      "markdown renderer",
+      "live markdown editor",
+      "markdown viewer online",
+      "markdown preview tool",
+    ],
     howToUse: [
       "Type or paste your Markdown content into the left editor.",
       "Watch the live HTML preview render instantly on the right side.",
@@ -406,9 +593,20 @@ export const TOOLS_REGISTRY: Record<string, ToolMeta> = {
     shortName: "HMAC Generator",
     description: "Compute HMAC signatures for webhook testing",
     seoTitle:
-      "HMAC Generator — SHA-256/SHA-512 for Webhooks | DevScratchpad",
+      "HMAC Generator — SHA-256 & SHA-512 for Webhooks Free",
     seoDescription:
       "Free online HMAC generator — compute SHA-256 and SHA-512 HMAC signatures in Hex and Base64 for Stripe and GitHub webhook testing. 100% client-side.",
+    keywords: [
+      "hmac generator",
+      "hmac sha256 generator",
+      "hmac calculator",
+      "hmac online",
+      "hmac sha512",
+      "webhook signature generator",
+      "stripe webhook hmac",
+      "github webhook signature",
+      "hmac hex base64",
+    ],
     howToUse: [
       "Enter your secret key in the Secret field.",
       "Paste your payload data into the Payload field.",
@@ -428,9 +626,20 @@ export const TOOLS_REGISTRY: Record<string, ToolMeta> = {
     shortName: "CIDR Calculator",
     description: "Calculate network address, broadcast, and host range",
     seoTitle:
-      "CIDR Calculator — IPv4 Subnet Calculator Online | DevScratchpad",
+      "CIDR Calculator — IPv4 Subnet Calculator Online Free",
     seoDescription:
       "Free online CIDR calculator — parse IPv4 CIDR blocks to get network address, broadcast, wildcard mask, and usable host range. Runs in your browser.",
+    keywords: [
+      "cidr calculator",
+      "subnet calculator",
+      "cidr calculator online",
+      "ip subnet calculator",
+      "ipv4 cidr calculator",
+      "network calculator",
+      "subnet mask calculator",
+      "ip range calculator",
+      "cidr to ip range",
+    ],
     howToUse: [
       "Type a valid IPv4 CIDR notation (e.g. 192.168.1.0/24) into the input field.",
       "View the calculated Network Address, Broadcast Address, Wildcard Mask, and Host Range.",

@@ -27,8 +27,9 @@ export async function generateMetadata({
   return {
     title: post.seoTitle,
     description: post.seoDescription,
+    keywords: [post.slug.split("-").join(", "), "developer guide", "tutorial", "DevScratchpad"],
     openGraph: {
-      title: post.seoTitle,
+      title: `${post.seoTitle} | DevScratchpad`,
       description: post.seoDescription,
       url: `${SITE_URL}/blog/${slug}`,
       type: "article",
@@ -38,7 +39,7 @@ export async function generateMetadata({
     },
     twitter: {
       card: "summary_large_image",
-      title: post.seoTitle,
+      title: `${post.seoTitle} | DevScratchpad`,
       description: post.seoDescription,
     },
     alternates: {

@@ -7,7 +7,8 @@ const SITE_URL = "https://tools.saadengineer.works";
 
 export const metadata: Metadata = {
   title: "Developer Blog — Guides, Tutorials & Cheat Sheets",
-  description: "Read the latest developer guides, tutorials, and cheat sheets on DevScratchpad.",
+  description: "Read the latest developer guides, tutorials, and cheat sheets on DevScratchpad. Cron expressions, JWT decoding, cURL conversion and more.",
+  keywords: ["developer blog", "programming tutorials", "developer guides", "cheat sheets", "DevScratchpad blog"],
   openGraph: {
     title: "Developer Blog — Guides, Tutorials & Cheat Sheets | DevScratchpad",
     description: "Read the latest developer guides, tutorials, and cheat sheets on DevScratchpad.",
@@ -17,7 +18,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Developer Blog — Guides, Tutorials & Cheat Sheets",
+    title: "Developer Blog — Guides, Tutorials & Cheat Sheets | DevScratchpad",
     description: "Read the latest developer guides, tutorials, and cheat sheets on DevScratchpad.",
   },
   alternates: {

@@ -14,7 +14,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "cron-expression-cheat-sheet",
     title: "Cron Expression Cheat Sheet — Complete Guide with Examples",
-    seoTitle: "Cron Expression Cheat Sheet 2026 — Syntax, Examples & Generator | DevScratchpad",
+    seoTitle: "Cron Expression Cheat Sheet 2026 — Syntax, Examples & Generator",
     description: "A comprehensive guide to cron expressions, syntax, and examples.",
     seoDescription: "Learn how to write cron expressions with our complete cheat sheet. Covers syntax, examples, special characters, and a free visualizer.",
     publishedAt: "2026-08-28T00:00:00Z",
@@ -92,7 +92,7 @@ Need help building or testing your cron expressions? Try our [Cron Visualizer](/
   {
     slug: "convert-curl-to-python",
     title: "How to Convert cURL Commands to Python requests — Complete Guide",
-    seoTitle: "Convert cURL to Python requests — Step-by-Step Guide 2026 | DevScratchpad",
+    seoTitle: "Convert cURL to Python requests — Step-by-Step Guide 2026",
     description: "Learn how to manually or automatically convert cURL commands into Python requests code.",
     seoDescription: "Step-by-step guide covering cURL flag mapping to Python requests (headers, body, auth, cookies, SSL) with complete code examples.",
     publishedAt: "2026-08-28T00:00:00Z",
@@ -239,7 +239,7 @@ Want to convert your commands instantly? Try our [cURL to Python/JavaScript/Go C
   {
     slug: "jwt-token-decode-guide",
     title: "How to Decode JWT Tokens — A Developer's Complete Guide",
-    seoTitle: "How to Decode JWT Tokens — Complete Guide with Examples 2026 | DevScratchpad",
+    seoTitle: "How to Decode JWT Tokens — Complete Guide with Examples 2026",
     description: "Understand the structure of JWTs and how to decode them in various languages.",
     seoDescription: "Learn how to decode JSON Web Tokens (JWT). Covers structure, Base64URL vs Base64, decoding without a library, and common security mistakes.",
     publishedAt: "2026-08-28T00:00:00Z",

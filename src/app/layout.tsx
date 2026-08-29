@@ -7,11 +7,31 @@ const SITE_URL = "https://tools.saadengineer.works";
 
 export const metadata: Metadata = {
   title: {
-    template: "%s – Free Online Developer Utility | DevScratchpad",
-    default: "DevScratchpad – Free Online Developer Utilities",
+    template: "%s | DevScratchpad",
+    default: "DevScratchpad – 19+ Free Online Developer Tools | 100% Private",
   },
   description:
-    "Fast, client-side developer tools. 100% private, zero server transmission. Process JSON, JWT, cURL commands, diffs, and Unix timestamps instantly in your browser.",
+    "Free online developer tools — JSON formatter, JWT decoder, Base64 encoder, cURL converter, diff checker, regex tester & more. 100% client-side, zero server transmission. Your data never leaves your browser.",
+  keywords: [
+    "developer tools",
+    "online developer tools",
+    "free developer tools",
+    "JSON formatter online",
+    "JWT decoder online",
+    "Base64 encoder decoder",
+    "cURL to Python converter",
+    "diff checker online",
+    "regex tester",
+    "SQL formatter",
+    "YAML to JSON converter",
+    "Unix timestamp converter",
+    "hash generator",
+    "HMAC generator",
+    "CIDR calculator",
+    "client-side tools",
+    "privacy-first developer tools",
+    "DevScratchpad",
+  ],
   metadataBase: new URL(SITE_URL),
   openGraph: {
     type: "website",
@@ -24,6 +44,10 @@ export const metadata: Metadata = {
   },
   alternates: {
     canonical: SITE_URL,
+  },
+  verification: {
+    // Replace with your actual Google Search Console verification code
+    google: "YOUR_GOOGLE_SITE_VERIFICATION_CODE",
   },
 };
 
