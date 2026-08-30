@@ -225,8 +225,9 @@ export function XmlFormatterTool({
               height="100%"
               defaultLanguage="xml"
               value={output}
+              onChange={(value) => setOutput(value || "")}
               options={{
-                readOnly: true,
+                readOnly: false,
                 minimap: { enabled: false },
                 fontSize: 13,
                 wordWrap: "on",

@@ -161,7 +161,8 @@ export function CurlConverterTool({ onValidationChange, onStatsChange, restoredI
               height="100%"
               language={target}
               value={output}
-              options={{ readOnly: true, minimap: { enabled: false }, fontSize: 13, wordWrap: "on", padding: { top: 16 } }}
+              onChange={(value) => setOutput(value || "")}
+              options={{ readOnly: false, minimap: { enabled: false }, fontSize: 13, wordWrap: "on", padding: { top: 16 } }}
             />
           </div>
         </div>

@@ -324,7 +324,7 @@ export function RegexTesterTool({
                     defaultLanguage="plaintext"
                     value={replacedOutput}
                     options={{
-                      readOnly: true,
+                      readOnly: false,
                       minimap: { enabled: false },
                       fontSize: 13,
                       wordWrap: "on",

@@ -280,8 +280,9 @@ export function Base64Tool({
               height="100%"
               defaultLanguage="plaintext"
               value={output}
+              onChange={(value) => setOutput(value || "")}
               options={{
-                readOnly: true,
+                readOnly: false,
                 minimap: { enabled: false },
                 fontSize: 13,
                 wordWrap: "on",

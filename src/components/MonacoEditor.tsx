@@ -44,9 +44,16 @@ const InternalDiffEditor = dynamic(
 export function MonacoEditor(props: EditorProps) {
   const editorTheme = "vs";
   
+  const enhancedOptions = {
+    maxTokenizationLineLength: 200000,
+    unicodeHighlight: { ambiguousCharacters: false },
+    ...props.options
+  };
+
   return (
     <InternalEditor 
       {...props} 
+      options={enhancedOptions}
       theme={editorTheme} 
       beforeMount={(monaco) => {
         handleEditorWillMount(monaco);
@@ -59,9 +66,16 @@ export function MonacoEditor(props: EditorProps) {
 export function MonacoDiffEditor(props: DiffEditorProps) {
   const editorTheme = "vs";
   
+  const enhancedOptions = {
+    maxTokenizationLineLength: 200000,
+    unicodeHighlight: { ambiguousCharacters: false },
+    ...props.options
+  };
+
   return (
     <InternalDiffEditor 
       {...props} 
+      options={enhancedOptions}
       theme={editorTheme}
       beforeMount={(monaco) => {
         handleEditorWillMount(monaco);
