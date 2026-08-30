@@ -2,7 +2,6 @@
 
 import dynamic from "next/dynamic";
 import type { EditorProps, DiffEditorProps } from "@monaco-editor/react";
-import { useTheme } from "@/lib/theme";
 import type { Monaco } from "@monaco-editor/react";
 
 const LoadingPlaceholder = () => (
@@ -43,13 +42,12 @@ const InternalDiffEditor = dynamic(
 ) as React.ComponentType<DiffEditorProps>;
 
 export function MonacoEditor(props: EditorProps) {
-  const { theme: appTheme } = useTheme();
-  const editorTheme = appTheme === "dark" ? "devscratchpad-dark" : "vs";
+  const editorTheme = "vs";
   
   return (
     <InternalEditor 
       {...props} 
-      theme={props.theme === "vs-dark" ? "devscratchpad-dark" : editorTheme} 
+      theme={editorTheme} 
       beforeMount={(monaco) => {
         handleEditorWillMount(monaco);
         if (props.beforeMount) props.beforeMount(monaco);
@@ -59,13 +57,12 @@ export function MonacoEditor(props: EditorProps) {
 }
 
 export function MonacoDiffEditor(props: DiffEditorProps) {
-  const { theme: appTheme } = useTheme();
-  const editorTheme = appTheme === "dark" ? "devscratchpad-dark" : "vs";
+  const editorTheme = "vs";
   
   return (
     <InternalDiffEditor 
       {...props} 
-      theme={props.theme === "vs-dark" ? "devscratchpad-dark" : editorTheme}
+      theme={editorTheme}
       beforeMount={(monaco) => {
         handleEditorWillMount(monaco);
         if (props.beforeMount) props.beforeMount(monaco);
