@@ -40,10 +40,7 @@ export function TopBar({ onOpenCommandPalette, onOpenMobileMenu }: TopBarProps) 
         </button>
 
         <div className="flex items-center gap-2.5">
-          <div className="flex items-center gap-0.5 select-none" title="DevScratchpad">
-            <span className="font-black text-2xl bg-clip-text text-transparent bg-gradient-to-b from-zinc-600 to-black drop-shadow-sm">D</span>
-            <span className="font-black text-2xl bg-clip-text text-transparent bg-gradient-to-b from-zinc-600 to-black drop-shadow-sm">S</span>
-          </div>
+          <img src="/logo.png" alt="DevScratchpad Logo" className="w-7 h-7 object-contain" />
           <span className="font-semibold text-base md:text-lg tracking-tight text-zinc-900 dark:text-zinc-50 truncate">
             DevScratchpad
           </span>
