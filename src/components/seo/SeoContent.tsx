@@ -107,7 +107,7 @@ export function SeoContent({ tool }: { tool: ToolMeta }) {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLdGraph) }}
       />
       <h1 className="mt-6 mb-3 text-2xl font-bold text-zinc-900 dark:text-zinc-100">
-        {tool.name} Online
+        {tool.name} (Offline & Secure)
       </h1>
       <p className="text-zinc-600 dark:text-zinc-400 text-sm leading-relaxed mb-6">
         {tool.seoDescription || tool.description}

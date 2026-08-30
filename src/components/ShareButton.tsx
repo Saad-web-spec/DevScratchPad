@@ -10,29 +10,34 @@ interface ShareButtonProps {
   className?: string;
 }
 
+import LZString from "lz-string";
+
 /**
- * Safely encode Unicode text / objects into a URL-safe Base64 string.
+ * Safely encode Unicode text / objects into a compressed URL-safe string.
  */
 export function encodeShareData(data: string | object): string {
   try {
     const rawString = typeof data === "object" ? JSON.stringify(data) : data;
-    const utf8Bytes = new TextEncoder().encode(rawString);
-    let binary = "";
-    utf8Bytes.forEach((b) => (binary += String.fromCharCode(b)));
-    return btoa(binary)
-      .replace(/\+/g, "-")
-      .replace(/\//g, "_")
-      .replace(/=+$/, "");
+    return LZString.compressToEncodedURIComponent(rawString);
   } catch {
     return "";
   }
 }
 
 /**
- * Safely decode a URL-safe Base64 string into a Unicode string.
+ * Safely decode a compressed URL-safe string into a Unicode string.
+ * Falls back to base64 for backward compatibility.
  */
 export function decodeShareData(encoded: string): string {
   if (!encoded) return "";
+  try {
+    const decompressed = LZString.decompressFromEncodedURIComponent(encoded);
+    if (decompressed) return decompressed;
+  } catch (e) {
+    console.error("LZString decompression failed, trying fallback", e);
+  }
+  
+  // Fallback for old base64 strings
   try {
     let base64 = encoded.replace(/-/g, "+").replace(/_/g, "/");
     while (base64.length % 4) {
@@ -42,7 +47,6 @@ export function decodeShareData(encoded: string): string {
     const bytes = Uint8Array.from(binary, (c) => c.charCodeAt(0));
     return new TextDecoder().decode(bytes);
   } catch {
-    // Fallback for standard atob
     try {
       return atob(encoded);
     } catch {

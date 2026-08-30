@@ -255,8 +255,9 @@ export function WorkspaceShell({ initialToolSlug, toolMeta, children }: Workspac
             <div className="relative flex flex-col w-72 max-w-[85vw] bg-white dark:bg-zinc-900 h-full shadow-2xl z-10 animate-in slide-in-from-left duration-200 border-r border-transparent dark:border-zinc-800">
               <div className="h-14 border-b border-zinc-200 dark:border-zinc-800 flex items-center justify-between px-4 shrink-0 bg-white dark:bg-zinc-900">
                 <div className="flex items-center gap-2.5">
-                  <div className="w-8 h-8 bg-zinc-900 dark:bg-zinc-50 rounded-lg flex items-center justify-center text-white dark:text-zinc-950 font-bold text-xs shrink-0 shadow-sm">
-                    DS
+                  <div className="flex items-center gap-0.5 select-none" title="DevScratchpad">
+                    <span className="font-black text-2xl bg-clip-text text-transparent bg-gradient-to-b from-zinc-600 to-black drop-shadow-sm">D</span>
+                    <span className="font-black text-2xl bg-clip-text text-transparent bg-gradient-to-b from-zinc-600 to-black drop-shadow-sm">S</span>
                   </div>
                   <span className="font-semibold text-base text-zinc-900 dark:text-zinc-50 truncate">
                     DevScratchpad

@@ -111,11 +111,11 @@ export function HomeSeoContent() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLdGraph) }}
       />
-      <h1 className="mt-6 mb-3 text-2xl font-bold text-zinc-900 dark:text-zinc-100">
-        Free Online Developer Tools — 100% Client-Side &amp; Private
+      <h1 className="mt-6 mb-3 text-3xl font-black text-zinc-900 dark:text-zinc-100 tracking-tight">
+        100% Offline, Private Developer Tools
       </h1>
-      <p className="text-zinc-600 dark:text-zinc-400 text-sm leading-relaxed mb-10">
-        DevScratchpad is a suite of 19+ privacy-first, blazing-fast developer utilities. Every tool runs entirely within your browser using client-side processing, meaning zero server transmission. Your data, payloads, and tokens never leave your machine.
+      <p className="text-zinc-600 dark:text-zinc-400 text-base leading-relaxed mb-10 font-medium">
+        DevScratchpad is a suite of 19+ privacy-first developer utilities. Every tool runs entirely within your browser using client-side processing. <strong className="text-zinc-900 dark:text-zinc-100">Zero server transmission.</strong> Once loaded, it works entirely offline. Your data, payloads, and tokens never leave your machine.
       </p>
 
       {CATEGORIES.map((category) => (

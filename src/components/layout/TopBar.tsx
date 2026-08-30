@@ -1,8 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { Search, Save, Menu, MoreVertical, Moon, Sun } from "lucide-react";
-import { useTheme } from "@/lib/theme";
+import { Search, Save, Menu, MoreVertical } from "lucide-react";
 
 interface TopBarProps {
   onOpenCommandPalette?: () => void;
@@ -10,7 +9,6 @@ interface TopBarProps {
 }
 
 export function TopBar({ onOpenCommandPalette, onOpenMobileMenu }: TopBarProps) {
-  const { theme, toggleTheme } = useTheme();
   const [isOverflowOpen, setIsOverflowOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -42,8 +40,9 @@ export function TopBar({ onOpenCommandPalette, onOpenMobileMenu }: TopBarProps) 
         </button>
 
         <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 bg-zinc-900 dark:bg-zinc-50 rounded-lg flex items-center justify-center text-white dark:text-zinc-950 font-bold text-xs shrink-0 shadow-sm transition-all">
-            DS
+          <div className="flex items-center gap-0.5 select-none" title="DevScratchpad">
+            <span className="font-black text-2xl bg-clip-text text-transparent bg-gradient-to-b from-zinc-600 to-black drop-shadow-sm">D</span>
+            <span className="font-black text-2xl bg-clip-text text-transparent bg-gradient-to-b from-zinc-600 to-black drop-shadow-sm">S</span>
           </div>
           <span className="font-semibold text-base md:text-lg tracking-tight text-zinc-900 dark:text-zinc-50 truncate">
             DevScratchpad
@@ -67,17 +66,8 @@ export function TopBar({ onOpenCommandPalette, onOpenMobileMenu }: TopBarProps) 
         </button>
       </div>
 
-      {/* Right side: Theme toggle + Actions */}
+      {/* Right side: Actions */}
       <div className="flex items-center gap-2">
-        {/* Dark Mode Toggle with Glow */}
-        <button
-          onClick={toggleTheme}
-          className="p-1.5 rounded-lg text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-50 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all focus:outline-none active:scale-95"
-          aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
-          title={theme === "dark" ? "Light mode" : "Dark mode"}
-        >
-          {theme === "dark" ? <Sun className="w-5 h-5 transition-transform hover:rotate-45" /> : <Moon className="w-5 h-5 transition-transform hover:-rotate-12" />}
-        </button>
 
         {/* Desktop Action Buttons */}
         <div className="hidden md:flex items-center gap-2">
