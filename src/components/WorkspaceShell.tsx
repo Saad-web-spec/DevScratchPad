@@ -112,72 +112,118 @@ export function WorkspaceShell({ initialToolSlug, toolMeta, children }: Workspac
    }
  }, [initialToolSlug]);
 
- const [isCommandPaletteOpen, setCommandPaletteOpen] = useState(false);
- const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false);
-  const [magicPasteToast, setMagicPasteToast] = useState<{message: string, visible: boolean} | null>(null);
- const [restoredInput, setRestoredInput] = useState<string | null>(null);
+  const [isCommandPaletteOpen, setCommandPaletteOpen] = useState(false);
+  const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false);
+  const [magicPasteToast, setMagicPasteToast] = useState<{message: string; visible: boolean} | null>(null);
+  const [restoredInput, setRestoredInput] = useState<string | null>(null);
 
- // Status Bar State
- const [isValid, setIsValid] = useState(true);
- const [errorMsg, setErrorMsg] = useState<string | undefined>();
- const [errorLine, setErrorLine] = useState<number | undefined>();
- const [inputLength, setInputLength] = useState(0);
- const [execMs, setExecMs] = useState(0);
- const [isEmbed, setIsEmbed] = useState(false);
+  // Status Bar State
+  const [isValid, setIsValid] = useState(true);
+  const [errorMsg, setErrorMsg] = useState<string | undefined>();
+  const [errorLine, setErrorLine] = useState<number | undefined>();
+  const [inputLength, setInputLength] = useState(0);
+  const [execMs, setExecMs] = useState(0);
+  const [isEmbed, setIsEmbed] = useState(false);
+
+  // Restore magic paste from sessionStorage if available across page changes
+  useEffect(() => {
+    try {
+      const pending = sessionStorage.getItem("devscratchpad_magic_paste");
+      if (pending) {
+        setRestoredInput(pending);
+        sessionStorage.removeItem("devscratchpad_magic_paste");
+      }
+    } catch {}
+  }, [activeTool]);
 
   // Magic Paste Smart Auto-Detector
   useEffect(() => {
     const handlePaste = (e: ClipboardEvent) => {
-      const target = e.target as HTMLElement;
+      const target = e.target as HTMLElement | null;
       
-      // Do not intercept if user is explicitly typing in a regular input box like search
-      if (target.tagName === 'INPUT' && (target as HTMLInputElement).type !== 'hidden') return;
-      // Monaco's hidden textarea usually has class 'inputarea'. Do not intercept if they are in some OTHER textarea
-      if (target.tagName === 'TEXTAREA' && typeof target.className === 'string' && !target.className.includes('inputarea')) return;
-      
+      // Do not intercept if user is typing in the search bar or command palette
+      if (target && target.tagName === 'INPUT') {
+        const placeholder = (target as HTMLInputElement).placeholder?.toLowerCase() || '';
+        if (placeholder.includes('search') || placeholder.includes('find')) return;
+      }
+
       const text = e.clipboardData?.getData('text/plain') || e.clipboardData?.getData('text');
       if (!text) return;
 
       const trimmed = text.trim();
+      if (!trimmed) return;
+
       let detectedToolId: string | null = null;
       let toolName = "";
+      let cleanedText = trimmed;
 
-      if (/^eyJ[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+\.[A-Za-z0-9-_]*$/.test(trimmed)) {
+      // 1. Cleaned JWT (strip optional Bearer prefix and surrounding quotes)
+      const cleanJwt = trimmed.replace(/^Bearer\s+/i, '').replace(/^["']|["']$/g, '');
+      if (/^[A-Za-z0-9-_=]+\.[A-Za-z0-9-_=]+\.[A-Za-z0-9-_=]*$/.test(cleanJwt) && cleanJwt.split('.').length === 3 && cleanJwt.startsWith('eyJ')) {
         detectedToolId = "jwt";
-        toolName = "JWT";
-      } else if (trimmed.startsWith('curl ')) {
+        toolName = "JWT Decoder";
+        cleanedText = cleanJwt;
+      }
+      // 2. cURL Command
+      else if (/^curl\s+/i.test(trimmed)) {
         detectedToolId = "curl";
-        toolName = "cURL";
-      } else if (trimmed.startsWith('<svg') && trimmed.includes('</svg>')) {
+        toolName = "cURL Converter";
+      }
+      // 3. SVG Vector
+      else if (/<svg[\s\S]*>[\s\S]*<\/svg>/i.test(trimmed)) {
         detectedToolId = "svg-to-jsx";
-        toolName = "SVG";
-      } else if ((trimmed.startsWith('{') && trimmed.endsWith('}')) || (trimmed.startsWith('[') && trimmed.endsWith(']'))) {
+        toolName = "SVG to JSX";
+      }
+      // 4. JSON
+      else if ((trimmed.startsWith('{') && trimmed.endsWith('}')) || (trimmed.startsWith('[') && trimmed.endsWith(']'))) {
         try {
           JSON.parse(trimmed);
-          if (activeTool !== "json-formatter" && activeTool !== "json-to-ts") {
-            detectedToolId = "json-formatter";
-            toolName = "JSON";
-          }
-        } catch (err) {}
-      } else if (/^\d{10}$/.test(trimmed) || /^\d{13}$/.test(trimmed)) {
-         if (activeTool !== "timestamp") {
-           detectedToolId = "timestamp";
-           toolName = "Unix Timestamp";
-         }
+          detectedToolId = "json-formatter";
+          toolName = "JSON Formatter";
+        } catch {}
+      }
+      // 5. XML
+      else if (trimmed.startsWith('<?xml') || (trimmed.startsWith('<') && trimmed.endsWith('>') && /<\/([a-zA-Z0-9_-]+)>$/.test(trimmed))) {
+        detectedToolId = "xml-formatter";
+        toolName = "XML Formatter";
+      }
+      // 6. SQL
+      else if (/^(SELECT|INSERT\s+INTO|UPDATE|DELETE\s+FROM|CREATE\s+TABLE|ALTER\s+TABLE|DROP\s+TABLE|WITH)\s+/i.test(trimmed)) {
+        detectedToolId = "sql-formatter";
+        toolName = "SQL Formatter";
+      }
+      // 7. Unix Timestamp (10 or 13 digits)
+      else if (/^\d{10}$/.test(trimmed) || /^\d{13}$/.test(trimmed)) {
+        detectedToolId = "timestamp";
+        toolName = "Unix Timestamp";
+      }
+      // 8. Cron expression (5 or 6 fields)
+      else if (/^(@(annually|yearly|monthly|weekly|daily|hourly|reboot))|(@every (\d+(ns|us|µs|ms|s|m|h))+)|((((\d+,)+\d+|(\d+(\/|-)\d+)|\d+|\*) ?){5,6})$/.test(trimmed)) {
+        detectedToolId = "cron";
+        toolName = "Cron Visualizer";
       }
 
-      if (detectedToolId && detectedToolId !== activeTool) {
-        e.preventDefault();
-        const slug = SIDEBAR_TO_SLUG[detectedToolId];
-        if (slug) {
-          router.push(`/${slug}`);
-        } else {
+      if (detectedToolId) {
+        if (detectedToolId !== activeTool) {
+          e.preventDefault();
+          try {
+            sessionStorage.setItem("devscratchpad_magic_paste", cleanedText);
+          } catch {}
+
           setActiveTool(detectedToolId);
+          setRestoredInput(cleanedText);
+
+          const slug = SIDEBAR_TO_SLUG[detectedToolId];
+          if (slug) {
+            router.push(`/${slug}`, { scroll: false });
+          }
+
+          setMagicPasteToast({ message: `Auto-detected ${toolName}. Switched tools!`, visible: true });
+          setTimeout(() => setMagicPasteToast(null), 3500);
+        } else {
+          setMagicPasteToast({ message: `✨ Detected ${toolName} input`, visible: true });
+          setTimeout(() => setMagicPasteToast(null), 2500);
         }
-        setRestoredInput(trimmed);
-        
-        setMagicPasteToast({ message: `Auto-detected ${toolName}. Switched tools!`, visible: true });
-        setTimeout(() => setMagicPasteToast(prev => prev ? { ...prev, visible: false } : null), 3000);
       }
     };
     
@@ -534,6 +580,15 @@ export function WorkspaceShell({ initialToolSlug, toolMeta, children }: Workspac
 
  {!isEmbed && children}
 
+  {/* Magic Paste Floating Toast Notification */}
+  {magicPasteToast && magicPasteToast.visible && (
+    <div className="fixed bottom-14 left-1/2 -translate-x-1/2 z-50 animate-in fade-in slide-in-from-bottom-3 duration-200 pointer-events-none">
+      <div className="bg-zinc-900 text-white text-xs md:text-sm font-medium px-4 py-2 rounded-full shadow-2xl flex items-center gap-2 border border-zinc-800 backdrop-blur-md">
+        <Sparkles className="w-4 h-4 text-amber-400 shrink-0" />
+        <span>{magicPasteToast.message}</span>
+      </div>
+    </div>
+  )}
  {isEmbed && (
  <a
  href={`https://www.devscratchpad.tech/${currentSlug || ''}`}
