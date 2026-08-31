@@ -238,6 +238,7 @@ export function WorkspaceShell({ initialToolSlug, toolMeta, children }: Workspac
 "markdown-previewer",
 "hmac-generator",
 "cidr-calculator",
+"svg-to-jsx",
  ];
 
  return (
@@ -442,14 +443,21 @@ export function WorkspaceShell({ initialToolSlug, toolMeta, children }: Workspac
  restoredInput={restoredInput}
  />
  )}
- {activeTool ==="cidr-calculator"&& (
- <CidrCalculatorTool
- onValidationChange={handleValidationChange}
- onStatsChange={handleStatsChange}
- onLogHistory={handleLogHistory}
- restoredInput={restoredInput}
- />
- )}
+  {activeTool ==="cidr-calculator"&& (
+  <CidrCalculatorTool
+  onValidationChange={handleValidationChange}
+  onStatsChange={handleStatsChange}
+  onLogHistory={handleLogHistory}
+  restoredInput={restoredInput}
+  />
+  )}
+  {activeTool ==="svg-to-jsx"&& (
+  <SvgToJsxTool
+  onValidationChange={handleValidationChange}
+  onStatsChange={handleStatsChange}
+  restoredInput={restoredInput}
+  />
+  )}
 
  {!IMPLEMENTED_TOOLS.includes(activeTool) && (
  <div className="flex flex-col items-center justify-center h-full text-zinc-400">
