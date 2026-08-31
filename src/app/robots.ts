@@ -6,6 +6,6 @@ export default function robots(): MetadataRoute.Robots {
       userAgent: "*",
       allow: "/",
     },
-    sitemap: "https://tools.saadengineer.works/sitemap.xml",
+    sitemap: "https://www.devscratchpad.tech/sitemap.xml",
   };
 }

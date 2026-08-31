@@ -33,9 +33,9 @@ export function HomeSeoContent() {
     "@graph": [
       {
         "@type": "SoftwareApplication",
-        "@id": "https://tools.saadengineer.works/#webapp",
+        "@id": "https://www.devscratchpad.tech/#webapp",
         "name": "DevScratchpad",
-        "url": "https://tools.saadengineer.works",
+        "url": "https://www.devscratchpad.tech",
         "applicationCategory": "DeveloperApplication",
         "operatingSystem": "All",
         "browserRequirements": "Requires JavaScript",
@@ -48,25 +48,25 @@ export function HomeSeoContent() {
       },
       {
         "@type": "WebSite",
-        "@id": "https://tools.saadengineer.works/#website",
-        "url": "https://tools.saadengineer.works",
+        "@id": "https://www.devscratchpad.tech/#website",
+        "url": "https://www.devscratchpad.tech",
         "name": "DevScratchpad",
         "description": "19+ Free online developer tools for formatting, converting, and analyzing data securely.",
       },
       {
         "@type": "ItemList",
-        "@id": "https://tools.saadengineer.works/#tools",
+        "@id": "https://www.devscratchpad.tech/#tools",
         "name": "DevScratchpad Tools",
         "itemListElement": allTools.map((tool, idx) => ({
           "@type": "ListItem",
           "position": idx + 1,
-          "url": `https://tools.saadengineer.works/${tool.slug}`,
+          "url": `https://www.devscratchpad.tech/${tool.slug}`,
           "name": tool.name
         }))
       },
       {
         "@type": "FAQPage",
-        "@id": "https://tools.saadengineer.works/#faq",
+        "@id": "https://www.devscratchpad.tech/#faq",
         "mainEntity": [
           {
             "@type": "Question",

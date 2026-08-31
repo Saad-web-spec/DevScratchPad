@@ -6,7 +6,7 @@ import { marked } from "marked";
 import { getBlogPost, BLOG_SLUGS } from "@/lib/blog/posts";
 import { getToolMeta } from "@/lib/tools/registry";
 
-const SITE_URL = "https://tools.saadengineer.works";
+const SITE_URL = "https://www.devscratchpad.tech";
 
 export async function generateStaticParams() {
   return BLOG_SLUGS.map((slug) => ({ slug }));

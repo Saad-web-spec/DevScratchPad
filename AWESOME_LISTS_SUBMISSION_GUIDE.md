@@ -10,7 +10,7 @@ This guide gives you the exact copy-paste markdown snippets and pull request tem
 - **Target File**: `README.md` under section `### Web Hosting` or `### Tools for Teams and Collaboration` / `### Miscellaneous`
 - **Markdown line to add**:
   ```markdown
-  * [DevScratchpad](https://tools.saadengineer.works) - An open-source, 100% client-side developer scratchpad suite featuring 19+ utilities (JSON, JWT, cURL, SQL, Diff, Cron, Regex) with zero server transmission.
+  * [DevScratchpad](https://www.devscratchpad.tech) - An open-source, 100% client-side developer scratchpad suite featuring 19+ utilities (JSON, JWT, cURL, SQL, Diff, Cron, Regex) with zero server transmission.
   ```
 - **Pull Request Title**:
   ```text
@@ -21,7 +21,7 @@ This guide gives you the exact copy-paste markdown snippets and pull request tem
   ### Description
   Adding **DevScratchpad**, an open-source, privacy-first developer utility suite with 19+ tools that run 100% client-side in browser memory with zero server transmission.
 
-  - **Website**: https://tools.saadengineer.works
+  - **Website**: https://www.devscratchpad.tech
   - **Source**: https://github.com/Saad-web-spec/DevScratchPad
   - **License**: MIT
   - **Free Tier**: 100% free and open source with no signup or payment required.
@@ -35,7 +35,7 @@ This guide gives you the exact copy-paste markdown snippets and pull request tem
 - **Target File**: `README.md` under section `### Web Tools`
 - **Markdown line to add**:
   ```markdown
-  * [DevScratchpad](https://tools.saadengineer.works) - Fast, client-side developer utility platform with Monaco editor (JSON, JWT, cURL code converter, Diff, Cron, Regex).
+  * [DevScratchpad](https://www.devscratchpad.tech) - Fast, client-side developer utility platform with Monaco editor (JSON, JWT, cURL code converter, Diff, Cron, Regex).
   ```
 - **Pull Request Title**:
   ```text
@@ -65,7 +65,7 @@ This guide gives you the exact copy-paste markdown snippets and pull request tem
 - **Target File**: `README.md` under `### Developer Tools`
 - **Markdown line to add**:
   ```markdown
-  * [DevScratchpad](https://tools.saadengineer.works) - Zero-server developer utility scratchpad for formatters, decoders, and crypto tools.
+  * [DevScratchpad](https://www.devscratchpad.tech) - Zero-server developer utility scratchpad for formatters, decoders, and crypto tools.
   ```
 
 ---

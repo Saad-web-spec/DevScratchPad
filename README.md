@@ -4,7 +4,7 @@
 
 **The privacy-first developer utility suite & scratchpad with zero server transmission.**
 
-[![Live Demo](https://img.shields.io/badge/Live%20Demo-tools.saadengineer.works-2563EB?style=for-the-badge&logo=vercel&logoColor=white)](https://tools.saadengineer.works)
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-devscratchpad.tech-2563EB?style=for-the-badge&logo=vercel&logoColor=white)](https://devscratchpad.tech)
 [![Next.js 16](https://img.shields.io/badge/Next.js-16.3.3-black?style=for-the-badge&logo=next.js&logoColor=white)](https://nextjs.org/)
 [![React 19](https://img.shields.io/badge/React-19.2.8-61DAFB?style=for-the-badge&logo=react&logoColor=black)](https://react.dev/)
 [![Tailwind CSS v4](https://img.shields.io/badge/Tailwind_CSS-v4.0-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
@@ -12,7 +12,7 @@
 
 <br/>
 
-[**Explore 19+ Tools**](https://tools.saadengineer.works) • [**Report a Bug**](https://github.com/Saad-web-spec/DevScratchPad/issues/new) • [**Request a Feature**](https://github.com/Saad-web-spec/DevScratchPad/issues/new) • [**Submit a PR**](./CONTRIBUTING.md)
+[**Explore 19+ Tools**](https://devscratchpad.tech) • [**Report a Bug**](https://github.com/Saad-web-spec/DevScratchPad/issues/new) • [**Request a Feature**](https://github.com/Saad-web-spec/DevScratchPad/issues/new) • [**Submit a PR**](./CONTRIBUTING.md)
 
 </div>
 
@@ -45,25 +45,25 @@
 
 | Category | Tool Name | Route | What It Does |
 | :--- | :--- | :--- | :--- |
-| **Code Formatting** | [JSON Formatter](https://tools.saadengineer.works/json-formatter) | `/json-formatter` | Multi-indent (2/4 spaces) formatting, minification, and real-time syntax error line tracking. |
-| | [XML Formatter](https://tools.saadengineer.works/xml-formatter) | `/xml-formatter` | Format, beautify, and minify XML data structures with indentation controls. |
-| | [SQL Formatter](https://tools.saadengineer.works/sql-formatter) | `/sql-formatter` | Multi-dialect query beautifier (PostgreSQL, MySQL, SQLite, T-SQL, PL/SQL) with keyword casing. |
-| | [GraphQL Formatter](https://tools.saadengineer.works/graphql-formatter) | `/graphql-formatter` | Formats and validates GraphQL queries and schemas using the official AST parser. |
-| **Security & Crypto** | [JWT Decoder](https://tools.saadengineer.works/jwt-decoder) | `/jwt-decoder` | Safely decodes Header, Payload & Signature; auto-converts `exp`/`iat` timestamps to ISO dates. |
-| | [Hash Generator](https://tools.saadengineer.works/hash-generator) | `/hash-generator` | Computes MD5 (SparkMD5), SHA-1, SHA-256, and SHA-512 in parallel client-side. |
-| | [HMAC Generator](https://tools.saadengineer.works/hmac-generator) | `/hmac-generator` | Computes SHA256 & SHA512 HMAC signatures in Hex & Base64 for Stripe/GitHub webhook testing. |
-| | [Base64 Tool](https://tools.saadengineer.works/base64-decoder) | `/base64-decoder` | Safe UTF-8 Base64 encoding & decoding with URL-safe toggle and instant swapping. |
-| **Networking & Unix** | [Unix Timestamp](https://tools.saadengineer.works/unix-timestamp) | `/unix-timestamp` | Bidirectional Epoch ↔ UTC/Local/ISO date converter with auto-second/millisecond detection. |
-| | [Cron Visualizer](https://tools.saadengineer.works/cron-visualizer) | `/cron-visualizer` | Translates complex cron schedules into plain English with a 5-column breakdown grid. |
-| | [IP / CIDR Calculator](https://tools.saadengineer.works/cidr-calculator) | `/cidr-calculator` | Calculates IPv4 network address, broadcast, wildcard mask, and usable host bounds. |
-| **Code Converters** | [cURL Converter](https://tools.saadengineer.works/curl-converter) | `/curl-converter` | Transforms cURL commands into executable JavaScript (`fetch`), Python (`requests`), or Go. |
-| | [JSON to TypeScript](https://tools.saadengineer.works/json-to-typescript) | `/json-to-typescript` | Generates strongly-typed TypeScript interfaces and type definitions from raw JSON. |
-| | [YAML / JSON Converter](https://tools.saadengineer.works/yaml-json) | `/yaml-json` | Bidirectional YAML ↔ JSON conversion preserving data structures with one-click swap. |
-| | [URL Encoder](https://tools.saadengineer.works/url-encoder) | `/url-encoder` | Safely encodes and decodes URL components, parameters, and full URIs. |
-| **Diff & Optimization** | [Diff Checker](https://tools.saadengineer.works/diff-checker) | `/diff-checker` | Monaco side-by-side or inline code diffing with character-level additions and deletions. |
-| | [CSS & SVG Minifier](https://tools.saadengineer.works/css-svg-minifier) | `/css-svg-minifier` | Strips comments and whitespace; displays byte savings and compression ratio. |
-| | [Markdown Previewer](https://tools.saadengineer.works/markdown-previewer) | `/markdown-previewer` | Dual-pane live Markdown preview with HTML sanitization via `marked` and `DOMPurify`. |
-| | [Regex Tester](https://tools.saadengineer.works/regex-tester) | `/regex-tester` | Real-time RegExp testing with flags (`g`, `i`, `m`, `s`), match lists, and substitution preview. |
+| **Code Formatting** | [JSON Formatter](https://devscratchpad.tech/json-formatter) | `/json-formatter` | Multi-indent (2/4 spaces) formatting, minification, and real-time syntax error line tracking. |
+| | [XML Formatter](https://devscratchpad.tech/xml-formatter) | `/xml-formatter` | Format, beautify, and minify XML data structures with indentation controls. |
+| | [SQL Formatter](https://devscratchpad.tech/sql-formatter) | `/sql-formatter` | Multi-dialect query beautifier (PostgreSQL, MySQL, SQLite, T-SQL, PL/SQL) with keyword casing. |
+| | [GraphQL Formatter](https://devscratchpad.tech/graphql-formatter) | `/graphql-formatter` | Formats and validates GraphQL queries and schemas using the official AST parser. |
+| **Security & Crypto** | [JWT Decoder](https://devscratchpad.tech/jwt-decoder) | `/jwt-decoder` | Safely decodes Header, Payload & Signature; auto-converts `exp`/`iat` timestamps to ISO dates. |
+| | [Hash Generator](https://devscratchpad.tech/hash-generator) | `/hash-generator` | Computes MD5 (SparkMD5), SHA-1, SHA-256, and SHA-512 in parallel client-side. |
+| | [HMAC Generator](https://devscratchpad.tech/hmac-generator) | `/hmac-generator` | Computes SHA256 & SHA512 HMAC signatures in Hex & Base64 for Stripe/GitHub webhook testing. |
+| | [Base64 Tool](https://devscratchpad.tech/base64-decoder) | `/base64-decoder` | Safe UTF-8 Base64 encoding & decoding with URL-safe toggle and instant swapping. |
+| **Networking & Unix** | [Unix Timestamp](https://devscratchpad.tech/unix-timestamp) | `/unix-timestamp` | Bidirectional Epoch ↔ UTC/Local/ISO date converter with auto-second/millisecond detection. |
+| | [Cron Visualizer](https://devscratchpad.tech/cron-visualizer) | `/cron-visualizer` | Translates complex cron schedules into plain English with a 5-column breakdown grid. |
+| | [IP / CIDR Calculator](https://devscratchpad.tech/cidr-calculator) | `/cidr-calculator` | Calculates IPv4 network address, broadcast, wildcard mask, and usable host bounds. |
+| **Code Converters** | [cURL Converter](https://devscratchpad.tech/curl-converter) | `/curl-converter` | Transforms cURL commands into executable JavaScript (`fetch`), Python (`requests`), or Go. |
+| | [JSON to TypeScript](https://devscratchpad.tech/json-to-typescript) | `/json-to-typescript` | Generates strongly-typed TypeScript interfaces and type definitions from raw JSON. |
+| | [YAML / JSON Converter](https://devscratchpad.tech/yaml-json) | `/yaml-json` | Bidirectional YAML ↔ JSON conversion preserving data structures with one-click swap. |
+| | [URL Encoder](https://devscratchpad.tech/url-encoder) | `/url-encoder` | Safely encodes and decodes URL components, parameters, and full URIs. |
+| **Diff & Optimization** | [Diff Checker](https://devscratchpad.tech/diff-checker) | `/diff-checker` | Monaco side-by-side or inline code diffing with character-level additions and deletions. |
+| | [CSS & SVG Minifier](https://devscratchpad.tech/css-svg-minifier) | `/css-svg-minifier` | Strips comments and whitespace; displays byte savings and compression ratio. |
+| | [Markdown Previewer](https://devscratchpad.tech/markdown-previewer) | `/markdown-previewer` | Dual-pane live Markdown preview with HTML sanitization via `marked` and `DOMPurify`. |
+| | [Regex Tester](https://devscratchpad.tech/regex-tester) | `/regex-tester` | Real-time RegExp testing with flags (`g`, `i`, `m`, `s`), match lists, and substitution preview. |
 
 ---
 

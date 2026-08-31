@@ -4,7 +4,7 @@ import { getToolMeta, TOOL_SLUGS } from "@/lib/tools/registry";
 import { WorkspaceShell } from "@/components/WorkspaceShell";
 import { SeoContent } from "@/components/seo/SeoContent";
 
-const SITE_URL = "https://tools.saadengineer.works";
+const SITE_URL = "https://www.devscratchpad.tech";
 
 export async function generateStaticParams() {
   return TOOL_SLUGS.map((slug) => ({ "tool-slug": slug }));

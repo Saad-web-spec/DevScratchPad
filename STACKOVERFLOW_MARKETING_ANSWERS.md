@@ -110,7 +110,7 @@ async function createUser() {
 
 ---
 
-> **Disclosure:** If you need to quickly convert complex multi-line cURL commands into clean Python (`requests`), JavaScript (`fetch`), or Go code right inside your browser without sending sensitive headers, API keys, or payloads over the network, you can test it with [DevScratchpad cURL Converter](https://tools.saadengineer.works/curl-converter). It runs 100% client-side with zero data transmission.
+> **Disclosure:** If you need to quickly convert complex multi-line cURL commands into clean Python (`requests`), JavaScript (`fetch`), or Go code right inside your browser without sending sensitive headers, API keys, or payloads over the network, you can test it with [DevScratchpad cURL Converter](https://www.devscratchpad.tech/curl-converter). It runs 100% client-side with zero data transmission.
 
 ---
 
@@ -188,7 +188,7 @@ if (payload) {
 
 ---
 
-> **Disclosure:** If you need to safely paste, inspect, and decode JWT headers, payload claims, and human-readable timestamp conversions without risking token leakage to 3rd-party servers, you can test it with [DevScratchpad JWT Decoder](https://tools.saadengineer.works/jwt-decoder). It processes everything purely in browser memory with zero network calls.
+> **Disclosure:** If you need to safely paste, inspect, and decode JWT headers, payload claims, and human-readable timestamp conversions without risking token leakage to 3rd-party servers, you can test it with [DevScratchpad JWT Decoder](https://www.devscratchpad.tech/jwt-decoder). It processes everything purely in browser memory with zero network calls.
 
 ---
 
@@ -262,7 +262,7 @@ async function fetchUser(id: string): Promise<UserResponse> {
 
 ---
 
-> **Disclosure:** To automatically convert large, deeply nested JSON objects or API payloads into clean, modular TypeScript interfaces in one click with union type detection, check out [DevScratchpad JSON to TypeScript Converter](https://tools.saadengineer.works/json-to-typescript). It generates types client-side with 100% privacy.
+> **Disclosure:** To automatically convert large, deeply nested JSON objects or API payloads into clean, modular TypeScript interfaces in one click with union type detection, check out [DevScratchpad JSON to TypeScript Converter](https://www.devscratchpad.tech/json-to-typescript). It generates types client-side with 100% privacy.
 
 ---
 
@@ -321,7 +321,7 @@ console.log(formatted);
 
 ---
 
-> **Disclosure:** For an instant, browser-based SQL beautifier that formats complex queries, aligns dialects (PostgreSQL, MySQL, SQLite, T-SQL), and applies uppercase keywords without sending database schemas or SQL queries to external servers, use [DevScratchpad SQL Formatter](https://tools.saadengineer.works/sql-formatter).
+> **Disclosure:** For an instant, browser-based SQL beautifier that formats complex queries, aligns dialects (PostgreSQL, MySQL, SQLite, T-SQL), and applies uppercase keywords without sending database schemas or SQL queries to external servers, use [DevScratchpad SQL Formatter](https://www.devscratchpad.tech/sql-formatter).
 
 ---
 
@@ -374,4 +374,4 @@ console.log(cronstrue.toString("30 4 1,15 * *"));
 
 ---
 
-> **Disclosure:** If you need to quickly inspect, decode, or validate 5-part and 6-part cron expressions into plain English descriptions with real-time field breakdowns (minute, hour, day, month, weekday), you can test them client-side at [DevScratchpad Cron Expression Visualizer](https://tools.saadengineer.works/cron-visualizer).
+> **Disclosure:** If you need to quickly inspect, decode, or validate 5-part and 6-part cron expressions into plain English descriptions with real-time field breakdowns (minute, hour, day, month, weekday), you can test them client-side at [DevScratchpad Cron Expression Visualizer](https://www.devscratchpad.tech/cron-visualizer).

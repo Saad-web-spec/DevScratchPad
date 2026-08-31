@@ -2,7 +2,7 @@ import { MetadataRoute } from "next";
 import { TOOL_SLUGS } from "@/lib/tools/registry";
 import { BLOG_SLUGS } from "@/lib/blog/posts";
 
-const SITE_URL = "https://tools.saadengineer.works";
+const SITE_URL = "https://www.devscratchpad.tech";
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const routes = TOOL_SLUGS.map((slug) => ({

@@ -3,7 +3,7 @@ import { Analytics } from "@vercel/analytics/react";
 import { ThemeProvider } from "@/lib/theme";
 import "./globals.css";
 
-const SITE_URL = "https://tools.saadengineer.works";
+const SITE_URL = "https://www.devscratchpad.tech";
 
 export const metadata: Metadata = {
   title: {

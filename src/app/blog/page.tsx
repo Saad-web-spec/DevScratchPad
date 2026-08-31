@@ -3,7 +3,7 @@ import Link from "next/link";
 import { ArrowRight, BookOpen } from "lucide-react";
 import { BLOG_POSTS } from "@/lib/blog/posts";
 
-const SITE_URL = "https://tools.saadengineer.works";
+const SITE_URL = "https://www.devscratchpad.tech";
 
 export const metadata: Metadata = {
   title: "Developer Blog — Guides, Tutorials & Cheat Sheets",

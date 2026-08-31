@@ -18,7 +18,7 @@ export function EmbedButton({ toolSlug, data, className }: EmbedButtonProps) {
   const getEmbedCode = () => {
     if (data === undefined || data === null) return "";
     const encoded = encodeShareData(data);
-    const origin = typeof window !== "undefined" ? window.location.origin : "https://tools.saadengineer.works";
+    const origin = typeof window !== "undefined" ? window.location.origin : "https://www.devscratchpad.tech";
     const embedUrl = `${origin}/${toolSlug}?embed=true#data=${encoded}`;
     
     return `<iframe 

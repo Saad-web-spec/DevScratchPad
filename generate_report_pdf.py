@@ -41,7 +41,7 @@ class NumberedCanvas(canvas.Canvas):
         self.setStrokeColor(colors.HexColor("#E4E4E7"))
         self.setLineWidth(0.5)
         self.line(40, 38, 555, 38)
-        self.drawString(40, 26, "https://tools.saadengineer.works | 100% Client-Side Privacy")
+        self.drawString(40, 26, "https://devscratchpad.tech | 100% Client-Side Privacy")
         self.drawRightString(555, 26, f"Page {self._pageNumber} of {page_count}")
         self.restoreState()
 
@@ -329,7 +329,7 @@ def generate_pdf(output_path):
     story.append(Paragraph("6.1 Static Site Generation (SSG) &amp; Meta Engine", h2_style))
     story.append(Paragraph(
         "&bull; <b>Pre-rendered Routes:</b> <code>generateStaticParams()</code> pre-compiles 24 static pages with 0ms TTFB.<br/>"
-        "&bull; <b>Dynamic Metadata:</b> <code>generateMetadata()</code> creates unique titles, descriptions, canonical URLs (<code>https://tools.saadengineer.works/{slug}</code>), and OpenGraph/Twitter summary cards.",
+        "&bull; <b>Dynamic Metadata:</b> <code>generateMetadata()</code> creates unique titles, descriptions, canonical URLs (<code>https://devscratchpad.tech/{slug}</code>), and OpenGraph/Twitter summary cards.",
         bullet_style
     ))
 

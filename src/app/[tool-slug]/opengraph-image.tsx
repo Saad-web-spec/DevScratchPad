@@ -38,7 +38,7 @@ export default async function Image({ params }: { params: Promise<{ "tool-slug":
             Free • Private • Client-Side
           </div>
           <div style={{ marginTop: 60, fontSize: 24, color: '#3B82F6', display: 'flex' }}>
-            tools.saadengineer.works
+            devscratchpad.tech
           </div>
           <div style={{ marginTop: 20, fontSize: 24, color: '#D4D4D8', display: 'flex' }}>
             DevScratchpad

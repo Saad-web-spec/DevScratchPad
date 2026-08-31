@@ -35,9 +35,9 @@ export function SeoContent({ tool }: { tool: ToolMeta }) {
     "@graph": [
       {
         "@type": "WebApplication",
-        "@id": `https://tools.saadengineer.works/${tool.slug}#webapp`,
+        "@id": `https://www.devscratchpad.tech/${tool.slug}#webapp`,
         "name": `${tool.name} Online`,
-        "url": `https://tools.saadengineer.works/${tool.slug}`,
+        "url": `https://www.devscratchpad.tech/${tool.slug}`,
         "applicationCategory": "DeveloperApplication",
         "operatingSystem": "All",
         "browserRequirements": "Requires JavaScript",
@@ -50,7 +50,7 @@ export function SeoContent({ tool }: { tool: ToolMeta }) {
       },
       {
         "@type": "HowTo",
-        "@id": `https://tools.saadengineer.works/${tool.slug}#howto`,
+        "@id": `https://www.devscratchpad.tech/${tool.slug}#howto`,
         "name": `How to use ${tool.name} Online`,
         "description": `Step-by-step guide to use ${tool.name} with 100% in-browser client-side privacy.`,
         "step": tool.howToUse.map((step, idx) => ({
@@ -62,7 +62,7 @@ export function SeoContent({ tool }: { tool: ToolMeta }) {
       },
       {
         "@type": "FAQPage",
-        "@id": `https://tools.saadengineer.works/${tool.slug}#faq`,
+        "@id": `https://www.devscratchpad.tech/${tool.slug}#faq`,
         "mainEntity": [
           {
             "@type": "Question",
@@ -93,8 +93,8 @@ export function SeoContent({ tool }: { tool: ToolMeta }) {
       {
         "@type": "BreadcrumbList",
         "itemListElement": [
-          { "@type": "ListItem", "position": 1, "name": "DevScratchpad", "item": "https://tools.saadengineer.works" },
-          { "@type": "ListItem", "position": 2, "name": tool.name, "item": `https://tools.saadengineer.works/${tool.slug}` }
+          { "@type": "ListItem", "position": 1, "name": "DevScratchpad", "item": "https://www.devscratchpad.tech" },
+          { "@type": "ListItem", "position": 2, "name": tool.name, "item": `https://www.devscratchpad.tech/${tool.slug}` }
         ]
       }
     ]

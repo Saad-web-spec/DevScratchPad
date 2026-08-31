@@ -218,7 +218,7 @@ export function ExportImageModal({ isOpen, onClose, code, language }: ExportImag
 
                 {/* Brand Watermark - Positioned in canvas bottom corner */}
                 <div className="absolute bottom-2 sm:bottom-2.5 right-3 sm:right-4 text-[10px] sm:text-xs font-mono text-white/50 tracking-wider select-none pointer-events-none drop-shadow-xs">
-                  tools.saadengineer.works
+                  devscratchpad.tech
                 </div>
               </div>
             </div>

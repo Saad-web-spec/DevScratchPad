@@ -449,7 +449,7 @@ export function WorkspaceShell({ initialToolSlug, toolMeta, children }: Workspac
 
             {isEmbed && (
               <a
-                href={`https://tools.saadengineer.works/${currentSlug || ''}`}
+                href={`https://www.devscratchpad.tech/${currentSlug || ''}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="absolute bottom-10 right-4 bg-zinc-900/90 hover:bg-black text-white px-3 py-1.5 rounded-full text-xs font-medium shadow-lg backdrop-blur-sm border border-white/10 transition-transform hover:scale-105 z-50 flex items-center gap-1.5"
