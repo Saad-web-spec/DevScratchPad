@@ -22,6 +22,7 @@ import {
   FileText,
   Shield,
   Network,
+  Fingerprint,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -41,10 +42,12 @@ const ALL_TOOLS = [
   { id: "base64", name: "Base64 Decoder", category: "Decoders", icon: Binary },
   { id: "jwt", name: "JWT Decoder", category: "Decoders", icon: Key },
   { id: "url", name: "URL Encoder", category: "Decoders", icon: Type },
-  { id: "json-to-ts", name: "JSON to TypeScript", category: "Converters", icon: FileCode },
+  { id: "json-to-ts", name: "JSON to TypeScript / Schemas", category: "Converters", icon: FileCode },
   { id: "svg-to-jsx", name: "SVG to JSX", category: "Converters", icon: FileCode },
+  { id: "case-converter", name: "Case Converter", category: "Converters", icon: Type },
   { id: "yaml", name: "YAML / JSON Converter", category: "Converters", icon: ArrowLeftRight },
   { id: "timestamp", name: "Unix Timestamp", category: "Converters", icon: Clock },
+  { id: "uuid-generator", name: "UUID / ULID Generator", category: "Utilities", icon: Fingerprint },
   { id: "markdown-previewer", name: "Markdown Previewer", category: "Utilities", icon: FileText },
   { id: "hmac-generator", name: "HMAC Generator", category: "Utilities", icon: Shield },
   { id: "cidr-calculator", name: "CIDR Calculator", category: "Utilities", icon: Network },

@@ -681,6 +681,66 @@ export const TOOLS_REGISTRY: Record<string, ToolMeta> = {
       "Ctrl/Cmd + K — Open Command Palette to switch tools instantly."
     ],
   },
+  "uuid-generator": {
+    slug: "uuid-generator",
+    name: "UUID / ULID / NanoID Generator",
+    shortName: "UUID Generator",
+    description: "Generate cryptographically secure UUID v4, UUID v7, ULID, and NanoIDs in bulk",
+    seoTitle: "UUID & ULID Generator Online — Bulk UUID v4 & v7 Generator Free",
+    seoDescription: "Free online UUID and ULID generator — create secure UUID v4, time-ordered UUID v7, ULID, and NanoIDs in bulk with JSON and CSV export formats. 100% client-side.",
+    keywords: [
+      "uuid generator",
+      "uuid v4 generator",
+      "uuid v7 generator",
+      "ulid generator",
+      "nanoid generator",
+      "bulk uuid generator",
+      "online uuid generator",
+      "generate guid online"
+    ],
+    howToUse: [
+      "Select your identifier type: UUID v4, UUID v7 (time-ordered), ULID, or NanoID.",
+      "Choose the quantity to generate (up to 100).",
+      "Configure format options: Lines, JSON Array, or CSV.",
+      "Click 'Copy All' to copy the generated identifiers to your clipboard."
+    ],
+    edgeCases: [
+      "All IDs are generated locally in the browser using the Web Crypto API."
+    ],
+    shortcuts: [
+      "Ctrl/Cmd + K — Open Command Palette to switch tools instantly."
+    ],
+  },
+  "case-converter": {
+    slug: "case-converter",
+    name: "String Case & Text Transformer",
+    shortName: "Case Converter",
+    description: "Convert text between camelCase, snake_case, PascalCase, and kebab-case with sorting and deduplication",
+    seoTitle: "Case Converter Online — camelCase, snake_case, kebab-case Free",
+    seoDescription: "Free online string case converter — convert text instantly to camelCase, snake_case, PascalCase, CONSTANT_CASE, and kebab-case. Includes line sorting and deduplication.",
+    keywords: [
+      "case converter",
+      "camelcase converter",
+      "snake case converter",
+      "kebab case converter",
+      "pascalcase converter",
+      "text case converter online",
+      "convert string case",
+      "deduplicate lines online"
+    ],
+    howToUse: [
+      "Type or paste your text into the Input editor.",
+      "Select the desired target case format from the header pills.",
+      "Use the quick action toolbar to sort lines or remove duplicate lines.",
+      "Copy the converted text from the output editor."
+    ],
+    edgeCases: [
+      "Multi-line inputs are converted line-by-line while preserving line breaks."
+    ],
+    shortcuts: [
+      "Ctrl/Cmd + K — Open Command Palette to switch tools instantly."
+    ],
+  },
 };
 
 export const TOOL_SLUGS = Object.keys(TOOLS_REGISTRY);

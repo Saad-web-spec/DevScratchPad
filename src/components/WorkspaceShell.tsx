@@ -26,7 +26,8 @@ const MarkdownPreviewerTool = dynamic(() => import("@/components/tools/MarkdownP
 const HmacGeneratorTool = dynamic(() => import("@/components/tools/HmacGeneratorTool").then(mod => mod.HmacGeneratorTool));
 const CidrCalculatorTool = dynamic(() => import("@/components/tools/CidrCalculatorTool").then(mod => mod.CidrCalculatorTool));
 const SvgToJsxTool = dynamic(() => import("@/components/tools/SvgToJsxTool").then(mod => mod.SvgToJsxTool));
-//(() => import("@/components/tools/CidrCalculatorTool").then(mod => mod.CidrCalculatorTool));
+const UuidGeneratorTool = dynamic(() => import("@/components/tools/UuidGeneratorTool").then(mod => mod.UuidGeneratorTool));
+const CaseConverterTool = dynamic(() => import("@/components/tools/CaseConverterTool").then(mod => mod.CaseConverterTool));
 import { CommandPalette } from"@/components/modals/CommandPalette";
 import { getToolMeta, type ToolMeta } from"@/lib/tools/registry";
 import { addHistoryEntry, type HistoryEntry } from"@/lib/storage";
@@ -56,6 +57,8 @@ const SIDEBAR_TO_SLUG: Record<string, string> = {
 "hmac-generator":"hmac-generator",
 "cidr-calculator":"cidr-calculator",
 "svg-to-jsx":"svg-to-jsx",
+"uuid-generator":"uuid-generator",
+"case-converter":"case-converter",
 };
 
 const SIDEBAR_TO_NAME: Record<string, string> = {
@@ -79,6 +82,8 @@ const SIDEBAR_TO_NAME: Record<string, string> = {
 "hmac-generator":"HMAC Generator",
 "cidr-calculator":"CIDR Calculator",
 "svg-to-jsx":"SVG to JSX",
+"uuid-generator":"UUID Generator",
+"case-converter":"Case Converter",
 };
 
 const SLUG_TO_SIDEBAR: Record<string, string> = Object.fromEntries(
@@ -346,6 +351,8 @@ export function WorkspaceShell({ initialToolSlug, toolMeta, children }: Workspac
 "hmac-generator",
 "cidr-calculator",
 "svg-to-jsx",
+"uuid-generator",
+"case-converter",
  ];
 
  return (
@@ -562,6 +569,22 @@ export function WorkspaceShell({ initialToolSlug, toolMeta, children }: Workspac
   <SvgToJsxTool
   onValidationChange={handleValidationChange}
   onStatsChange={handleStatsChange}
+  restoredInput={restoredInput}
+  />
+  )}
+  {activeTool ==="uuid-generator"&& (
+  <UuidGeneratorTool
+  onValidationChange={handleValidationChange}
+  onStatsChange={handleStatsChange}
+  onLogHistory={handleLogHistory}
+  restoredInput={restoredInput}
+  />
+  )}
+  {activeTool ==="case-converter"&& (
+  <CaseConverterTool
+  onValidationChange={handleValidationChange}
+  onStatsChange={handleStatsChange}
+  onLogHistory={handleLogHistory}
   restoredInput={restoredInput}
   />
   )}

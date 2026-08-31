@@ -2,57 +2,60 @@
 
 import { useState, useEffect } from"react";
 import {
- FileJson, Database, Key, Binary, Hash, Type, Regex, Code, Clock,
- Terminal, SplitSquareHorizontal, History, Trash2,
- FileCode, Calendar, ArrowLeftRight, Minimize2, Sparkles, FileText, Shield, Network
-} from"lucide-react";
-import { cn } from"@/lib/utils";
+  FileJson, Database, Key, Binary, Hash, Type, Regex, Code, Clock,
+  Terminal, SplitSquareHorizontal, History, Trash2,
+  FileCode, Calendar, ArrowLeftRight, Minimize2, Sparkles, FileText, Shield, Network,
+  Fingerprint
+} from "lucide-react";
+import { cn } from "@/lib/utils";
 import {
- getHistoryEntries, clearHistory, deleteHistoryEntry,
- formatRelativeTime, type HistoryEntry
-} from"@/lib/storage";
+  getHistoryEntries, clearHistory, deleteHistoryEntry,
+  formatRelativeTime, type HistoryEntry
+} from "@/lib/storage";
 
 const NAV_CATEGORIES = [
- {
- title:"Formatters & Minifiers",
- items: [
- { name:"JSON Formatter", icon: FileJson, id:"json-formatter"},
- { name:"XML Formatter", icon: Code, id:"xml-formatter"},
- { name:"SQL Formatter", icon: Database, id:"sql-formatter"},
- { name:"GraphQL Formatter", icon: Sparkles, id:"graphql-formatter"},
- { name:"CSS/SVG Minifier", icon: Minimize2, id:"minifier"},
- { name:"cURL Converter", icon: Terminal, id:"curl"},
- ],
- },
- {
- title:"Decoders & Encoders",
- items: [
- { name:"Base64 Decoder", icon: Binary, id:"base64"},
- { name:"JWT Decoder", icon: Key, id:"jwt"},
- { name:"URL Encoder", icon: Type, id:"url"},
- ],
- },
   {
-    title: "Converters",
+    title: "Formatters & Minifiers",
     items: [
-      { name: "JSON to TypeScript", icon: FileCode, id: "json-to-ts" },
+      { name: "JSON Formatter", icon: FileJson, id: "json-formatter" },
+      { name: "XML Formatter", icon: Code, id: "xml-formatter" },
+      { name: "SQL Formatter", icon: Database, id: "sql-formatter" },
+      { name: "GraphQL Formatter", icon: Sparkles, id: "graphql-formatter" },
+      { name: "CSS/SVG Minifier", icon: Minimize2, id: "minifier" },
+      { name: "cURL Converter", icon: Terminal, id: "curl" },
+    ],
+  },
+  {
+    title: "Decoders & Encoders",
+    items: [
+      { name: "Base64 Decoder", icon: Binary, id: "base64" },
+      { name: "JWT Decoder", icon: Key, id: "jwt" },
+      { name: "URL Encoder", icon: Type, id: "url" },
+    ],
+  },
+  {
+    title: "Converters & Types",
+    items: [
+      { name: "JSON to Types / Schemas", icon: FileCode, id: "json-to-ts" },
       { name: "SVG to JSX", icon: FileCode, id: "svg-to-jsx" },
+      { name: "Case Converter", icon: Type, id: "case-converter" },
       { name: "YAML / JSON", icon: ArrowLeftRight, id: "yaml" },
       { name: "Unix Timestamp", icon: Clock, id: "timestamp" },
     ],
   },
- {
- title:"Utilities & Network",
- items: [
- { name:"Markdown Previewer", icon: FileText, id:"markdown-previewer"},
- { name:"HMAC Generator", icon: Shield, id:"hmac-generator"},
- { name:"CIDR Calculator", icon: Network, id:"cidr-calculator"},
- { name:"Cron Visualizer", icon: Calendar, id:"cron"},
- { name:"Diff Checker", icon: SplitSquareHorizontal, id:"diff"},
- { name:"Hash Generator", icon: Hash, id:"hash"},
- { name:"Regex Tester", icon: Regex, id:"regex"},
- ],
- },
+  {
+    title: "Utilities & Network",
+    items: [
+      { name: "UUID / ULID Generator", icon: Fingerprint, id: "uuid-generator" },
+      { name: "Markdown Previewer", icon: FileText, id: "markdown-previewer" },
+      { name: "HMAC Generator", icon: Shield, id: "hmac-generator" },
+      { name: "CIDR Calculator", icon: Network, id: "cidr-calculator" },
+      { name: "Cron Visualizer", icon: Calendar, id: "cron" },
+      { name: "Diff Checker", icon: SplitSquareHorizontal, id: "diff" },
+      { name: "Hash Generator", icon: Hash, id: "hash" },
+      { name: "Regex Tester", icon: Regex, id: "regex" },
+    ],
+  },
 ];
 
 interface SidebarProps {

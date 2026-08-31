@@ -8,19 +8,19 @@ const CATEGORIES = [
   tools: ["json-formatter","xml-formatter","sql-formatter","graphql-formatter"],
   },
   {
-  name:"Security & Crypto",
-  tools: ["jwt-decoder","hash-generator","hmac-generator","base64-decoder"],
+  name:"Security & Identifiers",
+  tools: ["uuid-generator","jwt-decoder","hash-generator","hmac-generator","base64-decoder"],
   },
   {
   name:"Networking & Unix",
   tools: ["unix-timestamp","cron-visualizer","cidr-calculator"],
   },
   {
-  name:"Code Converters",
-  tools: ["svg-to-jsx","curl-converter","json-to-typescript","yaml-json","url-encoder"],
+  name:"Code & Type Converters",
+  tools: ["json-to-typescript","svg-to-jsx","case-converter","curl-converter","yaml-json","url-encoder"],
   },
   {
-  name:"Diff & Optimization",
+  name:"Diff & Text Optimization",
   tools: ["diff-checker","css-svg-minifier","markdown-previewer","regex-tester"],
   },
 ];
