@@ -651,7 +651,36 @@ export const TOOLS_REGISTRY: Record<string, ToolMeta> = {
  shortcuts: [
 "Ctrl/Cmd + K — Open Command Palette to switch tools instantly.",
  ],
- },
+  },
+  "svg-to-jsx": {
+    slug: "svg-to-jsx",
+    name: "SVG to JSX Converter",
+    shortName: "SVG to JSX",
+    description: "Convert raw SVG code to React JSX functional components",
+    seoTitle: "SVG to JSX Converter Online — Generate React Components Free",
+    seoDescription: "Free online SVG to JSX converter — paste your raw SVG and get a ready-to-use React functional component with camelCase attributes. No servers, 100% private.",
+    keywords: [
+      "svg to jsx",
+      "svg to react",
+      "svg to component",
+      "svg to react component online",
+      "convert svg to jsx",
+      "svg react tool",
+      "camelcase svg attributes"
+    ],
+    howToUse: [
+      "Paste your raw SVG code into the left Input panel.",
+      "Click 'Convert' to transform standard HTML attributes (like class and fill-rule) into React-compatible camelCase attributes.",
+      "Click 'Copy' on the output panel to copy your React functional component."
+    ],
+    edgeCases: [
+      "Complex SVGs with invalid syntax may not parse completely.",
+      "Styles inside style tags are not automatically converted to React style objects."
+    ],
+    shortcuts: [
+      "Ctrl/Cmd + K — Open Command Palette to switch tools instantly."
+    ],
+  },
 };
 
 export const TOOL_SLUGS = Object.keys(TOOLS_REGISTRY);

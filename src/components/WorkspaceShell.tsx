@@ -25,10 +25,12 @@ const GraphqlFormatterTool = dynamic(() => import("@/components/tools/GraphqlFor
 const MarkdownPreviewerTool = dynamic(() => import("@/components/tools/MarkdownPreviewerTool").then(mod => mod.MarkdownPreviewerTool));
 const HmacGeneratorTool = dynamic(() => import("@/components/tools/HmacGeneratorTool").then(mod => mod.HmacGeneratorTool));
 const CidrCalculatorTool = dynamic(() => import("@/components/tools/CidrCalculatorTool").then(mod => mod.CidrCalculatorTool));
+const SvgToJsxTool = dynamic(() => import("@/components/tools/SvgToJsxTool").then(mod => mod.SvgToJsxTool));
+//(() => import("@/components/tools/CidrCalculatorTool").then(mod => mod.CidrCalculatorTool));
 import { CommandPalette } from"@/components/modals/CommandPalette";
 import { getToolMeta, type ToolMeta } from"@/lib/tools/registry";
 import { addHistoryEntry, type HistoryEntry } from"@/lib/storage";
-import { X } from"lucide-react";
+import { X, Sparkles } from "lucide-react";
 import { useRouter } from"next/navigation";
 import { decodeShareData } from"@/components/ShareButton";
 
@@ -53,6 +55,7 @@ const SIDEBAR_TO_SLUG: Record<string, string> = {
 "markdown-previewer":"markdown-previewer",
 "hmac-generator":"hmac-generator",
 "cidr-calculator":"cidr-calculator",
+"svg-to-jsx":"svg-to-jsx",
 };
 
 const SIDEBAR_TO_NAME: Record<string, string> = {
@@ -75,6 +78,7 @@ const SIDEBAR_TO_NAME: Record<string, string> = {
 "markdown-previewer":"Markdown Previewer",
 "hmac-generator":"HMAC Generator",
 "cidr-calculator":"CIDR Calculator",
+"svg-to-jsx":"SVG to JSX",
 };
 
 const SLUG_TO_SIDEBAR: Record<string, string> = Object.fromEntries(
@@ -110,6 +114,7 @@ export function WorkspaceShell({ initialToolSlug, toolMeta, children }: Workspac
 
  const [isCommandPaletteOpen, setCommandPaletteOpen] = useState(false);
  const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false);
+  const [magicPasteToast, setMagicPasteToast] = useState<{message: string, visible: boolean} | null>(null);
  const [restoredInput, setRestoredInput] = useState<string | null>(null);
 
  // Status Bar State

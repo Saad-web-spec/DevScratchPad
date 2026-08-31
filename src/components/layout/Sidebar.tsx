@@ -32,14 +32,15 @@ const NAV_CATEGORIES = [
  { name:"URL Encoder", icon: Type, id:"url"},
  ],
  },
- {
- title:"Converters",
- items: [
- { name:"JSON to TypeScript", icon: FileCode, id:"json-to-ts"},
- { name:"YAML / JSON", icon: ArrowLeftRight, id:"yaml"},
- { name:"Unix Timestamp", icon: Clock, id:"timestamp"},
- ],
- },
+  {
+    title: "Converters",
+    items: [
+      { name: "JSON to TypeScript", icon: FileCode, id: "json-to-ts" },
+      { name: "SVG to JSX", icon: FileCode, id: "svg-to-jsx" },
+      { name: "YAML / JSON", icon: ArrowLeftRight, id: "yaml" },
+      { name: "Unix Timestamp", icon: Clock, id: "timestamp" },
+    ],
+  },
  {
  title:"Utilities & Network",
  items: [
