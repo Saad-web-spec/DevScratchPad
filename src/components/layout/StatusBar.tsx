@@ -39,7 +39,7 @@ export function EditorPanelFooter({
  <div className="h-7 bg-zinc-50 border-t border-zinc-200 px-3 flex items-center justify-between text-xs font-mono shrink-0 w-full z-10">
  {isValid ? (
  <span className="flex items-center gap-1.5 text-zinc-400">
- <CheckCircle2 className="w-3.5 h-3.5 text-zinc-100"/> Ready
+ <CheckCircle2 className="w-3.5 h-3.5 text-zinc-900"/> Ready
  </span>
  ) : (
  <span className="flex items-center gap-1.5 text-red-400 font-medium truncate max-w-md">

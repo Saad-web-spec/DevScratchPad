@@ -249,7 +249,7 @@ export function JwtDecoderTool({ onValidationChange, onStatsChange, restoredInpu
 "flex-1 py-1.5 text-xs font-semibold rounded-md transition-all text-center",
  activeTab ==="input"
  ?"bg-white text-zinc-900 shadow-sm"
- :"text-zinc-500 hover:text-zinc-900 :text-zinc-200"
+ :"text-zinc-500 hover:text-zinc-900"
  )}
  >
  Encoded JWT
@@ -260,7 +260,7 @@ export function JwtDecoderTool({ onValidationChange, onStatsChange, restoredInpu
 "flex-1 py-1.5 text-xs font-semibold rounded-md transition-all text-center",
  activeTab ==="output"
  ?"bg-white text-zinc-900 shadow-sm"
- :"text-zinc-500 hover:text-zinc-900 :text-zinc-200"
+ :"text-zinc-500 hover:text-zinc-900"
  )}
  >
  Decoded Token
@@ -280,7 +280,7 @@ export function JwtDecoderTool({ onValidationChange, onStatsChange, restoredInpu
  <button onClick={() => setInput("")} className="text-zinc-400 hover:text-red-500 transition-colors p-1"title="Clear">
  <Trash2 className="w-3.5 h-3.5"/>
  </button>
- <button onClick={() => handleCopy(input, 'input')} className="text-zinc-400 hover:text-zinc-900 :text-zinc-100 transition-colors p-1">
+ <button onClick={() => handleCopy(input, 'input')} className="text-zinc-400 hover:text-zinc-900 transition-colors p-1">
  {copied === 'input' ? <Check className="w-3.5 h-3.5"/> : <Copy className="w-3.5 h-3.5"/>}
  </button>
  </div>
@@ -299,7 +299,7 @@ export function JwtDecoderTool({ onValidationChange, onStatsChange, restoredInpu
  onChange={(e) => setInput(e.target.value)}
  spellCheck={false}
  placeholder="Paste your JWT here (eyJ...)"
- className="absolute inset-0 p-4 w-full h-full font-mono text-[13px] sm:text-sm bg-transparent text-transparent caret-zinc-900 resize-none outline-none break-all leading-[1.6] placeholder:text-zinc-400 :text-zinc-600"
+ className="absolute inset-0 p-4 w-full h-full font-mono text-[13px] sm:text-sm bg-transparent text-transparent caret-zinc-900 resize-none outline-none break-all leading-[1.6] placeholder:text-zinc-400"
  />
  </div>
 
@@ -363,7 +363,7 @@ export function JwtDecoderTool({ onValidationChange, onStatsChange, restoredInpu
  value={secret}
  onChange={e => setSecret(e.target.value)}
  placeholder={`${headerObj.alg} Secret Key`}
- className="flex-1 bg-transparent border-none outline-none text-xs font-mono text-zinc-900 px-2 placeholder:text-zinc-400 :text-zinc-600"
+ className="flex-1 bg-transparent border-none outline-none text-xs font-mono text-zinc-900 px-2 placeholder:text-zinc-400"
  />
  {sigStatus ==="valid"&& (
  <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-emerald-50 text-emerald-600 border border-emerald-200">

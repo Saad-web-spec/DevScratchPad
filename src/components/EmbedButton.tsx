@@ -42,7 +42,7 @@ export function EmbedButton({ toolSlug, data, className }: EmbedButtonProps) {
  <button
  onClick={() => setIsOpen(true)}
  className={cn(
-"bg-transparent hover:bg-zinc-100 :bg-zinc-800 text-zinc-600 rounded-md h-8 w-8 flex items-center justify-center transition-colors shrink-0",
+"bg-transparent hover:bg-zinc-100 text-zinc-600 rounded-md h-8 w-8 flex items-center justify-center transition-colors shrink-0",
  className
  )}
  title="Get embed code to put this tool on your own site"
@@ -65,7 +65,7 @@ export function EmbedButton({ toolSlug, data, className }: EmbedButtonProps) {
  </div>
  <button
  onClick={() => setIsOpen(false)}
- className="p-1.5 text-zinc-500 hover:text-zinc-700 :text-zinc-300 hover:bg-zinc-100 :bg-zinc-800 rounded-lg transition-colors"
+ className="p-1.5 text-zinc-500 hover:text-zinc-700 hover:bg-zinc-100 rounded-lg transition-colors"
  aria-label="Close modal"
  >
  <X className="w-5 h-5"/>
@@ -86,7 +86,7 @@ export function EmbedButton({ toolSlug, data, className }: EmbedButtonProps) {
  </span>
  <button
  onClick={handleCopy}
- className="px-2.5 py-1 bg-white hover:bg-zinc-50 :bg-zinc-700 border border-zinc-200 rounded-md text-xs font-medium text-zinc-700 shadow-xs transition-colors flex items-center gap-1.5 active:scale-95"
+ className="px-2.5 py-1 bg-white hover:bg-zinc-50 border border-zinc-200 rounded-md text-xs font-medium text-zinc-700 shadow-xs transition-colors flex items-center gap-1.5 active:scale-95"
  >
  {copied ? (
  <Check className="w-3.5 h-3.5 text-emerald-500"/>

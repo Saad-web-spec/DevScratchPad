@@ -78,7 +78,7 @@ export function ShareButton({ toolSlug, data, className }: ShareButtonProps) {
  <button
  onClick={handleShare}
  className={cn(
-"bg-transparent hover:bg-zinc-100 :bg-zinc-800 text-zinc-600 rounded-md h-8 w-8 flex items-center justify-center transition-colors shrink-0",
+"bg-transparent hover:bg-zinc-100 text-zinc-600 rounded-md h-8 w-8 flex items-center justify-center transition-colors shrink-0",
  className
  )}
  title="Generate and copy shareable link for this tool"

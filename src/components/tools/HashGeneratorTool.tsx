@@ -120,7 +120,7 @@ export function HashGeneratorTool({
 "px-2.5 py-1 text-xs font-medium rounded-md transition-all",
  !isUppercase
  ?"bg-white text-zinc-900 font-semibold shadow-xs"
- :"text-zinc-500 hover:text-zinc-900 :text-zinc-200"
+ :"text-zinc-500 hover:text-zinc-900"
  )}
  >
  lowercase
@@ -131,7 +131,7 @@ export function HashGeneratorTool({
 "px-2.5 py-1 text-xs font-medium rounded-md transition-all",
  isUppercase
  ?"bg-white text-zinc-900 font-semibold shadow-xs"
- :"text-zinc-500 hover:text-zinc-900 :text-zinc-200"
+ :"text-zinc-500 hover:text-zinc-900"
  )}
  >
  UPPERCASE
@@ -140,7 +140,7 @@ export function HashGeneratorTool({
 
  <button
  onClick={handleCopyAll}
- className="bg-zinc-900 hover:bg-zinc-800 text-white :bg-zinc-200 h-8 px-3 text-xs font-semibold rounded-md flex items-center gap-1.5 ml-1 shrink-0 transition-colors shadow-xs"
+ className="bg-zinc-900 hover:bg-zinc-800 text-white h-8 px-3 text-xs font-semibold rounded-md flex items-center gap-1.5 ml-1 shrink-0 transition-colors shadow-xs"
  >
  {copiedKey ==="all"? (
  <Check className="w-3.5 h-3.5"/>
@@ -172,7 +172,7 @@ export function HashGeneratorTool({
  value={input}
  onChange={(e) => setInput(e.target.value)}
  placeholder="Type or paste your text here..."
- className="font-mono text-sm bg-transparent border-0 outline-none focus:ring-0 text-zinc-900 w-full min-h-[100px] resize-y placeholder:text-zinc-400 :text-zinc-600"
+ className="font-mono text-sm bg-transparent border-0 outline-none focus:ring-0 text-zinc-900 w-full min-h-[100px] resize-y placeholder:text-zinc-400"
  />
  </div>
 
@@ -193,7 +193,7 @@ export function HashGeneratorTool({
  return (
  <div
  key={card.id}
- className="flex flex-col sm:flex-row sm:items-center justify-between p-3.5 bg-white border border-zinc-200/80 rounded-xl mb-3 shadow-xs hover:border-zinc-300 :border-zinc-700 transition-all gap-3 sm:gap-0"
+ className="flex flex-col sm:flex-row sm:items-center justify-between p-3.5 bg-white border border-zinc-200/80 rounded-xl mb-3 shadow-xs hover:border-zinc-300 transition-all gap-3 sm:gap-0"
  >
  {/* Algorithm Tag & Bit Badge */}
  <div className="flex items-center gap-3">
@@ -213,7 +213,7 @@ export function HashGeneratorTool({
  {/* Copy Button */}
  <button
  onClick={() => handleCopy(card.value, card.id)}
- className="h-8 px-2.5 text-xs bg-zinc-100 hover:bg-zinc-200 :bg-zinc-700 text-zinc-700 rounded-md font-medium transition-colors flex items-center justify-center gap-1 shrink-0"
+ className="h-8 px-2.5 text-xs bg-zinc-100 hover:bg-zinc-200 text-zinc-700 rounded-md font-medium transition-colors flex items-center justify-center gap-1 shrink-0"
  title={`Copy ${card.name} hash`}
  >
  {copiedKey === card.id ? (

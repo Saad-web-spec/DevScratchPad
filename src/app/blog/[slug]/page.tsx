@@ -98,7 +98,7 @@ export default async function BlogPostPage({
  
  <Link
  href="/blog"
- className="inline-flex items-center text-sm font-medium text-zinc-500 hover:text-zinc-900 :text-zinc-100 transition-colors mb-8"
+ className="inline-flex items-center text-sm font-medium text-zinc-500 hover:text-zinc-900 transition-colors mb-8"
  >
  <ArrowLeft className="w-4 h-4 mr-2"/>
  Back to Blog
@@ -115,7 +115,7 @@ export default async function BlogPostPage({
  </h3>
  <Link
  href={`/${toolMeta.slug}`}
- className="group flex flex-col sm:flex-row items-start sm:items-center justify-between p-5 bg-zinc-50 ] border border-zinc-200 ] rounded-xl hover:bg-zinc-100 :bg-white transition-all"
+ className="group flex flex-col sm:flex-row items-start sm:items-center justify-between p-5 bg-zinc-50 ] border border-zinc-200 ] rounded-xl hover:bg-zinc-100 transition-all"
  >
  <div className="flex items-center gap-4 mb-4 sm:mb-0">
  <div className="w-10 h-10 rounded-lg bg-blue-500/10 flex items-center justify-center shrink-0">

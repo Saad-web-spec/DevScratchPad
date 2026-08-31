@@ -116,7 +116,7 @@ export function CronVisualizerTool({
  {/* Tool Header */}
  <div className="min-h-14 border-b border-[#e2e8f0] flex items-center justify-between gap-2 overflow-x-auto no-scrollbar py-2 px-3 md:px-4 px-3 md:px-6 py-2 md:py-0 bg-[#f8fafc] shrink-0">
  <div className="flex items-center gap-2">
- <Calendar className="w-4 h-4 text-zinc-100"/>
+ <Calendar className="w-4 h-4 text-zinc-900"/>
  <h2 className="text-sm font-semibold text-zinc-800">Cron Expression Visualizer</h2>
  </div>
 
@@ -142,8 +142,8 @@ export function CronVisualizerTool({
  className={cn(
 "px-3 py-1.5 rounded-full text-xs font-medium transition-colors border",
  input === preset.cron
- ?"bg-[#2563EB] text-white border-[#2563EB] shadow-2xs"
- :"bg-[#F1F5F9] ] text-[#0F172A] hover:bg-zinc-200 :bg-zinc-700 border-transparent"
+ ?"bg-[#2563EB] text-zinc-900 border-[#2563EB] shadow-2xs"
+ :"bg-[#F1F5F9] ] text-[#0F172A] hover:bg-zinc-200 border-transparent"
  )}
  >
  {preset.label}
@@ -160,7 +160,7 @@ export function CronVisualizerTool({
  </label>
  <button
  onClick={() => setInput("")}
- className="h-9 px-3 bg-white hover:bg-[#27272A] border border-zinc-200 text-zinc-300 text-xs font-medium rounded-md transition-colors flex items-center gap-1.5"
+ className="h-9 px-3 bg-white hover:bg-zinc-100 border border-zinc-200 text-zinc-700 text-xs font-medium rounded-md transition-colors flex items-center gap-1.5"
  title="Clear input"
  >
  <Trash2 className="w-3.5 h-3.5"/>
@@ -175,7 +175,7 @@ export function CronVisualizerTool({
  value={input}
  onChange={(e) => setInput(e.target.value)}
  placeholder="e.g. */15 * * * * or 0 9 * * 1-5"
- className="w-full font-mono text-base tracking-wide bg-zinc-50 border border-zinc-200 text-zinc-100 focus:ring-1 focus:ring-zinc-400 rounded-lg p-3 focus:outline-none"
+ className="w-full font-mono text-base tracking-wide bg-zinc-50 border border-zinc-200 text-zinc-900 focus:ring-1 focus:ring-zinc-400 rounded-lg p-3 focus:outline-none"
  />
  </div>
 
@@ -215,7 +215,7 @@ export function CronVisualizerTool({
  <button
  onClick={handleCopy}
  className={cn(
-"h-9 px-3 bg-white hover:bg-[#27272A] border border-zinc-200 text-zinc-300 text-xs font-medium rounded-md transition-colors flex items-center gap-1.5",
+"h-9 px-3 bg-white hover:bg-zinc-100 border border-zinc-200 text-zinc-700 text-xs font-medium rounded-md transition-colors flex items-center gap-1.5",
  copied &&"text-zinc-900 border-emerald-500/40"
  )}
  >

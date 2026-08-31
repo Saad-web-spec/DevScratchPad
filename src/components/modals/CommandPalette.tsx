@@ -118,7 +118,7 @@ export function CommandPalette({ isOpen, onClose, onSelectTool }: CommandPalette
  value={search}
  onChange={(e) => setSearch(e.target.value)}
  placeholder="Search tools... (e.g. JWT, JSON, TypeScript, Cron, YAML)"
- className="flex-1 bg-transparent border-none text-zinc-900 placeholder:text-zinc-400 :text-zinc-500 h-14 px-4 focus:outline-none focus:ring-0 text-base sm:text-lg"
+ className="flex-1 bg-transparent border-none text-zinc-900 placeholder:text-zinc-400 h-14 px-4 focus:outline-none focus:ring-0 text-base sm:text-lg"
  />
  <kbd className="hidden sm:inline-block px-1.5 py-0.5 rounded bg-zinc-100 border border-zinc-200 text-[10px] font-medium text-zinc-400">
  ESC
@@ -144,7 +144,7 @@ export function CommandPalette({ isOpen, onClose, onSelectTool }: CommandPalette
 "w-full flex items-center justify-between px-4 py-2.5 rounded-lg text-left transition-all",
  selectedIndex === index
  ?"bg-blue-50 text-blue-600 font-medium"
- :"text-zinc-700 hover:bg-zinc-50 :bg-zinc-800/40"
+ :"text-zinc-700 hover:bg-zinc-50"
  )}
  >
  <div className="flex items-center gap-3">

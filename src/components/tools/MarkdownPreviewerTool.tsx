@@ -79,7 +79,7 @@ export function MarkdownPreviewerTool({ onValidationChange, onStatsChange, onLog
  {/* Tool Header */}
  <div className="min-h-14 border-b border-[#e2e8f0] flex items-center justify-between gap-2 overflow-x-auto no-scrollbar py-2 px-3 md:px-4 px-3 md:px-4 py-2 md:py-0 bg-[#f8fafc] shrink-0">
  <div className="flex items-center gap-2">
- <FileText className="w-4 h-4 text-zinc-100"/>
+ <FileText className="w-4 h-4 text-zinc-900"/>
  <h2 className="text-sm font-semibold text-zinc-800">Markdown Previewer</h2>
  </div>
  
@@ -98,7 +98,7 @@ export function MarkdownPreviewerTool({ onValidationChange, onStatsChange, onLog
 "flex-1 py-1.5 text-xs font-medium rounded-md transition-colors text-center",
  activeTab ==="input"
  ?"bg-white text-zinc-900 font-semibold shadow-xs rounded-md px-2.5 py-1 text-xs"
- :"text-zinc-500 hover:text-zinc-900 :text-zinc-200 px-2.5 py-1 text-xs"
+ :"text-zinc-500 hover:text-zinc-900 px-2.5 py-1 text-xs"
  )}
  >
  Markdown Input
@@ -109,7 +109,7 @@ export function MarkdownPreviewerTool({ onValidationChange, onStatsChange, onLog
 "flex-1 py-1.5 text-xs font-medium rounded-md transition-colors text-center",
  activeTab ==="output"
  ?"bg-white text-zinc-900 font-semibold shadow-xs rounded-md px-2.5 py-1 text-xs"
- :"text-zinc-500 hover:text-zinc-900 :text-zinc-200 px-2.5 py-1 text-xs"
+ :"text-zinc-500 hover:text-zinc-900 px-2.5 py-1 text-xs"
  )}
  >
  Rendered Preview
@@ -122,7 +122,7 @@ export function MarkdownPreviewerTool({ onValidationChange, onStatsChange, onLog
  <div className={cn("flex-1 border-r-0 md:border-r border-b md:border-b-0 border-[#e2e8f0] flex flex-col min-w-0 w-full overflow-x-hidden", activeTab !=="input"&&"hidden md:flex")}>
  <div className="h-8 bg-[#f8fafc] border-b border-[#e2e8f0] flex items-center justify-between px-3 shrink-0">
  <span className="text-[11px] font-medium text-zinc-500 uppercase tracking-wider">Markdown</span>
- <button onClick={() => setInput("")} className="text-zinc-400 hover:text-red-600 :text-red-400 transition-colors"title="Clear">
+ <button onClick={() => setInput("")} className="text-zinc-400 hover:text-red-600 transition-colors"title="Clear">
  <Trash2 className="w-3.5 h-3.5"/>
  </button>
  </div>
@@ -152,7 +152,7 @@ export function MarkdownPreviewerTool({ onValidationChange, onStatsChange, onLog
  <div className="flex-1 overflow-y-auto p-4 md:p-6">
  <div 
  dangerouslySetInnerHTML={{ __html: htmlOutput }} 
- className="prose prose-slate max-w-none prose-headings:font-semibold prose-a:text-zinc-100 :text-zinc-100"
+ className="prose prose-slate max-w-none prose-headings:font-semibold prose-a:text-zinc-900"
  />
  </div>
  </div>

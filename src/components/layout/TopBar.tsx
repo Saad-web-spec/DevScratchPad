@@ -33,7 +33,7 @@ export function TopBar({ onOpenCommandPalette, onOpenMobileMenu }: TopBarProps) 
  <div className="flex items-center gap-2.5">
  <button
  onClick={onOpenMobileMenu}
- className="p-1.5 rounded-lg text-zinc-600 hover:text-zinc-900 :text-white hover:bg-zinc-100 :bg-zinc-800/80 transition-colors md:hidden focus:outline-none"
+ className="p-1.5 rounded-lg text-zinc-600 hover:text-zinc-900 hover:bg-zinc-100 transition-colors md:hidden focus:outline-none"
  aria-label="Open Navigation Menu"
  >
  <Menu className="w-5 h-5"/>
@@ -50,13 +50,13 @@ export function TopBar({ onOpenCommandPalette, onOpenMobileMenu }: TopBarProps) 
  <div className="flex items-center mx-2 flex-1 max-w-xs md:max-w-none md:flex-initial">
  <button
  onClick={onOpenCommandPalette}
- className="group flex items-center gap-2 px-2.5 sm:px-3 py-1.5 bg-zinc-50 hover:bg-zinc-100 :bg-[#131d33] text-zinc-500 hover:text-zinc-700 :text-zinc-200 rounded-lg border border-zinc-200 hover:border-zinc-300 :border-cyan-500/40 transition-all text-xs sm:text-sm w-full sm:w-64 justify-between"
+ className="group flex items-center gap-2 px-2.5 sm:px-3 py-1.5 bg-zinc-50 hover:bg-zinc-100 text-zinc-500 hover:text-zinc-700 rounded-lg border border-zinc-200 hover:border-zinc-300 transition-all text-xs sm:text-sm w-full sm:w-64 justify-between"
  >
  <div className="flex items-center gap-2 min-w-0">
- <Search className="w-4 h-4 shrink-0 text-zinc-400 group-hover:text-blue-500 :text-cyan-400 transition-colors"/>
+ <Search className="w-4 h-4 shrink-0 text-zinc-400 group-hover:text-blue-500 transition-colors"/>
  <span className="truncate">Search tools...</span>
  </div>
- <kbd className="hidden sm:inline-block px-1.5 py-0.5 rounded bg-white border border-zinc-200 text-[10px] font-medium text-zinc-400 group-hover:border-blue-300 :border-zinc-600">
+ <kbd className="hidden sm:inline-block px-1.5 py-0.5 rounded bg-white border border-zinc-200 text-[10px] font-medium text-zinc-400 group-hover:border-blue-300">
  ⌘K
  </kbd>
  </button>
@@ -70,7 +70,7 @@ export function TopBar({ onOpenCommandPalette, onOpenMobileMenu }: TopBarProps) 
  <div className="w-px h-6 bg-zinc-200 mx-1"></div>
  <button
  onClick={handleSaveWorkspace}
- className="flex items-center gap-2 px-3 py-1.5 bg-zinc-900 hover:bg-zinc-800 :bg-zinc-200 text-white rounded-lg transition-all text-sm font-medium shadow-xs active:scale-95"
+ className="flex items-center gap-2 px-3 py-1.5 bg-zinc-900 hover:bg-zinc-800 text-white rounded-lg transition-all text-sm font-medium shadow-xs active:scale-95"
  >
  <Save className="w-4 h-4"/>
  <span>Save Workspace</span>
@@ -81,7 +81,7 @@ export function TopBar({ onOpenCommandPalette, onOpenMobileMenu }: TopBarProps) 
  <div className="relative md:hidden"ref={dropdownRef}>
  <button
  onClick={() => setIsOverflowOpen((prev) => !prev)}
- className="p-1.5 rounded-lg text-zinc-600 hover:text-zinc-900 :text-white hover:bg-zinc-100 :bg-zinc-800 transition-colors focus:outline-none"
+ className="p-1.5 rounded-lg text-zinc-600 hover:text-zinc-900 hover:bg-zinc-100 transition-colors focus:outline-none"
  aria-label="More actions"
  >
  <MoreVertical className="w-5 h-5"/>
@@ -91,7 +91,7 @@ export function TopBar({ onOpenCommandPalette, onOpenMobileMenu }: TopBarProps) 
  <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg border border-zinc-200 py-1 z-50 animate-in fade-in zoom-in-95 duration-100">
  <button
  onClick={handleSaveWorkspace}
- className="w-full flex items-center gap-2 px-4 py-2.5 text-xs text-zinc-700 hover:bg-zinc-50 :bg-zinc-800 font-medium transition-colors text-left"
+ className="w-full flex items-center gap-2 px-4 py-2.5 text-xs text-zinc-700 hover:bg-zinc-50 font-medium transition-colors text-left"
  >
  <Save className="w-4 h-4 text-zinc-500"/>
  <span>Save Workspace</span>

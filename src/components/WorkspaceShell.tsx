@@ -274,7 +274,7 @@ export function WorkspaceShell({ initialToolSlug, toolMeta, children }: Workspac
  </div>
  <button
  onClick={() => setIsMobileDrawerOpen(false)}
- className="p-1.5 rounded-lg text-zinc-500 hover:text-zinc-700 :text-white hover:bg-zinc-100 :bg-zinc-800 transition-colors"
+ className="p-1.5 rounded-lg text-zinc-500 hover:text-zinc-700 hover:bg-zinc-100 transition-colors"
  aria-label="Close navigation drawer"
  >
  <X className="w-5 h-5"/>
@@ -465,7 +465,7 @@ export function WorkspaceShell({ initialToolSlug, toolMeta, children }: Workspac
  href={`https://www.devscratchpad.tech/${currentSlug || ''}`}
  target="_blank"
  rel="noopener noreferrer"
- className="absolute bottom-10 right-4 bg-zinc-900/90 hover:bg-black text-white px-3 py-1.5 rounded-full text-xs font-medium shadow-lg backdrop-blur-sm border border-white/10 transition-transform hover:scale-105 z-50 flex items-center gap-1.5"
+ className="absolute bottom-10 right-4 bg-zinc-900/90 hover:bg-black text-zinc-900 px-3 py-1.5 rounded-full text-xs font-medium shadow-lg backdrop-blur-sm border border-white/10 transition-transform hover:scale-105 z-50 flex items-center gap-1.5"
  >
  <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"/>
  Powered by DevScratchpad

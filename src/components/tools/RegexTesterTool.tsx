@@ -142,8 +142,8 @@ export function RegexTesterTool({
  className={cn(
 "h-8 px-3 text-xs font-medium rounded-md border transition-colors flex items-center gap-1.5 ml-1",
  replaceMode
- ?"bg-zinc-900 text-white border-zinc-900 font-semibold shadow-xs"
- :"bg-zinc-100 hover:bg-zinc-200 :bg-zinc-700 text-zinc-700 border-zinc-200"
+ ?"bg-zinc-900 text-zinc-900 border-zinc-900 font-semibold shadow-xs"
+ :"bg-zinc-100 hover:bg-zinc-200 text-zinc-700 border-zinc-200"
  )}
  >
  <Replace className="w-3.5 h-3.5"/>
@@ -154,7 +154,7 @@ export function RegexTesterTool({
 
  <div className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8 w-full mx-auto bg-white ] flex flex-col max-w-[1400px]">
  {/* Integrated Regex Pattern Input Bar */}
- <div className="bg-zinc-50 border border-zinc-200 rounded-xl p-3 shadow-xs flex items-center justify-between gap-3 focus-within:border-zinc-400 :border-zinc-600 transition-colors">
+ <div className="bg-zinc-50 border border-zinc-200 rounded-xl p-3 shadow-xs flex items-center justify-between gap-3 focus-within:border-zinc-400 transition-colors">
  <span className="text-zinc-400 font-mono font-bold select-none pl-1 text-sm md:text-base">/</span>
  <input
  type="text"
@@ -162,7 +162,7 @@ export function RegexTesterTool({
  onChange={(e) => setPattern(e.target.value)}
  placeholder="Enter regular expression pattern..."
  spellCheck={false}
- className="font-mono text-sm md:text-base tracking-wide bg-transparent border-0 focus:ring-0 focus:outline-none text-zinc-900 flex-1 placeholder:text-zinc-400 :text-zinc-600 min-w-0"
+ className="font-mono text-sm md:text-base tracking-wide bg-transparent border-0 focus:ring-0 focus:outline-none text-zinc-900 flex-1 placeholder:text-zinc-400 min-w-0"
  />
  <span className="text-zinc-400 font-mono font-bold select-none text-sm md:text-base pr-1">/</span>
 
@@ -183,8 +183,8 @@ export function RegexTesterTool({
  className={cn(
 "font-mono text-xs px-2 py-0.5 transition-colors",
  flags[f.id]
- ?"bg-zinc-900 text-white font-bold rounded shadow-xs"
- :"text-zinc-400 hover:text-zinc-700 :text-zinc-200"
+ ?"bg-zinc-900 text-zinc-900 font-bold rounded shadow-xs"
+ :"text-zinc-400 hover:text-zinc-700"
  )}
  >
  {f.label}
@@ -195,7 +195,7 @@ export function RegexTesterTool({
 
  {/* Replace Pattern Bar (if enabled) */}
  {replaceMode && (
- <div className="bg-zinc-50 border border-zinc-200 rounded-xl p-3 shadow-xs flex items-center justify-between gap-3 mt-3 focus-within:border-zinc-400 :border-zinc-600 transition-colors">
+ <div className="bg-zinc-50 border border-zinc-200 rounded-xl p-3 shadow-xs flex items-center justify-between gap-3 mt-3 focus-within:border-zinc-400 transition-colors">
  <span className="text-xs font-semibold text-zinc-400 uppercase tracking-wider select-none shrink-0 pl-1">
  Replace:
  </span>
@@ -204,7 +204,7 @@ export function RegexTesterTool({
  value={replacePattern}
  onChange={(e) => setReplacePattern(e.target.value)}
  placeholder="Replacement pattern (e.g. $1, [REDACTED])..."
- className="font-mono text-sm md:text-base tracking-wide bg-transparent border-0 focus:ring-0 focus:outline-none text-zinc-900 flex-1 placeholder:text-zinc-400 :text-zinc-600 min-w-0"
+ className="font-mono text-sm md:text-base tracking-wide bg-transparent border-0 focus:ring-0 focus:outline-none text-zinc-900 flex-1 placeholder:text-zinc-400 min-w-0"
  />
  </div>
  )}
@@ -226,7 +226,7 @@ export function RegexTesterTool({
 "flex-1 py-1.5 text-xs font-semibold rounded-md transition-all text-center",
  activeTab ==="input"
  ?"bg-white text-zinc-900 shadow-sm"
- :"text-zinc-500 hover:text-zinc-900 :text-zinc-200"
+ :"text-zinc-500 hover:text-zinc-900"
  )}
  >
  Test String
@@ -237,7 +237,7 @@ export function RegexTesterTool({
 "flex-1 py-1.5 text-xs font-semibold rounded-md transition-all text-center",
  activeTab ==="output"
  ?"bg-white text-zinc-900 shadow-sm"
- :"text-zinc-500 hover:text-zinc-900 :text-zinc-200"
+ :"text-zinc-500 hover:text-zinc-900"
  )}
  >
  {replaceMode ?"Replaced Result": `Matches (${matches.length})`}
@@ -313,7 +313,7 @@ export function RegexTesterTool({
  </span>
  <button
  onClick={() => handleCopy(replacedOutput,"replaced")}
- className="text-zinc-400 hover:text-zinc-900 :text-zinc-100 transition-colors flex items-center gap-1 p-1"
+ className="text-zinc-400 hover:text-zinc-900 transition-colors flex items-center gap-1 p-1"
  >
  {copied ==="replaced"? <Check className="w-3.5 h-3.5 text-zinc-900"/> : <Copy className="w-3.5 h-3.5"/>}
  </button>
@@ -349,7 +349,7 @@ export function RegexTesterTool({
  {matches.length > 0 && (
  <button
  onClick={handleCopyAllMatches}
- className="text-zinc-400 hover:text-zinc-900 :text-zinc-100 transition-colors flex items-center gap-1.5 p-1 text-xs font-medium"
+ className="text-zinc-400 hover:text-zinc-900 transition-colors flex items-center gap-1.5 p-1 text-xs font-medium"
  >
  {copied ==="all-matches"? <Check className="w-3.5 h-3.5 text-zinc-900"/> : <Copy className="w-3.5 h-3.5"/>}
  <span className="hidden sm:inline">{copied ==="all-matches"?"Copied All":"Copy All"}</span>
@@ -360,11 +360,11 @@ export function RegexTesterTool({
  <div className="flex-1 overflow-y-auto space-y-3 pr-1">
  {matches.length > 0 ? (
  matches.map((m, idx) => (
- <div key={idx} className="bg-white border border-zinc-200 rounded-lg p-3.5 shadow-xs relative group hover:border-zinc-300 :border-zinc-700 transition-colors">
+ <div key={idx} className="bg-white border border-zinc-200 rounded-lg p-3.5 shadow-xs relative group hover:border-zinc-300 transition-colors">
  
  <div className="flex items-center justify-between mb-2">
  <div className="flex items-center">
- <span className="bg-zinc-900 text-white text-[11px] font-mono font-bold px-2 py-0.5 rounded">
+ <span className="bg-zinc-900 text-zinc-900 text-[11px] font-mono font-bold px-2 py-0.5 rounded">
  Match {idx + 1}
  </span>
  <span className="text-xs font-mono text-zinc-500 ml-2 tracking-tight">
@@ -374,7 +374,7 @@ export function RegexTesterTool({
  
  <button
  onClick={() => handleCopy(m.match, `match-${idx}`)}
- className="h-7 px-2 text-xs bg-zinc-100 hover:bg-zinc-200 :bg-zinc-700 text-zinc-700 rounded transition-colors flex items-center gap-1 opacity-0 group-hover:opacity-100 focus:opacity-100"
+ className="h-7 px-2 text-xs bg-zinc-100 hover:bg-zinc-200 text-zinc-700 rounded transition-colors flex items-center gap-1 opacity-0 group-hover:opacity-100 focus:opacity-100"
  title="Copy Match"
  >
  {copied === `match-${idx}` ? <Check className="w-3.5 h-3.5"/> : <Copy className="w-3.5 h-3.5"/>}

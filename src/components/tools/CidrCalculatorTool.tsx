@@ -91,7 +91,7 @@ export function CidrCalculatorTool({ onValidationChange, onStatsChange, onLogHis
  <div className="flex flex-wrap items-center">
  {Array.from({ length: 32 }).map((_, i) => (
  <span key={i} className="flex items-center">
- {i > 0 && i % 8 === 0 && <span className="text-zinc-300 font-normal mx-0.5 md:mx-1">.</span>}
+ {i > 0 && i % 8 === 0 && <span className="text-zinc-700 font-normal mx-0.5 md:mx-1">.</span>}
  <span className={cn(
 "font-mono text-sm sm:text-base md:text-lg tracking-widest",
  i < prefix ?"text-zinc-900 font-bold":"text-zinc-400 font-normal"
@@ -130,14 +130,14 @@ export function CidrCalculatorTool({ onValidationChange, onStatsChange, onLogHis
  value={input}
  onChange={(e) => setInput(e.target.value)}
  placeholder="e.g. 192.168.1.0/24"
- className="w-full font-mono text-lg font-bold bg-zinc-50 border border-zinc-200 rounded-xl p-4 text-zinc-900 focus:ring-1 focus:ring-zinc-400 focus:outline-none placeholder:text-zinc-400 :text-zinc-600 transition-all"
+ className="w-full font-mono text-lg font-bold bg-zinc-50 border border-zinc-200 rounded-xl p-4 text-zinc-900 focus:ring-1 focus:ring-zinc-400 focus:outline-none placeholder:text-zinc-400 transition-all"
  />
  <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1">
  {['/8', '/16', '/24', '/27', '/30', '/32'].map((mask) => (
  <button
  key={mask}
  onClick={() => setMask(mask)}
- className="shrink-0 px-3 py-1.5 rounded-full text-xs font-medium border border-zinc-200 bg-white text-zinc-600 hover:bg-zinc-100 :bg-zinc-800 transition-colors"
+ className="shrink-0 px-3 py-1.5 rounded-full text-xs font-medium border border-zinc-200 bg-white text-zinc-600 hover:bg-zinc-100 transition-colors"
  >
  {mask}
  </button>
@@ -197,18 +197,18 @@ export function CidrCalculatorTool({ onValidationChange, onStatsChange, onLogHis
 
 function MetricCard({ label, value, id, copiedId, onCopy }: { label: string; value: string | number; id: string; copiedId: string | null; onCopy: (val: string, id: string) => void }) {
  return (
- <div className="bg-white border border-zinc-200 rounded-xl p-4 shadow-sm relative group hover:border-zinc-300 :border-zinc-700 transition-all flex flex-col justify-center min-h-[90px]">
+ <div className="bg-white border border-zinc-200 rounded-xl p-4 shadow-sm relative group hover:border-zinc-300 transition-all flex flex-col justify-center min-h-[90px]">
  <div className="flex items-center justify-between mb-1.5">
  <span className="text-xs font-semibold tracking-wider text-zinc-500 uppercase">{label}</span>
  <button 
  onClick={() => onCopy(value.toString(), id)}
- className="p-1 rounded-md opacity-0 group-hover:opacity-100 transition-opacity bg-zinc-100 hover:bg-zinc-200 :bg-zinc-700 focus:opacity-100"
+ className="p-1 rounded-md opacity-0 group-hover:opacity-100 transition-opacity bg-zinc-100 hover:bg-zinc-200 focus:opacity-100"
  title="Copy value"
  >
  {copiedId === id ? (
  <Check className="w-3.5 h-3.5 text-zinc-900"/>
  ) : (
- <Copy className="w-3.5 h-3.5 text-zinc-500 hover:text-zinc-900 :text-zinc-100 transition-colors"/>
+ <Copy className="w-3.5 h-3.5 text-zinc-500 hover:text-zinc-900 transition-colors"/>
  )}
  </button>
  </div>

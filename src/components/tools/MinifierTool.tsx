@@ -138,7 +138,7 @@ export function MinifierTool({
  {/* Tool Header */}
  <div className="min-h-14 border-b border-[#e2e8f0] flex items-center justify-between gap-2 overflow-x-auto no-scrollbar py-2 px-3 md:px-4 px-3 md:px-4 py-2 md:py-0 bg-[#f8fafc] shrink-0">
  <div className="flex items-center gap-2">
- <Minimize2 className="w-4 h-4 text-zinc-100"/>
+ <Minimize2 className="w-4 h-4 text-zinc-900"/>
  <h2 className="text-sm font-semibold text-zinc-800">CSS & SVG Minifier</h2>
  </div>
 
@@ -155,7 +155,7 @@ export function MinifierTool({
  id="minifier-mode-select"
  value={mode}
  onChange={(e) => handleModeChange(e.target.value as"css"|"svg")}
- className="h-9 bg-white border border-zinc-200 text-zinc-300 text-xs rounded-md px-2 focus:outline-none font-medium"
+ className="h-9 bg-white border border-zinc-200 text-zinc-700 text-xs rounded-md px-2 focus:outline-none font-medium"
  >
  <option value="css">CSS Minifier</option>
  <option value="svg">SVG Minifier</option>
@@ -173,7 +173,7 @@ export function MinifierTool({
  {/* Action Button */}
  <button
  onClick={handleMinify}
- className="h-8 px-3 text-xs font-semibold rounded-md shadow-xs transition-colors flex items-center gap-1.5 bg-zinc-900 hover:bg-zinc-800 text-white :bg-zinc-200"
+ className="h-8 px-3 text-xs font-semibold rounded-md shadow-xs transition-colors flex items-center gap-1.5 bg-zinc-900 hover:bg-zinc-800 text-white"
  >
  <Minimize2 className="w-3.5 h-3.5"/>
  <span>Minify {mode.toUpperCase()}</span>
@@ -189,7 +189,7 @@ export function MinifierTool({
 "flex-1 py-1.5 text-xs font-medium rounded-md transition-colors text-center",
  activeTab ==="input"
  ?"bg-white text-zinc-900 font-semibold shadow-xs rounded-md px-2.5 py-1 text-xs"
- :"text-zinc-500 hover:text-zinc-900 :text-zinc-200 px-2.5 py-1 text-xs"
+ :"text-zinc-500 hover:text-zinc-900 px-2.5 py-1 text-xs"
  )}
  >
  Raw {mode.toUpperCase()} Input
@@ -200,7 +200,7 @@ export function MinifierTool({
 "flex-1 py-1.5 text-xs font-medium rounded-md transition-colors text-center",
  activeTab ==="output"
  ?"bg-white text-zinc-900 font-semibold shadow-xs rounded-md px-2.5 py-1 text-xs"
- :"text-zinc-500 hover:text-zinc-900 :text-zinc-200 px-2.5 py-1 text-xs"
+ :"text-zinc-500 hover:text-zinc-900 px-2.5 py-1 text-xs"
  )}
  >
  Minified Output
@@ -217,7 +217,7 @@ export function MinifierTool({
  </span>
  <button
  onClick={() => setInput("")}
- className="text-zinc-400 hover:text-red-600 :text-red-400 transition-colors"
+ className="text-zinc-400 hover:text-red-600 transition-colors"
  title="Clear"
  >
  <Trash2 className="w-3.5 h-3.5"/>
@@ -252,7 +252,7 @@ export function MinifierTool({
  onClick={handleCopy}
  className={cn(
 "flex items-center gap-1 text-[11px] transition-colors",
- copied ?"text-zinc-900 font-medium":"text-zinc-400 hover:text-zinc-700 :text-zinc-300"
+ copied ?"text-zinc-900 font-medium":"text-zinc-400 hover:text-zinc-700"
  )}
  >
  {copied ? <Check className="w-3.5 h-3.5 text-zinc-900"/> : <Copy className="w-3.5 h-3.5"/>}

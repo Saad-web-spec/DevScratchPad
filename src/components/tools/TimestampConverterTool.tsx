@@ -53,14 +53,14 @@ export function TimestampConverterTool({ onValidationChange, onStatsChange, rest
  };
 
  const ResultCard = ({ title, value, id }: { title: string; value?: string | number; id: string }) => (
- <div className="bg-[#f8fafc] ] border border-[#e2e8f0] ] rounded-lg p-3.5 md:p-4 flex items-center justify-between group hover:border-zinc-200 :border-zinc-600 transition-colors gap-2 min-w-0">
+ <div className="bg-[#f8fafc] ] border border-[#e2e8f0] ] rounded-lg p-3.5 md:p-4 flex items-center justify-between group hover:border-zinc-200 transition-colors gap-2 min-w-0">
  <div className="flex flex-col gap-0.5 md:gap-1 min-w-0">
  <span className="text-[10px] md:text-xs font-medium text-zinc-400 uppercase tracking-wider">{title}</span>
  <span className="text-xs md:text-sm font-mono text-zinc-800 break-all">{value !== undefined ? value :"-"}</span>
  </div>
  <button 
  onClick={() => value && handleCopy(value.toString(), id)} 
- className={cn("p-1.5 md:p-2 rounded-md transition-colors shrink-0", copied === id ?"bg-emerald-50 text-zinc-900":"bg-[#f8fafc] text-zinc-500 hover:text-zinc-800 :text-white hover:bg-zinc-100 :bg-zinc-800 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 focus:opacity-100")}
+ className={cn("p-1.5 md:p-2 rounded-md transition-colors shrink-0", copied === id ?"bg-emerald-50 text-zinc-900":"bg-[#f8fafc] text-zinc-500 hover:text-zinc-800 hover:bg-zinc-100 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 focus:opacity-100")}
  title={copied === id ?"Copied!":"Copy"}
  >
  {copied === id ? <Check className="w-4 h-4 text-zinc-900"/> : <Copy className="w-4 h-4"/>}
@@ -73,7 +73,7 @@ export function TimestampConverterTool({ onValidationChange, onStatsChange, rest
  {/* Tool Header */}
  <div className="min-h-14 border-b border-[#e2e8f0] flex items-center justify-between gap-2 overflow-x-auto no-scrollbar py-2 px-3 md:px-4 px-3 md:px-4 py-2 md:py-0 bg-[#f8fafc] shrink-0">
  <div className="flex items-center gap-2">
- <Clock className="w-4 h-4 text-zinc-100"/>
+ <Clock className="w-4 h-4 text-zinc-900"/>
  <h2 className="text-sm font-semibold text-zinc-800">Unix Timestamp Converter</h2>
  </div>
  
@@ -95,11 +95,11 @@ export function TimestampConverterTool({ onValidationChange, onStatsChange, rest
  value={input}
  onChange={(e) => setInput(e.target.value)}
  placeholder="Enter epoch (1770000000) or date string (2025-01-01)"
- className="flex-1 min-w-0 bg-transparent text-zinc-100 font-mono text-base tracking-wide focus:outline-none placeholder:text-zinc-500 py-1.5"
+ className="flex-1 min-w-0 bg-transparent text-zinc-900 font-mono text-base tracking-wide focus:outline-none placeholder:text-zinc-500 py-1.5"
  />
  <button 
  onClick={() => setInput(Math.floor(Date.now() / 1000).toString())}
- className="h-9 px-3 bg-white hover:bg-[#27272A] border border-zinc-200 text-zinc-300 text-xs font-medium rounded-md transition-colors shrink-0"
+ className="h-9 px-3 bg-white hover:bg-zinc-100 border border-zinc-200 text-zinc-700 text-xs font-medium rounded-md transition-colors shrink-0"
  >
  Now
  </button>

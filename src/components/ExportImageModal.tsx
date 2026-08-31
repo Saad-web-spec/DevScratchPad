@@ -24,11 +24,11 @@ const BACKGROUNDS = [
 
 const SYNTAX_THEMES = [
  { name:"GitHub Light", bg:"#FFFFFF", headerBg:"#F6F8FA", textClass:"text-zinc-600", themeId:"vs"},
- { name:"One Dark Pro", bg:"#282C34", headerBg:"#21252B", textClass:"text-white/60", themeId:"devscratchpad-dark"},
- { name:"Dark Slate", bg:"#121215", headerBg:"#09090B", textClass:"text-white/60", themeId:"devscratchpad-dark"},
- { name:"Dracula", bg:"#282A36", headerBg:"#21222C", textClass:"text-white/60", themeId:"devscratchpad-dark"},
- { name:"GitHub Dark", bg:"#0D1117", headerBg:"#010409", textClass:"text-white/60", themeId:"devscratchpad-dark"},
- { name:"Nord", bg:"#2E3440", headerBg:"#3B4252", textClass:"text-white/60", themeId:"devscratchpad-dark"},
+ { name:"One Dark Pro", bg:"#282C34", headerBg:"#21252B", textClass:"text-zinc-900/60", themeId:"devscratchpad-dark"},
+ { name:"Dark Slate", bg:"#121215", headerBg:"#09090B", textClass:"text-zinc-900/60", themeId:"devscratchpad-dark"},
+ { name:"Dracula", bg:"#282A36", headerBg:"#21222C", textClass:"text-zinc-900/60", themeId:"devscratchpad-dark"},
+ { name:"GitHub Dark", bg:"#0D1117", headerBg:"#010409", textClass:"text-zinc-900/60", themeId:"devscratchpad-dark"},
+ { name:"Nord", bg:"#2E3440", headerBg:"#3B4252", textClass:"text-zinc-900/60", themeId:"devscratchpad-dark"},
 ];
 
 const PADDINGS = [
@@ -143,7 +143,7 @@ export function ExportImageModal({ isOpen, onClose, code, language }: ExportImag
  </div>
  <button
  onClick={onClose}
- className="p-1.5 text-zinc-500 hover:text-zinc-700 :text-zinc-300 hover:bg-zinc-100 :bg-zinc-800 rounded-lg transition-colors"
+ className="p-1.5 text-zinc-500 hover:text-zinc-700 hover:bg-zinc-100 rounded-lg transition-colors"
  aria-label="Close modal"
  >
  <X className="w-5 h-5"/>
@@ -217,7 +217,7 @@ export function ExportImageModal({ isOpen, onClose, code, language }: ExportImag
  </div>
 
  {/* Brand Watermark - Positioned in canvas bottom corner */}
- <div className="absolute bottom-2 sm:bottom-2.5 right-3 sm:right-4 text-[10px] sm:text-xs font-mono text-white/50 tracking-wider select-none pointer-events-none drop-shadow-xs">
+ <div className="absolute bottom-2 sm:bottom-2.5 right-3 sm:right-4 text-[10px] sm:text-xs font-mono text-zinc-900/50 tracking-wider select-none pointer-events-none drop-shadow-xs">
  devscratchpad.tech
  </div>
  </div>
@@ -281,7 +281,7 @@ export function ExportImageModal({ isOpen, onClose, code, language }: ExportImag
 "flex-1 py-1 sm:py-1.5 text-xs font-medium rounded-md transition-colors text-center",
  activePadding.label === pad.label
  ?"bg-white text-zinc-900 shadow-xs border border-zinc-200"
- :"text-zinc-500 hover:text-zinc-700 :text-zinc-200 border border-transparent"
+ :"text-zinc-500 hover:text-zinc-700 border border-transparent"
  )}
  >
  {pad.label}
@@ -301,7 +301,7 @@ export function ExportImageModal({ isOpen, onClose, code, language }: ExportImag
  aria-checked={showLineNumbers}
  onClick={() => setShowLineNumbers(!showLineNumbers)}
  className={cn(
-"w-10 h-5.5 rounded-full transition-colors relative focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 :ring-offset-zinc-900",
+"w-10 h-5.5 rounded-full transition-colors relative focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2",
  showLineNumbers ?"bg-indigo-600":"bg-zinc-300"
  )}
  >
@@ -317,7 +317,7 @@ export function ExportImageModal({ isOpen, onClose, code, language }: ExportImag
  <button
  onClick={handleCopyClipboard}
  disabled={isExporting}
- className="w-full h-9 sm:h-10 bg-zinc-100 hover:bg-zinc-200 :bg-zinc-700 text-zinc-900 border border-zinc-200 rounded-lg font-medium flex items-center justify-center gap-2 transition-colors disabled:opacity-50 text-xs sm:text-sm active:scale-[0.99]"
+ className="w-full h-9 sm:h-10 bg-zinc-100 hover:bg-zinc-200 text-zinc-900 border border-zinc-200 rounded-lg font-medium flex items-center justify-center gap-2 transition-colors disabled:opacity-50 text-xs sm:text-sm active:scale-[0.99]"
  >
  {copied ? <Check className="w-4 h-4 text-emerald-500"/> : <Copy className="w-4 h-4 text-zinc-500"/>}
  <span>{copied ?"Copied to Clipboard!":"Copy PNG to Clipboard"}</span>
@@ -326,7 +326,7 @@ export function ExportImageModal({ isOpen, onClose, code, language }: ExportImag
  <button
  onClick={handleDownload}
  disabled={isExporting}
- className="w-full h-9 sm:h-10 bg-blue-600 hover:bg-blue-500 active:bg-blue-700 text-white rounded-lg font-medium flex items-center justify-center gap-2 transition-colors disabled:opacity-50 shadow-sm text-xs sm:text-sm active:scale-[0.99]"
+ className="w-full h-9 sm:h-10 bg-blue-600 hover:bg-blue-500 active:bg-blue-700 text-zinc-900 rounded-lg font-medium flex items-center justify-center gap-2 transition-colors disabled:opacity-50 shadow-sm text-xs sm:text-sm active:scale-[0.99]"
  >
  {isExporting ? (
  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"/>

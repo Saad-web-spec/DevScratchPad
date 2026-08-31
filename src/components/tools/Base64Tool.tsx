@@ -128,7 +128,7 @@ export function Base64Tool({
  {/* Tool Header */}
  <div className="min-h-14 border-b border-[#e2e8f0] flex items-center justify-between gap-2 overflow-x-auto no-scrollbar py-2 px-3 md:px-4 px-3 md:px-4 py-2 md:py-0 bg-[#f8fafc] shrink-0">
  <div className="flex items-center gap-2">
- <Binary className="w-4 h-4 text-zinc-100"/>
+ <Binary className="w-4 h-4 text-zinc-900"/>
  <h2 className="text-sm font-semibold text-zinc-800">Base64 Encoder & Decoder</h2>
  </div>
 
@@ -144,7 +144,7 @@ export function Base64Tool({
 "px-2.5 py-1 text-xs font-medium rounded-md transition-all",
  mode ==="encode"
  ?"bg-white text-zinc-900 font-semibold shadow-xs rounded-md px-2.5 py-1 text-xs"
- :"text-zinc-500 hover:text-zinc-900 :text-zinc-200 px-2.5 py-1 text-xs"
+ :"text-zinc-500 hover:text-zinc-900 px-2.5 py-1 text-xs"
  )}
  >
  Encode
@@ -155,7 +155,7 @@ export function Base64Tool({
 "px-2.5 py-1 text-xs font-medium rounded-md transition-all",
  mode ==="decode"
  ?"bg-white text-zinc-900 font-semibold shadow-xs rounded-md px-2.5 py-1 text-xs"
- :"text-zinc-500 hover:text-zinc-900 :text-zinc-200 px-2.5 py-1 text-xs"
+ :"text-zinc-500 hover:text-zinc-900 px-2.5 py-1 text-xs"
  )}
  >
  Decode
@@ -168,7 +168,7 @@ export function Base64Tool({
  type="checkbox"
  checked={urlSafe}
  onChange={(e) => setUrlSafe(e.target.checked)}
- className="rounded border-zinc-600 text-zinc-100 focus:ring-blue-500 w-3.5 h-3.5"
+ className="rounded border-zinc-600 text-zinc-900 focus:ring-blue-500 w-3.5 h-3.5"
  />
  <span>URL-Safe</span>
  </label>
@@ -177,7 +177,7 @@ export function Base64Tool({
  <button
  onClick={handleSwap}
  disabled={!output}
- className="h-9 px-3 bg-white hover:bg-[#27272A] border border-zinc-200 disabled:opacity-40 disabled:cursor-not-allowed text-zinc-300 rounded-md text-xs font-medium transition-colors flex items-center gap-1.5"
+ className="h-9 px-3 bg-white hover:bg-zinc-100 border border-zinc-200 disabled:opacity-40 disabled:cursor-not-allowed text-zinc-700 rounded-md text-xs font-medium transition-colors flex items-center gap-1.5"
  title="Swap input and output"
  >
  <ArrowLeftRight className="w-3.5 h-3.5"/>
@@ -187,7 +187,7 @@ export function Base64Tool({
  {/* Process Button */}
  <button
  onClick={handleAction}
- className="h-8 px-3 text-xs font-semibold rounded-md shadow-xs transition-colors flex items-center gap-1.5 bg-zinc-900 hover:bg-zinc-800 text-white :bg-zinc-200"
+ className="h-8 px-3 text-xs font-semibold rounded-md shadow-xs transition-colors flex items-center gap-1.5 bg-zinc-900 hover:bg-zinc-800 text-white"
  >
  <Play className="w-3.5 h-3.5"/>
  <span>{mode ==="encode"?"Encode":"Decode"}</span>
@@ -206,7 +206,7 @@ export function Base64Tool({
 "flex-1 py-1.5 text-xs font-medium rounded-md transition-colors text-center",
  activeTab ==="input"
  ?"bg-white text-zinc-900 font-semibold shadow-xs rounded-md px-2.5 py-1 text-xs"
- :"text-zinc-500 hover:text-zinc-900 :text-zinc-200 px-2.5 py-1 text-xs"
+ :"text-zinc-500 hover:text-zinc-900 px-2.5 py-1 text-xs"
  )}
  >
  {mode ==="encode"?"Raw Input":"Base64 Input"}
@@ -217,7 +217,7 @@ export function Base64Tool({
 "flex-1 py-1.5 text-xs font-medium rounded-md transition-colors text-center",
  activeTab ==="output"
  ?"bg-white text-zinc-900 font-semibold shadow-xs rounded-md px-2.5 py-1 text-xs"
- :"text-zinc-500 hover:text-zinc-900 :text-zinc-200 px-2.5 py-1 text-xs"
+ :"text-zinc-500 hover:text-zinc-900 px-2.5 py-1 text-xs"
  )}
  >
  {mode ==="encode"?"Base64 Output":"Decoded Text"}
@@ -234,7 +234,7 @@ export function Base64Tool({
  </span>
  <button
  onClick={() => setInput("")}
- className="text-zinc-400 hover:text-red-600 :text-red-400 transition-colors"
+ className="text-zinc-400 hover:text-red-600 transition-colors"
  title="Clear"
  >
  <Trash2 className="w-3.5 h-3.5"/>
@@ -268,7 +268,7 @@ export function Base64Tool({
  onClick={handleCopy}
  className={cn(
 "flex items-center gap-1 text-[11px] transition-colors",
- copied ?"text-zinc-900 font-medium":"text-zinc-400 hover:text-zinc-700 :text-zinc-200"
+ copied ?"text-zinc-900 font-medium":"text-zinc-400 hover:text-zinc-700"
  )}
  >
  {copied ? <Check className="w-3.5 h-3.5 text-zinc-900"/> : <Copy className="w-3.5 h-3.5"/>}

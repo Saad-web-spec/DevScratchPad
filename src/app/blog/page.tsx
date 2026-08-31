@@ -65,7 +65,7 @@ export default function BlogIndex() {
 
  <div className="grid grid-cols-1 gap-6">
  {BLOG_POSTS.map((post) => (
- <Link href={`/blog/${post.slug}`} key={post.slug} className="group flex flex-col p-6 bg-zinc-50 ] border border-zinc-200 ] rounded-xl hover:bg-zinc-100 :bg-white transition-all duration-200">
+ <Link href={`/blog/${post.slug}`} key={post.slug} className="group flex flex-col p-6 bg-zinc-50 ] border border-zinc-200 ] rounded-xl hover:bg-zinc-100 transition-all duration-200">
  <h2 className="text-xl font-semibold text-zinc-900 group-hover:text-blue-500 transition-colors mb-2">
  {post.title}
  </h2>

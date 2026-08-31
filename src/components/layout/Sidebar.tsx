@@ -117,7 +117,7 @@ export function Sidebar({
 "w-full flex items-center gap-3 px-4 py-2 text-[13px] transition-all text-left group",
  isActive
  ?"bg-blue-50 text-blue-600 border-l-2 border-blue-600 font-medium"
- :"text-zinc-600 hover:text-zinc-900 :text-zinc-100 hover:bg-zinc-100 :bg-zinc-800/50 border-l-2 border-transparent"
+ :"text-zinc-600 hover:text-zinc-900 hover:bg-zinc-100 border-l-2 border-transparent"
  )}
  >
  <item.icon
@@ -125,7 +125,7 @@ export function Sidebar({
 "w-4 h-4 shrink-0 transition-colors",
  isActive
  ?"text-blue-600"
- :"text-zinc-400 group-hover:text-zinc-500 :text-zinc-400"
+ :"text-zinc-400 group-hover:text-zinc-500"
  )}
  />
  <span className="truncate">{item.name}</span>
@@ -142,7 +142,7 @@ export function Sidebar({
  <div className="border-t border-zinc-200">
  <button
  onClick={() => setHistoryOpen(!historyOpen)}
- className="w-full flex items-center justify-between px-4 py-3 text-[13px] text-zinc-500 hover:text-zinc-700 :text-zinc-200 hover:bg-zinc-50 :bg-zinc-800/40 transition-colors"
+ className="w-full flex items-center justify-between px-4 py-3 text-[13px] text-zinc-500 hover:text-zinc-700 hover:bg-zinc-50 transition-colors"
  >
  <div className="flex items-center gap-2">
  <History className="w-4 h-4 text-zinc-400"/>
@@ -167,7 +167,7 @@ export function Sidebar({
  </span>
  <button
  onClick={handleClearAll}
- className="text-[10px] text-red-500 hover:text-red-700 :text-rose-300 font-medium"
+ className="text-[10px] text-red-500 hover:text-red-700 font-medium"
  >
  Clear All
  </button>
@@ -176,13 +176,13 @@ export function Sidebar({
  {entries.map((entry) => (
  <li
  key={entry.id}
- className="group flex items-center justify-between px-3 py-2 hover:bg-zinc-50 :bg-zinc-800/60 transition-colors"
+ className="group flex items-center justify-between px-3 py-2 hover:bg-zinc-50 transition-colors"
  >
  <button
  onClick={() => handleHistoryClick(entry)}
  className="flex-1 text-left min-w-0"
  >
- <p className="text-xs font-medium text-zinc-700 truncate group-hover:text-blue-600 :text-cyan-300 transition-colors">
+ <p className="text-xs font-medium text-zinc-700 truncate group-hover:text-blue-600 transition-colors">
  {entry.toolName}
  </p>
  <p className="text-[10px] text-zinc-400 truncate font-mono">
@@ -198,7 +198,7 @@ export function Sidebar({
  e.stopPropagation();
  handleDelete(entry.id);
  }}
- className="p-1 text-zinc-300 hover:text-red-500 :text-rose-400 opacity-0 group-hover:opacity-100 transition-opacity"
+ className="p-1 text-zinc-700 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
  >
  <Trash2 className="w-3 h-3"/>
  </button>

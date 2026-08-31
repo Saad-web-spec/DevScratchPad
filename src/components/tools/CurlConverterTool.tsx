@@ -79,7 +79,7 @@ export function CurlConverterTool({ onValidationChange, onStatsChange, restoredI
  {/* Tool Header */}
  <div className="min-h-14 border-b border-[#e2e8f0] flex items-center justify-between gap-2 overflow-x-auto no-scrollbar py-2 px-3 md:px-4 px-3 md:px-4 py-2 md:py-0 bg-[#f8fafc] shrink-0">
  <div className="flex items-center gap-2">
- <Terminal className="w-4 h-4 text-zinc-100"/>
+ <Terminal className="w-4 h-4 text-zinc-900"/>
  <h2 className="text-sm font-semibold text-zinc-800">cURL Converter</h2>
  </div>
  
@@ -90,7 +90,7 @@ export function CurlConverterTool({ onValidationChange, onStatsChange, restoredI
  <select 
  value={target}
  onChange={(e) => setTarget(e.target.value as LangTarget)}
- className="h-9 bg-white border border-zinc-200 text-zinc-300 text-xs rounded-md px-2 focus:outline-none font-medium"
+ className="h-9 bg-white border border-zinc-200 text-zinc-700 text-xs rounded-md px-2 focus:outline-none font-medium"
  >
  <option value="javascript">JavaScript (fetch)</option>
  <option value="python">Python (requests)</option>
@@ -107,7 +107,7 @@ export function CurlConverterTool({ onValidationChange, onStatsChange, restoredI
 "flex-1 py-1.5 text-xs font-medium rounded-md transition-colors text-center",
  activeTab ==="input"
  ?"bg-white text-zinc-900 font-semibold shadow-xs rounded-md px-2.5 py-1 text-xs"
- :"text-zinc-500 hover:text-zinc-900 :text-zinc-200 px-2.5 py-1 text-xs"
+ :"text-zinc-500 hover:text-zinc-900 px-2.5 py-1 text-xs"
  )}
  >
  cURL Input
@@ -118,7 +118,7 @@ export function CurlConverterTool({ onValidationChange, onStatsChange, restoredI
 "flex-1 py-1.5 text-xs font-medium rounded-md transition-colors text-center",
  activeTab ==="output"
  ?"bg-white text-zinc-900 font-semibold shadow-xs rounded-md px-2.5 py-1 text-xs"
- :"text-zinc-500 hover:text-zinc-900 :text-zinc-200 px-2.5 py-1 text-xs"
+ :"text-zinc-500 hover:text-zinc-900 px-2.5 py-1 text-xs"
  )}
  >
  Generated Code
@@ -131,7 +131,7 @@ export function CurlConverterTool({ onValidationChange, onStatsChange, restoredI
  <div className={cn("flex-1 border-r-0 md:border-r border-b md:border-b-0 border-[#e2e8f0] flex flex-col min-w-0 w-full overflow-x-hidden", activeTab !=="input"&&"hidden md:flex")}>
  <div className="h-8 bg-[#f8fafc] border-b border-[#e2e8f0] flex items-center justify-between px-3 shrink-0">
  <span className="text-[11px] font-medium text-zinc-500 uppercase tracking-wider">cURL Input</span>
- <button onClick={() => setInput("")} className="text-zinc-400 hover:text-red-600 :text-red-400 transition-colors"title="Clear">
+ <button onClick={() => setInput("")} className="text-zinc-400 hover:text-red-600 transition-colors"title="Clear">
  <Trash2 className="w-3.5 h-3.5"/>
  </button>
  </div>
@@ -151,7 +151,7 @@ export function CurlConverterTool({ onValidationChange, onStatsChange, restoredI
  <div className={cn("flex-1 flex flex-col min-w-0 w-full overflow-x-hidden", activeTab !=="output"&&"hidden md:flex")}>
  <div className="h-8 bg-[#f8fafc] border-b border-[#e2e8f0] flex items-center justify-between px-3 shrink-0">
  <span className="text-[11px] font-medium text-zinc-500 uppercase tracking-wider">Generated Code</span>
- <button onClick={handleCopy} className={cn("flex items-center gap-1 text-[11px] transition-colors", copied ?"text-zinc-900 font-medium":"text-zinc-400 hover:text-zinc-700 :text-zinc-300")}>
+ <button onClick={handleCopy} className={cn("flex items-center gap-1 text-[11px] transition-colors", copied ?"text-zinc-900 font-medium":"text-zinc-400 hover:text-zinc-700")}>
  {copied ? <Check className="w-3.5 h-3.5 text-zinc-900"/> : <Copy className="w-3.5 h-3.5"/>}
  <span>{copied ?"Copied!":"Copy"}</span>
  </button>

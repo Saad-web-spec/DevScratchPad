@@ -131,7 +131,7 @@ export function HomeSeoContent() {
  <Link
  key={tool.slug}
  href={`/${tool.slug}`}
- className="group flex items-center justify-between p-3.5 bg-zinc-50 ] hover:bg-zinc-100 :bg-white border border-zinc-200 ] rounded-xl transition-all"
+ className="group flex items-center justify-between p-3.5 bg-zinc-50 ] hover:bg-zinc-100 border border-zinc-200 ] rounded-xl transition-all"
  >
  <div>
  <h3 className="text-sm font-medium text-zinc-900 group-hover:text-blue-500 transition-colors">
