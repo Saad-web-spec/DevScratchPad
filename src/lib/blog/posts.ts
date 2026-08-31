@@ -1,26 +1,26 @@
 export interface BlogPost {
-  slug: string;
-  title: string;
-  seoTitle: string;
-  description: string;
-  seoDescription: string;
-  publishedAt: string;
-  updatedAt: string;
-  relatedToolSlug: string;
-  content: string;
+ slug: string;
+ title: string;
+ seoTitle: string;
+ description: string;
+ seoDescription: string;
+ publishedAt: string;
+ updatedAt: string;
+ relatedToolSlug: string;
+ content: string;
 }
 
 export const BLOG_POSTS: BlogPost[] = [
-  {
-    slug: "cron-expression-cheat-sheet",
-    title: "Cron Expression Cheat Sheet — Complete Guide with Examples",
-    seoTitle: "Cron Expression Cheat Sheet 2026 — Syntax, Examples & Generator",
-    description: "A comprehensive guide to cron expressions, syntax, and examples.",
-    seoDescription: "Learn how to write cron expressions with our complete cheat sheet. Covers syntax, examples, special characters, and a free visualizer.",
-    publishedAt: "2026-08-28T00:00:00Z",
-    updatedAt: "2026-08-28T00:00:00Z",
-    relatedToolSlug: "cron-visualizer",
-    content: `
+ {
+ slug:"cron-expression-cheat-sheet",
+ title:"Cron Expression Cheat Sheet — Complete Guide with Examples",
+ seoTitle:"Cron Expression Cheat Sheet 2026 — Syntax, Examples & Generator",
+ description:"A comprehensive guide to cron expressions, syntax, and examples.",
+ seoDescription:"Learn how to write cron expressions with our complete cheat sheet. Covers syntax, examples, special characters, and a free visualizer.",
+ publishedAt:"2026-08-28T00:00:00Z",
+ updatedAt:"2026-08-28T00:00:00Z",
+ relatedToolSlug:"cron-visualizer",
+ content: `
 # Cron Expression Cheat Sheet
 
 Cron expressions are a powerful way to schedule background tasks, scripts, and jobs in Unix-like operating systems and modern cloud environments. This guide will walk you through the 5-field cron syntax, special characters, and provide practical examples.
@@ -41,7 +41,7 @@ A standard cron expression consists of five fields separated by spaces:
 
 ## Special Characters
 
-- **\`*\` (Asterisk):** Matches all values for a field. For example, \`*\` in the minute field means "every minute".
+- **\`*\` (Asterisk):** Matches all values for a field. For example, \`*\` in the minute field means"every minute".
 - **\`,\` (Comma):** Used to separate items in a list. For example, \`1,15,30\` in the minute field means the 1st, 15th, and 30th minutes.
 - **\`-\` (Hyphen):** Defines a range. For example, \`9-17\` in the hour field means from 9 AM to 5 PM.
 - **\`/\` (Slash):** Specifies step values. For example, \`*/5\` in the minute field means every 5 minutes.
@@ -87,18 +87,18 @@ Send a weekly summary report on Friday at 5:00 PM:
 - **Syntax Errors:** Ensure you have exactly 5 (or 6 for some extended parsers) fields. Using a cron visualizer can help you catch off-by-one errors.
 
 Need help building or testing your cron expressions? Try our [Cron Visualizer](/cron-visualizer) tool.
-    `,
-  },
-  {
-    slug: "convert-curl-to-python",
-    title: "How to Convert cURL Commands to Python requests — Complete Guide",
-    seoTitle: "Convert cURL to Python requests — Step-by-Step Guide 2026",
-    description: "Learn how to manually or automatically convert cURL commands into Python requests code.",
-    seoDescription: "Step-by-step guide covering cURL flag mapping to Python requests (headers, body, auth, cookies, SSL) with complete code examples.",
-    publishedAt: "2026-08-28T00:00:00Z",
-    updatedAt: "2026-08-28T00:00:00Z",
-    relatedToolSlug: "curl-converter",
-    content: `
+ `,
+ },
+ {
+ slug:"convert-curl-to-python",
+ title:"How to Convert cURL Commands to Python requests — Complete Guide",
+ seoTitle:"Convert cURL to Python requests — Step-by-Step Guide 2026",
+ description:"Learn how to manually or automatically convert cURL commands into Python requests code.",
+ seoDescription:"Step-by-step guide covering cURL flag mapping to Python requests (headers, body, auth, cookies, SSL) with complete code examples.",
+ publishedAt:"2026-08-28T00:00:00Z",
+ updatedAt:"2026-08-28T00:00:00Z",
+ relatedToolSlug:"curl-converter",
+ content: `
 # How to Convert cURL Commands to Python requests
 
 The \`cURL\` command-line tool is ubiquitous in API documentation and debugging. However, when you need to integrate that API call into your Python application, you must convert the \`cURL\` syntax into a Python \`requests\` script. This guide covers how to map cURL flags to the \`requests\` library.
@@ -124,9 +124,9 @@ Headers are passed using the \`headers\` dictionary in Python.
 
 **cURL:**
 \`\`\`bash
-curl -H "Authorization: Bearer my_token" \\
-     -H "Accept: application/json" \\
-     https://api.example.com/data
+curl -H"Authorization: Bearer my_token"\\
+ -H"Accept: application/json"\\
+ https://api.example.com/data
 \`\`\`
 
 **Python:**
@@ -134,8 +134,8 @@ curl -H "Authorization: Bearer my_token" \\
 import requests
 
 headers = {
-    'Authorization': 'Bearer my_token',
-    'Accept': 'application/json'
+ 'Authorization': 'Bearer my_token',
+ 'Accept': 'application/json'
 }
 
 response = requests.get('https://api.example.com/data', headers=headers)
@@ -148,8 +148,8 @@ When sending JSON, use the \`json\` parameter in \`requests.post()\`. This autom
 **cURL:**
 \`\`\`bash
 curl -X POST https://api.example.com/users \\
-     -H "Content-Type: application/json" \\
-     -d '{"name": "Alice", "role": "admin"}'
+ -H"Content-Type: application/json"\\
+ -d '{"name":"Alice","role":"admin"}'
 \`\`\`
 
 **Python:**
@@ -157,8 +157,8 @@ curl -X POST https://api.example.com/users \\
 import requests
 
 json_data = {
-    'name': 'Alice',
-    'role': 'admin'
+ 'name': 'Alice',
+ 'role': 'admin'
 }
 
 response = requests.post('https://api.example.com/users', json=json_data)
@@ -171,8 +171,8 @@ For file uploads or form data, use the \`files\` or \`data\` parameters.
 **cURL:**
 \`\`\`bash
 curl -X POST https://api.example.com/upload \\
-     -F "file=@/path/to/image.jpg" \\
-     -F "description=Profile photo"
+ -F"file=@/path/to/image.jpg"\\
+ -F"description=Profile photo"
 \`\`\`
 
 **Python:**
@@ -180,10 +180,10 @@ curl -X POST https://api.example.com/upload \\
 import requests
 
 files = {
-    'file': open('/path/to/image.jpg', 'rb')
+ 'file': open('/path/to/image.jpg', 'rb')
 }
 data = {
-    'description': 'Profile photo'
+ 'description': 'Profile photo'
 }
 
 response = requests.post('https://api.example.com/upload', files=files, data=data)
@@ -211,17 +211,17 @@ Always check for HTTP errors in your requests:
 import requests
 
 try:
-    response = requests.get('https://api.example.com/data', timeout=5)
-    response.raise_for_status() # Raises an HTTPError for bad responses (4xx and 5xx)
-    data = response.json()
+ response = requests.get('https://api.example.com/data', timeout=5)
+ response.raise_for_status() # Raises an HTTPError for bad responses (4xx and 5xx)
+ data = response.json()
 except requests.exceptions.HTTPError as errh:
-    print(f"HTTP Error: {errh}")
+ print(f"HTTP Error: {errh}")
 except requests.exceptions.ConnectionError as errc:
-    print(f"Error Connecting: {errc}")
+ print(f"Error Connecting: {errc}")
 except requests.exceptions.Timeout as errt:
-    print(f"Timeout Error: {errt}")
+ print(f"Timeout Error: {errt}")
 except requests.exceptions.RequestException as err:
-    print(f"Something went wrong: {err}")
+ print(f"Something went wrong: {err}")
 \`\`\`
 
 ## Disabling SSL Verification (\`-k\` / \`--insecure\`)
@@ -234,18 +234,18 @@ response = requests.get('https://localhost:8443/test', verify=False)
 \`\`\`
 
 Want to convert your commands instantly? Try our [cURL to Python/JavaScript/Go Converter](/curl-converter).
-    `,
-  },
-  {
-    slug: "jwt-token-decode-guide",
-    title: "How to Decode JWT Tokens — A Developer's Complete Guide",
-    seoTitle: "How to Decode JWT Tokens — Complete Guide with Examples 2026",
-    description: "Understand the structure of JWTs and how to decode them in various languages.",
-    seoDescription: "Learn how to decode JSON Web Tokens (JWT). Covers structure, Base64URL vs Base64, decoding without a library, and common security mistakes.",
-    publishedAt: "2026-08-28T00:00:00Z",
-    updatedAt: "2026-08-28T00:00:00Z",
-    relatedToolSlug: "jwt-decoder",
-    content: `
+ `,
+ },
+ {
+ slug:"jwt-token-decode-guide",
+ title:"How to Decode JWT Tokens — A Developer's Complete Guide",
+ seoTitle:"How to Decode JWT Tokens — Complete Guide with Examples 2026",
+ description:"Understand the structure of JWTs and how to decode them in various languages.",
+ seoDescription:"Learn how to decode JSON Web Tokens (JWT). Covers structure, Base64URL vs Base64, decoding without a library, and common security mistakes.",
+ publishedAt:"2026-08-28T00:00:00Z",
+ updatedAt:"2026-08-28T00:00:00Z",
+ relatedToolSlug:"jwt-decoder",
+ content: `
 # How to Decode JWT Tokens — A Developer's Complete Guide
 
 JSON Web Tokens (JWT) are an open, industry standard (RFC 7519) method for representing claims securely between two parties. They are widely used for authentication and authorization in modern web applications.
@@ -258,7 +258,7 @@ A JWT consists of three parts separated by dots (\`.\`):
 header.payload.signature
 \`\`\`
 
-1. **Header:** Contains the token type (usually "JWT") and the signing algorithm being used (e.g., HMAC SHA256 or RSA).
+1. **Header:** Contains the token type (usually"JWT") and the signing algorithm being used (e.g., HMAC SHA256 or RSA).
 2. **Payload:** Contains the claims (the statements about an entity, typically the user, and additional data).
 3. **Signature:** Used to verify that the sender of the JWT is who it says it is and to ensure that the message wasn't changed along the way.
 
@@ -289,13 +289,13 @@ In the browser, you can use the built-in \`atob()\` function (though it doesn't 
 
 \`\`\`javascript
 function decodeJwtPayload(token) {
-  const base64Url = token.split('.')[1];
-  const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-  const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
-      return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
-  }).join(''));
-  
-  return JSON.parse(jsonPayload);
+ const base64Url = token.split('.')[1];
+ const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+ const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
+ return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+ }).join(''));
+ 
+ return JSON.parse(jsonPayload);
 }
 \`\`\`
 
@@ -308,28 +308,28 @@ import base64
 import json
 
 def decode_jwt_payload(token):
-    payload_part = token.split('.')[1]
-    # Add padding back if necessary
-    payload_part += '=' * (-len(payload_part) % 4)
-    # Decode Base64URL to bytes, then to string
-    decoded_bytes = base64.urlsafe_b64decode(payload_part)
-    return json.loads(decoded_bytes.decode('utf-8'))
+ payload_part = token.split('.')[1]
+ # Add padding back if necessary
+ payload_part += '=' * (-len(payload_part) % 4)
+ # Decode Base64URL to bytes, then to string
+ decoded_bytes = base64.urlsafe_b64decode(payload_part)
+ return json.loads(decoded_bytes.decode('utf-8'))
 \`\`\`
 
 ## Common Security Mistakes
 
 1. **Assuming JWTs are encrypted:** They are encoded. The payload is readable by anyone who has the token.
-2. **Accepting "none" algorithm:** Always enforce a strong signing algorithm (like RS256 or HS256). The "none" algorithm vulnerability allowed attackers to forge tokens.
+2. **Accepting"none"algorithm:** Always enforce a strong signing algorithm (like RS256 or HS256). The"none"algorithm vulnerability allowed attackers to forge tokens.
 3. **Not verifying the signature:** Decoding the payload is not enough; you must cryptographically verify the signature before trusting the claims.
 4. **Ignoring expiration (\`exp\`):** Always check that the token is not expired before trusting it.
 
 Need to decode a token right now securely in your browser? Use our [JWT Decoder](/jwt-decoder) tool.
-    `,
-  },
+ `,
+ },
 ];
 
 export function getBlogPost(slug: string): BlogPost | undefined {
-  return BLOG_POSTS.find((p) => p.slug === slug);
+ return BLOG_POSTS.find((p) => p.slug === slug);
 }
 
 export const BLOG_SLUGS = BLOG_POSTS.map((p) => p.slug);
