@@ -30,9 +30,11 @@ export const metadata: Metadata = {
  siteName:"DevScratchpad",
  locale:"en_US",
  url: SITE_URL,
+ images: [{ url: `${SITE_URL}/opengraph-image`, width: 1200, height: 630 }],
  },
  twitter: {
  card:"summary_large_image",
+ images: [`${SITE_URL}/opengraph-image`],
  },
  alternates: {
  canonical: SITE_URL,

@@ -51,7 +51,7 @@ export function HomeSeoContent() {
 "@id":"https://www.devscratchpad.tech/#website",
 "url":"https://www.devscratchpad.tech",
 "name":"DevScratchpad",
-"description":"19+ Free online developer tools for formatting, converting, and analyzing data securely.",
+"description":"22+ Free online developer tools for formatting, converting, and analyzing data securely.",
  },
  {
 "@type":"ItemList",
@@ -73,7 +73,7 @@ export function HomeSeoContent() {
 "name":"What tools does DevScratchpad offer?",
 "acceptedAnswer": {
 "@type":"Answer",
-"text":"DevScratchpad provides over 19 developer tools including JSON/XML/SQL formatters, JWT decoders, Hash/HMAC generators, Base64/URL encoders, timestamp converters, CIDR calculators, diff checkers, and more."
+"text":"DevScratchpad provides over 22 developer tools including JSON/XML/SQL/GraphQL formatters, JWT decoders, UUID/ULID generators, SVG to JSX converter, string case converter, Hash/HMAC generators, Base64/URL encoders, timestamp converters, CIDR calculators, diff checkers, and more."
  }
  },
  {
