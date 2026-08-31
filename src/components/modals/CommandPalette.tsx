@@ -32,25 +32,26 @@ interface CommandPaletteProps {
 }
 
 const ALL_TOOLS = [
- { id:"json-formatter", name:"JSON Formatter", category:"Formatters", icon: FileJson },
- { id:"xml-formatter", name:"XML Formatter", category:"Formatters", icon: Code },
- { id:"sql-formatter", name:"SQL Formatter", category:"Formatters", icon: Database },
- { id:"graphql-formatter", name:"GraphQL Formatter", category:"Formatters", icon: Sparkles },
- { id:"minifier", name:"CSS/SVG Minifier", category:"Formatters", icon: Minimize2 },
- { id:"curl", name:"cURL Converter", category:"Formatters", icon: Terminal },
- { id:"base64", name:"Base64 Decoder", category:"Decoders", icon: Binary },
- { id:"jwt", name:"JWT Decoder", category:"Decoders", icon: Key },
- { id:"url", name:"URL Encoder", category:"Decoders", icon: Type },
- { id:"json-to-ts", name:"JSON to TypeScript", category:"Converters", icon: FileCode },
- { id:"yaml", name:"YAML / JSON Converter", category:"Converters", icon: ArrowLeftRight },
- { id:"timestamp", name:"Unix Timestamp", category:"Converters", icon: Clock },
- { id:"markdown-previewer", name:"Markdown Previewer", category:"Utilities", icon: FileText },
- { id:"hmac-generator", name:"HMAC Generator", category:"Utilities", icon: Shield },
- { id:"cidr-calculator", name:"CIDR Calculator", category:"Utilities", icon: Network },
- { id:"cron", name:"Cron Visualizer", category:"Utilities", icon: Calendar },
- { id:"diff", name:"Diff Checker", category:"Utilities", icon: SplitSquareHorizontal },
- { id:"hash", name:"Hash Generator", category:"Utilities", icon: Hash },
- { id:"regex", name:"Regex Tester", category:"Utilities", icon: Regex },
+  { id:"json-formatter", name:"JSON Formatter", category:"Formatters", icon: FileJson },
+  { id:"xml-formatter", name:"XML Formatter", category:"Formatters", icon: Code },
+  { id:"sql-formatter", name:"SQL Formatter", category:"Formatters", icon: Database },
+  { id:"graphql-formatter", name:"GraphQL Formatter", category:"Formatters", icon: Sparkles },
+  { id:"minifier", name:"CSS/SVG Minifier", category:"Formatters", icon: Minimize2 },
+  { id:"curl", name:"cURL Converter", category:"Formatters", icon: Terminal },
+  { id:"base64", name:"Base64 Decoder", category:"Decoders", icon: Binary },
+  { id:"jwt", name:"JWT Decoder", category:"Decoders", icon: Key },
+  { id:"url", name:"URL Encoder", category:"Decoders", icon: Type },
+  { id:"json-to-ts", name:"JSON to TypeScript", category:"Converters", icon: FileCode },
+  { id:"svg-to-jsx", name:"SVG to JSX", category:"Converters", icon: FileCode },
+  { id:"yaml", name:"YAML / JSON Converter", category:"Converters", icon: ArrowLeftRight },
+  { id:"timestamp", name:"Unix Timestamp", category:"Converters", icon: Clock },
+  { id:"markdown-previewer", name:"Markdown Previewer", category:"Utilities", icon: FileText },
+  { id:"hmac-generator", name:"HMAC Generator", category:"Utilities", icon: Shield },
+  { id:"cidr-calculator", name:"CIDR Calculator", category:"Utilities", icon: Network },
+  { id:"cron", name:"Cron Visualizer", category:"Utilities", icon: Calendar },
+  { id:"diff", name:"Diff Checker", category:"Utilities", icon: SplitSquareHorizontal },
+  { id:"hash", name:"Hash Generator", category:"Utilities", icon: Hash },
+  { id:"regex", name:"Regex Tester", category:"Utilities", icon: Regex },
 ];
 
 export function CommandPalette({ isOpen, onClose, onSelectTool }: CommandPaletteProps) {
@@ -174,7 +175,16 @@ export function CommandPalette({ isOpen, onClose, onSelectTool }: CommandPalette
  </ul>
  )}
  </div>
- </div>
- </div>
+
+  {/* Modal Footer */}
+  <div className="px-4 py-2.5 bg-zinc-50 border-t border-zinc-200 flex items-center justify-between text-xs text-zinc-500">
+    <span className="flex items-center gap-1.5">
+      <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+      <span>Pro-tip: Press <kbd className="px-1 py-0.5 bg-white border border-zinc-200 rounded font-mono text-[10px] text-zinc-700 font-medium">Ctrl + V</kbd> anywhere to auto-detect tools</span>
+    </span>
+    <span className="text-[11px] text-zinc-400 hidden sm:inline">Use ↑↓ to navigate, Enter to select</span>
+  </div>
+  </div>
+  </div>
  );
 }

@@ -1,28 +1,28 @@
 import Link from"next/link";
-import { ShieldCheck, ArrowRight, HelpCircle } from"lucide-react";
+import { ShieldCheck, ArrowRight, HelpCircle, Sparkles, Zap } from"lucide-react";
 import { TOOLS_REGISTRY } from"@/lib/tools/registry";
 
 const CATEGORIES = [
- {
- name:"Code Formatting",
- tools: ["json-formatter","xml-formatter","sql-formatter","graphql-formatter"],
- },
- {
- name:"Security & Crypto",
- tools: ["jwt-decoder","hash-generator","hmac-generator","base64-decoder"],
- },
- {
- name:"Networking & Unix",
- tools: ["unix-timestamp","cron-visualizer","cidr-calculator"],
- },
- {
- name:"Code Converters",
- tools: ["curl-converter","json-to-typescript","yaml-json","url-encoder"],
- },
- {
- name:"Diff & Optimization",
- tools: ["diff-checker","css-svg-minifier","markdown-previewer","regex-tester"],
- },
+  {
+  name:"Code Formatting",
+  tools: ["json-formatter","xml-formatter","sql-formatter","graphql-formatter"],
+  },
+  {
+  name:"Security & Crypto",
+  tools: ["jwt-decoder","hash-generator","hmac-generator","base64-decoder"],
+  },
+  {
+  name:"Networking & Unix",
+  tools: ["unix-timestamp","cron-visualizer","cidr-calculator"],
+  },
+  {
+  name:"Code Converters",
+  tools: ["svg-to-jsx","curl-converter","json-to-typescript","yaml-json","url-encoder"],
+  },
+  {
+  name:"Diff & Optimization",
+  tools: ["diff-checker","css-svg-minifier","markdown-previewer","regex-tester"],
+  },
 ];
 
 export function HomeSeoContent() {
@@ -114,11 +114,33 @@ export function HomeSeoContent() {
  <h1 className="mt-6 mb-3 text-3xl font-black text-zinc-900 tracking-tight">
  100% Offline, Private Developer Tools
  </h1>
- <p className="text-zinc-600 text-base leading-relaxed mb-10 font-medium">
- DevScratchpad is a suite of 19+ privacy-first developer utilities. Every tool runs entirely within your browser using client-side processing. <strong className="text-zinc-900">Zero server transmission.</strong> Once loaded, it works entirely offline. Your data, payloads, and tokens never leave your machine.
- </p>
+  <p className="text-zinc-600 text-base leading-relaxed mb-6 font-medium">
+  DevScratchpad is a suite of 20+ privacy-first developer utilities. Every tool runs entirely within your browser using client-side processing. <strong className="text-zinc-900">Zero server transmission.</strong> Once loaded, it works entirely offline. Your data, payloads, and tokens never leave your machine.
+  </p>
 
- {CATEGORIES.map((category) => (
+  {/* Magic Paste Featured Promo Card */}
+  <div className="mb-10 p-5 bg-blue-50/80 border border-blue-200 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-xs">
+    <div className="flex items-start gap-3.5">
+      <div className="p-2.5 bg-blue-600 text-white rounded-xl shadow-md shrink-0 mt-0.5 sm:mt-0">
+        <Sparkles className="w-5 h-5" />
+      </div>
+      <div>
+        <div className="flex items-center gap-2">
+          <h2 className="text-base font-bold text-zinc-900">
+            Magic Paste: Smart Auto-Detection
+          </h2>
+          <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 bg-blue-600 text-white rounded-full">
+            Pro Feature
+          </span>
+        </div>
+        <p className="text-xs text-zinc-600 mt-1 leading-relaxed">
+          Copy any raw <strong>JWT token</strong>, <strong>cURL command</strong>, <strong>JSON</strong>, <strong>SVG</strong>, <strong>SQL query</strong>, or <strong>Unix timestamp</strong> and press <kbd className="px-1.5 py-0.5 bg-white border border-zinc-300 rounded text-[11px] font-mono shadow-2xs text-zinc-900 font-semibold">Ctrl + V</kbd> (or <kbd className="px-1.5 py-0.5 bg-white border border-zinc-300 rounded text-[11px] font-mono shadow-2xs text-zinc-900 font-semibold">⌘V</kbd>) anywhere on the screen. DevScratchpad automatically identifies the data format and switches tools for you instantly with zero clicks.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  {CATEGORIES.map((category) => (
  <section key={category.name} className="mb-10">
  <h2 className="mb-4 text-xl font-bold text-zinc-900">
  {category.name}
@@ -149,54 +171,63 @@ export function HomeSeoContent() {
  </section>
  ))}
 
- <h2 className="mt-12 mb-6 text-xl font-bold text-zinc-900">
- Why DevScratchpad?
- </h2>
- <ul className="list-disc pl-5 space-y-2 text-zinc-600 text-sm leading-relaxed mb-10">
- <li><strong>Zero Server Transmission:</strong> Everything happens in your browser. We don&apos;t even have a backend database to store your data.</li>
- <li><strong>Lightning Fast:</strong> No API latency. Processing happens instantly on your device.</li>
- <li><strong>Offline Capable:</strong> Works without an internet connection once loaded.</li>
- <li><strong>Free &amp; Open:</strong> Accessible to all developers without sign-ups or limits.</li>
- </ul>
+  <h2 className="mt-12 mb-6 text-xl font-bold text-zinc-900">
+  Why DevScratchpad?
+  </h2>
+  <ul className="list-disc pl-5 space-y-2 text-zinc-600 text-sm leading-relaxed mb-10">
+  <li><strong>⚡ Magic Paste Auto-Detection:</strong> Never waste time searching through sidebars. Just press <kbd className="px-1 py-0.5 bg-zinc-100 border border-zinc-300 rounded text-xs font-mono text-zinc-800">Ctrl + V</kbd> anywhere and DevScratchpad auto-detects JWTs, cURL, SVGs, JSON, SQL, Unix timestamps, and Cron expressions instantly.</li>
+  <li><strong>Zero Server Transmission:</strong> Everything happens 100% in your browser. We don&apos;t have any backend databases or tracking servers that log your confidential tokens.</li>
+  <li><strong>Lightning Fast:</strong> Zero API latency. Formatting, conversion, and decoding execute instantly in local browser memory.</li>
+  <li><strong>Offline &amp; PWA Ready:</strong> Installable as a Progressive Web App that functions without an active internet connection.</li>
+  <li><strong>Free &amp; Open:</strong> Accessible to all engineers worldwide without ads, sign-ups, or usage limits.</li>
+  </ul>
 
- <h2 className="mt-8 mb-4 text-xl font-bold text-zinc-900 flex items-center gap-2">
- <HelpCircle className="w-5 h-5 text-zinc-400"/>
- Frequently Asked Questions
- </h2>
- <div className="space-y-3 mb-10">
- <div className="p-4 bg-zinc-50 ] border border-zinc-200 ] rounded-xl">
- <h3 className="text-sm font-semibold text-zinc-900 mb-1.5">
- What tools does DevScratchpad offer?
- </h3>
- <p className="text-xs text-zinc-600 leading-relaxed">
- DevScratchpad provides over 19 developer tools including JSON/XML/SQL formatters, JWT decoders, Hash/HMAC generators, Base64/URL encoders, timestamp converters, CIDR calculators, diff checkers, and more.
- </p>
- </div>
- <div className="p-4 bg-zinc-50 ] border border-zinc-200 ] rounded-xl">
- <h3 className="text-sm font-semibold text-zinc-900 mb-1.5">
- Is DevScratchpad really free?
- </h3>
- <p className="text-xs text-zinc-600 leading-relaxed">
- Yes, DevScratchpad is 100% free to use with no hidden fees, premium tiers, or account registration required.
- </p>
- </div>
- <div className="p-4 bg-zinc-50 ] border border-zinc-200 ] rounded-xl">
- <h3 className="text-sm font-semibold text-zinc-900 mb-1.5">
- Does DevScratchpad work offline?
- </h3>
- <p className="text-xs text-zinc-600 leading-relaxed">
- Yes! Once the website loads in your browser, all tools execute strictly using client-side JavaScript, meaning they work fully offline without any network dependency.
- </p>
- </div>
- <div className="p-4 bg-zinc-50 ] border border-zinc-200 ] rounded-xl">
- <h3 className="text-sm font-semibold text-zinc-900 mb-1.5">
- Is my data safe with DevScratchpad?
- </h3>
- <p className="text-xs text-zinc-600 leading-relaxed">
- Absolutely. Your data never leaves your device. All inputs, text, tokens, and payloads are processed locally in your browser&apos;s memory and are never transmitted to any remote servers or databases.
- </p>
- </div>
- </div>
+  <h2 className="mt-8 mb-4 text-xl font-bold text-zinc-900 flex items-center gap-2">
+  <HelpCircle className="w-5 h-5 text-zinc-400"/>
+  Frequently Asked Questions
+  </h2>
+  <div className="space-y-3 mb-10">
+  <div className="p-4 bg-zinc-50 border border-zinc-200 rounded-xl">
+  <h3 className="text-sm font-semibold text-zinc-900 mb-1.5">
+  How does Magic Paste (Ctrl + V) work?
+  </h3>
+  <p className="text-xs text-zinc-600 leading-relaxed">
+  When you press Ctrl+V (or ⌘V) anywhere on the page, DevScratchpad client-side parser inspects your clipboard. If it detects a recognizable format (like a JWT token, cURL snippet, raw SVG, valid JSON, SQL query, or timestamp), it switches you directly to the relevant tool and pre-populates your formatted output with zero friction.
+  </p>
+  </div>
+  <div className="p-4 bg-zinc-50 border border-zinc-200 rounded-xl">
+  <h3 className="text-sm font-semibold text-zinc-900 mb-1.5">
+  What tools does DevScratchpad offer?
+  </h3>
+  <p className="text-xs text-zinc-600 leading-relaxed">
+  DevScratchpad provides over 20 developer tools including SVG to JSX, JSON/XML/SQL formatters, JWT decoders, Hash/HMAC generators, Base64/URL encoders, timestamp converters, CIDR calculators, diff checkers, and more.
+  </p>
+  </div>
+  <div className="p-4 bg-zinc-50 border border-zinc-200 rounded-xl">
+  <h3 className="text-sm font-semibold text-zinc-900 mb-1.5">
+  Is DevScratchpad really free?
+  </h3>
+  <p className="text-xs text-zinc-600 leading-relaxed">
+  Yes, DevScratchpad is 100% free to use with no hidden fees, premium tiers, or account registration required.
+  </p>
+  </div>
+  <div className="p-4 bg-zinc-50 border border-zinc-200 rounded-xl">
+  <h3 className="text-sm font-semibold text-zinc-900 mb-1.5">
+  Does DevScratchpad work offline?
+  </h3>
+  <p className="text-xs text-zinc-600 leading-relaxed">
+  Yes! Once the website loads in your browser, all tools execute strictly using client-side JavaScript, meaning they work fully offline without any network dependency.
+  </p>
+  </div>
+  <div className="p-4 bg-zinc-50 border border-zinc-200 rounded-xl">
+  <h3 className="text-sm font-semibold text-zinc-900 mb-1.5">
+  Is my data safe with DevScratchpad?
+  </h3>
+  <p className="text-xs text-zinc-600 leading-relaxed">
+  Absolutely. Your data never leaves your device. All inputs, text, tokens, and payloads are processed locally in your browser&apos;s memory and are never transmitted to any remote servers or databases.
+  </p>
+  </div>
+  </div>
 
  <div className="mt-8 flex items-start gap-3 p-4 bg-zinc-50 ] border border-zinc-200 ] rounded-xl mb-10">
  <ShieldCheck className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5"/>

@@ -1,5 +1,5 @@
 import Link from"next/link";
-import { ShieldCheck, ArrowRight, HelpCircle, CheckCircle2 } from"lucide-react";
+import { ShieldCheck, ArrowRight, HelpCircle, CheckCircle2, Sparkles } from"lucide-react";
 import { TOOLS_REGISTRY, type ToolMeta } from"@/lib/tools/registry";
 
 const RELATED_MAP: Record<string, string[]> = {
@@ -113,6 +113,23 @@ export function SeoContent({ tool }: { tool: ToolMeta }) {
  {tool.seoDescription || tool.description}
  </p>
 
+ {/* Magic Paste Tip Banner */}
+ <div className="mb-8 p-4 bg-blue-50/80 border border-blue-200 rounded-xl flex items-center justify-between gap-3">
+   <div className="flex items-center gap-3">
+     <div className="p-2 bg-blue-600 text-white rounded-lg shrink-0 shadow-xs">
+       <Sparkles className="w-4 h-4" />
+     </div>
+     <div>
+       <p className="text-xs font-semibold text-zinc-900">
+         Smart Auto-Detection Supported
+       </p>
+       <p className="text-xs text-zinc-600 mt-0.5">
+         Press <kbd className="px-1.5 py-0.5 bg-white border border-zinc-300 rounded font-mono text-[10px] text-zinc-900 font-bold shadow-2xs">Ctrl + V</kbd> (or <kbd className="px-1.5 py-0.5 bg-white border border-zinc-300 rounded font-mono text-[10px] text-zinc-900 font-bold shadow-2xs">⌘V</kbd>) anywhere to auto-switch between tools and format your clipboard automatically.
+       </p>
+     </div>
+   </div>
+ </div>
+
  <h2 className="mt-8 mb-4 text-xl font-bold text-zinc-900 flex items-center gap-2">
  <CheckCircle2 className="w-5 h-5 text-blue-500"/>
  How to use {tool.shortName || tool.name}
@@ -137,18 +154,13 @@ export function SeoContent({ tool }: { tool: ToolMeta }) {
  </>
  )}
 
- {tool.shortcuts.length > 0 && (
- <>
  <h3 className="mt-8 mb-3 text-lg font-semibold text-zinc-800">
  Keyboard Shortcuts
  </h3>
  <ul className="list-disc pl-5 space-y-2 text-zinc-600 text-sm leading-relaxed mb-8">
- {tool.shortcuts.map((s, i) => (
- <li key={i}>{s}</li>
- ))}
+ <li><strong>Ctrl/Cmd + V:</strong> Smart Magic Paste — Auto-detects data type (JWT, cURL, JSON, SVG, Timestamp) and switches tools.</li>
+ <li><strong>Ctrl/Cmd + K:</strong> Open Command Palette to search and jump to any tool instantly.</li>
  </ul>
- </>
- )}
 
  {/* Frequently Asked Questions for Rich Snippets */}
  <h3 className="mt-8 mb-4 text-lg font-semibold text-zinc-800 flex items-center gap-2">
