@@ -125,6 +125,67 @@ export function WorkspaceShell({ initialToolSlug, toolMeta, children }: Workspac
  const [execMs, setExecMs] = useState(0);
  const [isEmbed, setIsEmbed] = useState(false);
 
+  // Magic Paste Smart Auto-Detector
+  useEffect(() => {
+    const handlePaste = (e: ClipboardEvent) => {
+      const target = e.target as HTMLElement;
+      
+      // Do not intercept if user is explicitly typing in a regular input box like search
+      if (target.tagName === 'INPUT' && (target as HTMLInputElement).type !== 'hidden') return;
+      // Monaco's hidden textarea usually has class 'inputarea'. Do not intercept if they are in some OTHER textarea
+      if (target.tagName === 'TEXTAREA' && typeof target.className === 'string' && !target.className.includes('inputarea')) return;
+      
+      const text = e.clipboardData?.getData('text/plain') || e.clipboardData?.getData('text');
+      if (!text) return;
+
+      const trimmed = text.trim();
+      let detectedToolId: string | null = null;
+      let toolName = "";
+
+      if (/^eyJ[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+\.[A-Za-z0-9-_]*$/.test(trimmed)) {
+        detectedToolId = "jwt";
+        toolName = "JWT";
+      } else if (trimmed.startsWith('curl ')) {
+        detectedToolId = "curl";
+        toolName = "cURL";
+      } else if (trimmed.startsWith('<svg') && trimmed.includes('</svg>')) {
+        detectedToolId = "svg-to-jsx";
+        toolName = "SVG";
+      } else if ((trimmed.startsWith('{') && trimmed.endsWith('}')) || (trimmed.startsWith('[') && trimmed.endsWith(']'))) {
+        try {
+          JSON.parse(trimmed);
+          if (activeTool !== "json-formatter" && activeTool !== "json-to-ts") {
+            detectedToolId = "json-formatter";
+            toolName = "JSON";
+          }
+        } catch (err) {}
+      } else if (/^\d{10}$/.test(trimmed) || /^\d{13}$/.test(trimmed)) {
+         if (activeTool !== "timestamp") {
+           detectedToolId = "timestamp";
+           toolName = "Unix Timestamp";
+         }
+      }
+
+      if (detectedToolId && detectedToolId !== activeTool) {
+        e.preventDefault();
+        const slug = SIDEBAR_TO_SLUG[detectedToolId];
+        if (slug) {
+          router.push(`/${slug}`);
+        } else {
+          setActiveTool(detectedToolId);
+        }
+        setRestoredInput(trimmed);
+        
+        setMagicPasteToast({ message: `Auto-detected ${toolName}. Switched tools!`, visible: true });
+        setTimeout(() => setMagicPasteToast(prev => prev ? { ...prev, visible: false } : null), 3000);
+      }
+    };
+    
+    // Use capture phase so we intercept the paste before Monaco Editor's stopPropagation()
+    window.addEventListener('paste', handlePaste, { capture: true });
+    return () => window.removeEventListener('paste', handlePaste, { capture: true });
+  }, [activeTool, router]);
+
  // Global Ctrl/Cmd + K shortcut
  useEffect(() => {
  // Check if we are in embed mode
