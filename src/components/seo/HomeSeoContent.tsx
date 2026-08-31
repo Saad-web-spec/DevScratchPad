@@ -118,23 +118,27 @@ export function HomeSeoContent() {
   DevScratchpad is a suite of 20+ privacy-first developer utilities. Every tool runs entirely within your browser using client-side processing. <strong className="text-zinc-900">Zero server transmission.</strong> Once loaded, it works entirely offline. Your data, payloads, and tokens never leave your machine.
   </p>
 
-  {/* Magic Paste Featured Promo Card */}
-  <div className="mb-10 p-5 bg-blue-50/80 border border-blue-200 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-xs">
+  {/* Smart Paste (Auto-Detection) Professional Monochromatic Card */}
+  <div className="mb-10 p-4 sm:p-5 bg-zinc-50 border border-zinc-200/90 rounded-xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 transition-all">
     <div className="flex items-start gap-3.5">
-      <div className="p-2.5 bg-blue-600 text-white rounded-xl shadow-md shrink-0 mt-0.5 sm:mt-0">
-        <Sparkles className="w-5 h-5" />
+      <div className="w-9 h-9 rounded-lg bg-zinc-900 text-white flex items-center justify-center shrink-0 mt-0.5 sm:mt-0 shadow-xs">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 text-white">
+          <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" />
+          <rect x="8" y="2" width="8" height="4" rx="1" ry="1" />
+          <path d="M12 11l-2 3h3l-1 4 4-5h-3l1-2z" fill="currentColor" />
+        </svg>
       </div>
       <div>
         <div className="flex items-center gap-2">
-          <h2 className="text-base font-bold text-zinc-900">
-            Magic Paste: Smart Auto-Detection
+          <h2 className="text-sm sm:text-base font-semibold text-zinc-900">
+            Smart Clipboard Detection
           </h2>
-          <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 bg-blue-600 text-white rounded-full">
-            Pro Feature
+          <span className="text-[10px] font-mono font-medium tracking-wide px-1.5 py-0.5 bg-zinc-200 text-zinc-700 rounded">
+            Auto-Detect
           </span>
         </div>
         <p className="text-xs text-zinc-600 mt-1 leading-relaxed">
-          Copy any raw <strong>JWT token</strong>, <strong>cURL command</strong>, <strong>JSON</strong>, <strong>SVG</strong>, <strong>SQL query</strong>, or <strong>Unix timestamp</strong> and press <kbd className="px-1.5 py-0.5 bg-white border border-zinc-300 rounded text-[11px] font-mono shadow-2xs text-zinc-900 font-semibold">Ctrl + V</kbd> (or <kbd className="px-1.5 py-0.5 bg-white border border-zinc-300 rounded text-[11px] font-mono shadow-2xs text-zinc-900 font-semibold">⌘V</kbd>) anywhere on the screen. DevScratchpad automatically identifies the data format and switches tools for you instantly with zero clicks.
+          Copy any raw <strong>JWT</strong>, <strong>cURL</strong>, <strong>JSON</strong>, <strong>SVG</strong>, <strong>SQL</strong>, or <strong>Timestamp</strong> and press <kbd className="px-1.5 py-0.5 bg-white border border-zinc-300 rounded text-[11px] font-mono text-zinc-900 shadow-2xs font-medium">Ctrl + V</kbd> (or <kbd className="px-1.5 py-0.5 bg-white border border-zinc-300 rounded text-[11px] font-mono text-zinc-900 shadow-2xs font-medium">⌘V</kbd>) anywhere. DevScratchpad identifies the format and switches tools for you automatically.
         </p>
       </div>
     </div>

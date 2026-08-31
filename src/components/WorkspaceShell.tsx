@@ -580,11 +580,15 @@ export function WorkspaceShell({ initialToolSlug, toolMeta, children }: Workspac
 
  {!isEmbed && children}
 
-  {/* Magic Paste Floating Toast Notification */}
+  {/* Smart Paste Floating Toast Notification */}
   {magicPasteToast && magicPasteToast.visible && (
     <div className="fixed bottom-14 left-1/2 -translate-x-1/2 z-50 animate-in fade-in slide-in-from-bottom-3 duration-200 pointer-events-none">
       <div className="bg-zinc-900 text-white text-xs md:text-sm font-medium px-4 py-2 rounded-full shadow-2xl flex items-center gap-2 border border-zinc-800 backdrop-blur-md">
-        <Sparkles className="w-4 h-4 text-amber-400 shrink-0" />
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5 text-zinc-300 shrink-0">
+          <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" />
+          <rect x="8" y="2" width="8" height="4" rx="1" ry="1" />
+          <path d="M12 11l-2 3h3l-1 4 4-5h-3l1-2z" fill="currentColor" />
+        </svg>
         <span>{magicPasteToast.message}</span>
       </div>
     </div>

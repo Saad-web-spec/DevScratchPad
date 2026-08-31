@@ -113,22 +113,26 @@ export function SeoContent({ tool }: { tool: ToolMeta }) {
  {tool.seoDescription || tool.description}
  </p>
 
- {/* Magic Paste Tip Banner */}
- <div className="mb-8 p-4 bg-blue-50/80 border border-blue-200 rounded-xl flex items-center justify-between gap-3">
-   <div className="flex items-center gap-3">
-     <div className="p-2 bg-blue-600 text-white rounded-lg shrink-0 shadow-xs">
-       <Sparkles className="w-4 h-4" />
-     </div>
-     <div>
-       <p className="text-xs font-semibold text-zinc-900">
-         Smart Auto-Detection Supported
-       </p>
-       <p className="text-xs text-zinc-600 mt-0.5">
-         Press <kbd className="px-1.5 py-0.5 bg-white border border-zinc-300 rounded font-mono text-[10px] text-zinc-900 font-bold shadow-2xs">Ctrl + V</kbd> (or <kbd className="px-1.5 py-0.5 bg-white border border-zinc-300 rounded font-mono text-[10px] text-zinc-900 font-bold shadow-2xs">⌘V</kbd>) anywhere to auto-switch between tools and format your clipboard automatically.
-       </p>
-     </div>
-   </div>
- </div>
+  {/* Smart Auto-Detection Monochromatic Banner */}
+  <div className="mb-8 p-3.5 sm:p-4 bg-zinc-50 border border-zinc-200/90 rounded-xl flex items-center justify-between gap-3">
+    <div className="flex items-center gap-3">
+      <div className="w-8 h-8 rounded-lg bg-zinc-900 text-white flex items-center justify-center shrink-0 shadow-xs">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 text-white">
+          <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" />
+          <rect x="8" y="2" width="8" height="4" rx="1" ry="1" />
+          <path d="M12 11l-2 3h3l-1 4 4-5h-3l1-2z" fill="currentColor" />
+        </svg>
+      </div>
+      <div>
+        <p className="text-xs font-semibold text-zinc-900">
+          Smart Clipboard Detection Supported
+        </p>
+        <p className="text-xs text-zinc-600 mt-0.5">
+          Press <kbd className="px-1.5 py-0.5 bg-white border border-zinc-300 rounded font-mono text-[10px] text-zinc-900 shadow-2xs font-medium">Ctrl + V</kbd> (or <kbd className="px-1.5 py-0.5 bg-white border border-zinc-300 rounded font-mono text-[10px] text-zinc-900 shadow-2xs font-medium">⌘V</kbd>) anywhere to auto-detect and switch between tools instantly.
+        </p>
+      </div>
+    </div>
+  </div>
 
  <h2 className="mt-8 mb-4 text-xl font-bold text-zinc-900 flex items-center gap-2">
  <CheckCircle2 className="w-5 h-5 text-blue-500"/>
