@@ -35,11 +35,13 @@ export async function generateMetadata({
  url: `${SITE_URL}/${slug}`,
  type:"website",
  siteName:"DevScratchpad",
+ images: [{ url: `${SITE_URL}/${slug}/opengraph-image`, width: 1200, height: 630 }],
  },
  twitter: {
  card:"summary_large_image",
  title: `${tool.seoTitle} | DevScratchpad`,
  description: tool.seoDescription,
+ images: [`${SITE_URL}/${slug}/opengraph-image`],
  },
  alternates: {
  canonical: `${SITE_URL}/${slug}`,

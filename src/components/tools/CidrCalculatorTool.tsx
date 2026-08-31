@@ -110,7 +110,7 @@ export function CidrCalculatorTool({ onValidationChange, onStatsChange, onLogHis
  <div className="min-h-14 border-b border-zinc-200 flex items-center justify-between gap-2 overflow-x-auto no-scrollbar py-2 px-3 md:px-4 bg-white shrink-0 sticky top-0 z-10">
  <div className="flex items-center gap-2">
  <Network className="w-4 h-4 text-zinc-900"/>
- <h2 className="text-sm font-semibold text-zinc-900">CIDR Calculator</h2>
+ <h1 className="text-sm font-semibold text-zinc-900">CIDR Calculator</h1>
  </div>
  
  <div className="flex items-center gap-2">

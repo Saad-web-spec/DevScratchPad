@@ -139,7 +139,7 @@ export function MinifierTool({
  <div className="min-h-14 border-b border-[#e2e8f0] flex items-center justify-between gap-2 overflow-x-auto no-scrollbar py-2 px-3 md:px-4 px-3 md:px-4 py-2 md:py-0 bg-[#f8fafc] shrink-0">
  <div className="flex items-center gap-2">
  <Minimize2 className="w-4 h-4 text-zinc-900"/>
- <h2 className="text-sm font-semibold text-zinc-800">CSS & SVG Minifier</h2>
+ <h1 className="text-sm font-semibold text-zinc-800">CSS & SVG Minifier</h1>
  </div>
 
  <div className="flex items-center gap-2">

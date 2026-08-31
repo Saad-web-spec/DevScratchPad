@@ -230,7 +230,7 @@ export function JwtDecoderTool({ onValidationChange, onStatsChange, restoredInpu
  <div className="min-h-14 border-b border-zinc-200 flex items-center justify-between gap-2 overflow-x-auto no-scrollbar py-2 px-3 md:px-4 bg-white shrink-0">
  <div className="flex items-center gap-2">
  <Key className="w-4 h-4 text-zinc-900"/>
- <h2 className="text-sm font-semibold text-zinc-900">JWT Decoder</h2>
+ <h1 className="text-sm font-semibold text-zinc-900">JWT Decoder</h1>
  </div>
  
  <div className="flex items-center gap-2">

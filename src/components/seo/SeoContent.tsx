@@ -3,25 +3,28 @@ import { ShieldCheck, ArrowRight, HelpCircle, CheckCircle2, Sparkles } from"luci
 import { TOOLS_REGISTRY, type ToolMeta } from"@/lib/tools/registry";
 
 const RELATED_MAP: Record<string, string[]> = {
-"json-formatter": ["json-to-typescript","yaml-json","css-svg-minifier","diff-checker"],
-"jwt-decoder": ["base64-decoder","hmac-generator","url-encoder","hash-generator"],
-"unix-timestamp": ["cron-visualizer","jwt-decoder","cidr-calculator"],
-"curl-converter": ["url-encoder","graphql-formatter","json-formatter"],
-"diff-checker": ["json-formatter","markdown-previewer","xml-formatter"],
-"xml-formatter": ["json-formatter","sql-formatter","yaml-json"],
-"sql-formatter": ["json-formatter","xml-formatter","diff-checker"],
-"base64-decoder": ["jwt-decoder","url-encoder","hmac-generator"],
-"url-encoder": ["base64-decoder","curl-converter","jwt-decoder"],
-"hash-generator": ["hmac-generator","jwt-decoder","base64-decoder"],
-"regex-tester": ["diff-checker","markdown-previewer","json-formatter"],
-"json-to-typescript": ["json-formatter","yaml-json","graphql-formatter"],
-"cron-visualizer": ["unix-timestamp","cidr-calculator","regex-tester"],
-"yaml-json": ["json-formatter","json-to-typescript","xml-formatter"],
-"css-svg-minifier": ["json-formatter","diff-checker","markdown-previewer"],
-"graphql-formatter": ["json-formatter","curl-converter","json-to-typescript"],
-"markdown-previewer": ["diff-checker","css-svg-minifier","regex-tester"],
-"hmac-generator": ["hash-generator","jwt-decoder","base64-decoder"],
-"cidr-calculator": ["unix-timestamp","cron-visualizer","hash-generator"],
+  "json-formatter": ["json-to-typescript", "yaml-json", "css-svg-minifier", "diff-checker"],
+  "jwt-decoder": ["base64-decoder", "url-encoder", "hmac-generator", "hash-generator"],
+  "unix-timestamp": ["cron-visualizer", "jwt-decoder", "uuid-generator", "json-formatter"],
+  "curl-converter": ["json-formatter", "url-encoder", "base64-decoder", "yaml-json"],
+  "diff-checker": ["json-formatter", "css-svg-minifier", "markdown-previewer", "case-converter"],
+  "xml-formatter": ["json-formatter", "yaml-json", "diff-checker", "css-svg-minifier"],
+  "sql-formatter": ["json-formatter", "diff-checker", "regex-tester", "case-converter"],
+  "base64-decoder": ["jwt-decoder", "url-encoder", "hash-generator", "hmac-generator"],
+  "url-encoder": ["base64-decoder", "jwt-decoder", "curl-converter", "hash-generator"],
+  "hash-generator": ["hmac-generator", "jwt-decoder", "base64-decoder", "uuid-generator"],
+  "regex-tester": ["diff-checker", "json-formatter", "sql-formatter", "case-converter"],
+  "json-to-typescript": ["json-formatter", "yaml-json", "svg-to-jsx", "case-converter"],
+  "cron-visualizer": ["unix-timestamp", "regex-tester", "diff-checker", "uuid-generator"],
+  "yaml-json": ["json-formatter", "xml-formatter", "json-to-typescript", "diff-checker"],
+  "css-svg-minifier": ["svg-to-jsx", "diff-checker", "json-formatter", "xml-formatter"],
+  "graphql-formatter": ["json-formatter", "json-to-typescript", "yaml-json", "curl-converter"],
+  "markdown-previewer": ["diff-checker", "regex-tester", "css-svg-minifier", "case-converter"],
+  "hmac-generator": ["hash-generator", "jwt-decoder", "base64-decoder", "uuid-generator"],
+  "cidr-calculator": ["unix-timestamp", "regex-tester", "hash-generator", "cron-visualizer"],
+  "svg-to-jsx": ["css-svg-minifier", "json-to-typescript", "case-converter", "json-formatter"],
+  "uuid-generator": ["hash-generator", "hmac-generator", "unix-timestamp", "jwt-decoder"],
+  "case-converter": ["regex-tester", "diff-checker", "json-to-typescript", "sql-formatter"],
 };
 
 export function SeoContent({ tool }: { tool: ToolMeta }) {
@@ -106,9 +109,9 @@ export function SeoContent({ tool }: { tool: ToolMeta }) {
  type="application/ld+json"
  dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLdGraph) }}
  />
- <h1 className="mt-6 mb-3 text-2xl font-bold text-zinc-900">
+ <h2 className="mt-6 mb-3 text-2xl font-bold text-zinc-900">
  {tool.name} (Offline & Secure)
- </h1>
+ </h2>
  <p className="text-zinc-600 text-sm leading-relaxed mb-6">
  {tool.seoDescription || tool.description}
  </p>

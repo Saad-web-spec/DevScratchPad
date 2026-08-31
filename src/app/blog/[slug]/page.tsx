@@ -36,11 +36,13 @@ export async function generateMetadata({
  publishedTime: post.publishedAt,
  modifiedTime: post.updatedAt,
  siteName:"DevScratchpad",
+ images: [{ url: `${SITE_URL}/opengraph-image`, width: 1200, height: 630 }],
  },
  twitter: {
  card:"summary_large_image",
  title: `${post.seoTitle} | DevScratchpad`,
  description: post.seoDescription,
+ images: [`${SITE_URL}/opengraph-image`],
  },
  alternates: {
  canonical: `${SITE_URL}/blog/${slug}`,
@@ -70,6 +72,7 @@ export default async function BlogPostPage({
 "description": post.seoDescription,
 "datePublished": post.publishedAt,
 "dateModified": post.updatedAt,
+"image": `${SITE_URL}/opengraph-image`,
 "author": {
 "@type":"Organization",
 "name":"DevScratchpad"

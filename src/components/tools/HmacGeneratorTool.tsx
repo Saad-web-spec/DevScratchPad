@@ -183,7 +183,7 @@ export function HmacGeneratorTool({
  <div className="min-h-14 border-b border-[#e2e8f0] flex items-center justify-between gap-2 overflow-x-auto no-scrollbar py-2 px-3 md:px-4 px-3 md:px-6 py-2.5 md:py-0 bg-[#f8fafc] ] shrink-0 sticky top-0 z-20">
  <div className="flex items-center gap-2">
  <Shield className="w-4 h-4 text-zinc-900"/>
- <h2 className="text-sm font-semibold text-zinc-800">HMAC Generator</h2>
+ <h1 className="text-sm font-semibold text-zinc-800">HMAC Generator</h1>
  </div>
 
  <div className="flex items-center gap-2">

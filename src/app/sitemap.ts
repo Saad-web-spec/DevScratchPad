@@ -7,21 +7,21 @@ const SITE_URL ="https://www.devscratchpad.tech";
 export default function sitemap(): MetadataRoute.Sitemap {
  const routes = TOOL_SLUGS.map((slug) => ({
  url: `${SITE_URL}/${slug}`,
- lastModified: new Date(),
+ lastModified: new Date("2026-08-31"),
  changeFrequency:"weekly"as const,
  priority: 0.8,
  }));
 
  const blogIndex = {
  url: `${SITE_URL}/blog`,
- lastModified: new Date(),
+ lastModified: new Date("2026-08-31"),
  changeFrequency:"weekly"as const,
  priority: 0.7,
  };
 
  const blogRoutes = BLOG_SLUGS.map((slug) => ({
  url: `${SITE_URL}/blog/${slug}`,
- lastModified: new Date(),
+ lastModified: new Date("2026-08-31"),
  changeFrequency:"weekly"as const,
  priority: 0.6,
  }));
@@ -29,7 +29,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
  return [
  {
  url: SITE_URL,
- lastModified: new Date(),
+ lastModified: new Date("2026-08-31"),
  changeFrequency:"weekly",
  priority: 1.0,
  },

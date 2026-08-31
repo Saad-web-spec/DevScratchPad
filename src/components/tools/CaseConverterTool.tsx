@@ -117,9 +117,9 @@ export function CaseConverterTool({
       <div className="min-h-14 border-b border-[#e2e8f0] flex items-center justify-between gap-2 overflow-x-auto no-scrollbar py-2 px-3 md:px-4 bg-[#f8fafc] shrink-0">
         <div className="flex items-center gap-2">
           <Type className="w-4 h-4 text-zinc-900" />
-          <h2 className="text-sm font-semibold text-zinc-800 whitespace-nowrap">
+          <h1 className="text-sm font-semibold text-zinc-800 whitespace-nowrap">
             String Case &amp; Text Converter
-          </h2>
+          </h1>
         </div>
 
         {/* Case Selector Pills */}
