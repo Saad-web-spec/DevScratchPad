@@ -16,6 +16,7 @@ interface JsonToTsToolProps {
   onStatsChange: (length: number, execMs: number) => void;
   onLogHistory?: (input: string) => void;
   restoredInput?: string | null;
+  fixedTarget?: TargetLanguage;
 }
 
 const DEFAULT_JSON = `{\n  "id": 1,\n  "name": "Leanne Graham",\n  "username": "Bret",\n  "email": "Sincere@april.biz",\n  "address": {\n    "street": "Kulas Light",\n    "suite": "Apt. 556",\n    "city": "Gwenborough",\n    "zipcode": "92998-3874"\n  },\n  "phone": "1-770-736-8031 x56442",\n  "website": "hildegard.org",\n  "company": {\n    "name": "Romaguera-Crona",\n    "catchPhrase": "Multi-layered client-server neural-net"\n  },\n  "tags": ["developer", "admin"],\n  "isActive": true\n}`;
@@ -28,15 +29,10 @@ const LANGUAGES: { id: TargetLanguage; label: string; monacoLang: string }[] = [
   { id: "rust", label: "Rust (Serde)", monacoLang: "rust" },
 ];
 
-export function JsonToTsTool({
-  onValidationChange,
-  onStatsChange,
-  onLogHistory,
-  restoredInput,
-}: JsonToTsToolProps) {
+export function JsonToTsTool(props: JsonToTsToolProps) {
   const [input, setInput] = useState<string>(DEFAULT_JSON);
   const [output, setOutput] = useState<string>("");
-  const [targetLang, setTargetLang] = useState<TargetLanguage>("typescript");
+  const [targetLang, setTargetLang] = useState<TargetLanguage>(props.fixedTarget || "typescript");
   const [rootName, setRootName] = useState<string>("User");
   const [copied, setCopied] = useState(false);
   const [activeTab, setActiveTab] = useState<"input" | "output">("input");
@@ -44,10 +40,14 @@ export function JsonToTsTool({
   const [errorLine, setErrorLine] = useState<number | undefined>();
   const [execMs, setExecMs] = useState(0);
 
+  useEffect(() => {
+    if (props.fixedTarget) setTargetLang(props.fixedTarget);
+  }, [props.fixedTarget]);
+
   // Restore from history / magic paste
   useEffect(() => {
-    if (restoredInput) setInput(restoredInput);
-  }, [restoredInput]);
+    if (props.restoredInput) setInput(props.restoredInput);
+  }, [props.restoredInput]);
 
   // Real-time conversion & validation
   useEffect(() => {
@@ -59,7 +59,7 @@ export function JsonToTsTool({
     setIsValid(validation.valid);
     setErrorLine(validation.line);
     setExecMs(ms);
-    onValidationChange(validation.valid, validation.error, validation.line);
+    props.onValidationChange(validation.valid, validation.error, validation.line);
 
     if (validation.valid && input.trim()) {
       try {
@@ -68,14 +68,14 @@ export function JsonToTsTool({
       } catch (err: any) {
         setOutput("");
         setIsValid(false);
-        onValidationChange(false, err.message);
+        props.onValidationChange(false, err.message);
       }
     } else if (!input.trim()) {
       setOutput("");
     }
 
-    onStatsChange(input.length, ms);
-  }, [input, targetLang, rootName, onValidationChange, onStatsChange]);
+    props.onStatsChange(input.length, ms);
+  }, [input, targetLang, rootName, props]);
 
   const handleGenerate = () => {
     const start = performance.now();
@@ -83,17 +83,17 @@ export function JsonToTsTool({
       const result = convertJsonToSchema(input, targetLang, rootName);
       setOutput(result);
       setIsValid(true);
-      onValidationChange(true);
-      onLogHistory?.(input);
+      props.onValidationChange(true);
+      props.onLogHistory?.(input);
       setActiveTab("output");
     } catch (err: any) {
       setIsValid(false);
-      onValidationChange(false, err.message);
+      props.onValidationChange(false, err.message);
     }
     const end = performance.now();
     const ms = end - start;
     setExecMs(ms);
-    onStatsChange(input.length, ms);
+    props.onStatsChange(input.length, ms);
   };
 
   const handleCopy = () => {
@@ -113,27 +113,29 @@ export function JsonToTsTool({
         <div className="flex items-center gap-2">
           <FileCode className="w-4 h-4 text-zinc-900" />
           <h1 className="text-sm font-semibold text-zinc-800 whitespace-nowrap">
-            JSON to Types &amp; Schemas
+            JSON to {LANGUAGES.find((l) => l.id === targetLang)?.label}
           </h1>
         </div>
 
         {/* Target Language Selector Pills */}
-        <div className="flex items-center bg-zinc-200/70 p-0.5 rounded-lg overflow-x-auto no-scrollbar shrink-0">
-          {LANGUAGES.map((lang) => (
-            <button
-              key={lang.id}
-              onClick={() => setTargetLang(lang.id)}
-              className={cn(
-                "px-2.5 py-1 text-xs font-medium rounded-md transition-all whitespace-nowrap",
-                targetLang === lang.id
-                  ? "bg-white text-zinc-900 shadow-none font-semibold"
-                  : "text-zinc-600 hover:text-zinc-900"
-              )}
-            >
-              {lang.label}
-            </button>
-          ))}
-        </div>
+        {!props.fixedTarget && (
+          <div className="flex items-center bg-zinc-200/70 p-0.5 rounded-lg overflow-x-auto no-scrollbar shrink-0">
+            {LANGUAGES.map((lang) => (
+              <button
+                key={lang.id}
+                onClick={() => setTargetLang(lang.id)}
+                className={cn(
+                  "px-2.5 py-1 text-xs font-medium rounded-md transition-all whitespace-nowrap",
+                  targetLang === lang.id
+                    ? "bg-white text-zinc-900 shadow-none font-semibold"
+                    : "text-zinc-600 hover:text-zinc-900"
+                )}
+              >
+                {lang.label}
+              </button>
+            ))}
+          </div>
+        )}
 
         <div className="flex items-center gap-2 shrink-0">
           <ExportImageButton code={output || input} language={currentMonacoLang} />

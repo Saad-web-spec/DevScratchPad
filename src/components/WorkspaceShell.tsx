@@ -8,13 +8,10 @@ import dynamic from"next/dynamic";
 // Dynamically import tools to code-split heavy dependencies (sql-formatter, graphql, yaml, etc)
 const JsonFormatterTool = dynamic(() => import("@/components/tools/JsonFormatterTool").then(mod => mod.JsonFormatterTool));
 const JwtDecoderTool = dynamic(() => import("@/components/tools/JwtDecoderTool").then(mod => mod.JwtDecoderTool));
-const TimestampConverterTool = dynamic(() => import("@/components/tools/TimestampConverterTool").then(mod => mod.TimestampConverterTool));
 const CurlConverterTool = dynamic(() => import("@/components/tools/CurlConverterTool").then(mod => mod.CurlConverterTool));
 const DiffCheckerTool = dynamic(() => import("@/components/tools/DiffCheckerTool").then(mod => mod.DiffCheckerTool));
 const XmlFormatterTool = dynamic(() => import("@/components/tools/XmlFormatterTool").then(mod => mod.XmlFormatterTool));
 const SqlFormatterTool = dynamic(() => import("@/components/tools/SqlFormatterTool").then(mod => mod.SqlFormatterTool));
-const Base64DecoderTool = dynamic(() => import("@/components/tools/Base64DecoderTool").then(mod => mod.Base64DecoderTool));
-const UrlEncoderTool = dynamic(() => import("@/components/tools/UrlEncoderTool").then(mod => mod.UrlEncoderTool));
 const HashGeneratorTool = dynamic(() => import("@/components/tools/HashGeneratorTool").then(mod => mod.HashGeneratorTool));
 const RegexTesterTool = dynamic(() => import("@/components/tools/RegexTesterTool").then(mod => mod.RegexTesterTool));
 const JsonToTsTool = dynamic(() => import("@/components/tools/JsonToTsTool").then(mod => mod.JsonToTsTool));
@@ -22,12 +19,10 @@ const CronVisualizerTool = dynamic(() => import("@/components/tools/CronVisualiz
 const YamlConverterTool = dynamic(() => import("@/components/tools/YamlConverterTool").then(mod => mod.YamlConverterTool));
 const MinifierTool = dynamic(() => import("@/components/tools/MinifierTool").then(mod => mod.MinifierTool));
 const GraphqlFormatterTool = dynamic(() => import("@/components/tools/GraphqlFormatterTool").then(mod => mod.GraphqlFormatterTool));
-const MarkdownPreviewerTool = dynamic(() => import("@/components/tools/MarkdownPreviewerTool").then(mod => mod.MarkdownPreviewerTool));
 const HmacGeneratorTool = dynamic(() => import("@/components/tools/HmacGeneratorTool").then(mod => mod.HmacGeneratorTool));
 const CidrCalculatorTool = dynamic(() => import("@/components/tools/CidrCalculatorTool").then(mod => mod.CidrCalculatorTool));
 const SvgToJsxTool = dynamic(() => import("@/components/tools/SvgToJsxTool").then(mod => mod.SvgToJsxTool));
 const UuidGeneratorTool = dynamic(() => import("@/components/tools/UuidGeneratorTool").then(mod => mod.UuidGeneratorTool));
-const CaseConverterTool = dynamic(() => import("@/components/tools/CaseConverterTool").then(mod => mod.CaseConverterTool));
 import { CommandPalette } from"@/components/modals/CommandPalette";
 import { getToolMeta, type ToolMeta } from"@/lib/tools/registry";
 import { addHistoryEntry, type HistoryEntry } from"@/lib/storage";
@@ -38,28 +33,27 @@ import { decodeShareData } from"@/components/ShareButton";
 import { SIDEBAR_TO_SLUG, SLUG_TO_SIDEBAR, getToolUrl } from "@/lib/routes";
 
 const SIDEBAR_TO_NAME: Record<string, string> = {
- "json-formatter":"JSON Formatter",
- jwt:"JWT Decoder",
- timestamp:"Unix Timestamp",
- curl:"cURL Converter",
- diff:"Diff Checker",
- "xml-formatter":"XML Formatter",
- "sql-formatter":"SQL Formatter",
- base64:"Base64 Decoder",
- url:"URL Encoder",
- hash:"Hash Generator",
- regex:"Regex Tester",
- "json-to-ts":"JSON to TypeScript",
- cron:"Cron Visualizer",
- yaml:"YAML Converter",
- minifier:"CSS/SVG Minifier",
- "graphql-formatter":"GraphQL Formatter",
- "markdown-previewer":"Markdown Previewer",
- "hmac-generator":"HMAC Generator",
- "cidr-calculator":"CIDR Calculator",
- "svg-to-jsx":"SVG to JSX",
- "uuid-generator":"UUID Generator",
- "case-converter":"Case Converter",
+  "json-formatter": "JSON Formatter",
+  jwt: "JWT Decoder",
+  "curl-to-python": "cURL to Python",
+  "curl-to-fetch": "cURL to Fetch",
+  "curl-to-go": "cURL to Go",
+  diff: "Diff Checker",
+  "xml-formatter": "XML Formatter",
+  "sql-formatter": "SQL Formatter",
+  hash: "Hash Generator",
+  regex: "Regex Tester",
+  "json-to-ts": "JSON to TypeScript",
+  "json-to-zod": "JSON to Zod",
+  "json-to-go": "JSON to Go Struct",
+  cron: "Cron Visualizer",
+  yaml: "YAML Converter",
+  minifier: "CSS/SVG Minifier",
+  "graphql-formatter": "GraphQL Formatter",
+  "hmac-generator": "HMAC Generator",
+  "cidr-calculator": "CIDR Calculator",
+  "svg-to-jsx": "SVG to JSX",
+  "uuid-generator": "UUID Generator",
 };
 
 interface WorkspaceShellProps {
@@ -291,30 +285,7 @@ export function WorkspaceShell({ initialToolSlug, toolMeta, children }: Workspac
  ? getToolMeta(currentSlug)
  : toolMeta ?? undefined;
 
- const IMPLEMENTED_TOOLS = [
-"json-formatter",
-"jwt",
-"timestamp",
-"curl",
-"diff",
-"xml-formatter",
-"sql-formatter",
-"base64",
-"url",
-"hash",
-"regex",
-"json-to-ts",
-"cron",
-"yaml",
-"minifier",
-"graphql-formatter",
-"markdown-previewer",
-"hmac-generator",
-"cidr-calculator",
-"svg-to-jsx",
-"uuid-generator",
-"case-converter",
- ];
+ const IMPLEMENTED_TOOLS = ["json-formatter", "jwt", "curl-to-python", "curl-to-fetch", "curl-to-go", "diff", "xml-formatter", "sql-formatter", "hash", "regex", "json-to-ts", "json-to-zod", "json-to-go", "cron", "yaml", "minifier", "graphql-formatter", "hmac-generator", "cidr-calculator", "svg-to-jsx", "uuid-generator"];
 
  return (
  <div className="flex flex-col h-screen w-full bg-white overflow-hidden relative">
@@ -385,172 +356,67 @@ export function WorkspaceShell({ initialToolSlug, toolMeta, children }: Workspac
  <div className="flex-1 min-h-0 relative flex flex-col">
  <div className="min-h-[calc(100vh-3.5rem)] relative flex flex-col border-b border-zinc-200">
  {activeTool ==="json-formatter"&& (
- <JsonFormatterTool
- onValidationChange={handleValidationChange}
- onStatsChange={handleStatsChange}
- onLogHistory={handleLogHistory}
- restoredInput={restoredInput}
- />
- )}
- {activeTool ==="jwt"&& (
- <JwtDecoderTool
- onValidationChange={handleValidationChange}
- onStatsChange={handleStatsChange}
- restoredInput={restoredInput}
- />
- )}
- {activeTool ==="timestamp"&& (
- <TimestampConverterTool
- onValidationChange={handleValidationChange}
- onStatsChange={handleStatsChange}
- restoredInput={restoredInput}
- />
- )}
- {activeTool ==="curl"&& (
- <CurlConverterTool
- onValidationChange={handleValidationChange}
- onStatsChange={handleStatsChange}
- restoredInput={restoredInput}
- />
- )}
- {activeTool ==="diff"&& <DiffCheckerTool restoredInput={restoredInput} />}
- {activeTool ==="xml-formatter"&& (
- <XmlFormatterTool
- onValidationChange={handleValidationChange}
- onStatsChange={handleStatsChange}
- onLogHistory={handleLogHistory}
- restoredInput={restoredInput}
- />
- )}
- {activeTool ==="sql-formatter"&& (
- <SqlFormatterTool
- onValidationChange={handleValidationChange}
- onStatsChange={handleStatsChange}
- onLogHistory={handleLogHistory}
- restoredInput={restoredInput}
- />
- )}
- {activeTool ==="base64"&& (
- <Base64DecoderTool
- onValidationChange={handleValidationChange}
- onStatsChange={handleStatsChange}
- onLogHistory={handleLogHistory}
- restoredInput={restoredInput}
- />
- )}
- {activeTool ==="url"&& (
- <UrlEncoderTool
- onValidationChange={handleValidationChange}
- onStatsChange={handleStatsChange}
- onLogHistory={handleLogHistory}
- restoredInput={restoredInput}
- />
- )}
- {activeTool ==="hash"&& (
- <HashGeneratorTool
- onValidationChange={handleValidationChange}
- onStatsChange={handleStatsChange}
- onLogHistory={handleLogHistory}
- restoredInput={restoredInput}
- />
- )}
- {activeTool ==="regex"&& (
- <RegexTesterTool
- onValidationChange={handleValidationChange}
- onStatsChange={handleStatsChange}
- onLogHistory={handleLogHistory}
- restoredInput={restoredInput}
- />
- )}
- {activeTool ==="json-to-ts"&& (
- <JsonToTsTool
- onValidationChange={handleValidationChange}
- onStatsChange={handleStatsChange}
- onLogHistory={handleLogHistory}
- restoredInput={restoredInput}
- />
- )}
- {activeTool ==="cron"&& (
- <CronVisualizerTool
- onValidationChange={handleValidationChange}
- onStatsChange={handleStatsChange}
- onLogHistory={handleLogHistory}
- restoredInput={restoredInput}
- />
- )}
- {activeTool ==="yaml"&& (
- <YamlConverterTool
- onValidationChange={handleValidationChange}
- onStatsChange={handleStatsChange}
- onLogHistory={handleLogHistory}
- restoredInput={restoredInput}
- />
- )}
- {activeTool ==="minifier"&& (
- <MinifierTool
- onValidationChange={handleValidationChange}
- onStatsChange={handleStatsChange}
- onLogHistory={handleLogHistory}
- restoredInput={restoredInput}
- />
- )}
- {activeTool ==="graphql-formatter"&& (
- <GraphqlFormatterTool
- onValidationChange={handleValidationChange}
- onStatsChange={handleStatsChange}
- onLogHistory={handleLogHistory}
- restoredInput={restoredInput}
- />
- )}
- {activeTool ==="markdown-previewer"&& (
- <MarkdownPreviewerTool
- onValidationChange={handleValidationChange}
- onStatsChange={handleStatsChange}
- onLogHistory={handleLogHistory}
- restoredInput={restoredInput}
- />
- )}
- {activeTool ==="hmac-generator"&& (
- <HmacGeneratorTool
- onValidationChange={handleValidationChange}
- onStatsChange={handleStatsChange}
- onLogHistory={handleLogHistory}
- restoredInput={restoredInput}
- />
- )}
-  {activeTool ==="cidr-calculator"&& (
-  <CidrCalculatorTool
-  onValidationChange={handleValidationChange}
-  onStatsChange={handleStatsChange}
-  onLogHistory={handleLogHistory}
-  restoredInput={restoredInput}
-  />
-  )}
-  {activeTool ==="svg-to-jsx"&& (
-  <SvgToJsxTool
-  onValidationChange={handleValidationChange}
-  onStatsChange={handleStatsChange}
-  restoredInput={restoredInput}
-  />
-  )}
-  {activeTool ==="uuid-generator"&& (
-  <UuidGeneratorTool
-  onValidationChange={handleValidationChange}
-  onStatsChange={handleStatsChange}
-  onLogHistory={handleLogHistory}
-  restoredInput={restoredInput}
-  />
-  )}
-  {activeTool ==="case-converter"&& (
-  <CaseConverterTool
-  onValidationChange={handleValidationChange}
-  onStatsChange={handleStatsChange}
-  onLogHistory={handleLogHistory}
-  restoredInput={restoredInput}
-  />
-  )}
-
- {!IMPLEMENTED_TOOLS.includes(activeTool) && (
+ <JsonFormatterTool onValidationChange={handleValidationChange} onStatsChange={handleStatsChange} onLogHistory={handleLogHistory} restoredInput={restoredInput} />
+)}
+{activeTool ==="jwt"&& (
+ <JwtDecoderTool onValidationChange={handleValidationChange} onStatsChange={handleStatsChange} restoredInput={restoredInput} />
+)}
+{activeTool ==="curl-to-python"&& (
+ <CurlConverterTool fixedTarget="python" onValidationChange={handleValidationChange} onStatsChange={handleStatsChange} restoredInput={restoredInput} />
+)}
+{activeTool ==="curl-to-fetch"&& (
+ <CurlConverterTool fixedTarget="javascript" onValidationChange={handleValidationChange} onStatsChange={handleStatsChange} restoredInput={restoredInput} />
+)}
+{activeTool ==="curl-to-go"&& (
+ <CurlConverterTool fixedTarget="go" onValidationChange={handleValidationChange} onStatsChange={handleStatsChange} restoredInput={restoredInput} />
+)}
+{activeTool ==="diff"&& <DiffCheckerTool restoredInput={restoredInput} />}
+{activeTool ==="xml-formatter"&& (
+ <XmlFormatterTool onValidationChange={handleValidationChange} onStatsChange={handleStatsChange} onLogHistory={handleLogHistory} restoredInput={restoredInput} />
+)}
+{activeTool ==="sql-formatter"&& (
+ <SqlFormatterTool onValidationChange={handleValidationChange} onStatsChange={handleStatsChange} onLogHistory={handleLogHistory} restoredInput={restoredInput} />
+)}
+{activeTool ==="hash"&& (
+ <HashGeneratorTool onValidationChange={handleValidationChange} onStatsChange={handleStatsChange} onLogHistory={handleLogHistory} restoredInput={restoredInput} />
+)}
+{activeTool ==="regex"&& (
+ <RegexTesterTool onValidationChange={handleValidationChange} onStatsChange={handleStatsChange} onLogHistory={handleLogHistory} restoredInput={restoredInput} />
+)}
+{activeTool ==="json-to-ts"&& (
+ <JsonToTsTool fixedTarget="typescript" onValidationChange={handleValidationChange} onStatsChange={handleStatsChange} onLogHistory={handleLogHistory} restoredInput={restoredInput} />
+)}
+{activeTool ==="json-to-zod"&& (
+ <JsonToTsTool fixedTarget="zod" onValidationChange={handleValidationChange} onStatsChange={handleStatsChange} onLogHistory={handleLogHistory} restoredInput={restoredInput} />
+)}
+{activeTool ==="json-to-go"&& (
+ <JsonToTsTool fixedTarget="go" onValidationChange={handleValidationChange} onStatsChange={handleStatsChange} onLogHistory={handleLogHistory} restoredInput={restoredInput} />
+)}
+{activeTool ==="cron"&& (
+ <CronVisualizerTool onValidationChange={handleValidationChange} onStatsChange={handleStatsChange} onLogHistory={handleLogHistory} restoredInput={restoredInput} />
+)}
+{activeTool ==="yaml"&& (
+ <YamlConverterTool onValidationChange={handleValidationChange} onStatsChange={handleStatsChange} onLogHistory={handleLogHistory} restoredInput={restoredInput} />
+)}
+{activeTool ==="minifier"&& (
+ <MinifierTool onValidationChange={handleValidationChange} onStatsChange={handleStatsChange} onLogHistory={handleLogHistory} restoredInput={restoredInput} />
+)}
+{activeTool ==="graphql-formatter"&& (
+ <GraphqlFormatterTool onValidationChange={handleValidationChange} onStatsChange={handleStatsChange} onLogHistory={handleLogHistory} restoredInput={restoredInput} />
+)}
+{activeTool ==="hmac-generator"&& (
+ <HmacGeneratorTool onValidationChange={handleValidationChange} onStatsChange={handleStatsChange} onLogHistory={handleLogHistory} restoredInput={restoredInput} />
+)}
+{activeTool ==="cidr-calculator"&& (
+ <CidrCalculatorTool onValidationChange={handleValidationChange} onStatsChange={handleStatsChange} onLogHistory={handleLogHistory} restoredInput={restoredInput} />
+)}
+{activeTool ==="svg-to-jsx"&& (
+ <SvgToJsxTool onValidationChange={handleValidationChange} onStatsChange={handleStatsChange} restoredInput={restoredInput} />
+)}
+{activeTool ==="uuid-generator"&& (
+ <UuidGeneratorTool onValidationChange={handleValidationChange} onStatsChange={handleStatsChange} onLogHistory={handleLogHistory} restoredInput={restoredInput} />
+)}
+{!IMPLEMENTED_TOOLS.includes(activeTool) && (
  <div className="flex flex-col items-center justify-center h-full text-zinc-400">
  <p className="text-lg font-medium text-zinc-500 mb-2">
  Coming Soon

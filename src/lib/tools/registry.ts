@@ -11,7 +11,7 @@ export interface ToolMeta {
  shortcuts: string[];
 }
 
-export const TOOLS_REGISTRY: Record<string, ToolMeta> = {
+export const TOOLS_REGISTRY: Record<string, ToolMeta> = {"curl-to-python": { slug: "curl-to-python", name: "cURL to Python", shortName: "cURL to Python", description: "Convert cURL to Python requests", seoTitle: "cURL to Python Converter", seoDescription: "Free online converter.", keywords: [], howToUse: [], edgeCases: [], shortcuts: [] }, "curl-to-fetch": { slug: "curl-to-fetch", name: "cURL to Fetch", shortName: "cURL to Fetch", description: "Convert cURL to Fetch", seoTitle: "cURL to Fetch", seoDescription: "Free online converter.", keywords: [], howToUse: [], edgeCases: [], shortcuts: [] }, "curl-to-go": { slug: "curl-to-go", name: "cURL to Go", shortName: "cURL to Go", description: "Convert cURL to Go", seoTitle: "cURL to Go", seoDescription: "Free online converter.", keywords: [], howToUse: [], edgeCases: [], shortcuts: [] }, "json-to-ts": { slug: "json-to-typescript", name: "JSON to TS", shortName: "JSON to TS", description: "JSON to TypeScript", seoTitle: "JSON to TS", seoDescription: "Free.", keywords: [], howToUse: [], edgeCases: [], shortcuts: [] }, "json-to-zod": { slug: "json-to-zod", name: "JSON to Zod", shortName: "JSON to Zod", description: "JSON to Zod", seoTitle: "JSON to Zod", seoDescription: "Free.", keywords: [], howToUse: [], edgeCases: [], shortcuts: [] }, "json-to-go": { slug: "json-to-go-struct", name: "JSON to Go Struct", shortName: "JSON to Go", description: "JSON to Go", seoTitle: "JSON to Go", seoDescription: "Free.", keywords: [], howToUse: [], edgeCases: [], shortcuts: [] }, 
 "json-formatter": {
  slug:"json-formatter",
  name:"JSON Formatter, Minifier & Validator",

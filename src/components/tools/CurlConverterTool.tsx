@@ -12,27 +12,32 @@ import { addSnapshot } from"@/lib/storage";
 import { StatusBar, ValidationBadge, EditorPanelFooter } from '@/components/layout/StatusBar';
 
 interface CurlConverterToolProps {
- onValidationChange: (isValid: boolean, error?: string) => void;
- onStatsChange: (length: number, execMs: number) => void;
- restoredInput?: string | null;
+  onValidationChange: (isValid: boolean, error?: string) => void;
+  onStatsChange: (length: number, execMs: number) => void;
+  restoredInput?: string | null;
+  fixedTarget?: 'javascript' | 'python' | 'go';
 }
 
 type LangTarget = 'javascript' | 'python' | 'go';
 
-export function CurlConverterTool({ onValidationChange, onStatsChange, restoredInput }: CurlConverterToolProps) {
+export function CurlConverterTool(props: CurlConverterToolProps) {
  const [input, setInput] = useState<string>("curl -X POST https://api.example.com/data \\\n -H \"Content-Type: application/json\"\\\n -H \"Authorization: Bearer token123\"\\\n -d '{\"key\":\"value\"}'");
  const [output, setOutput] = useState<string>("");
- const [target, setTarget] = useState<LangTarget>('javascript');
+ const [target, setTarget] = useState<LangTarget>(props.fixedTarget || 'javascript');
  const [copied, setCopied] = useState(false);
  const [activeTab, setActiveTab] = useState<"input"|"output">("input");
  const [isValid, setIsValid] = useState(true);
  const [errorMsg, setErrorMsg] = useState<string | undefined>();
  const [execMs, setExecMs] = useState(0);
 
+ useEffect(() => {
+   if (props.fixedTarget) setTarget(props.fixedTarget);
+ }, [props.fixedTarget]);
+
  // Restore from history / share URL
  useEffect(() => {
- if (restoredInput) setInput(restoredInput);
- }, [restoredInput]);
+ if (props.restoredInput) setInput(props.restoredInput);
+ }, [props.restoredInput]);
 
  // Save workspace snapshot
  useEffect(() => {
@@ -50,11 +55,11 @@ export function CurlConverterTool({ onValidationChange, onStatsChange, restoredI
  
  if (parsed.error && input.trim().length > 0) {
  setIsValid(false);
- onValidationChange(false, parsed.error);
+ props.onValidationChange(false, parsed.error);
  } else {
  setIsValid(true);
  setErrorMsg(undefined);
- onValidationChange(true);
+ props.onValidationChange(true);
  if (target === 'javascript') code = generateFetch(parsed);
  if (target === 'python') code = generatePythonRequests(parsed);
  if (target === 'go') code = generateGoHttp(parsed);
@@ -64,8 +69,8 @@ export function CurlConverterTool({ onValidationChange, onStatsChange, restoredI
  const end = performance.now();
  const ms = end - start;
  setExecMs(ms);
- onStatsChange(input.length, ms);
- }, [input, target, onValidationChange, onStatsChange]);
+ props.onStatsChange(input.length, ms);
+ }, [input, target, props]);
 
  const handleCopy = () => {
  if (!output) return;
@@ -80,22 +85,26 @@ export function CurlConverterTool({ onValidationChange, onStatsChange, restoredI
  <div className="min-h-14 border-b border-[#e2e8f0] flex items-center justify-between gap-2 overflow-x-auto no-scrollbar py-2 px-3 md:px-4 px-3 md:px-4 py-2 md:py-0 bg-[#f8fafc] shrink-0">
  <div className="flex items-center gap-2">
  <Terminal className="w-4 h-4 text-zinc-900"/>
- <h1 className="text-sm font-semibold text-zinc-800">cURL Converter</h1>
+ <h1 className="text-sm font-semibold text-zinc-800">
+   cURL to {target === 'python' ? 'Python' : target === 'go' ? 'Go' : 'Fetch'}
+ </h1>
  </div>
  
  <div className="flex items-center gap-1.5 md:gap-2 flex-wrap">
  <ExportImageButton code={output || input} language="bash"/>
  <EmbedButton toolSlug="curl-converter"data={input} />
  <ShareButton toolSlug="curl-converter"data={input} />
- <select 
- value={target}
- onChange={(e) => setTarget(e.target.value as LangTarget)}
- className="h-9 bg-white border border-zinc-200 text-zinc-700 text-xs rounded-md px-2 focus:outline-none font-medium"
- >
- <option value="javascript">JavaScript (fetch)</option>
- <option value="python">Python (requests)</option>
- <option value="go">Go (net/http)</option>
- </select>
+ {!props.fixedTarget && (
+   <select 
+   value={target}
+   onChange={(e) => setTarget(e.target.value as LangTarget)}
+   className="h-9 bg-white border border-zinc-200 text-zinc-700 text-xs rounded-md px-2 focus:outline-none font-medium"
+   >
+   <option value="javascript">JavaScript (fetch)</option>
+   <option value="python">Python (requests)</option>
+   <option value="go">Go (net/http)</option>
+   </select>
+ )}
  </div>
  </div>
 
