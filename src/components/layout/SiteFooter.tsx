@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { ShieldCheck } from "lucide-react";
 
 export function SiteFooter() {
@@ -9,7 +10,13 @@ export function SiteFooter() {
           {/* Col 1: Brand & Philosophy */}
           <div className="space-y-3 md:col-span-1">
             <div className="flex items-center gap-2 font-semibold text-zinc-900 text-sm">
-              <span className="w-5 h-5 rounded bg-zinc-900 text-white flex items-center justify-center text-xs font-mono">⚡</span>
+              <Image
+                src="/icon.png"
+                alt="DevScratchpad Favicon"
+                width={20}
+                height={20}
+                className="w-5 h-5 rounded object-contain"
+              />
               DevScratchpad
             </div>
             <p className="text-xs text-zinc-500 leading-relaxed">

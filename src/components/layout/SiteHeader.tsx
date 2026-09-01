@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { ArrowRight, Terminal, Search } from "lucide-react";
+import Image from "next/image";
+import { ArrowRight } from "lucide-react";
 
 export function SiteHeader() {
   return (
@@ -8,9 +9,14 @@ export function SiteHeader() {
         {/* Brand Logo & Name */}
         <div className="flex items-center gap-6">
           <Link href="/" className="flex items-center gap-2.5 group">
-            <div className="w-7 h-7 rounded-md bg-zinc-900 text-white flex items-center justify-center font-mono font-bold text-xs">
-              ⚡
-            </div>
+            <Image
+              src="/icon.png"
+              alt="DevScratchpad Favicon"
+              width={24}
+              height={24}
+              className="w-6 h-6 rounded-md object-contain"
+              priority
+            />
             <span className="font-semibold text-sm tracking-tight text-zinc-900 group-hover:text-zinc-600 transition-colors">
               DevScratchpad
             </span>
