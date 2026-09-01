@@ -45,6 +45,16 @@ export function SeoContent({ tool }: { tool: ToolMeta }) {
 "@type":"FAQPage",
 "@id": `https://www.devscratchpad.tech/tools/${tool.slug}#faq`,
 "mainEntity": [
+ ...(tool.edgeCases && tool.edgeCases.length > 0 ? [
+   {
+     "@type":"Question",
+     "name": `What are some edge cases for ${tool.shortName || tool.name}?`,
+     "acceptedAnswer": {
+       "@type":"Answer",
+       "text": tool.edgeCases.join(" ")
+     }
+   }
+ ] : []),
  {
 "@type":"Question",
 "name": `Is this ${tool.shortName || tool.name} safe for sensitive data & credentials?`,

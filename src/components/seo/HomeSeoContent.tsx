@@ -5,23 +5,23 @@ import { TOOLS_REGISTRY } from"@/lib/tools/registry";
 const CATEGORIES = [
   {
   name:"Code Formatting",
-  tools: ["json-formatter","xml-formatter","sql-formatter","graphql-formatter"],
+  tools: ["json-formatter", "json-validator", "xml-formatter", "sql-formatter", "graphql-formatter"],
   },
   {
   name:"Security & Identifiers",
-  tools: ["uuid-generator","jwt-decoder","hash-generator","hmac-generator",],
+  tools: ["uuid-generator", "jwt", "hash", "hmac-generator"],
   },
   {
-  name:"Networking & Unix",
-  tools: ["cron-visualizer","cidr-calculator"],
+  name:"Networking & Time",
+  tools: ["cron", "cidr-calculator"],
   },
   {
-  name:"Code & Type Converters",
-  tools: ["json-to-typescript","svg-to-jsx","curl-converter","yaml-json",],
+  name:"Code Converters",
+  tools: ["json-to-ts", "json-to-zod", "json-to-go", "svg-to-jsx", "curl-to-javascript", "curl-to-python", "curl-to-fetch", "curl-to-go", "yaml", "yaml-to-json", "json-to-yaml"],
   },
   {
   name:"Diff & Text Optimization",
-  tools: ["diff-checker","css-svg-minifier","regex-tester"],
+  tools: ["diff", "minifier", "regex"],
   },
 ];
 
