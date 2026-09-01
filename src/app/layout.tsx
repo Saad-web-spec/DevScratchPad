@@ -6,35 +6,41 @@ import"./globals.css";
 const SITE_URL ="https://www.devscratchpad.tech";
 
 export const metadata: Metadata = {
- title: {
- template:"%s | DevScratchpad",
- default:"DevScratchpad – 100% Offline, Private Developer Tools",
- },
- description:
-"Free online developer tools that work 100% offline. JSON formatter, JWT decoder, Base64 encoder, cURL converter & more. Zero server transmission. Your data never leaves your browser.",
- robots: {
- index: true,
- follow: true,
- googleBot: {
- index: true,
- follow: true,
- },
- },
- metadataBase: new URL(SITE_URL),
- openGraph: {
- type:"website",
- siteName:"DevScratchpad",
- locale:"en_US",
- url: SITE_URL,
- images: [{ url: `${SITE_URL}/opengraph-image`, width: 1200, height: 630 }],
- },
- twitter: {
- card:"summary_large_image",
- images: [`${SITE_URL}/opengraph-image`],
- },
- alternates: {
- canonical: SITE_URL,
- },
+  title: {
+    template: "%s | DevScratchpad",
+    default: "DevScratchpad � 100% Offline, Private Developer Tools",
+  },
+  description:
+    "Free online developer tools that work 100% offline. JSON formatter, JWT decoder, Base64 encoder, SSH key generator, Password hashing, and more. Zero server transmission. Your data never leaves your browser.",
+  keywords: ["developer tools", "offline tools", "json formatter", "jwt decoder", "base64 encoder", "ssh key generator", "password hash verifier", "x509 cert decoder", "cron expression visualizer", "privacy focused tools"],
+  authors: [{ name: "DevScratchpad" }],
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+    },
+  },
+  metadataBase: new URL(SITE_URL),
+  openGraph: {
+    type: "website",
+    siteName: "DevScratchpad",
+    locale: "en_US",
+    url: SITE_URL,
+    title: "DevScratchpad � 100% Offline, Private Developer Tools",
+    description: "Free online developer tools that work 100% offline. Zero server transmission.",
+    images: [{ url: `${SITE_URL}/opengraph-image`, width: 1200, height: 630 }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "DevScratchpad � 100% Offline, Private Developer Tools",
+    description: "Free online developer tools that work 100% offline. Zero server transmission.",
+    images: [`${SITE_URL}/opengraph-image`],
+  },
+  alternates: {
+    canonical: SITE_URL,
+  },
 };
 
 export default function RootLayout({

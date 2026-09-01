@@ -560,8 +560,303 @@ echo "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." | cut -d. -f2 | base64 -d 2>/dev/
 ---
 
 Need to inspect a token safely? Use our 100% offline [JWT Decoder Tool](/tools/jwt) — all decoding and timestamp parsing runs in your browser's local memory with zero server transmission.
-`,
+`
   },
+  {
+    slug: "password-hashing-bcrypt-argon2",
+    title: "Password Hashing Guide: Bcrypt, Argon2 & PBKDF2 Explained",
+    seoTitle: "Password Hashing Guide: Bcrypt, Argon2id & PBKDF2 Explained",
+    description: "A complete developer's guide to modern password hashing. Learn the differences between Bcrypt, Argon2id, and PBKDF2, and how to choose the right cost factors.",
+    seoDescription: "Learn modern password hashing best practices. Compare Bcrypt, Argon2id, and PBKDF2, understand cost factors, and test hashes with our free offline verifier.",
+    publishedAt: "2026-09-01T12:00:00Z",
+    updatedAt: "2026-09-01T12:00:00Z",
+    relatedToolSlug: "password-hash",
+    content: `
+Password hashing is the foundational layer of application security. Whether you are building a new authentication system or auditing an existing one, choosing the right cryptographic algorithm is critical. 
+
+In this guide, we break down the most popular password hashing algorithms�**Bcrypt**, **Argon2id**, and **PBKDF2**�and explain how to configure them securely.
+
+---
+
+## Why You Must Hash Passwords
+
+Storing passwords in plaintext (or encrypting them with reversible algorithms like AES) is a catastrophic security risk. If a database is breached, attackers instantly gain access to user credentials.
+
+Hashing is a **one-way cryptographic mathematical function**. You can verify a password by hashing the user's input and comparing it to the stored hash, but you cannot mathematically reverse the hash to reveal the password.
+
+To protect against brute-force and dictionary attacks, modern password hashes must be:
+1. **Slow (Computationally Expensive):** To deter attackers from rapidly guessing millions of passwords per second.
+2. **Salted:** A unique random string added to each password before hashing to neutralize precomputed Rainbow Tables.
+
+---
+
+## 1. Bcrypt (The Industry Standard)
+
+Bcrypt is a battle-tested password hashing function based on the Blowfish cipher. It has been the industry standard for over two decades.
+
+### How it works
+Bcrypt includes a "Cost Factor" (a work factor) that dictates how many iterations the algorithm performs. As computers get faster, you simply increase the cost factor to keep the hash computation slow.
+
+### Configuration Best Practices
+* **Work Factor (Rounds):** A cost factor of \`10\` to \`12\` is currently recommended by OWASP. A factor of 12 requires $2^{12}$ (4,096) iterations.
+* **Salt:** Bcrypt automatically generates and embeds a 128-bit salt in the output hash string.
+
+**Example Hash Format:**
+\`$2b$12$Ex.Random.Salt.String.Here...HashOutputHere\`
+*(Where \`$2b$\` indicates the algorithm version, \`12\` is the cost factor, followed by the base64-encoded salt and hash).*
+
+---
+
+## 2. Argon2id (The Modern Powerhouse)
+
+Argon2 was the winner of the Password Hashing Competition (PHC) in 2015. It is designed to resist both GPU cracking and side-channel attacks.
+
+### Why Argon2 is better
+Unlike Bcrypt (which only consumes CPU cycles), Argon2 is **Memory-Hard**. It forces the computer to allocate a massive block of RAM during computation. Attackers using custom ASICs or GPUs to crack hashes in parallel will quickly run out of memory, making it prohibitively expensive to brute-force.
+
+### Configuration Best Practices
+Argon2id (a hybrid of Argon2i and Argon2d) is the recommended variant.
+* **Memory Cost (m):** How much RAM to consume (e.g., 64MB).
+* **Time Cost (t):** Number of CPU iterations (e.g., 3).
+* **Parallelism (p):** Number of concurrent threads (e.g., 4).
+
+**OWASP Recommendation:** Use Argon2id with 64MB memory, 3 iterations, and 1 thread for general web applications.
+
+---
+
+## 3. PBKDF2 (NIST Approved)
+
+Password-Based Key Derivation Function 2 (PBKDF2) is an older, standardized algorithm approved by NIST (National Institute of Standards and Technology) and FIPS.
+
+### When to use it
+PBKDF2 is widely supported in enterprise environments and legacy systems. It relies on standard cryptographic hash functions like SHA-256 or SHA-512. However, it is not memory-hard, making it more vulnerable to GPU acceleration than Argon2.
+
+### Configuration Best Practices
+* **Hash Function:** Always use SHA-256 or SHA-512. Do not use MD5 or SHA-1.
+* **Iterations:** OWASP recommends a minimum of **600,000 iterations** for PBKDF2-HMAC-SHA256 to counter modern hardware speeds.
+
+---
+
+## Try it out
+
+Understanding these parameters can be abstract. Use our [Password Hash & Verifier](/tools/password-hash) tool to generate Bcrypt, Argon2, and PBKDF2 hashes locally in your browser. You can tweak the cost factors in real-time to see how they impact execution time and output length, or securely verify a candidate password against an existing database hash string.
+`
+  },
+  {
+    slug: "x509-certificate-decoder-guide",
+    title: "How to Read X.509 PEM Certificates & CSRs",
+    seoTitle: "X.509 Certificate & CSR Decoder Guide - Read PEM Files",
+    description: "Learn how to parse, read, and understand X.509 SSL/TLS certificates and Certificate Signing Requests (CSR). Covers PEM structure, SANs, and Cryptographic properties.",
+    seoDescription: "A complete guide to decoding X.509 PEM certificates and CSRs. Learn how to extract Subject Alternative Names, validity dates, and public key signatures securely.",
+    publishedAt: "2026-09-01T12:00:00Z",
+    updatedAt: "2026-09-01T12:00:00Z",
+    relatedToolSlug: "cert-decoder",
+    content: `
+Dealing with SSL/TLS certificates is a routine task for DevOps engineers, backend developers, and system administrators. However, opening a \`.pem\` or \`.crt\` file in a text editor only yields an incomprehensible block of Base64 text.
+
+In this guide, we'll break down the structure of X.509 certificates and explain how to extract critical information like validity dates, issuer chains, and Subject Alternative Names (SANs).
+
+---
+
+## What is a PEM File?
+
+PEM (Privacy-Enhanced Mail) is the most common format for storing cryptographic keys and certificates. It consists of Base64-encoded ASN.1 (Abstract Syntax Notation One) binary data, wrapped in ASCII header and footer lines.
+
+A standard certificate looks like this:
+\`\`\`text
+-----BEGIN CERTIFICATE-----
+MIIDRjCCAi6gAwIBAgIUW6w3l1Fq7vjK...
+...base64 payload...
+-----END CERTIFICATE-----
+\`\`\`
+
+A Certificate Signing Request (CSR), which you generate to request a certificate from a Certificate Authority (CA), looks like this:
+\`\`\`text
+-----BEGIN CERTIFICATE REQUEST-----
+MIICvDCCAaQCAQAwdzELMAkGA1UEBh...
+...base64 payload...
+-----END CERTIFICATE REQUEST-----
+\`\`\`
+
+---
+
+## Key Fields in an X.509 Certificate
+
+When you parse the Base64 payload of an X.509 certificate, you reveal a structured data hierarchy containing several critical fields:
+
+### 1. Subject (The Owner)
+The Subject represents the entity the certificate was issued to.
+* **CN (Common Name):** The primary domain name (e.g., \`api.example.com\`).
+* **O (Organization):** The legal name of the company.
+* **C / ST / L:** Country, State, and Locality.
+
+### 2. Issuer (The Certificate Authority)
+The Issuer identifies the Certificate Authority (CA) that signed and validated the certificate, establishing the Chain of Trust (e.g., Let's Encrypt, DigiCert, Cloudflare).
+
+### 3. Validity Period
+Every certificate has a strict expiration window defined by two timestamps:
+* **Not Before:** The exact time the certificate becomes valid.
+* **Not After:** The exact time the certificate expires. Browsers will throw aggressive security warnings (ERR_CERT_DATE_INVALID) if this date passes.
+
+### 4. Subject Alternative Names (SANs)
+In modern TLS, the Common Name (CN) is deprecated for hostname validation. Browsers now strictly rely on the SAN extension to determine which domains the certificate covers. A single certificate can secure multiple domains (e.g., \`example.com\` and \`*.example.com\`) by listing them as DNS tags in the SAN array.
+
+### 5. Cryptographic Properties & Public Key
+This section details the mathematical algorithms securing the certificate.
+* **Public Key Algorithm:** Usually RSA or ECDSA (Elliptic Curve).
+* **Key Size:** The strength of the key (e.g., 2048-bit or 4096-bit for RSA; 256-bit for ECDSA).
+* **Signature Algorithm:** The hashing algorithm the CA used to sign the certificate (e.g., \`sha256WithRSAEncryption\`).
+
+### 6. Fingerprints (Thumbprints)
+A fingerprint is not actually embedded in the certificate; it is a cryptographic hash (SHA-1 or SHA-256) of the entire binary certificate file. Fingerprints are used by operating systems and servers to uniquely identify or pin specific certificates.
+
+---
+
+## Decoding Certificates Securely
+
+You can decode a certificate using OpenSSL in the terminal:
+\`\`\`bash
+openssl x509 -in certificate.pem -text -noout
+\`\`\`
+
+However, OpenSSL outputs a massive, difficult-to-read text wall. If you need a clean, scannable interface, use our [X.509 Certificate Decoder](/tools/cert-decoder). It processes the PEM file entirely in your browser using local JavaScript APIs, extracting the SANs, validity, and fingerprints into a structured JSON dashboard without ever transmitting your sensitive internal certificates to a remote server.
+`
+  },
+  {
+    slug: "ssh-key-generator-guide",
+    title: "Generating Secure SSH Keys: Ed25519 vs RSA",
+    seoTitle: "Secure SSH Key Generation: Ed25519 vs RSA Guide",
+    description: "Understand the differences between Ed25519, RSA, and ECDSA SSH keys. Learn why Ed25519 is the modern standard and how to generate secure keypairs.",
+    seoDescription: "A developer's guide to SSH key algorithms. Compare Ed25519 vs RSA 4096, understand key fingerprints, and generate offline SSH keypairs securely in-browser.",
+    publishedAt: "2026-09-01T12:00:00Z",
+    updatedAt: "2026-09-01T12:00:00Z",
+    relatedToolSlug: "ssh-key-generator",
+    content: `
+SSH (Secure Shell) keys are the backbone of secure infrastructure, allowing password-less authentication to remote servers, Git repositories, and cloud deployments. 
+
+When generating a new SSH keypair, you are faced with a choice of cryptographic algorithms: **RSA**, **ECDSA**, or **Ed25519**. In this guide, we will compare these algorithms to help you choose the most secure and performant option for your stack.
+
+---
+
+## The Algorithms Compared
+
+### 1. Ed25519 (The Modern Standard)
+Ed25519 is an Edwards-curve Digital Signature Algorithm. It is widely considered the best choice for modern SSH keys.
+
+* **Security:** It offers exceptional security, immune to many side-channel attacks and timing attacks that plague older algorithms.
+* **Performance:** Ed25519 is incredibly fast for both signing and verifying signatures.
+* **Size:** The resulting keys are very short (fixed 256-bit length), making them easy to copy, paste, and embed in configuration files without sacrificing strength.
+
+**Recommendation:** Unless you are connecting to incredibly legacy infrastructure (e.g., CentOS 5), **always choose Ed25519**.
+
+### 2. RSA (The Legacy Workhorse)
+RSA is the oldest and most widely supported public-key cryptosystem. 
+
+* **Compatibility:** RSA is supported by literally every SSH client and server in existence.
+* **Key Size Requirement:** Due to advances in computing power, RSA keys must be long to remain secure. A 2048-bit RSA key is the absolute minimum, but 4096-bit is recommended for long-term security.
+* **Drawbacks:** Generating a 4096-bit RSA key takes significantly longer, and the resulting text block is massive.
+
+### 3. ECDSA (The Compromise)
+ECDSA (Elliptic Curve Digital Signature Algorithm) was introduced as a faster, smaller alternative to RSA before Ed25519 existed.
+
+* **The Problem:** ECDSA relies on curves designed by NIST, which have drawn skepticism regarding potential backdoors. Furthermore, ECDSA is highly sensitive to the quality of the system's random number generator during signing. If the RNG fails, the private key can be deduced from the signature. 
+* **Recommendation:** Skip ECDSA entirely. Use Ed25519 instead.
+
+---
+
+## Anatomy of an SSH Keypair
+
+When you generate a key, you receive two files:
+
+1. **The Private Key (\`id_ed25519\` / \`id_rsa\`):**
+   This is your secret identity. It is formatted as a PKCS#8 PEM file (e.g., \`-----BEGIN OPENSSH PRIVATE KEY-----\`). **Never share this file with anyone or commit it to version control.**
+
+2. **The Public Key (\`id_ed25519.pub\`):**
+   This acts as the lock. It is a single line of text containing the algorithm type, the base64-encoded public key material, and an optional comment (e.g., \`ssh-ed25519 AAAAC3... user@laptop\`). You append this string to the \`~/.ssh/authorized_keys\` file on the remote server you wish to access.
+
+---
+
+## Fingerprints and Randomart
+
+When you connect to an SSH server for the first time, your terminal will display a hash (like \`SHA256:...\`) and a piece of ASCII art.
+
+* **Fingerprint:** A compressed cryptographic hash of the public key, making it easy for humans to compare strings and detect Man-in-the-Middle (MitM) attacks.
+* **Randomart:** An algorithmic ASCII drawing generated from the key's fingerprint. It leverages the human brain's ability to recognize visual patterns faster than strings of text, helping you verify that you are connecting to the correct server.
+
+---
+
+## Generating Keys
+
+You can generate an Ed25519 key locally using your terminal:
+\`\`\`bash
+ssh-keygen -t ed25519 -C "user@laptop"
+\`\`\`
+
+Alternatively, if you need a keypair quickly while working in a restricted environment, you can use our 100% client-side [SSH Keypair Generator](/tools/ssh-key-generator). It leverages the Web Crypto API to compute the cryptography entirely within your browser memory, ensuring your private keys are generated securely without ever touching a remote server.
+`
+  },
+  {
+    slug: "base64-inspector-guide",
+    title: "Understanding Base64: Encoding, Decoding, and Binary Data",
+    seoTitle: "Base64 Encoding & Decoding Guide - How it Works",
+    description: "Learn how Base64 encoding works under the hood. Understand how to safely transmit binary data (images, tokens, certs) as ASCII text over the web.",
+    seoDescription: "A developer's guide to Base64 encoding. Understand how to convert binary to ASCII, inspect hex dumps, and safely transmit images, tokens, and payloads.",
+    publishedAt: "2026-09-01T12:00:00Z",
+    updatedAt: "2026-09-01T12:00:00Z",
+    relatedToolSlug: "base64-inspector",
+    content: `
+Base64 is one of the most ubiquitous encoding schemes on the web. It is used to embed images directly into CSS/HTML, transmit cryptographic keys, format JWT tokens, and send email attachments via SMTP.
+
+But what exactly is Base64, and why do we use it?
+
+---
+
+## Why We Need Base64
+
+The internet relies on text-based protocols (like HTTP and SMTP). These protocols are designed to safely transmit printable ASCII characters (letters, numbers, and basic punctuation). 
+
+However, files like images (PNG/JPEG), compiled code, or cryptographic keys are **binary data**. They contain byte values that do not map to printable characters. If you try to send raw binary data through a text-based system, control characters (like null bytes or carriage returns) will break the protocol, causing data corruption.
+
+**Base64 solves this by translating raw binary data into a safe, universally supported alphabet of 64 printable ASCII characters.**
+
+---
+
+## How Base64 Works
+
+At the lowest level, all data is a sequence of bits (0s and 1s). 
+
+1. Base64 takes the binary data and divides it into blocks of **24 bits** (3 bytes).
+2. It then splits those 24 bits into four **6-bit chunks**.
+3. Each 6-bit chunk can represent a decimal number between 0 and 63 ($2^6 = 64$).
+4. That number is mapped to the Base64 alphabet:
+   * \`A-Z\` (Values 0 - 25)
+   * \`a-z\` (Values 26 - 51)
+   * \`0-9\` (Values 52 - 61)
+   * \`+\` and \`/\` (Values 62 and 63)
+
+Because 3 bytes of binary data are converted into 4 bytes of text characters, **Base64 encoding inflates the file size by exactly 33%.**
+
+### Padding (=)
+If the original binary data is not perfectly divisible by 3 bytes, Base64 pads the remainder with zero-bits and adds padding characters (\`=\` or \`==\`) at the very end of the output string to signal to the decoder that the final block was incomplete.
+
+---
+
+## Base64 vs Hexadecimal
+
+Base64 is not the only way to encode binary data. Hexadecimal (Hex) encoding is also heavily used in cryptography and debugging. 
+
+* **Hexadecimal** uses a 16-character alphabet (\`0-9\` and \`A-F\`). Every 1 byte of data becomes 2 characters of text. This means Hex doubles the file size (a 100% inflation), but it is much easier for humans to read and parse byte-by-byte.
+* **Base64** uses a 64-character alphabet, making it much more space-efficient (only 33% inflation), which is why it is preferred for transmitting large payloads like images over HTTP.
+
+---
+
+## Inspecting Base64 Payloads
+
+As a developer, you will frequently encounter mystery Base64 strings in API responses, Kubernetes secrets, or database dumps. 
+
+Instead of writing custom scripts to decode them, you can use our [Base64 & Hex Inspector](/tools/base64-inspector). It features an auto-detecting engine that instantly translates your input into Plain Text, raw Binary Octets, and a canonical Dark-Slate Hex Dump. If the string contains a Data URL or raw image bytes, it will even render a live image preview directly in your browser.
+`
+  }
 ];
 
 export function getBlogPost(slug: string): BlogPost | undefined {
