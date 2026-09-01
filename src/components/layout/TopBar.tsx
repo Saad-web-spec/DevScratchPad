@@ -67,8 +67,8 @@ export function TopBar({ onOpenCommandPalette, onOpenMobileMenu }: TopBarProps) 
 
  {/* Desktop Action Buttons */}
  <div className="hidden md:flex items-center gap-3">
- <div className="flex items-center gap-1.5 px-2.5 py-1 bg-green-50 text-green-700 border border-green-200 rounded-full text-[11px] font-medium tracking-wide">
- <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+ <div className="bg-transparent border border-neutral-300 text-neutral-700 text-xs font-medium px-3 py-1.5 rounded-md flex items-center gap-2">
+ <div className="w-1.5 h-1.5 rounded-full bg-neutral-400 animate-pulse" />
  100% Client-Side Processing
  </div>
  <div className="w-px h-6 bg-zinc-200 mx-1"></div>
