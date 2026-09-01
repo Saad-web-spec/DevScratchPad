@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, ChevronRight, Wrench, Clock, Calendar, ShieldCheck, Terminal, BookOpen, Share2 } from "lucide-react";
+import { ArrowLeft, ChevronRight, Terminal, ArrowRight, ArrowUpRight } from "lucide-react";
 import { marked } from "marked";
 import { getBlogPost, BLOG_SLUGS, BLOG_POSTS } from "@/lib/blog/posts";
 import { getToolMeta } from "@/lib/tools/registry";
@@ -65,8 +65,6 @@ export default async function BlogPostPage({
 
   const toolMeta = getToolMeta(post.relatedToolSlug);
   const htmlContent = await marked.parse(post.content);
-
-  // Other posts for footer recommendations
   const otherPosts = BLOG_POSTS.filter((p) => p.slug !== slug);
 
   const jsonLd = {
@@ -96,7 +94,7 @@ export default async function BlogPostPage({
   };
 
   return (
-    <div className="min-h-screen bg-zinc-50 flex flex-col">
+    <div className="min-h-screen bg-zinc-50 flex flex-col font-sans selection:bg-zinc-900 selection:text-white">
       <SiteHeader />
 
       <script
@@ -105,130 +103,120 @@ export default async function BlogPostPage({
       />
 
       <main className="flex-1 w-full max-w-4xl mx-auto px-4 sm:px-6 py-8 md:py-12">
-        {/* Breadcrumb & Navigation */}
-        <div className="flex items-center gap-2 text-xs text-zinc-500 mb-6 font-medium">
+        {/* Minimalist Breadcrumb */}
+        <div className="flex items-center gap-2 text-xs font-mono text-zinc-500 mb-6">
           <Link href="/" className="hover:text-zinc-900 transition-colors">
-            Home
+            root
           </Link>
-          <ChevronRight className="w-3 h-3 text-zinc-400" />
+          <span>/</span>
           <Link href="/blog" className="hover:text-zinc-900 transition-colors">
-            Blog
+            guides
           </Link>
-          <ChevronRight className="w-3 h-3 text-zinc-400" />
+          <span>/</span>
           <span className="text-zinc-800 truncate max-w-[200px] sm:max-w-none">
-            {post.title}
+            {post.slug}
           </span>
         </div>
 
         {/* Back Link */}
         <Link
           href="/blog"
-          className="inline-flex items-center text-xs font-semibold text-zinc-600 hover:text-blue-600 transition-colors mb-6 group"
+          className="inline-flex items-center text-xs font-mono text-zinc-500 hover:text-zinc-900 transition-colors mb-6 group"
         >
-          <ArrowLeft className="w-3.5 h-3.5 mr-1.5 group-hover:-translate-x-1 transition-transform" />
-          Back to all guides
+          <ArrowLeft className="w-3.5 h-3.5 mr-1 group-hover:-translate-x-1 transition-transform" />
+          <span>all_guides.md</span>
         </Link>
 
-        {/* Article Container */}
-        <article className="bg-white border border-zinc-200 rounded-2xl p-6 sm:p-10 md:p-12 shadow-sm mb-12">
+        {/* Main Article Document Card */}
+        <article className="bg-white border border-zinc-200 rounded-xl p-6 sm:p-10 md:p-12 mb-12">
           {/* Article Header Metadata */}
-          <header className="border-b border-zinc-100 pb-8 mb-8">
-            <div className="flex flex-wrap items-center gap-3 text-xs text-zinc-500 mb-4">
-              <span className="px-2.5 py-1 bg-blue-50 text-blue-700 font-semibold rounded-md border border-blue-200/60">
-                Developer Reference
+          <header className="border-b border-zinc-200 pb-6 mb-8">
+            <div className="flex flex-wrap items-center gap-2.5 text-xs font-mono text-zinc-500 mb-4">
+              <span className="px-2 py-0.5 bg-zinc-100 border border-zinc-200 text-zinc-700 rounded font-medium">
+                REFERENCE GUIDE
               </span>
-              <span className="flex items-center gap-1">
-                <Calendar className="w-3.5 h-3.5" />
+              <span>•</span>
+              <time>
                 {new Date(post.publishedAt).toLocaleDateString("en-US", {
-                  month: "long",
+                  month: "short",
                   day: "numeric",
                   year: "numeric",
                 })}
-              </span>
+              </time>
               <span>•</span>
-              <span className="flex items-center gap-1">
-                <Clock className="w-3.5 h-3.5" />
-                5 min read
-              </span>
-              <span>•</span>
-              <span className="inline-flex items-center gap-1 text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded font-medium">
-                <ShieldCheck className="w-3 h-3" />
-                100% Client-Side
-              </span>
+              <span>100% Client-Side Verified</span>
             </div>
 
-            <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-zinc-900 tracking-tight leading-tight mb-3">
+            <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight text-zinc-900 leading-tight mb-3">
               {post.title}
             </h1>
 
-            <p className="text-base text-zinc-600 leading-relaxed">
+            <p className="text-sm sm:text-base text-zinc-600 leading-relaxed max-w-3xl">
               {post.description}
             </p>
           </header>
 
-          {/* Rendered Markdown Body with custom high-density .prose typography */}
+          {/* Rendered Markdown Body */}
           <div className="prose max-w-none">
             <div dangerouslySetInnerHTML={{ __html: htmlContent }} />
           </div>
 
-          {/* Interactive Related Tool CTA Card */}
+          {/* Integrated Interactive Tool Card (Monochromatic IDE Style) */}
           {toolMeta && (
-            <div className="mt-12 p-6 bg-gradient-to-r from-blue-50/70 to-indigo-50/70 border border-blue-200/80 rounded-xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-              <div className="flex items-start gap-4">
-                <div className="w-10 h-10 rounded-xl bg-blue-600 text-white flex items-center justify-center shrink-0 mt-0.5 shadow-sm">
-                  <Wrench className="w-5 h-5" />
+            <div className="mt-12 p-5 sm:p-6 bg-zinc-50 border border-zinc-200 rounded-xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-zinc-400" />
+                  <h3 className="text-sm font-semibold text-zinc-900">
+                    Live Tool: {toolMeta.name}
+                  </h3>
+                  <span className="text-[10px] font-mono text-zinc-500 bg-white border border-zinc-200 px-1.5 py-0.5 rounded">
+                    Client-Side
+                  </span>
                 </div>
-                <div>
-                  <div className="flex items-center gap-2">
-                    <h3 className="text-base font-bold text-zinc-900">
-                      Try the {toolMeta.name} Online
-                    </h3>
-                    <span className="text-[10px] uppercase font-bold tracking-wider bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full">
-                      Free & Offline
-                    </span>
-                  </div>
-                  <p className="text-xs text-zinc-600 mt-1 leading-relaxed max-w-md">
-                    {toolMeta.description}
-                  </p>
-                </div>
+                <p className="text-xs text-zinc-500 leading-relaxed max-w-lg">
+                  {toolMeta.description}
+                </p>
               </div>
 
               <Link
                 href={`/tools/${toolMeta.slug}`}
-                className="px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg text-xs transition-all shadow-none whitespace-nowrap shrink-0 flex items-center gap-1.5"
+                className="px-3.5 py-2 bg-zinc-900 hover:bg-zinc-800 text-white font-medium rounded-md text-xs transition-colors whitespace-nowrap shrink-0 flex items-center gap-1.5 shadow-none"
               >
-                <span>Open Tool</span>
-                <ChevronRight className="w-3.5 h-3.5" />
+                <span>Launch Tool</span>
+                <ArrowRight className="w-3.5 h-3.5" />
               </Link>
             </div>
           )}
         </article>
 
-        {/* Read More / Next Guides Section */}
+        {/* More Guides Section */}
         {otherPosts.length > 0 && (
           <div className="mb-12">
-            <h3 className="text-xl font-bold text-zinc-900 mb-6 flex items-center gap-2">
-              <BookOpen className="w-5 h-5 text-blue-600" />
-              More Developer Guides & References
-            </h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-sm font-mono uppercase tracking-wider text-zinc-500 font-semibold">
+                More Developer Guides
+              </h3>
+              <Link href="/blog" className="text-xs font-mono text-zinc-500 hover:text-zinc-900 transition-colors">
+                view all →
+              </Link>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {otherPosts.map((other) => (
                 <Link
                   key={other.slug}
                   href={`/blog/${other.slug}`}
-                  className="group bg-white border border-zinc-200 rounded-xl p-5 hover:border-zinc-300 hover:shadow-md transition-all flex flex-col justify-between"
+                  className="group bg-white border border-zinc-200 rounded-lg p-4 hover:border-zinc-400 transition-all flex flex-col justify-between"
                 >
-                  <div>
-                    <h4 className="font-semibold text-zinc-900 group-hover:text-blue-600 transition-colors text-sm mb-1.5">
-                      {other.title}
+                  <div className="space-y-1">
+                    <h4 className="font-semibold text-zinc-900 group-hover:text-zinc-600 transition-colors text-sm tracking-tight flex items-center justify-between">
+                      <span className="line-clamp-1">{other.title}</span>
+                      <ArrowUpRight className="w-3.5 h-3.5 text-zinc-400 group-hover:text-zinc-900 shrink-0 ml-1" />
                     </h4>
                     <p className="text-xs text-zinc-500 line-clamp-2 leading-relaxed">
                       {other.description}
                     </p>
-                  </div>
-                  <div className="flex items-center justify-between mt-4 pt-3 border-t border-zinc-100 text-xs font-semibold text-blue-600">
-                    <span>Read Article</span>
-                    <ChevronRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
                   </div>
                 </Link>
               ))}
