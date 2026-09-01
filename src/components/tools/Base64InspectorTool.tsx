@@ -146,7 +146,7 @@ export function Base64InspectorTool({
       {/* Main Workspace Layout (Strict Dual-Pane Grid) */}
       <div className="flex-1 min-h-[600px] grid grid-cols-1 lg:grid-cols-2 divide-y lg:divide-y-0 lg:divide-x divide-neutral-200 overflow-hidden bg-neutral-50/30" id="base64-export-card">
         {/* Left Pane: Input Editor */}
-        <div className="flex flex-col h-full bg-white relative">
+        <div className="flex flex-col h-full bg-white relative min-h-0">
           <div className="flex-1 p-0 overflow-y-auto relative">
             <textarea
               value={input}
@@ -214,7 +214,7 @@ export function Base64InspectorTool({
         </div>
 
         {/* Right Pane: Multi-Encoding Output Grid */}
-        <div className="flex flex-col h-full bg-neutral-50/30">
+        <div className="flex flex-col h-full bg-neutral-50/30 min-h-0">
           <div className="h-10 border-b border-neutral-200 px-4 flex items-center justify-between bg-white shrink-0">
             <div className="flex items-center p-0.5 rounded-md bg-neutral-100/50 border border-neutral-200">
               <button
