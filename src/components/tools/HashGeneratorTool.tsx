@@ -119,7 +119,7 @@ export function HashGeneratorTool({
  className={cn(
 "px-2.5 py-1 text-xs font-medium rounded-md transition-all",
  !isUppercase
- ?"bg-white text-zinc-900 font-semibold shadow-xs"
+ ?"bg-white text-zinc-900 font-semibold shadow-none"
  :"text-zinc-500 hover:text-zinc-900"
  )}
  >
@@ -130,7 +130,7 @@ export function HashGeneratorTool({
  className={cn(
 "px-2.5 py-1 text-xs font-medium rounded-md transition-all",
  isUppercase
- ?"bg-white text-zinc-900 font-semibold shadow-xs"
+ ?"bg-white text-zinc-900 font-semibold shadow-none"
  :"text-zinc-500 hover:text-zinc-900"
  )}
  >
@@ -140,7 +140,7 @@ export function HashGeneratorTool({
 
  <button
  onClick={handleCopyAll}
- className="bg-zinc-900 hover:bg-zinc-800 text-white h-8 px-3 text-xs font-semibold rounded-md flex items-center gap-1.5 ml-1 shrink-0 transition-colors shadow-xs"
+ className="bg-zinc-900 hover:bg-zinc-800 text-white h-8 px-3 text-xs font-semibold rounded-md flex items-center gap-1.5 ml-1 shrink-0 transition-colors shadow-none"
  >
  {copiedKey ==="all"? (
  <Check className="w-3.5 h-3.5"/>
@@ -155,7 +155,7 @@ export function HashGeneratorTool({
  {/* Main Content Area */}
  <div className="flex-1 flex flex-col p-4 md:p-8 max-w-5xl mx-auto w-full gap-8 bg-white ]">
  {/* Input Box Container */}
- <div className="bg-zinc-50 border border-zinc-200 rounded-xl p-4 shadow-sm">
+ <div className="bg-zinc-50 border border-zinc-200 rounded-xl p-4 shadow-none">
  <div className="flex items-center justify-between mb-3">
  <span className="text-xs font-semibold text-zinc-500 uppercase tracking-wider">
  Input Text
@@ -193,7 +193,7 @@ export function HashGeneratorTool({
  return (
  <div
  key={card.id}
- className="flex flex-col sm:flex-row sm:items-center justify-between p-3.5 bg-white border border-zinc-200/80 rounded-xl mb-3 shadow-xs hover:border-zinc-300 transition-all gap-3 sm:gap-0"
+ className="flex flex-col sm:flex-row sm:items-center justify-between p-3.5 bg-white border border-zinc-200/80 rounded-xl mb-3 shadow-none hover:border-zinc-300 transition-all gap-3 sm:gap-0"
  >
  {/* Algorithm Tag & Bit Badge */}
  <div className="flex items-center gap-3">

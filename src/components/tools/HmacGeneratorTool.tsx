@@ -208,7 +208,7 @@ export function HmacGeneratorTool({
  onClick={() => handleCopy(hexOutput || base64Output,"primary")}
  disabled={!hexOutput}
  className={cn(
-"h-9 px-4 text-xs font-semibold rounded-lg shadow-sm transition-all flex items-center gap-1.5 shrink-0",
+"h-9 px-4 text-xs font-semibold rounded-lg shadow-none transition-all flex items-center gap-1.5 shrink-0",
  hexOutput
  ? copiedType ==="primary"
  ?"bg-zinc-900 text-zinc-900 shadow-zinc-900/20"
@@ -232,7 +232,7 @@ export function HmacGeneratorTool({
  
  {/* ================= LEFT COLUMN: INPUT CONFIGURATION ================= */}
  <div className="lg:col-span-6 flex flex-col gap-5">
- <div className="bg-white ] border border-zinc-200 rounded-xl p-5 shadow-sm space-y-5">
+ <div className="bg-white ] border border-zinc-200 rounded-xl p-5 shadow-none space-y-5">
  
  {/* Algorithm Selector */}
  <div className="space-y-2">
@@ -331,7 +331,7 @@ export function HmacGeneratorTool({
 
  {/* ================= RIGHT COLUMN: GRADIENT OUTPUT ================= */}
  <div className="lg:col-span-6 flex flex-col gap-5">
- <div className="bg-gradient-to-br from-zinc-50 to-emerald-50/30 ] border border-zinc-200 rounded-xl p-5 shadow-sm relative overflow-hidden flex flex-col gap-5">
+ <div className="bg-gradient-to-br from-zinc-50 to-emerald-50/30 ] border border-zinc-200 rounded-xl p-5 shadow-none relative overflow-hidden flex flex-col gap-5">
  
  {/* Header & Switcher */}
  <div className="flex items-center justify-between">
@@ -346,7 +346,7 @@ export function HmacGeneratorTool({
  className={cn(
 "px-3 py-1 text-xs font-medium rounded-md transition-all",
  outputFormat ==="hex"
- ?"bg-white text-zinc-900 font-semibold shadow-xs rounded-md px-2.5 py-1 text-xs"
+ ?"bg-white text-zinc-900 font-semibold shadow-none rounded-md px-2.5 py-1 text-xs"
  :"text-zinc-500 hover:text-zinc-900 px-2.5 py-1 text-xs"
  )}
  >
@@ -357,7 +357,7 @@ export function HmacGeneratorTool({
  className={cn(
 "px-3 py-1 text-xs font-medium rounded-md transition-all",
  outputFormat ==="base64"
- ?"bg-white text-zinc-900 font-semibold shadow-xs rounded-md px-2.5 py-1 text-xs"
+ ?"bg-white text-zinc-900 font-semibold shadow-none rounded-md px-2.5 py-1 text-xs"
  :"text-zinc-500 hover:text-zinc-900 px-2.5 py-1 text-xs"
  )}
  >
@@ -368,7 +368,7 @@ export function HmacGeneratorTool({
  className={cn(
 "px-3 py-1 text-xs font-medium rounded-md transition-all",
  outputFormat ==="both"
- ?"bg-white text-zinc-900 font-semibold shadow-xs rounded-md px-2.5 py-1 text-xs"
+ ?"bg-white text-zinc-900 font-semibold shadow-none rounded-md px-2.5 py-1 text-xs"
  :"text-zinc-500 hover:text-zinc-900 px-2.5 py-1 text-xs"
  )}
  >
@@ -439,7 +439,7 @@ export function HmacGeneratorTool({
  </div>
 
  {/* Signature Verifier Drawer */}
- <div className="bg-white ] border border-zinc-200 rounded-xl overflow-hidden shadow-sm">
+ <div className="bg-white ] border border-zinc-200 rounded-xl overflow-hidden shadow-none">
  <button
  type="button"
  onClick={() => setShowVerifier(!showVerifier)}

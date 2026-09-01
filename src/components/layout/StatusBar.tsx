@@ -55,7 +55,7 @@ export function FloatingErrorBadge({ errorMessage }: { errorMessage?: string }) 
  if (!errorMessage) return null;
  const shortMessage = cleanErrorMessage(errorMessage);
  return (
- <div className="absolute bottom-3 left-3 bg-red-950/80 border border-red-900/60 text-red-300 text-xs font-mono px-3 py-1.5 rounded-lg backdrop-blur-md shadow-lg flex items-center gap-2 z-10 pointer-events-none">
+ <div className="absolute bottom-3 left-3 bg-red-950/80 border border-red-900/60 text-red-300 text-xs font-mono px-3 py-1.5 rounded-lg backdrop-blur-md shadow-none flex items-center gap-2 z-10 pointer-events-none">
  <AlertCircle className="w-3.5 h-3.5 shrink-0 text-red-500"/>
  <span className="truncate max-w-[250px]">{shortMessage}</span>
  </div>

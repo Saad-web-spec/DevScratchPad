@@ -158,7 +158,7 @@ export function CidrCalculatorTool({ onValidationChange, onStatsChange, onLogHis
  </div>
 
  {/* Binary Subnet Visualizer */}
- <div className="mt-4 bg-zinc-50 border border-zinc-200 rounded-xl p-5 md:p-6 shadow-sm overflow-hidden flex flex-col gap-6">
+ <div className="mt-4 bg-zinc-50 border border-zinc-200 rounded-xl p-5 md:p-6 shadow-none overflow-hidden flex flex-col gap-6">
  <div className="flex items-center justify-between">
  <span className="text-xs font-semibold text-zinc-500 uppercase tracking-wider">Binary Subnet Visualizer</span>
  <div className="flex items-center gap-4 text-[11px] font-medium uppercase tracking-wider">
@@ -197,7 +197,7 @@ export function CidrCalculatorTool({ onValidationChange, onStatsChange, onLogHis
 
 function MetricCard({ label, value, id, copiedId, onCopy }: { label: string; value: string | number; id: string; copiedId: string | null; onCopy: (val: string, id: string) => void }) {
  return (
- <div className="bg-white border border-zinc-200 rounded-xl p-4 shadow-sm relative group hover:border-zinc-300 transition-all flex flex-col justify-center min-h-[90px]">
+ <div className="bg-white border border-zinc-200 rounded-xl p-4 shadow-none relative group hover:border-zinc-300 transition-all flex flex-col justify-center min-h-[90px]">
  <div className="flex items-center justify-between mb-1.5">
  <span className="text-xs font-semibold tracking-wider text-zinc-500 uppercase">{label}</span>
  <button 

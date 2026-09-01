@@ -90,7 +90,7 @@ export function UuidGeneratorTool({
               className={cn(
                 "px-2.5 py-1 text-xs font-medium rounded-md transition-all whitespace-nowrap",
                 idType === type.id
-                  ? "bg-white text-zinc-900 shadow-xs font-semibold"
+                  ? "bg-white text-zinc-900 shadow-none font-semibold"
                   : "text-zinc-600 hover:text-zinc-900"
               )}
             >
@@ -106,7 +106,7 @@ export function UuidGeneratorTool({
 
           <button
             onClick={generate}
-            className="h-8 px-3 text-xs font-semibold rounded-md shadow-xs transition-colors flex items-center gap-1.5 bg-zinc-900 hover:bg-zinc-800 text-white"
+            className="h-8 px-3 text-xs font-semibold rounded-md shadow-none transition-colors flex items-center gap-1.5 bg-zinc-900 hover:bg-zinc-800 text-white"
           >
             <RefreshCw className="w-3.5 h-3.5" />
             <span>Regenerate</span>
@@ -130,7 +130,7 @@ export function UuidGeneratorTool({
                   className={cn(
                     "py-1.5 text-xs font-mono rounded-md border transition-all",
                     count === num
-                      ? "bg-zinc-900 text-white border-zinc-900 font-semibold shadow-xs"
+                      ? "bg-zinc-900 text-white border-zinc-900 font-semibold shadow-none"
                       : "bg-white text-zinc-700 border-zinc-200 hover:border-zinc-300"
                   )}
                 >
@@ -156,7 +156,7 @@ export function UuidGeneratorTool({
                   className={cn(
                     "py-1.5 text-xs font-medium rounded-md border transition-all",
                     format === fmt.id
-                      ? "bg-zinc-900 text-white border-zinc-900 font-semibold shadow-xs"
+                      ? "bg-zinc-900 text-white border-zinc-900 font-semibold shadow-none"
                       : "bg-white text-zinc-700 border-zinc-200 hover:border-zinc-300"
                   )}
                 >

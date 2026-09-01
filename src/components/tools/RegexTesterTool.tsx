@@ -142,7 +142,7 @@ export function RegexTesterTool({
  className={cn(
 "h-8 px-3 text-xs font-medium rounded-md border transition-colors flex items-center gap-1.5 ml-1",
  replaceMode
- ?"bg-zinc-900 text-zinc-900 border-zinc-900 font-semibold shadow-xs"
+ ?"bg-zinc-900 text-zinc-900 border-zinc-900 font-semibold shadow-none"
  :"bg-zinc-100 hover:bg-zinc-200 text-zinc-700 border-zinc-200"
  )}
  >
@@ -154,7 +154,7 @@ export function RegexTesterTool({
 
  <div className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8 w-full mx-auto bg-white ] flex flex-col max-w-[1400px]">
  {/* Integrated Regex Pattern Input Bar */}
- <div className="bg-zinc-50 border border-zinc-200 rounded-xl p-3 shadow-xs flex items-center justify-between gap-3 focus-within:border-zinc-400 transition-colors">
+ <div className="bg-zinc-50 border border-zinc-200 rounded-xl p-3 shadow-none flex items-center justify-between gap-3 focus-within:border-zinc-400 transition-colors">
  <span className="text-zinc-400 font-mono font-bold select-none pl-1 text-sm md:text-base">/</span>
  <input
  type="text"
@@ -183,7 +183,7 @@ export function RegexTesterTool({
  className={cn(
 "font-mono text-xs px-2 py-0.5 transition-colors",
  flags[f.id]
- ?"bg-zinc-900 text-zinc-900 font-bold rounded shadow-xs"
+ ?"bg-zinc-900 text-zinc-900 font-bold rounded shadow-none"
  :"text-zinc-400 hover:text-zinc-700"
  )}
  >
@@ -195,7 +195,7 @@ export function RegexTesterTool({
 
  {/* Replace Pattern Bar (if enabled) */}
  {replaceMode && (
- <div className="bg-zinc-50 border border-zinc-200 rounded-xl p-3 shadow-xs flex items-center justify-between gap-3 mt-3 focus-within:border-zinc-400 transition-colors">
+ <div className="bg-zinc-50 border border-zinc-200 rounded-xl p-3 shadow-none flex items-center justify-between gap-3 mt-3 focus-within:border-zinc-400 transition-colors">
  <span className="text-xs font-semibold text-zinc-400 uppercase tracking-wider select-none shrink-0 pl-1">
  Replace:
  </span>
@@ -225,7 +225,7 @@ export function RegexTesterTool({
  className={cn(
 "flex-1 py-1.5 text-xs font-semibold rounded-md transition-all text-center",
  activeTab ==="input"
- ?"bg-white text-zinc-900 shadow-sm"
+ ?"bg-white text-zinc-900 shadow-none"
  :"text-zinc-500 hover:text-zinc-900"
  )}
  >
@@ -236,7 +236,7 @@ export function RegexTesterTool({
  className={cn(
 "flex-1 py-1.5 text-xs font-semibold rounded-md transition-all text-center",
  activeTab ==="output"
- ?"bg-white text-zinc-900 shadow-sm"
+ ?"bg-white text-zinc-900 shadow-none"
  :"text-zinc-500 hover:text-zinc-900"
  )}
  >
@@ -251,7 +251,7 @@ export function RegexTesterTool({
  {/* Left Panel: Test String */}
  <div
  className={cn(
-"border border-zinc-200 rounded-xl bg-zinc-50 flex flex-col p-4 shadow-sm",
+"border border-zinc-200 rounded-xl bg-zinc-50 flex flex-col p-4 shadow-none",
  activeTab !=="input"&&"hidden lg:flex"
  )}
  >
@@ -301,7 +301,7 @@ export function RegexTesterTool({
  {/* Right Panel: Match Details or Replaced Result */}
  <div
  className={cn(
-"border border-zinc-200 rounded-xl bg-zinc-50 p-4 shadow-sm flex flex-col",
+"border border-zinc-200 rounded-xl bg-zinc-50 p-4 shadow-none flex flex-col",
  activeTab !=="output"&&"hidden lg:flex"
  )}
  >
@@ -360,7 +360,7 @@ export function RegexTesterTool({
  <div className="flex-1 overflow-y-auto space-y-3 pr-1">
  {matches.length > 0 ? (
  matches.map((m, idx) => (
- <div key={idx} className="bg-white border border-zinc-200 rounded-lg p-3.5 shadow-xs relative group hover:border-zinc-300 transition-colors">
+ <div key={idx} className="bg-white border border-zinc-200 rounded-lg p-3.5 shadow-none relative group hover:border-zinc-300 transition-colors">
  
  <div className="flex items-center justify-between mb-2">
  <div className="flex items-center">

@@ -91,7 +91,7 @@ export function GraphqlFormatterTool({ onValidationChange, onStatsChange, onLogH
  
  <div className="h-5 w-px bg-zinc-200 mx-1 shrink-0"/>
 
- <button onClick={handleFormat} className="h-8 px-3 text-xs font-semibold rounded-md shadow-xs transition-colors flex items-center gap-1.5 bg-zinc-900 hover:bg-zinc-800 text-white shrink-0">
+ <button onClick={handleFormat} className="h-8 px-3 text-xs font-semibold rounded-md shadow-none transition-colors flex items-center gap-1.5 bg-zinc-900 hover:bg-zinc-800 text-white shrink-0">
  <Play className="w-3.5 h-3.5"/>
  <span>Format</span>
  </button>
@@ -105,7 +105,7 @@ export function GraphqlFormatterTool({ onValidationChange, onStatsChange, onLogH
  className={cn(
 "flex-1 py-1.5 text-xs font-medium rounded-md transition-colors text-center",
  activeTab ==="input"
- ?"bg-white text-zinc-900 font-semibold shadow-xs rounded-md px-2.5 py-1 text-xs"
+ ?"bg-white text-zinc-900 font-semibold shadow-none rounded-md px-2.5 py-1 text-xs"
  :"text-zinc-500 hover:text-zinc-900 px-2.5 py-1 text-xs"
  )}
  >
@@ -116,7 +116,7 @@ export function GraphqlFormatterTool({ onValidationChange, onStatsChange, onLogH
  className={cn(
 "flex-1 py-1.5 text-xs font-medium rounded-md transition-colors text-center",
  activeTab ==="output"
- ?"bg-white text-zinc-900 font-semibold shadow-xs rounded-md px-2.5 py-1 text-xs"
+ ?"bg-white text-zinc-900 font-semibold shadow-none rounded-md px-2.5 py-1 text-xs"
  :"text-zinc-500 hover:text-zinc-900 px-2.5 py-1 text-xs"
  )}
  >

@@ -52,7 +52,7 @@ export function EmbedButton({ toolSlug, data, className }: EmbedButtonProps) {
 
  {isOpen && (
  <div className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-4 md:p-6 bg-black/70 backdrop-blur-sm animate-in fade-in duration-150">
- <div className="bg-white rounded-2xl shadow-2xl w-[92vw] sm:w-full max-w-lg max-h-[85vh] sm:max-h-[90vh] flex flex-col border border-zinc-200 overflow-hidden animate-in zoom-in-95 duration-150">
+ <div className="bg-white rounded-2xl shadow-none w-[92vw] sm:w-full max-w-lg max-h-[85vh] sm:max-h-[90vh] flex flex-col border border-zinc-200 overflow-hidden animate-in zoom-in-95 duration-150">
  {/* Header */}
  <div className="flex items-center justify-between px-4 py-3 sm:px-5 sm:py-3.5 border-b border-zinc-200 shrink-0">
  <div className="flex items-center gap-2.5">
@@ -86,7 +86,7 @@ export function EmbedButton({ toolSlug, data, className }: EmbedButtonProps) {
  </span>
  <button
  onClick={handleCopy}
- className="px-2.5 py-1 bg-white hover:bg-zinc-50 border border-zinc-200 rounded-md text-xs font-medium text-zinc-700 shadow-xs transition-colors flex items-center gap-1.5 active:scale-95"
+ className="px-2.5 py-1 bg-white hover:bg-zinc-50 border border-zinc-200 rounded-md text-xs font-medium text-zinc-700 shadow-none transition-colors flex items-center gap-1.5 active:scale-95"
  >
  {copied ? (
  <Check className="w-3.5 h-3.5 text-emerald-500"/>

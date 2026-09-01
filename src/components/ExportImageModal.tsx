@@ -132,7 +132,7 @@ export function ExportImageModal({ isOpen, onClose, code, language }: ExportImag
  }
  `}</style>
  
- <div className="bg-white rounded-2xl shadow-2xl w-[95vw] sm:w-[90vw] md:w-full max-w-5xl max-h-[92vh] sm:max-h-[90vh] flex flex-col border border-zinc-200 overflow-hidden animate-in zoom-in-95 duration-150">
+ <div className="bg-white rounded-2xl shadow-none w-[95vw] sm:w-[90vw] md:w-full max-w-5xl max-h-[92vh] sm:max-h-[90vh] flex flex-col border border-zinc-200 overflow-hidden animate-in zoom-in-95 duration-150">
  {/* Header */}
  <div className="flex items-center justify-between px-4 py-3 sm:px-5 sm:py-3.5 border-b border-zinc-200 shrink-0">
  <div className="flex items-center gap-2.5">
@@ -166,7 +166,7 @@ export function ExportImageModal({ isOpen, onClose, code, language }: ExportImag
  >
  {/* Code Window Container */}
  <div 
- className="w-full rounded-xl shadow-2xl shadow-black/40 border border-white/10 overflow-hidden flex flex-col transition-colors duration-200"
+ className="w-full rounded-xl shadow-none shadow-black/40 border border-white/10 overflow-hidden flex flex-col transition-colors duration-200"
  style={{ backgroundColor: activeTheme.bg }}
  >
  {/* Window Header */}
@@ -217,7 +217,7 @@ export function ExportImageModal({ isOpen, onClose, code, language }: ExportImag
  </div>
 
  {/* Brand Watermark - Positioned in canvas bottom corner */}
- <div className="absolute bottom-2 sm:bottom-2.5 right-3 sm:right-4 text-[10px] sm:text-xs font-mono text-zinc-900/50 tracking-wider select-none pointer-events-none drop-shadow-xs">
+ <div className="absolute bottom-2 sm:bottom-2.5 right-3 sm:right-4 text-[10px] sm:text-xs font-mono text-zinc-900/50 tracking-wider select-none pointer-events-none drop-shadow-none">
  devscratchpad.tech
  </div>
  </div>
@@ -242,7 +242,7 @@ export function ExportImageModal({ isOpen, onClose, code, language }: ExportImag
 "h-8 sm:h-9 rounded-lg transition-all hover:scale-105 active:scale-95 border",
  bg.class,
  activeBg.name === bg.name 
- ?"ring-2 ring-indigo-500 ring-offset-2 border-transparent shadow-xs"
+ ?"ring-2 ring-indigo-500 ring-offset-2 border-transparent shadow-none"
  :"border-zinc-200"
  )}
  aria-label={bg.name}
@@ -280,7 +280,7 @@ export function ExportImageModal({ isOpen, onClose, code, language }: ExportImag
  className={cn(
 "flex-1 py-1 sm:py-1.5 text-xs font-medium rounded-md transition-colors text-center",
  activePadding.label === pad.label
- ?"bg-white text-zinc-900 shadow-xs border border-zinc-200"
+ ?"bg-white text-zinc-900 shadow-none border border-zinc-200"
  :"text-zinc-500 hover:text-zinc-700 border border-transparent"
  )}
  >
@@ -306,7 +306,7 @@ export function ExportImageModal({ isOpen, onClose, code, language }: ExportImag
  )}
  >
  <div className={cn(
-"w-4 h-4 bg-white rounded-full absolute top-0.75 transition-transform shadow-xs",
+"w-4 h-4 bg-white rounded-full absolute top-0.75 transition-transform shadow-none",
  showLineNumbers ?"translate-x-5":"translate-x-0.75"
  )} />
  </button>
@@ -326,7 +326,7 @@ export function ExportImageModal({ isOpen, onClose, code, language }: ExportImag
  <button
  onClick={handleDownload}
  disabled={isExporting}
- className="w-full h-9 sm:h-10 bg-blue-600 hover:bg-blue-500 active:bg-blue-700 text-zinc-900 rounded-lg font-medium flex items-center justify-center gap-2 transition-colors disabled:opacity-50 shadow-sm text-xs sm:text-sm active:scale-[0.99]"
+ className="w-full h-9 sm:h-10 bg-blue-600 hover:bg-blue-500 active:bg-blue-700 text-zinc-900 rounded-lg font-medium flex items-center justify-center gap-2 transition-colors disabled:opacity-50 shadow-none text-xs sm:text-sm active:scale-[0.99]"
  >
  {isExporting ? (
  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"/>

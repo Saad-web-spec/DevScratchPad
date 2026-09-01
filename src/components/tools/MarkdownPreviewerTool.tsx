@@ -97,7 +97,7 @@ export function MarkdownPreviewerTool({ onValidationChange, onStatsChange, onLog
  className={cn(
 "flex-1 py-1.5 text-xs font-medium rounded-md transition-colors text-center",
  activeTab ==="input"
- ?"bg-white text-zinc-900 font-semibold shadow-xs rounded-md px-2.5 py-1 text-xs"
+ ?"bg-white text-zinc-900 font-semibold shadow-none rounded-md px-2.5 py-1 text-xs"
  :"text-zinc-500 hover:text-zinc-900 px-2.5 py-1 text-xs"
  )}
  >
@@ -108,7 +108,7 @@ export function MarkdownPreviewerTool({ onValidationChange, onStatsChange, onLog
  className={cn(
 "flex-1 py-1.5 text-xs font-medium rounded-md transition-colors text-center",
  activeTab ==="output"
- ?"bg-white text-zinc-900 font-semibold shadow-xs rounded-md px-2.5 py-1 text-xs"
+ ?"bg-white text-zinc-900 font-semibold shadow-none rounded-md px-2.5 py-1 text-xs"
  :"text-zinc-500 hover:text-zinc-900 px-2.5 py-1 text-xs"
  )}
  >

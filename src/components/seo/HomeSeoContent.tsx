@@ -121,7 +121,7 @@ export function HomeSeoContent() {
   {/* Smart Paste (Auto-Detection) Professional Monochromatic Card */}
   <div className="mb-10 p-4 sm:p-5 bg-zinc-50 border border-zinc-200/90 rounded-xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 transition-all">
     <div className="flex items-start gap-3.5">
-      <div className="w-9 h-9 rounded-lg bg-zinc-900 text-white flex items-center justify-center shrink-0 mt-0.5 sm:mt-0 shadow-xs">
+      <div className="w-9 h-9 rounded-lg bg-zinc-900 text-white flex items-center justify-center shrink-0 mt-0.5 sm:mt-0 shadow-none">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 text-white">
           <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" />
           <rect x="8" y="2" width="8" height="4" rx="1" ry="1" />
@@ -138,7 +138,7 @@ export function HomeSeoContent() {
           </span>
         </div>
         <p className="text-xs text-zinc-600 mt-1 leading-relaxed">
-          Copy any raw <strong>JWT</strong>, <strong>cURL</strong>, <strong>JSON</strong>, <strong>SVG</strong>, <strong>SQL</strong>, or <strong>Timestamp</strong> and press <kbd className="px-1.5 py-0.5 bg-white border border-zinc-300 rounded text-[11px] font-mono text-zinc-900 shadow-2xs font-medium">Ctrl + V</kbd> (or <kbd className="px-1.5 py-0.5 bg-white border border-zinc-300 rounded text-[11px] font-mono text-zinc-900 shadow-2xs font-medium">⌘V</kbd>) anywhere. DevScratchpad identifies the format and switches tools for you automatically.
+          Copy any raw <strong>JWT</strong>, <strong>cURL</strong>, <strong>JSON</strong>, <strong>SVG</strong>, <strong>SQL</strong>, or <strong>Timestamp</strong> and press <kbd className="px-1.5 py-0.5 bg-white border border-zinc-300 rounded text-[11px] font-mono text-zinc-900 shadow-none font-medium">Ctrl + V</kbd> (or <kbd className="px-1.5 py-0.5 bg-white border border-zinc-300 rounded text-[11px] font-mono text-zinc-900 shadow-none font-medium">⌘V</kbd>) anywhere. DevScratchpad identifies the format and switches tools for you automatically.
         </p>
       </div>
     </div>

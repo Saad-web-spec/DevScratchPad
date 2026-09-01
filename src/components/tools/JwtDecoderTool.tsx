@@ -248,7 +248,7 @@ export function JwtDecoderTool({ onValidationChange, onStatsChange, restoredInpu
  className={cn(
 "flex-1 py-1.5 text-xs font-semibold rounded-md transition-all text-center",
  activeTab ==="input"
- ?"bg-white text-zinc-900 shadow-sm"
+ ?"bg-white text-zinc-900 shadow-none"
  :"text-zinc-500 hover:text-zinc-900"
  )}
  >
@@ -259,7 +259,7 @@ export function JwtDecoderTool({ onValidationChange, onStatsChange, restoredInpu
  className={cn(
 "flex-1 py-1.5 text-xs font-semibold rounded-md transition-all text-center",
  activeTab ==="output"
- ?"bg-white text-zinc-900 shadow-sm"
+ ?"bg-white text-zinc-900 shadow-none"
  :"text-zinc-500 hover:text-zinc-900"
  )}
  >
@@ -326,7 +326,7 @@ export function JwtDecoderTool({ onValidationChange, onStatsChange, restoredInpu
  <span className="text-[10px] text-zinc-500 font-mono bg-zinc-200 px-1.5 py-0.5 rounded border border-zinc-300">Algorithm & Token Type</span>
  )}
  </div>
- <div className="font-mono text-[13px] text-zinc-800 bg-white ] p-3 rounded-lg border border-zinc-200 overflow-x-auto shadow-sm">
+ <div className="font-mono text-[13px] text-zinc-800 bg-white ] p-3 rounded-lg border border-zinc-200 overflow-x-auto shadow-none">
  {headerObj ? <JsonViewer data={headerObj} /> : <span className="text-zinc-400 italic">No header data</span>}
  </div>
  </div>
@@ -339,7 +339,7 @@ export function JwtDecoderTool({ onValidationChange, onStatsChange, restoredInpu
  <span className="text-purple-500 font-semibold text-xs tracking-wider uppercase">Payload (Claims)</span>
  </div>
  </div>
- <div className="font-mono text-[13px] text-zinc-800 bg-white ] p-3 rounded-lg border border-zinc-200 flex-1 overflow-y-auto shadow-sm">
+ <div className="font-mono text-[13px] text-zinc-800 bg-white ] p-3 rounded-lg border border-zinc-200 flex-1 overflow-y-auto shadow-none">
  {payloadObj ? <JsonViewer data={payloadObj} /> : <span className="text-zinc-400 italic">No payload data</span>}
  </div>
  </div>
@@ -352,12 +352,12 @@ export function JwtDecoderTool({ onValidationChange, onStatsChange, restoredInpu
  </div>
  
  <div className="flex flex-col gap-3">
- <div className="font-mono text-xs text-zinc-500 break-all bg-white ] p-3 rounded-lg border border-zinc-200 shadow-sm">
+ <div className="font-mono text-xs text-zinc-500 break-all bg-white ] p-3 rounded-lg border border-zinc-200 shadow-none">
  {signature ||"No signature"}
  </div>
  
  {headerObj?.alg?.startsWith('HS') && (
- <div className="flex items-center gap-3 bg-white ] p-2 rounded-lg border border-zinc-200 shadow-sm">
+ <div className="flex items-center gap-3 bg-white ] p-2 rounded-lg border border-zinc-200 shadow-none">
  <input 
  type="text"
  value={secret}

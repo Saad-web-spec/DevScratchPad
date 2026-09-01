@@ -66,11 +66,15 @@ export function TopBar({ onOpenCommandPalette, onOpenMobileMenu }: TopBarProps) 
  <div className="flex items-center gap-2">
 
  {/* Desktop Action Buttons */}
- <div className="hidden md:flex items-center gap-2">
+ <div className="hidden md:flex items-center gap-3">
+ <div className="flex items-center gap-1.5 px-2.5 py-1 bg-green-50 text-green-700 border border-green-200 rounded-full text-[11px] font-medium tracking-wide">
+ <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+ 100% Client-Side Processing
+ </div>
  <div className="w-px h-6 bg-zinc-200 mx-1"></div>
  <button
  onClick={handleSaveWorkspace}
- className="flex items-center gap-2 px-3 py-1.5 bg-zinc-900 hover:bg-zinc-800 text-white rounded-lg transition-all text-sm font-medium shadow-xs active:scale-95"
+ className="flex items-center gap-2 px-3 py-1.5 bg-zinc-900 hover:bg-zinc-800 text-white rounded-lg transition-all text-sm font-medium shadow-none active:scale-95"
  >
  <Save className="w-4 h-4"/>
  <span>Save Workspace</span>
@@ -88,7 +92,7 @@ export function TopBar({ onOpenCommandPalette, onOpenMobileMenu }: TopBarProps) 
  </button>
 
  {isOverflowOpen && (
- <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg border border-zinc-200 py-1 z-50 animate-in fade-in zoom-in-95 duration-100">
+ <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-none border border-zinc-200 py-1 z-50 animate-in fade-in zoom-in-95 duration-100">
  <button
  onClick={handleSaveWorkspace}
  className="w-full flex items-center gap-2 px-4 py-2.5 text-xs text-zinc-700 hover:bg-zinc-50 font-medium transition-colors text-left"

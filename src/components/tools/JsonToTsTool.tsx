@@ -126,7 +126,7 @@ export function JsonToTsTool({
               className={cn(
                 "px-2.5 py-1 text-xs font-medium rounded-md transition-all whitespace-nowrap",
                 targetLang === lang.id
-                  ? "bg-white text-zinc-900 shadow-xs font-semibold"
+                  ? "bg-white text-zinc-900 shadow-none font-semibold"
                   : "text-zinc-600 hover:text-zinc-900"
               )}
             >
@@ -159,7 +159,7 @@ export function JsonToTsTool({
 
           <button
             onClick={handleGenerate}
-            className="h-8 px-3 text-xs font-semibold rounded-md shadow-xs transition-colors flex items-center gap-1.5 bg-zinc-900 hover:bg-zinc-800 text-white"
+            className="h-8 px-3 text-xs font-semibold rounded-md shadow-none transition-colors flex items-center gap-1.5 bg-zinc-900 hover:bg-zinc-800 text-white"
           >
             <Play className="w-3.5 h-3.5" />
             <span>Generate</span>
@@ -174,7 +174,7 @@ export function JsonToTsTool({
           className={cn(
             "flex-1 py-1.5 text-xs font-medium rounded-md transition-colors text-center",
             activeTab === "input"
-              ? "bg-white text-zinc-900 font-semibold shadow-xs"
+              ? "bg-white text-zinc-900 font-semibold shadow-none"
               : "text-zinc-500 hover:text-zinc-900"
           )}
         >
@@ -185,7 +185,7 @@ export function JsonToTsTool({
           className={cn(
             "flex-1 py-1.5 text-xs font-medium rounded-md transition-colors text-center",
             activeTab === "output"
-              ? "bg-white text-zinc-900 font-semibold shadow-xs"
+              ? "bg-white text-zinc-900 font-semibold shadow-none"
               : "text-zinc-500 hover:text-zinc-900"
           )}
         >

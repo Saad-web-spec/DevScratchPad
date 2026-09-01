@@ -131,7 +131,7 @@ export function CaseConverterTool({
               className={cn(
                 "px-2.5 py-1 text-xs font-mono rounded-md transition-all whitespace-nowrap",
                 targetCase === c.id
-                  ? "bg-white text-zinc-900 shadow-xs font-semibold"
+                  ? "bg-white text-zinc-900 shadow-none font-semibold"
                   : "text-zinc-600 hover:text-zinc-900"
               )}
             >

@@ -346,7 +346,7 @@ export function WorkspaceShell({ initialToolSlug, toolMeta, children }: Workspac
  />
 
  {/* Slide-over Container */}
- <div className="relative flex flex-col w-72 max-w-[85vw] bg-white h-full shadow-2xl z-10 animate-in slide-in-from-left duration-200 border-r border-transparent">
+ <div className="relative flex flex-col w-72 max-w-[85vw] bg-white h-full shadow-none z-10 animate-in slide-in-from-left duration-200 border-r border-transparent">
  <div className="h-14 border-b border-zinc-200 flex items-center justify-between px-4 shrink-0 bg-white">
  <div className="flex items-center gap-2.5">
  <span className="font-semibold text-base text-zinc-900 truncate">
@@ -383,7 +383,7 @@ export function WorkspaceShell({ initialToolSlug, toolMeta, children }: Workspac
 
  <main className="flex-1 flex flex-col min-w-0 bg-white overflow-y-auto">
  <div className="flex-1 min-h-0 relative flex flex-col">
- <div className="flex-1 min-h-[500px] relative flex flex-col">
+ <div className="min-h-[calc(100vh-3.5rem)] relative flex flex-col border-b border-zinc-200">
  {activeTool ==="json-formatter"&& (
  <JsonFormatterTool
  onValidationChange={handleValidationChange}
@@ -567,7 +567,7 @@ export function WorkspaceShell({ initialToolSlug, toolMeta, children }: Workspac
   {/* Smart Paste Floating Toast Notification */}
   {magicPasteToast && magicPasteToast.visible && (
     <div className="fixed bottom-14 left-1/2 -translate-x-1/2 z-50 animate-in fade-in slide-in-from-bottom-3 duration-200 pointer-events-none">
-      <div className="bg-zinc-900 text-white text-xs md:text-sm font-medium px-4 py-2 rounded-full shadow-2xl flex items-center gap-2 border border-zinc-800 backdrop-blur-md">
+      <div className="bg-zinc-900 text-white text-xs md:text-sm font-medium px-4 py-2 rounded-full shadow-none flex items-center gap-2 border border-zinc-800 backdrop-blur-md">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5 text-zinc-300 shrink-0">
           <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" />
           <rect x="8" y="2" width="8" height="4" rx="1" ry="1" />
@@ -582,7 +582,7 @@ export function WorkspaceShell({ initialToolSlug, toolMeta, children }: Workspac
  href={`https://www.devscratchpad.tech/tools/${currentSlug || ''}`}
  target="_blank"
  rel="noopener noreferrer"
- className="absolute bottom-10 right-4 bg-zinc-900/90 hover:bg-black text-zinc-900 px-3 py-1.5 rounded-full text-xs font-medium shadow-lg backdrop-blur-sm border border-white/10 transition-transform hover:scale-105 z-50 flex items-center gap-1.5"
+ className="absolute bottom-10 right-4 bg-zinc-900/90 hover:bg-black text-zinc-900 px-3 py-1.5 rounded-full text-xs font-medium shadow-none backdrop-blur-sm border border-white/10 transition-transform hover:scale-105 z-50 flex items-center gap-1.5"
  >
  <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"/>
  Powered by DevScratchpad

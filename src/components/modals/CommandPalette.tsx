@@ -113,7 +113,7 @@ export function CommandPalette({ isOpen, onClose, onSelectTool }: CommandPalette
         className="absolute inset-0 bg-black/30 backdrop-blur-xs transition-opacity"
         onClick={onClose}
       />
-      <div className="relative w-full max-w-xl bg-white border border-zinc-200 rounded-xl shadow-2xl shadow-zinc-200/60 overflow-hidden flex flex-col animate-in fade-in zoom-in-95 duration-150">
+      <div className="relative w-full max-w-xl bg-white border border-zinc-200 rounded-xl shadow-none shadow-zinc-200/60 overflow-hidden flex flex-col animate-in fade-in zoom-in-95 duration-150">
         <div className="flex items-center px-4 border-b border-zinc-200">
           <Search className="w-5 h-5 text-zinc-400" />
           <input
@@ -187,7 +187,7 @@ export function CommandPalette({ isOpen, onClose, onSelectTool }: CommandPalette
               <rect x="8" y="2" width="8" height="4" rx="1" ry="1" />
               <path d="M12 11l-2 3h3l-1 4 4-5h-3l1-2z" fill="currentColor" />
             </svg>
-            <span>Press <kbd className="px-1 py-0.5 bg-white border border-zinc-200 rounded font-mono text-[10px] text-zinc-800 font-medium shadow-2xs">Ctrl + V</kbd> anywhere to auto-detect tools</span>
+            <span>Press <kbd className="px-1 py-0.5 bg-white border border-zinc-200 rounded font-mono text-[10px] text-zinc-800 font-medium shadow-none">Ctrl + V</kbd> anywhere to auto-detect tools</span>
           </span>
           <span className="text-[11px] text-zinc-400 hidden sm:inline">Use ↑↓ to navigate, Enter to select</span>
         </div>

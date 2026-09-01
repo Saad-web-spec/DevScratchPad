@@ -142,7 +142,7 @@ export function CronVisualizerTool({
  className={cn(
 "px-3 py-1.5 rounded-full text-xs font-medium transition-colors border",
  input === preset.cron
- ?"bg-[#2563EB] text-zinc-900 border-[#2563EB] shadow-2xs"
+ ?"bg-[#2563EB] text-zinc-900 border-[#2563EB] shadow-none"
  :"bg-[#F1F5F9] ] text-[#0F172A] hover:bg-zinc-200 border-transparent"
  )}
  >

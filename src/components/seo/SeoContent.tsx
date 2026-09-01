@@ -1,6 +1,7 @@
 import Link from"next/link";
 import { ShieldCheck, ArrowRight, HelpCircle, CheckCircle2, Sparkles } from"lucide-react";
 import { TOOLS_REGISTRY, type ToolMeta } from"@/lib/tools/registry";
+import { SeoArticle } from "./SeoArticle";
 
 const RELATED_MAP: Record<string, string[]> = {
   "json-formatter": ["json-to-typescript", "yaml-json", "css-svg-minifier", "diff-checker"],
@@ -103,139 +104,53 @@ export function SeoContent({ tool }: { tool: ToolMeta }) {
  ]
  };
 
- return (
- <div className="mt-12 pt-8 border-t border-zinc-200 ] max-w-4xl pb-24 mx-auto px-4 w-full">
- <script
- type="application/ld+json"
- dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLdGraph) }}
- />
- <h2 className="mt-6 mb-3 text-2xl font-bold text-zinc-900">
- {tool.name} (Offline & Secure)
- </h2>
- <p className="text-zinc-600 text-sm leading-relaxed mb-6">
- {tool.seoDescription || tool.description}
- </p>
+  const explanation = `${tool.seoDescription || tool.description}
 
-  {/* Smart Auto-Detection Monochromatic Banner */}
-  <div className="mb-8 p-3.5 sm:p-4 bg-zinc-50 border border-zinc-200/90 rounded-xl flex items-center justify-between gap-3">
-    <div className="flex items-center gap-3">
-      <div className="w-8 h-8 rounded-lg bg-zinc-900 text-white flex items-center justify-center shrink-0 shadow-xs">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 text-white">
-          <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" />
-          <rect x="8" y="2" width="8" height="4" rx="1" ry="1" />
-          <path d="M12 11l-2 3h3l-1 4 4-5h-3l1-2z" fill="currentColor" />
-        </svg>
-      </div>
-      <div>
-        <p className="text-xs font-semibold text-zinc-900">
-          Smart Clipboard Detection Supported
-        </p>
-        <p className="text-xs text-zinc-600 mt-0.5">
-          Press <kbd className="px-1.5 py-0.5 bg-white border border-zinc-300 rounded font-mono text-[10px] text-zinc-900 shadow-2xs font-medium">Ctrl + V</kbd> (or <kbd className="px-1.5 py-0.5 bg-white border border-zinc-300 rounded font-mono text-[10px] text-zinc-900 shadow-2xs font-medium">⌘V</kbd>) anywhere to auto-detect and switch between tools instantly.
-        </p>
-      </div>
-    </div>
-  </div>
+How to use: ${tool.howToUse.join(" ")}
 
- <h2 className="mt-8 mb-4 text-xl font-bold text-zinc-900 flex items-center gap-2">
- <CheckCircle2 className="w-5 h-5 text-blue-500"/>
- How to use {tool.shortName || tool.name}
- </h2>
+Important Considerations: ${tool.edgeCases.join(" ")}
 
- <ol className="list-decimal pl-5 space-y-2.5 text-zinc-600 text-sm leading-relaxed mb-8">
- {tool.howToUse.map((step, i) => (
- <li key={i}>{step}</li>
- ))}
- </ol>
+This tool is strictly client-side. All processing runs in your local browser memory using JavaScript. No text, tokens, payloads, or logs are ever transmitted to any remote server or analytics engine. You can even use this tool offline.`;
 
- {tool.edgeCases.length > 0 && (
- <>
- <h3 className="mt-8 mb-3 text-lg font-semibold text-zinc-800">
- Edge Cases &amp; Important Considerations
- </h3>
- <ul className="list-disc pl-5 space-y-2 text-zinc-600 text-sm leading-relaxed mb-8">
- {tool.edgeCases.map((c, i) => (
- <li key={i}>{c}</li>
- ))}
- </ul>
- </>
- )}
-
- <h3 className="mt-8 mb-3 text-lg font-semibold text-zinc-800">
- Keyboard Shortcuts
- </h3>
- <ul className="list-disc pl-5 space-y-2 text-zinc-600 text-sm leading-relaxed mb-8">
- <li><strong>Ctrl/Cmd + V:</strong> Smart Magic Paste — Auto-detects data type (JWT, cURL, JSON, SVG, Timestamp) and switches tools.</li>
- <li><strong>Ctrl/Cmd + K:</strong> Open Command Palette to search and jump to any tool instantly.</li>
- </ul>
-
- {/* Frequently Asked Questions for Rich Snippets */}
- <h3 className="mt-8 mb-4 text-lg font-semibold text-zinc-800 flex items-center gap-2">
- <HelpCircle className="w-5 h-5 text-zinc-400"/>
- Frequently Asked Questions
- </h3>
- <div className="space-y-3 mb-8">
- <div className="p-4 bg-zinc-50 ] border border-zinc-200 ] rounded-xl">
- <h4 className="text-sm font-semibold text-zinc-900 mb-1.5">
- Is this {tool.shortName || tool.name} safe for sensitive corporate data?
- </h4>
- <p className="text-xs text-zinc-600 leading-relaxed">
- Yes, 100%. All processing runs client-side in your local browser memory. No text, tokens, payloads, or logs are ever transmitted to any remote server or analytics engine.
- </p>
- </div>
- <div className="p-4 bg-zinc-50 ] border border-zinc-200 ] rounded-xl">
- <h4 className="text-sm font-semibold text-zinc-900 mb-1.5">
- Can I use this tool offline?
- </h4>
- <p className="text-xs text-zinc-600 leading-relaxed">
- Yes. Because this tool runs strictly on client-side JavaScript with zero external API dependencies, once loaded it functions completely offline.
- </p>
- </div>
- </div>
-
- {/* Privacy Guarantee Banner */}
- <div className="mt-8 flex items-start gap-3 p-4 bg-zinc-50 ] border border-zinc-200 ] rounded-xl mb-10">
- <ShieldCheck className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5"/>
- <div>
- <p className="text-sm font-bold text-zinc-900 mb-1">
- 100% Client-Side Privacy Guarantee
- </p>
- <p className="text-xs text-zinc-600 leading-relaxed">
- All inputs are processed entirely inside your browser&apos;s memory
- using JavaScript. No data is ever transmitted to any server. Your
- tokens, JSON payloads, cURL commands, and timestamps never leave
- your machine.
- </p>
- </div>
- </div>
-
- {/* Internal Linking: Related Developer Utilities */}
- {relatedTools.length > 0 && (
- <div className="mt-10 pt-6 border-t border-zinc-200 ]">
- <h3 className="text-base font-semibold text-zinc-900 mb-4">
- Related Developer Utilities
- </h3>
- <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
- {relatedTools.map((rel) => (
- <Link
- key={rel.slug}
- href={`/tools/${rel.slug}`}
- className="group flex items-center justify-between p-3.5 bg-zinc-50 ] hover:bg-zinc-100 border border-zinc-200 ] rounded-xl transition-all"
- >
- <div>
- <p className="text-sm font-medium text-zinc-900 group-hover:text-blue-500 transition-colors">
- {rel.name}
- </p>
- <p className="text-xs text-zinc-500 line-clamp-1 mt-0.5">
- {rel.description}
- </p>
- </div>
- <ArrowRight className="w-4 h-4 text-zinc-400 group-hover:text-blue-500 group-hover:translate-x-0.5 transition-all shrink-0 ml-2"/>
- </Link>
- ))}
- </div>
- </div>
- )}
- </div>
- );
+  return (
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLdGraph) }}
+      />
+      <SeoArticle
+        title={`${tool.name} (Offline & Secure)`}
+        explanation={explanation}
+        shortcuts={tool.shortcuts || ["Ctrl/Cmd + V — Smart Magic Paste", "Ctrl/Cmd + K — Open Command Palette"]}
+      />
+      
+      {/* Internal Linking: Related Developer Utilities */}
+      {relatedTools.length > 0 && (
+        <div className="w-full bg-white border-t border-zinc-200">
+          <div className="max-w-5xl mx-auto px-6 py-12">
+            <h3 className="text-base font-semibold text-zinc-900 mb-6 flex items-center gap-2">
+              <Sparkles className="w-4 h-4 text-zinc-500" />
+              Related Developer Utilities
+            </h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+              {relatedTools.map((rel) => (
+                <Link
+                  key={rel.slug}
+                  href={`/tools/${rel.slug}`}
+                  className="group flex flex-col p-4 bg-zinc-50 border border-zinc-200 rounded-lg hover:border-zinc-300 hover:bg-zinc-100 transition-all"
+                >
+                  <p className="text-sm font-medium text-zinc-900 group-hover:text-blue-600 transition-colors">
+                    {rel.name}
+                  </p>
+                  <p className="text-xs text-zinc-500 line-clamp-2 mt-1.5 leading-relaxed">
+                    {rel.description}
+                  </p>
+                </Link>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  );
 }
