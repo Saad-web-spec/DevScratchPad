@@ -162,319 +162,312 @@ export function PasswordHashTool({
 
   return (
     <div className="flex flex-col h-full bg-white">
-      {/* Top Controls Bar */}
-      <div className="h-12 border-b border-zinc-200 px-4 flex items-center justify-between gap-2 shrink-0 bg-white">
-        {/* Mode Toggle */}
-        <div className="flex items-center p-0.5 rounded-lg bg-zinc-100/70 border border-zinc-200/60">
-          <button
-            onClick={() => setMode("generate")}
-            className={cn(
-              "px-3 py-1 rounded-md text-xs font-medium transition-colors",
-              mode === "generate"
-                ? "bg-white text-zinc-900 shadow-sm ring-1 ring-black/5 font-semibold"
-                : "text-zinc-500 hover:text-zinc-900 hover:bg-zinc-200/50"
-            )}
-          >
-            Generate Hash
-          </button>
-          <button
-            onClick={() => setMode("verify")}
-            className={cn(
-              "px-3 py-1 rounded-md text-xs font-medium transition-colors",
-              mode === "verify"
-                ? "bg-white text-zinc-900 shadow-sm ring-1 ring-black/5 font-semibold"
-                : "text-zinc-500 hover:text-zinc-900 hover:bg-zinc-200/50"
-            )}
-          >
-            Verify Password Against Hash
-          </button>
+      {/* Top Controls Bar (Unified Clean Header) */}
+      <div className="h-10 border-b border-neutral-200 px-4 flex items-center justify-between gap-4 shrink-0 bg-white">
+        <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar">
+          <div className="bg-neutral-100 p-0.5 rounded-md inline-flex gap-0.5 border border-neutral-200 shadow-sm">
+            <button
+              onClick={() => setMode("generate")}
+              className={cn(
+                "text-[11px] px-3 py-1 rounded transition-all font-medium",
+                mode === "generate" ? "bg-white text-neutral-900 shadow-xs" : "text-neutral-500 hover:text-neutral-900"
+              )}
+            >
+              Generate Hash
+            </button>
+            <button
+              onClick={() => setMode("verify")}
+              className={cn(
+                "text-[11px] px-3 py-1 rounded transition-all font-medium",
+                mode === "verify" ? "bg-white text-neutral-900 shadow-xs" : "text-neutral-500 hover:text-neutral-900"
+              )}
+            >
+              Verify Password Against Hash
+            </button>
+          </div>
         </div>
-
-        <div className="flex items-center gap-2">
-          <ShareButton
-            toolSlug="password-hash"
-            data={mode === "generate" ? genResult?.hash || "" : verifyHash}
-          />
-          <EmbedButton
-            toolSlug="password-hash"
-            data={mode === "generate" ? genResult?.hash || "" : verifyHash}
-          />
-          <ExportImageButton
-            code={mode === "generate" ? genResult?.hash || "" : verifyHash}
-            language="text"
-          />
+        <div className="flex items-center gap-1.5">
+          <ShareButton toolSlug="password-hash" data={genResult?.hash || ""} />
+          <EmbedButton toolSlug="password-hash" data={genResult?.hash || ""} />
+          <ExportImageButton code={genResult?.hash || ""} language="text" />
         </div>
       </div>
 
-      {/* Main Layout */}
-      <div className="flex-1 min-h-0 flex flex-col lg:flex-row divide-y lg:divide-y-0 lg:divide-x divide-zinc-200 overflow-hidden" id="hash-export-card">
-        {mode === "generate" ? (
-          <>
-            {/* Left Column: Generator Parameters */}
-            <div className="w-full lg:w-96 flex flex-col min-w-0 bg-zinc-50/30 p-6 overflow-y-auto space-y-6 shrink-0">
-              {/* Plaintext Password Input */}
-              <div>
-                <div className="flex items-center justify-between mb-1">
-                  <label className="text-xs font-semibold text-zinc-900">Plaintext Password</label>
-                  <button
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="text-[11px] text-zinc-500 hover:text-zinc-900 flex items-center gap-1"
-                  >
-                    {showPassword ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
-                    <span>{showPassword ? "Hide" : "Show"}</span>
-                  </button>
-                </div>
-                <input
-                  type={showPassword ? "text" : "password"}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Enter password to hash..."
-                  className="w-full px-3 py-2.5 rounded-lg border border-zinc-200 bg-white font-mono text-xs text-zinc-900 focus:outline-none focus:ring-1 focus:ring-blue-500 transition-shadow"
-                />
-              </div>
-
-              {/* Algorithm Picker */}
-              <div>
-                <span className="text-xs font-semibold text-zinc-900 block mb-2">
-                  Hashing Algorithm
-                </span>
+      <div className="flex-1 min-h-[520px] grid grid-cols-1 lg:grid-cols-2 divide-y lg:divide-y-0 lg:divide-x divide-neutral-200 overflow-hidden bg-neutral-50/30" id="password-hash-export">
+        
+        {/* Left Pane: Configuration & Input */}
+        <div className="flex flex-col h-full bg-white relative min-h-0">
+          <div className="h-10 border-b border-neutral-200 bg-neutral-50/50 flex items-center justify-between px-4 shrink-0">
+            <span className="text-xs font-mono font-semibold text-neutral-700">
+              {mode === "generate" ? "Hash Configuration" : "Verification Inputs"}
+            </span>
+          </div>
+          
+          <div className="flex-1 overflow-y-auto p-4 relative space-y-4">
+            {mode === "generate" ? (
+              <>
+                {/* Algorithm Selector */}
                 <div className="space-y-2">
-                  {ALGORITHMS.map((a) => {
-                    const isSelected = algo === a.id;
-                    return (
-                      <button
-                        key={a.id}
-                        onClick={() => setAlgo(a.id)}
-                        className={cn(
-                          "w-full text-left p-3 rounded-xl border transition-all text-xs",
-                          isSelected
-                            ? "bg-blue-50/50 border-blue-200 shadow-sm ring-1 ring-blue-500"
-                            : "bg-white border-zinc-200 hover:border-zinc-300 text-zinc-600 shadow-xs"
-                        )}
-                      >
-                        <div className="flex items-center justify-between mb-1">
-                          <span className={cn("font-semibold", isSelected ? "text-blue-900" : "text-zinc-900")}>{a.name}</span>
-                          <span
-                            className={cn(
-                              "px-1.5 py-0.5 rounded text-[10px] font-medium",
-                              isSelected ? "bg-blue-100 text-blue-700" : "bg-zinc-100 text-zinc-600"
-                            )}
-                          >
-                            {a.tag}
-                          </span>
-                        </div>
-                        <p className="text-[11px] text-zinc-500">{a.description}</p>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Dynamic Algorithm Configuration */}
-              {algo === "bcrypt" && (
-                <div className="p-3 rounded-lg border border-zinc-200 bg-white space-y-2">
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="font-semibold text-zinc-800">Bcrypt Cost Factor</span>
-                    <span className="font-mono font-bold text-zinc-900">{bcryptRounds} rounds (2^{bcryptRounds})</span>
-                  </div>
-                  <input
-                    type="range"
-                    min="4"
-                    max="14"
-                    value={bcryptRounds}
-                    onChange={(e) => setBcryptRounds(parseInt(e.target.value, 10))}
-                    className="w-full accent-zinc-900 cursor-pointer"
-                  />
-                  <div className="flex justify-between text-[10px] text-zinc-600">
-                    <span>Fast (4)</span>
-                    <span className="font-medium text-blue-600">OWASP Recommended (10-12)</span>
-                    <span>Heavy (14)</span>
-                  </div>
-                </div>
-              )}
-
-              {(algo === "pbkdf2-sha256" || algo === "pbkdf2-sha512") && (
-                <div className="p-3 rounded-lg border border-zinc-200 bg-white space-y-2">
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="font-semibold text-zinc-800">PBKDF2 Iterations</span>
-                    <span className="font-mono font-bold text-zinc-900">{pbkdf2Iterations.toLocaleString()}</span>
-                  </div>
-                  <input
-                    type="range"
-                    min="10000"
-                    max="600000"
-                    step="10000"
-                    value={pbkdf2Iterations}
-                    onChange={(e) => setPbkdf2Iterations(parseInt(e.target.value, 10))}
-                    className="w-full accent-zinc-900 cursor-pointer"
-                  />
-                  <div className="flex justify-between text-[10px] text-zinc-600">
-                    <span>10k</span>
-                    <span className="font-medium text-blue-600">OWASP 600k (High)</span>
-                    <span>600k</span>
-                  </div>
-                </div>
-              )}
-
-              {/* Salt Control */}
-              <div className="p-3 rounded-lg border border-zinc-200 bg-white space-y-2">
-                <div className="flex items-center justify-between text-xs">
-                  <span className="font-semibold text-zinc-800">Salt</span>
-                  <button
-                    onClick={() => setSalt(generateRandomSalt(16))}
-                    className="text-[11px] text-blue-600 hover:text-blue-700 flex items-center gap-1 font-medium"
-                  >
-                    <RefreshCw className="w-3 h-3" />
-                    <span>Generate New Salt</span>
-                  </button>
-                </div>
-                <input
-                  type="text"
-                  value={salt}
-                  onChange={(e) => setSalt(e.target.value)}
-                  className="w-full px-2.5 py-1.5 rounded border border-zinc-200 bg-zinc-50 font-mono text-[11px] text-zinc-800 focus:outline-none"
-                />
-              </div>
-            </div>
-
-            {/* Right Column: Output Hash Card */}
-            <div className="flex-1 flex flex-col min-w-0 bg-white p-6 overflow-y-auto space-y-4">
-              <div className="p-5 rounded-xl border border-zinc-200 bg-white shadow-xs space-y-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2 text-xs font-semibold text-zinc-900">
-                    <Lock className="w-4 h-4 text-blue-600" />
-                    <span>Generated Cryptographic Hash</span>
-                    <span className="px-2 py-0.5 rounded bg-zinc-100 text-zinc-700 text-[10px] font-mono uppercase">
-                      {algo}
-                    </span>
-                  </div>
-                  {genResult && (
-                    <button
-                      onClick={() => handleCopy(genResult.hash, "gen_hash")}
-                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-white text-xs font-medium transition-colors"
-                    >
-                      {copiedKey === "gen_hash" ? <Check className="w-3.5 h-3.5 text-blue-400" /> : <Copy className="w-3.5 h-3.5" />}
-                      <span>Copy Hash</span>
-                    </button>
-                  )}
-                </div>
-
-                <pre className="font-mono text-sm text-zinc-900 break-all whitespace-pre-wrap bg-zinc-50 p-4 rounded-xl border border-zinc-100 leading-relaxed select-all">
-                  {genResult?.hash || "Computing hash..."}
-                </pre>
-
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 pt-2 text-xs">
-                  <div className="p-3 rounded-lg bg-zinc-50 border border-zinc-100">
-                    <span className="text-zinc-600 block text-[11px] mb-0.5">Execution Time</span>
-                    <span className="font-mono font-semibold text-zinc-900">
-                      {genResult?.executionMs ?? 0} ms
-                    </span>
-                  </div>
-                  <div className="p-3 rounded-lg bg-zinc-50 border border-zinc-100">
-                    <span className="text-zinc-600 block text-[11px] mb-0.5">Hash Length</span>
-                    <span className="font-mono font-semibold text-zinc-900">
-                      {genResult?.hash.length ?? 0} characters
-                    </span>
-                  </div>
-                  <div className="p-3 rounded-lg bg-zinc-50 border border-zinc-100 col-span-2 sm:col-span-1">
-                    <span className="text-zinc-600 block text-[11px] mb-0.5">Security Level</span>
-                    <span className="font-semibold text-blue-600">Production Ready</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </>
-        ) : (
-          /* Verify Password Against Hash Mode */
-          <div className="flex-1 flex flex-col min-w-0 bg-white p-6 overflow-y-auto space-y-6">
-            <div className="max-w-3xl mx-auto w-full space-y-4">
-              {/* Hash Input */}
-              <div className="p-4 rounded-xl border border-zinc-200 bg-zinc-50/50 space-y-2">
-                <div className="flex items-center justify-between">
-                  <label className="text-xs font-semibold text-zinc-900">
-                    Existing Stored Hash String
+                  <label className="text-[11px] font-semibold text-neutral-900 uppercase tracking-wider block">
+                    Hashing Algorithm
                   </label>
-                  <span className="text-[11px] font-mono text-blue-600 font-medium">
-                    Detected: {detectHashAlgorithm(verifyHash)}
-                  </span>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-2">
+                    {ALGORITHMS.map((a) => {
+                      const isSelected = algo === a.id;
+                      return (
+                        <button
+                          key={a.id}
+                          onClick={() => setAlgo(a.id)}
+                          className={cn(
+                            "p-2 rounded-md border text-left transition-all flex flex-col gap-1 focus:outline-none",
+                            isSelected
+                              ? "border-neutral-900 bg-neutral-50 font-medium shadow-sm"
+                              : "border-neutral-200 bg-white hover:border-neutral-400"
+                          )}
+                        >
+                          <span className={cn("text-xs w-full block", isSelected ? "text-neutral-900 font-semibold" : "text-neutral-700")}>{a.name}</span>
+                          <span className="text-[9px] text-neutral-500 bg-neutral-100 border border-neutral-200/60 px-1.5 py-0.5 rounded w-fit">{a.tag}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
-                <input
-                  type="text"
-                  value={verifyHash}
-                  onChange={(e) => setVerifyHash(e.target.value)}
-                  placeholder="Paste $2b$10$..., $argon2id$..., or $pbkdf2-... hash string"
-                  className="w-full px-3 py-2.5 rounded-lg border border-zinc-200 bg-white font-mono text-xs text-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-900"
-                />
-              </div>
 
-              {/* Candidate Password Input */}
-              <div className="p-4 rounded-xl border border-zinc-200 bg-zinc-50/50 space-y-2">
-                <label className="text-xs font-semibold text-zinc-900 block">
-                  Candidate Password to Test
-                </label>
-                <input
-                  type="text"
-                  value={verifyPassword}
-                  onChange={(e) => setVerifyPassword(e.target.value)}
-                  placeholder="Enter candidate password to verify against hash..."
-                  className="w-full px-3 py-2.5 rounded-lg border border-zinc-200 bg-white font-mono text-xs text-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-900"
-                />
-              </div>
+                {/* Password Input */}
+                <div className="space-y-2">
+                  <label className="text-[11px] font-semibold text-neutral-900 uppercase tracking-wider block">
+                    Plaintext Password
+                  </label>
+                  <div className="relative">
+                    <input
+                      type={showPassword ? "text" : "password"}
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder="Enter password to hash..."
+                      className="w-full h-9 pl-3 pr-10 bg-white border border-neutral-200 rounded-md text-sm font-mono text-neutral-900 focus:outline-none focus:border-neutral-400 focus:ring-1 focus:ring-neutral-400 placeholder:text-neutral-400 transition-shadow"
+                    />
+                    <button
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-neutral-400 hover:text-neutral-700 transition-colors"
+                      title={showPassword ? "Hide password" : "Show password"}
+                    >
+                      {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
+                </div>
 
-              {/* Verification Result Banner */}
-              {verifyResult && (
-                <div
-                  className={cn(
-                    "p-6 rounded-xl border flex flex-col sm:flex-row items-center justify-between gap-4 shadow-sm",
-                    verifyResult.isMatch
-                      ? "bg-blue-50 border-blue-200 text-blue-900"
-                      : verifyResult.error
-                      ? "bg-amber-50 border-amber-200 text-amber-950"
-                      : "bg-zinc-50 border-zinc-200 text-zinc-900"
-                  )}
-                >
-                  <div className="flex items-center gap-3.5">
-                    {verifyResult.isMatch ? (
-                      <CheckCircle2 className="w-8 h-8 text-blue-600 shrink-0" />
-                    ) : verifyResult.error ? (
-                      <ShieldAlert className="w-8 h-8 text-amber-600 shrink-0" />
-                    ) : (
-                      <XCircle className="w-8 h-8 text-red-600 shrink-0" />
-                    )}
-                    <div>
-                      <div className="font-bold text-base">
-                        {verifyResult.isMatch
-                          ? "Password Matches Hash ✅"
-                          : verifyResult.error
-                          ? "Verification Failed"
-                          : "Password Does NOT Match Hash ❌"}
+                {/* Parameters Box */}
+                <div className="bg-neutral-50 p-3 rounded-md border border-neutral-200 mt-3 space-y-4">
+                  {algo === "bcrypt" && (
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[11px] font-semibold text-neutral-800 uppercase tracking-wider">Bcrypt Cost Factor</span>
+                        <span className="font-mono text-xs font-bold text-neutral-900">{bcryptRounds}</span>
                       </div>
-                      <div className="text-xs opacity-80 mt-0.5 font-mono">
-                        {verifyResult.error ||
-                          `Algorithm: ${verifyResult.algorithmDetected} • Verified in ${verifyResult.executionMs} ms`}
+                      <input
+                        type="range"
+                        min="4"
+                        max="14"
+                        value={bcryptRounds}
+                        onChange={(e) => setBcryptRounds(parseInt(e.target.value, 10))}
+                        className="w-full accent-neutral-900 cursor-pointer"
+                      />
+                      <div className="flex justify-between text-[10px] text-neutral-500 font-medium">
+                        <span>Fast (4)</span>
+                        <span>OWASP Rec (10-12)</span>
+                        <span>Heavy (14)</span>
                       </div>
                     </div>
-                  </div>
+                  )}
 
-                  <div className="text-right">
-                    <span
-                      className={cn(
-                        "px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider",
-                        verifyResult.isMatch
-                          ? "bg-blue-200 text-blue-900"
-                          : verifyResult.error
-                          ? "bg-amber-200 text-amber-900"
-                          : "bg-red-200 text-red-900"
-                      )}
-                    >
-                      {verifyResult.isMatch ? "VALID MATCH" : verifyResult.error ? "FORMAT ERROR" : "NO MATCH"}
-                    </span>
+                  {(algo === "pbkdf2-sha256" || algo === "pbkdf2-sha512") && (
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[11px] font-semibold text-neutral-800 uppercase tracking-wider">Iterations</span>
+                        <span className="font-mono text-xs font-bold text-neutral-900">{pbkdf2Iterations.toLocaleString()}</span>
+                      </div>
+                      <input
+                        type="range"
+                        min="10000"
+                        max="600000"
+                        step="10000"
+                        value={pbkdf2Iterations}
+                        onChange={(e) => setPbkdf2Iterations(parseInt(e.target.value, 10))}
+                        className="w-full accent-neutral-900 cursor-pointer"
+                      />
+                      <div className="flex justify-between text-[10px] text-neutral-500 font-medium">
+                        <span>10k</span>
+                        <span>OWASP High (600k)</span>
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[11px] font-semibold text-neutral-800 uppercase tracking-wider">Cryptographic Salt</span>
+                      <button
+                        onClick={() => setSalt(generateRandomSalt(16))}
+                        className="text-[10px] text-neutral-500 hover:text-neutral-900 font-medium transition-colors flex items-center gap-1 bg-white border border-neutral-200 px-1.5 py-0.5 rounded shadow-sm"
+                      >
+                        <RefreshCw className="w-3 h-3" /> Generate New
+                      </button>
+                    </div>
+                    <input
+                      type="text"
+                      value={salt}
+                      onChange={(e) => setSalt(e.target.value)}
+                      className="w-full h-8 px-2.5 border border-neutral-200 bg-white rounded font-mono text-[11px] text-neutral-800 focus:outline-none focus:border-neutral-400 focus:ring-1 focus:ring-neutral-400"
+                    />
                   </div>
                 </div>
-              )}
-            </div>
+              </>
+            ) : (
+              <>
+                {/* Verify Mode Left Pane */}
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <label className="text-[11px] font-semibold text-neutral-900 uppercase tracking-wider block">
+                        Existing Stored Hash String
+                      </label>
+                      <span className="text-[10px] font-mono text-neutral-500 font-medium bg-neutral-100 border border-neutral-200 px-1.5 py-0.5 rounded">
+                        {detectHashAlgorithm(verifyHash) || "Unknown"}
+                      </span>
+                    </div>
+                    <input
+                      type="text"
+                      value={verifyHash}
+                      onChange={(e) => setVerifyHash(e.target.value)}
+                      placeholder="Paste $2b$10$..., $argon2id$..., etc."
+                      className="w-full h-9 px-3 bg-white border border-neutral-200 rounded-md text-xs font-mono text-neutral-900 focus:outline-none focus:border-neutral-400 focus:ring-1 focus:ring-neutral-400 transition-shadow"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[11px] font-semibold text-neutral-900 uppercase tracking-wider block">
+                      Candidate Password to Test
+                    </label>
+                    <div className="relative">
+                      <input
+                        type={showPassword ? "text" : "password"}
+                        value={verifyPassword}
+                        onChange={(e) => setVerifyPassword(e.target.value)}
+                        placeholder="Enter password..."
+                        className="w-full h-9 pl-3 pr-10 bg-white border border-neutral-200 rounded-md text-sm font-mono text-neutral-900 focus:outline-none focus:border-neutral-400 focus:ring-1 focus:ring-neutral-400 placeholder:text-neutral-400 transition-shadow"
+                      />
+                      <button
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-neutral-400 hover:text-neutral-700 transition-colors"
+                      >
+                        {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </>
+            )}
           </div>
-        )}
+        </div>
+
+        {/* Right Pane: Output */}
+        <div className="flex flex-col h-full bg-neutral-50/30 min-h-0">
+          <div className="h-10 border-b border-neutral-200 bg-neutral-50/50 flex items-center justify-between px-4 shrink-0">
+            <span className="text-xs font-mono font-semibold text-neutral-700">
+              {mode === "generate" ? "Generated Hash Output" : "Verification Status"}
+            </span>
+            {mode === "generate" && genResult && (
+              <button
+                onClick={() => handleCopy(genResult.hash, "gen_hash")}
+                className="flex items-center gap-1.5 px-2.5 py-1 rounded border border-neutral-200 bg-white hover:bg-neutral-50 text-neutral-700 text-[11px] font-medium transition-colors shadow-sm"
+              >
+                {copiedKey === "gen_hash" ? <Check className="w-3.5 h-3.5 text-neutral-900" /> : <Copy className="w-3.5 h-3.5" />}
+                <span>Copy Hash</span>
+              </button>
+            )}
+          </div>
+          
+          <div className="flex-1 overflow-y-auto p-4 relative flex flex-col gap-4">
+            {mode === "generate" ? (
+              <>
+                <div className="bg-white border border-neutral-200 rounded-lg shadow-sm flex flex-col">
+                   <div className="p-3.5 bg-neutral-50 border-b border-neutral-200 font-mono text-xs text-neutral-900 break-all select-all whitespace-pre-wrap rounded-t-lg">
+                      {genResult?.hash || "Computing hash..."}
+                   </div>
+                   <div className="grid grid-cols-3 divide-x divide-neutral-200 bg-white rounded-b-lg">
+                      <div className="p-2.5 flex flex-col gap-0.5">
+                         <span className="text-[10px] text-neutral-500 uppercase tracking-wider font-semibold">Time</span>
+                         <span className="font-mono text-xs font-semibold text-neutral-800">{genResult?.executionMs ?? 0} ms</span>
+                      </div>
+                      <div className="p-2.5 flex flex-col gap-0.5">
+                         <span className="text-[10px] text-neutral-500 uppercase tracking-wider font-semibold">Length</span>
+                         <span className="font-mono text-xs font-semibold text-neutral-800">{genResult?.hash.length ?? 0} chars</span>
+                      </div>
+                      <div className="p-2.5 flex flex-col gap-0.5">
+                         <span className="text-[10px] text-neutral-500 uppercase tracking-wider font-semibold">Status</span>
+                         <span className="font-sans text-xs font-semibold text-neutral-800">Production Ready</span>
+                      </div>
+                   </div>
+                </div>
+              </>
+            ) : (
+              <>
+                {verifyResult ? (
+                  <div
+                    className={cn(
+                      "p-6 rounded-lg border flex flex-col items-start gap-4 shadow-sm",
+                      verifyResult.isMatch
+                        ? "bg-green-50 border-green-200 text-green-900"
+                        : verifyResult.error
+                        ? "bg-amber-50 border-amber-200 text-amber-950"
+                        : "bg-red-50 border-red-200 text-red-900"
+                    )}
+                  >
+                    <div className="flex items-center gap-3.5 w-full">
+                      {verifyResult.isMatch ? (
+                        <CheckCircle2 className="w-8 h-8 text-green-600 shrink-0" />
+                      ) : verifyResult.error ? (
+                        <ShieldAlert className="w-8 h-8 text-amber-600 shrink-0" />
+                      ) : (
+                        <XCircle className="w-8 h-8 text-red-600 shrink-0" />
+                      )}
+                      <div className="flex-1">
+                        <div className="font-bold text-base">
+                          {verifyResult.isMatch
+                            ? "Password Matches Hash"
+                            : verifyResult.error
+                            ? "Verification Failed"
+                            : "Password Does NOT Match Hash"}
+                        </div>
+                        <div className="text-[11px] opacity-80 mt-0.5 font-mono">
+                          {verifyResult.error ||
+                            `Algorithm: ${verifyResult.algorithmDetected} � Verified in ${verifyResult.executionMs} ms`}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="w-full">
+                      <span
+                        className={cn(
+                          "px-3 py-1 rounded text-[11px] font-bold uppercase tracking-wider border",
+                          verifyResult.isMatch
+                            ? "bg-green-100 text-green-800 border-green-200"
+                            : verifyResult.error
+                            ? "bg-amber-100 text-amber-800 border-amber-200"
+                            : "bg-red-100 text-red-800 border-red-200"
+                        )}
+                      >
+                        {verifyResult.isMatch ? "VALID MATCH" : verifyResult.error ? "FORMAT ERROR" : "NO MATCH"}
+                      </span>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="p-8 text-center text-neutral-400 font-mono text-sm">
+                    Awaiting verification inputs...
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        </div>
       </div>
     </div>
   );
