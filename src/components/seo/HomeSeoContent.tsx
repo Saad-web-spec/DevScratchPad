@@ -9,7 +9,7 @@ const CATEGORIES = [
   },
   {
   name:"Security & Identifiers",
-  tools: ["uuid-generator", "jwt", "hash", "hmac-generator"],
+  tools: ["uuid-generator", "jwt", "hash", "hmac-generator", "base64-inspector", "cert-decoder", "ssh-key-generator", "password-hash"],
   },
   {
   name:"Networking & Time",
