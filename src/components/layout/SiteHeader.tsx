@@ -1,6 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Lock } from "lucide-react";
 
 export function SiteHeader() {
   return (
@@ -41,10 +41,7 @@ export function SiteHeader() {
 
         {/* Right Side Actions */}
         <div className="flex items-center gap-3">
-          <div className="hidden md:flex items-center gap-2 text-xs font-mono text-zinc-600 bg-zinc-50 border border-zinc-200 px-3 py-1.5 rounded-md">
-            <span className="w-1.5 h-1.5 rounded-full bg-zinc-400" />
-            <span>100% Client-Side Processing</span>
-          </div>
+          <div className="hidden md:flex bg-neutral-900 text-neutral-100 text-xs px-2.5 py-1 rounded-md items-center gap-1.5"><Lock className="w-3 h-3" /> 100% Local</div>
 
           <Link
             href="/"

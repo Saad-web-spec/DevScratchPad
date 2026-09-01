@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from"react";
-import { Search, Save, Menu, MoreVertical } from"lucide-react";
+import { Search, Save, Menu, MoreVertical, Lock } from"lucide-react";
 
 interface TopBarProps {
  onOpenCommandPalette?: () => void;
@@ -67,10 +67,7 @@ export function TopBar({ onOpenCommandPalette, onOpenMobileMenu }: TopBarProps) 
 
  {/* Desktop Action Buttons */}
  <div className="hidden md:flex items-center gap-3">
- <div className="bg-transparent border border-neutral-300 text-neutral-700 text-xs font-medium px-3 py-1.5 rounded-md flex items-center gap-2">
- <div className="w-1.5 h-1.5 rounded-full bg-neutral-400 animate-pulse" />
- 100% Client-Side Processing
- </div>
+ <div className="bg-neutral-900 text-neutral-100 text-xs px-2.5 py-1 rounded-md flex items-center gap-1.5"><Lock className="w-3 h-3" /> 100% Local</div>
  <div className="w-px h-6 bg-zinc-200 mx-1"></div>
  <button
  onClick={handleSaveWorkspace}
