@@ -5,26 +5,30 @@ export const ROUTES = {
 
 export const SIDEBAR_TO_SLUG: Record<string, string> = {
   "json-formatter": "json-formatter",
-  jwt: "jwt-decoder",
+  "json-validator": "json-validator",
+  "xml-formatter": "xml-formatter",
+  "sql-formatter": "sql-formatter",
+  "graphql-formatter": "graphql-formatter",
+  "minifier": "minifier",
   "curl-to-python": "curl-to-python",
   "curl-to-fetch": "curl-to-fetch",
   "curl-to-go": "curl-to-go",
-  diff: "diff-checker",
-  "xml-formatter": "xml-formatter",
-  "sql-formatter": "sql-formatter",
-  hash: "hash-generator",
-  regex: "regex-tester",
-  "json-to-ts": "json-to-typescript",
+  "curl-to-javascript": "curl-to-javascript",
+  "json-to-ts": "json-to-ts",
   "json-to-zod": "json-to-zod",
-  "json-to-go": "json-to-go-struct",
-  cron: "cron-visualizer",
-  yaml: "yaml-json",
-  minifier: "css-svg-minifier",
-  "graphql-formatter": "graphql-formatter",
+  "json-to-go": "json-to-go",
+  "svg-to-jsx": "svg-to-jsx",
+  "yaml": "yaml",
+  "yaml-to-json": "yaml-to-json",
+  "json-to-yaml": "json-to-yaml",
+  "jwt": "jwt",
+  "uuid-generator": "uuid-generator",
   "hmac-generator": "hmac-generator",
   "cidr-calculator": "cidr-calculator",
-  "svg-to-jsx": "svg-to-jsx",
-  "uuid-generator": "uuid-generator",
+  "cron": "cron",
+  "diff": "diff",
+  "hash": "hash",
+  "regex": "regex",
 };
 
 export const SLUG_TO_SIDEBAR: Record<string, string> = Object.fromEntries(
@@ -32,6 +36,6 @@ export const SLUG_TO_SIDEBAR: Record<string, string> = Object.fromEntries(
 );
 
 export function getToolUrl(sidebarId: string): string {
-  const slug = SIDEBAR_TO_SLUG[sidebarId];
-  return slug ? ROUTES.tool(slug) : ROUTES.home;
+  const slug = SIDEBAR_TO_SLUG[sidebarId] || sidebarId;
+  return ROUTES.tool(slug);
 }

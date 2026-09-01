@@ -355,22 +355,25 @@ export function WorkspaceShell({ initialToolSlug, toolMeta, children }: Workspac
  <main className="flex-1 flex flex-col min-w-0 bg-white overflow-y-auto">
  <div className="flex-1 min-h-0 relative flex flex-col">
  <div className="min-h-[calc(100vh-3.5rem)] relative flex flex-col border-b border-zinc-200">
- {activeTool ==="json-formatter"&& (
- <JsonFormatterTool onValidationChange={handleValidationChange} onStatsChange={handleStatsChange} onLogHistory={handleLogHistory} restoredInput={restoredInput} />
+ {(activeTool === "json-formatter" || activeTool === "json-validator") && (
+  <JsonFormatterTool onValidationChange={handleValidationChange} onStatsChange={handleStatsChange} onLogHistory={handleLogHistory} restoredInput={restoredInput} />
 )}
-{activeTool ==="jwt"&& (
- <JwtDecoderTool onValidationChange={handleValidationChange} onStatsChange={handleStatsChange} restoredInput={restoredInput} />
+{activeTool === "jwt" && (
+  <JwtDecoderTool onValidationChange={handleValidationChange} onStatsChange={handleStatsChange} restoredInput={restoredInput} />
 )}
-{activeTool ==="curl-to-python"&& (
- <CurlConverterTool fixedTarget="python" onValidationChange={handleValidationChange} onStatsChange={handleStatsChange} restoredInput={restoredInput} />
+{activeTool === "curl-to-python" && (
+  <CurlConverterTool fixedTarget="python" onValidationChange={handleValidationChange} onStatsChange={handleStatsChange} restoredInput={restoredInput} />
 )}
-{activeTool ==="curl-to-fetch"&& (
- <CurlConverterTool fixedTarget="javascript" onValidationChange={handleValidationChange} onStatsChange={handleStatsChange} restoredInput={restoredInput} />
+{(activeTool === "curl-to-fetch" || activeTool === "curl-to-javascript") && (
+  <CurlConverterTool fixedTarget="javascript" onValidationChange={handleValidationChange} onStatsChange={handleStatsChange} restoredInput={restoredInput} />
 )}
-{activeTool ==="curl-to-go"&& (
- <CurlConverterTool fixedTarget="go" onValidationChange={handleValidationChange} onStatsChange={handleStatsChange} restoredInput={restoredInput} />
+{activeTool === "curl-to-go" && (
+  <CurlConverterTool fixedTarget="go" onValidationChange={handleValidationChange} onStatsChange={handleStatsChange} restoredInput={restoredInput} />
 )}
-{activeTool ==="diff"&& <DiffCheckerTool restoredInput={restoredInput} />}
+{(activeTool === "yaml" || activeTool === "yaml-to-json" || activeTool === "json-to-yaml") && (
+  <YamlConverterTool onValidationChange={handleValidationChange} onStatsChange={handleStatsChange} onLogHistory={handleLogHistory} restoredInput={restoredInput} />
+)}
+{activeTool === "diff" && <DiffCheckerTool restoredInput={restoredInput} />}
 {activeTool ==="xml-formatter"&& (
  <XmlFormatterTool onValidationChange={handleValidationChange} onStatsChange={handleStatsChange} onLogHistory={handleLogHistory} restoredInput={restoredInput} />
 )}
