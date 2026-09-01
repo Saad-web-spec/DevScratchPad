@@ -211,7 +211,7 @@ export function RegexTesterTool({
 
  {/* Error notification if regex syntax is invalid */}
  {regexError && (
- <div className="flex items-center gap-2 text-xs text-red-600 bg-red-50 border border-red-200 px-3.5 py-2 rounded-lg mt-3">
+ <div className="flex items-center gap-2 text-xs text-zinc-600 bg-zinc-50 border border-zinc-200 px-3.5 py-2 rounded-lg mt-3">
  <AlertCircle className="w-4 h-4 shrink-0"/>
  <span className="font-mono">{regexError}</span>
  </div>
@@ -261,7 +261,7 @@ export function RegexTesterTool({
  </span>
  <button
  onClick={() => setTestString("")}
- className="text-zinc-400 hover:text-red-500 transition-colors p-1"
+ className="text-zinc-400 hover:text-zinc-500 transition-colors p-1"
  title="Clear test string"
  >
  <Trash2 className="w-3.5 h-3.5"/>
@@ -291,7 +291,7 @@ export function RegexTesterTool({
  {testString.length.toLocaleString()} characters • {testString.split("\n").length} lines
  </span>
  {!regexError && (
- <span className="text-[10px] uppercase font-bold tracking-wider text-emerald-600 flex items-center gap-1">
+ <span className="text-[10px] uppercase font-bold tracking-wider text-blue-600 flex items-center gap-1">
  <Check className="w-3 h-3"/> Valid Pattern
  </span>
  )}
@@ -402,7 +402,7 @@ export function RegexTesterTool({
  {!regexError && testString.length > 0 ? (
  <p className="text-sm">No matches found in the test string.</p>
  ) : regexError ? (
- <p className="text-sm text-red-500">Fix the regex syntax error to see matches.</p>
+ <p className="text-sm text-zinc-500">Fix the regex syntax error to see matches.</p>
  ) : (
  <p className="text-sm">Enter a test string to find matches.</p>
  )}

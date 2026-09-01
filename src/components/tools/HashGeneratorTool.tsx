@@ -165,7 +165,7 @@ export function HashGeneratorTool({
  className="p-1 rounded-md transition-colors"
  title="Clear input"
  >
- <Trash2 className="w-3.5 h-3.5 text-zinc-400 hover:text-red-500"/>
+ <Trash2 className="w-3.5 h-3.5 text-zinc-400 hover:text-zinc-800"/>
  </button>
  </div>
  <textarea

@@ -228,11 +228,11 @@ export function CronVisualizerTool({
 
  {/* Error message card */}
  {errorMessage && (
- <div className="bg-red-50 border border-red-200 rounded-xl p-4 md:p-5 flex items-start gap-3 text-red-700">
- <AlertCircle className="w-5 h-5 shrink-0 mt-0.5 text-red-500"/>
+ <div className="bg-zinc-50 border border-zinc-200 rounded-xl p-4 md:p-5 flex items-start gap-3 text-red-700">
+ <AlertCircle className="w-5 h-5 shrink-0 mt-0.5 text-zinc-500"/>
  <div>
  <h4 className="text-sm font-semibold mb-1">Invalid Cron Expression</h4>
- <p className="text-xs text-red-600 leading-relaxed">{errorMessage}</p>
+ <p className="text-xs text-zinc-600 leading-relaxed">{errorMessage}</p>
  </div>
  </div>
  )}

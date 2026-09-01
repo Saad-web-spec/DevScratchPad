@@ -174,7 +174,7 @@ export function CertDecoderTool({
             </div>
             <button
               onClick={() => setInput("")}
-              className="p-1 rounded text-zinc-600 hover:text-red-600 hover:bg-red-50 transition-colors"
+              className="p-1 rounded text-zinc-600 hover:text-zinc-600 hover:bg-zinc-50 transition-colors"
               title="Clear input"
             >
               <Trash2 className="w-3.5 h-3.5" />
@@ -204,7 +204,7 @@ export function CertDecoderTool({
                 onClick={() => handleCopy(certData.fingerprintSha256!, "sha256")}
                 className="flex items-center gap-1 text-[11px] font-mono text-zinc-500 hover:text-zinc-900"
               >
-                {copiedKey === "sha256" ? <Check className="w-3 h-3 text-emerald-600" /> : <Copy className="w-3 h-3" />}
+                {copiedKey === "sha256" ? <Check className="w-3 h-3 text-blue-600" /> : <Copy className="w-3 h-3" />}
                 <span>Copy SHA-256</span>
               </button>
             )}
@@ -219,13 +219,13 @@ export function CertDecoderTool({
                     className={cn(
                       "p-5 rounded-2xl border flex items-center justify-between gap-3 shadow-xs",
                       certData.validityStatus === "valid"
-                        ? "bg-emerald-50 border-emerald-200 text-emerald-950"
+                        ? "bg-blue-50 border-blue-200 text-blue-900"
                         : "bg-red-50 border-red-200 text-red-950"
                     )}
                   >
                     <div className="flex items-center gap-3">
                       {certData.validityStatus === "valid" ? (
-                        <ShieldCheck className="w-6 h-6 text-emerald-600 shrink-0" />
+                        <ShieldCheck className="w-6 h-6 text-blue-600 shrink-0" />
                       ) : (
                         <ShieldAlert className="w-6 h-6 text-red-600 shrink-0" />
                       )}
@@ -287,7 +287,7 @@ export function CertDecoderTool({
                 {certData.type === "certificate" && certData.issuer && (
                   <div className="p-6 rounded-2xl border border-zinc-200/60 bg-white shadow-sm shadow-xs">
                     <div className="flex items-center gap-2 mb-3 text-xs font-semibold text-zinc-900">
-                      <Globe className="w-4 h-4 text-emerald-600" />
+                      <Globe className="w-4 h-4 text-blue-600" />
                       <span>Issuer (Certificate Authority)</span>
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
@@ -358,7 +358,7 @@ export function CertDecoderTool({
                           onClick={() => handleCopy(certData.fingerprintSha256!, "sha256_fp")}
                           className="p-1 rounded text-zinc-500 hover:text-zinc-900"
                         >
-                          {copiedKey === "sha256_fp" ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
+                          {copiedKey === "sha256_fp" ? <Check className="w-3.5 h-3.5 text-blue-600" /> : <Copy className="w-3.5 h-3.5" />}
                         </button>
                       </div>
                     )}
@@ -372,7 +372,7 @@ export function CertDecoderTool({
                           onClick={() => handleCopy(certData.fingerprintSha1!, "sha1_fp")}
                           className="p-1 rounded text-zinc-500 hover:text-zinc-900"
                         >
-                          {copiedKey === "sha1_fp" ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
+                          {copiedKey === "sha1_fp" ? <Check className="w-3.5 h-3.5 text-blue-600" /> : <Copy className="w-3.5 h-3.5" />}
                         </button>
                       </div>
                     )}

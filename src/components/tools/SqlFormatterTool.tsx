@@ -212,7 +212,7 @@ export function SqlFormatterTool({
  <span className="text-[11px] font-medium text-zinc-500 uppercase tracking-wider">Input SQL</span>
  <button
  onClick={() => setInput("")}
- className="text-zinc-400 hover:text-red-600 transition-colors"
+ className="text-zinc-400 hover:text-zinc-800 transition-colors"
  title="Clear"
  >
  <Trash2 className="w-3.5 h-3.5"/>

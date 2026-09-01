@@ -79,7 +79,7 @@ async function verifyHs256(token: string, secret: string): Promise<boolean> {
 const JsonViewer = ({ data, level = 0, isLast = true }: { data: any, level?: number, isLast?: boolean }) => {
  if (data === null) return <span className="text-zinc-500">null{isLast ? '' : ','}</span>;
  if (typeof data === 'boolean') return <span className="text-blue-500">{data ? 'true' : 'false'}{isLast ? '' : ','}</span>;
- if (typeof data === 'number') return <span className="text-emerald-500">{data}{isLast ? '' : ','}</span>;
+ if (typeof data === 'number') return <span className="text-blue-500">{data}{isLast ? '' : ','}</span>;
  if (typeof data === 'string') return <span className="text-amber-500">"{data}"{isLast ? '' : ','}</span>;
 
  const indent = ' '.repeat(level);
@@ -277,7 +277,7 @@ export function JwtDecoderTool({ onValidationChange, onStatsChange, restoredInpu
  <div className="h-10 bg-zinc-100 border-b border-zinc-200 flex items-center justify-between px-4 shrink-0">
  <span className="text-[11px] font-bold text-zinc-500 uppercase tracking-wider">Encoded JWT</span>
  <div className="flex items-center gap-2">
- <button onClick={() => setInput("")} className="text-zinc-400 hover:text-red-500 transition-colors p-1"title="Clear">
+ <button onClick={() => setInput("")} className="text-zinc-400 hover:text-zinc-500 transition-colors p-1"title="Clear">
  <Trash2 className="w-3.5 h-3.5"/>
  </button>
  <button onClick={() => handleCopy(input, 'input')} className="text-zinc-400 hover:text-zinc-900 transition-colors p-1">
@@ -366,13 +366,13 @@ export function JwtDecoderTool({ onValidationChange, onStatsChange, restoredInpu
  className="flex-1 bg-transparent border-none outline-none text-xs font-mono text-zinc-900 px-2 placeholder:text-zinc-400"
  />
  {sigStatus ==="valid"&& (
- <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-emerald-50 text-emerald-600 border border-emerald-200">
+ <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-blue-50 text-blue-600 border border-blue-200">
  <Check className="w-3.5 h-3.5"/>
  <span className="text-xs font-semibold">Signature Verified</span>
  </div>
  )}
  {sigStatus ==="invalid"&& secret.length > 0 && (
- <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-red-50 text-red-600 border border-red-200">
+ <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-zinc-50 text-zinc-600 border border-zinc-200">
  <ShieldAlert className="w-3.5 h-3.5"/>
  <span className="text-xs font-semibold">Invalid Signature</span>
  </div>

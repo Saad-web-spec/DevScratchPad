@@ -197,7 +197,7 @@ export function HmacGeneratorTool({
 
  <button
  onClick={handleClearAll}
- className="h-9 px-3 text-xs text-zinc-500 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors flex items-center gap-1.5 shrink-0"
+ className="h-9 px-3 text-xs text-zinc-500 hover:text-zinc-800 hover:bg-zinc-100 rounded-lg transition-colors flex items-center gap-1.5 shrink-0"
  title="Clear all fields"
  >
  <Trash2 className="w-3.5 h-3.5"/>

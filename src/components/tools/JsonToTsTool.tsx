@@ -210,7 +210,7 @@ export function JsonToTsTool(props: JsonToTsToolProps) {
             </span>
             <button
               onClick={() => setInput("")}
-              className="text-zinc-400 hover:text-red-600 transition-colors"
+              className="text-zinc-400 hover:text-zinc-800 transition-colors"
               title="Clear"
             >
               <Trash2 className="w-3.5 h-3.5" />

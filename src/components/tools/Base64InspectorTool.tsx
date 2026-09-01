@@ -168,7 +168,7 @@ export function Base64InspectorTool({
               ))}
               <button
                 onClick={() => setInput("")}
-                className="p-1 rounded text-zinc-600 hover:text-red-600 hover:bg-red-50 transition-colors ml-1"
+                className="p-1 rounded text-zinc-600 hover:text-zinc-600 hover:bg-zinc-50 transition-colors ml-1"
                 title="Clear input"
               >
                 <Trash2 className="w-3.5 h-3.5" />
@@ -191,9 +191,9 @@ export function Base64InspectorTool({
             <div className="border-t border-zinc-100 p-6 bg-zinc-50/50">
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2 text-xs font-medium text-zinc-800">
-                  <ImageIcon className="w-4 h-4 text-emerald-600" />
+                  <ImageIcon className="w-4 h-4 text-blue-600" />
                   <span>Live Image Preview</span>
-                  <span className="px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 text-[10px] font-mono uppercase">
+                  <span className="px-2 py-0.5 rounded bg-blue-100 text-blue-800 text-[10px] font-mono uppercase">
                     {conversions.dataUrlInfo.mimeType}
                   </span>
                 </div>
@@ -259,7 +259,7 @@ export function Base64InspectorTool({
                       className="p-1 rounded text-zinc-500 hover:text-zinc-900 hover:bg-zinc-100 transition-colors"
                       title="Copy plain text"
                     >
-                      {copiedKey === "text" ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
+                      {copiedKey === "text" ? <Check className="w-3.5 h-3.5 text-blue-600" /> : <Copy className="w-3.5 h-3.5" />}
                     </button>
                   </div>
                   <pre className="font-mono text-xs text-zinc-800 break-all whitespace-pre-wrap max-h-24 overflow-y-auto bg-zinc-50 p-2 rounded border border-zinc-100">
@@ -276,7 +276,7 @@ export function Base64InspectorTool({
                       className="p-1 rounded text-zinc-500 hover:text-zinc-900 hover:bg-zinc-100 transition-colors"
                       title="Copy Base64"
                     >
-                      {copiedKey === "b64" ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
+                      {copiedKey === "b64" ? <Check className="w-3.5 h-3.5 text-blue-600" /> : <Copy className="w-3.5 h-3.5" />}
                     </button>
                   </div>
                   <pre className="font-mono text-xs text-blue-700 break-all whitespace-pre-wrap max-h-24 overflow-y-auto bg-blue-50/50 p-2 rounded border border-blue-100">
@@ -293,7 +293,7 @@ export function Base64InspectorTool({
                       className="p-1 rounded text-zinc-500 hover:text-zinc-900 hover:bg-zinc-100 transition-colors"
                       title="Copy URL-safe Base64"
                     >
-                      {copiedKey === "b64url" ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
+                      {copiedKey === "b64url" ? <Check className="w-3.5 h-3.5 text-blue-600" /> : <Copy className="w-3.5 h-3.5" />}
                     </button>
                   </div>
                   <pre className="font-mono text-xs text-indigo-700 break-all whitespace-pre-wrap max-h-24 overflow-y-auto bg-indigo-50/50 p-2 rounded border border-indigo-100">
@@ -310,10 +310,10 @@ export function Base64InspectorTool({
                       className="p-1 rounded text-zinc-500 hover:text-zinc-900 hover:bg-zinc-100 transition-colors"
                       title="Copy Hex"
                     >
-                      {copiedKey === "hex" ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
+                      {copiedKey === "hex" ? <Check className="w-3.5 h-3.5 text-blue-600" /> : <Copy className="w-3.5 h-3.5" />}
                     </button>
                   </div>
-                  <pre className="font-mono text-xs text-emerald-700 break-all whitespace-pre-wrap max-h-24 overflow-y-auto bg-emerald-50/50 p-2 rounded border border-emerald-100">
+                  <pre className="font-mono text-xs text-emerald-700 break-all whitespace-pre-wrap max-h-24 overflow-y-auto bg-blue-50/50 p-2 rounded border border-emerald-100">
                     {conversions.hexStream || "<empty>"}
                   </pre>
                 </div>
@@ -327,7 +327,7 @@ export function Base64InspectorTool({
                       className="p-1 rounded text-zinc-500 hover:text-zinc-900 hover:bg-zinc-100 transition-colors"
                       title="Copy Binary"
                     >
-                      {copiedKey === "bin" ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
+                      {copiedKey === "bin" ? <Check className="w-3.5 h-3.5 text-blue-600" /> : <Copy className="w-3.5 h-3.5" />}
                     </button>
                   </div>
                   <pre className="font-mono text-xs text-amber-800 break-all whitespace-pre-wrap max-h-24 overflow-y-auto bg-amber-50/50 p-2 rounded border border-amber-100">
@@ -344,7 +344,7 @@ export function Base64InspectorTool({
                       className="p-1 rounded text-zinc-500 hover:text-zinc-900 hover:bg-zinc-100 transition-colors"
                       title="Copy URL encoded"
                     >
-                      {copiedKey === "url" ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
+                      {copiedKey === "url" ? <Check className="w-3.5 h-3.5 text-blue-600" /> : <Copy className="w-3.5 h-3.5" />}
                     </button>
                   </div>
                   <pre className="font-mono text-xs text-purple-700 break-all whitespace-pre-wrap max-h-24 overflow-y-auto bg-purple-50/50 p-2 rounded border border-purple-100">
@@ -361,11 +361,11 @@ export function Base64InspectorTool({
                     onClick={() => handleCopy(conversions.hexDump, "hexdump")}
                     className="flex items-center gap-1 px-2 py-1 rounded text-xs font-medium text-zinc-300 hover:text-white hover:bg-zinc-800 transition-colors"
                   >
-                    {copiedKey === "hexdump" ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                    {copiedKey === "hexdump" ? <Check className="w-3.5 h-3.5 text-blue-400" /> : <Copy className="w-3.5 h-3.5" />}
                     <span>Copy Dump</span>
                   </button>
                 </div>
-                <pre className="flex-1 font-mono text-xs text-emerald-400 overflow-auto bg-black p-3 rounded border border-zinc-800 leading-relaxed">
+                <pre className="flex-1 font-mono text-xs text-blue-400 overflow-auto bg-black p-3 rounded border border-zinc-800 leading-relaxed">
                   {conversions.hexDump || "00000000"}
                 </pre>
               </div>

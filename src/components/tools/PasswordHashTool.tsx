@@ -287,7 +287,7 @@ export function PasswordHashTool({
                   />
                   <div className="flex justify-between text-[10px] text-zinc-600">
                     <span>Fast (4)</span>
-                    <span className="font-medium text-emerald-600">OWASP Recommended (10-12)</span>
+                    <span className="font-medium text-blue-600">OWASP Recommended (10-12)</span>
                     <span>Heavy (14)</span>
                   </div>
                 </div>
@@ -310,7 +310,7 @@ export function PasswordHashTool({
                   />
                   <div className="flex justify-between text-[10px] text-zinc-600">
                     <span>10k</span>
-                    <span className="font-medium text-emerald-600">OWASP 600k (High)</span>
+                    <span className="font-medium text-blue-600">OWASP 600k (High)</span>
                     <span>600k</span>
                   </div>
                 </div>
@@ -342,7 +342,7 @@ export function PasswordHashTool({
               <div className="p-5 rounded-xl border border-zinc-200 bg-white shadow-xs space-y-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2 text-xs font-semibold text-zinc-900">
-                    <Lock className="w-4 h-4 text-emerald-600" />
+                    <Lock className="w-4 h-4 text-blue-600" />
                     <span>Generated Cryptographic Hash</span>
                     <span className="px-2 py-0.5 rounded bg-zinc-100 text-zinc-700 text-[10px] font-mono uppercase">
                       {algo}
@@ -353,7 +353,7 @@ export function PasswordHashTool({
                       onClick={() => handleCopy(genResult.hash, "gen_hash")}
                       className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-white text-xs font-medium transition-colors"
                     >
-                      {copiedKey === "gen_hash" ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                      {copiedKey === "gen_hash" ? <Check className="w-3.5 h-3.5 text-blue-400" /> : <Copy className="w-3.5 h-3.5" />}
                       <span>Copy Hash</span>
                     </button>
                   )}
@@ -378,7 +378,7 @@ export function PasswordHashTool({
                   </div>
                   <div className="p-3 rounded-lg bg-zinc-50 border border-zinc-100 col-span-2 sm:col-span-1">
                     <span className="text-zinc-600 block text-[11px] mb-0.5">Security Level</span>
-                    <span className="font-semibold text-emerald-600">Production Ready</span>
+                    <span className="font-semibold text-blue-600">Production Ready</span>
                   </div>
                 </div>
               </div>
@@ -427,15 +427,15 @@ export function PasswordHashTool({
                   className={cn(
                     "p-6 rounded-xl border flex flex-col sm:flex-row items-center justify-between gap-4 shadow-sm",
                     verifyResult.isMatch
-                      ? "bg-emerald-50 border-emerald-200 text-emerald-950"
+                      ? "bg-blue-50 border-blue-200 text-blue-900"
                       : verifyResult.error
                       ? "bg-amber-50 border-amber-200 text-amber-950"
-                      : "bg-red-50 border-red-200 text-red-950"
+                      : "bg-zinc-50 border-zinc-200 text-zinc-900"
                   )}
                 >
                   <div className="flex items-center gap-3.5">
                     {verifyResult.isMatch ? (
-                      <CheckCircle2 className="w-8 h-8 text-emerald-600 shrink-0" />
+                      <CheckCircle2 className="w-8 h-8 text-blue-600 shrink-0" />
                     ) : verifyResult.error ? (
                       <ShieldAlert className="w-8 h-8 text-amber-600 shrink-0" />
                     ) : (
@@ -461,7 +461,7 @@ export function PasswordHashTool({
                       className={cn(
                         "px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider",
                         verifyResult.isMatch
-                          ? "bg-emerald-200 text-emerald-900"
+                          ? "bg-blue-200 text-blue-900"
                           : verifyResult.error
                           ? "bg-amber-200 text-amber-900"
                           : "bg-red-200 text-red-900"

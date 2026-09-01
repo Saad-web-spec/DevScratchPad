@@ -169,7 +169,7 @@ export function JsonFormatterTool({ onValidationChange, onStatsChange, onLogHist
  <div className={cn("flex-1 border-r-0 md:border-r border-b md:border-b-0 border-[#e2e8f0] flex flex-col min-w-0 w-full overflow-x-hidden", activeTab !=="input"&&"hidden md:flex")}>
  <div className="h-8 bg-[#f8fafc] border-b border-[#e2e8f0] flex items-center justify-between px-3 shrink-0">
  <span className="text-[11px] font-medium text-zinc-500 uppercase tracking-wider">Input</span>
- <button onClick={() => setInput("")} className="text-zinc-400 hover:text-red-600 transition-colors"title="Clear">
+ <button onClick={() => setInput("")} className="text-zinc-400 hover:text-zinc-800 transition-colors"title="Clear">
  <Trash2 className="w-3.5 h-3.5"/>
  </button>
  </div>
