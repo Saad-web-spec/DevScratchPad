@@ -224,172 +224,174 @@ export function JwtDecoderTool({ onValidationChange, onStatsChange, restoredInpu
  const payloadPart = parts[1] !== undefined ? parts[1] : null;
  const signaturePart = parts[2] !== undefined ? parts[2] : null;
 
- return (
- <div className="flex flex-col h-full bg-[#09090B] w-full overflow-hidden">
- {/* Tool Header */}
- <div className="min-h-14 border-b border-zinc-200 flex items-center justify-between gap-2 overflow-x-auto no-scrollbar py-2 px-3 md:px-4 bg-white shrink-0">
- <div className="flex items-center gap-2">
- <Key className="w-4 h-4 text-zinc-900"/>
- <h1 className="text-sm font-semibold text-zinc-900">JWT Decoder</h1>
- </div>
- 
- <div className="flex items-center gap-2">
- <ExportImageButton code={payloadObj ? JSON.stringify(payloadObj, null, 2) : input} language="json"/>
- <EmbedButton toolSlug="jwt"data={input} />
- <ShareButton toolSlug="jwt"data={input} />
- </div>
- </div>
+  return (
+    <div className="flex flex-col h-full bg-white w-full overflow-hidden">
+      {/* Top Controls Bar (Unified Clean Header) */}
+      <div className="h-10 border-b border-neutral-200 px-4 flex items-center justify-between gap-4 shrink-0 bg-white">
+        <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar">
+          <span className="text-xs font-mono font-medium text-neutral-600">JWT Decoder</span>
+        </div>
 
- {/* Mobile Segmented Tab Control */}
- <div className="flex lg:hidden bg-zinc-50 p-2 border-b border-zinc-200 shrink-0">
- <div className="bg-zinc-200/50 p-1 rounded-lg flex items-center w-full">
- <button
- onClick={() => setActiveTab("input")}
- className={cn(
-"flex-1 py-1.5 text-xs font-semibold rounded-md transition-all text-center",
- activeTab ==="input"
- ?"bg-white text-zinc-900 shadow-none"
- :"text-zinc-500 hover:text-zinc-900"
- )}
- >
- Encoded JWT
- </button>
- <button
- onClick={() => setActiveTab("output")}
- className={cn(
-"flex-1 py-1.5 text-xs font-semibold rounded-md transition-all text-center",
- activeTab ==="output"
- ?"bg-white text-zinc-900 shadow-none"
- :"text-zinc-500 hover:text-zinc-900"
- )}
- >
- Decoded Token
- </button>
- </div>
- </div>
+        <div className="flex items-center gap-1.5">
+          <ExportImageButton code={payloadObj ? JSON.stringify(payloadObj, null, 2) : input} language="json" />
+          <EmbedButton toolSlug="jwt" data={input} />
+          <ShareButton toolSlug="jwt" data={input} />
+        </div>
+      </div>
 
- {/* Main Canvas Area */}
- <div className="flex-1 overflow-y-auto p-4 md:p-6 bg-white ] flex flex-col">
- <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6 lg:h-[calc(100vh-140px)] min-h-[600px]">
- 
- {/* Left Panel: Encoded Input */}
- <div className={cn("border border-zinc-200 rounded-xl bg-zinc-50 flex flex-col overflow-hidden h-full", activeTab !=="input"&&"hidden lg:flex")}>
- <div className="h-10 bg-zinc-100 border-b border-zinc-200 flex items-center justify-between px-4 shrink-0">
- <span className="text-[11px] font-bold text-zinc-500 uppercase tracking-wider">Encoded JWT</span>
- <div className="flex items-center gap-2">
- <button onClick={() => setInput("")} className="text-zinc-400 hover:text-zinc-500 transition-colors p-1"title="Clear">
- <Trash2 className="w-3.5 h-3.5"/>
- </button>
- <button onClick={() => handleCopy(input, 'input')} className="text-zinc-400 hover:text-zinc-900 transition-colors p-1">
- {copied === 'input' ? <Check className="w-3.5 h-3.5"/> : <Copy className="w-3.5 h-3.5"/>}
- </button>
- </div>
- </div>
- 
- <div className="flex-1 relative bg-white ]">
- <div className="absolute inset-0 p-4 font-mono text-[13px] sm:text-sm break-all whitespace-pre-wrap pointer-events-none leading-[1.6]">
- <span className="text-rose-500 font-medium">{headerPart}</span>
- {payloadPart !== null && <span className="text-zinc-400">.</span>}
- {payloadPart !== null && <span className="text-purple-500 font-medium">{payloadPart}</span>}
- {signaturePart !== null && <span className="text-zinc-400">.</span>}
- {signaturePart !== null && <span className="text-sky-500 font-medium">{signaturePart}</span>}
- </div>
- <textarea 
- value={input}
- onChange={(e) => setInput(e.target.value)}
- spellCheck={false}
- placeholder="Paste your JWT here (eyJ...)"
- className="absolute inset-0 p-4 w-full h-full font-mono text-[13px] sm:text-sm bg-transparent text-transparent caret-zinc-900 resize-none outline-none break-all leading-[1.6] placeholder:text-zinc-400"
- />
- </div>
+      {/* Main Workspace Layout (Strict Dual-Pane Grid) */}
+      <div className="flex-1 min-h-[520px] grid grid-cols-1 lg:grid-cols-2 divide-y lg:divide-y-0 lg:divide-x divide-neutral-200 overflow-hidden bg-neutral-50/30">
+        
+        {/* Left Pane: Encoded Input */}
+        <div className="flex flex-col h-full bg-white relative min-h-0">
+          <div className="h-10 border-b border-neutral-200 bg-neutral-50/50 flex items-center justify-between px-4 shrink-0">
+            <span className="text-xs font-mono font-semibold text-neutral-700">ENCODED TOKEN</span>
+            <div className="flex items-center gap-1.5">
+              <button onClick={() => setInput("")} className="text-[11px] font-medium text-neutral-500 hover:text-neutral-900 transition-colors">Clear</button>
+              <button onClick={() => setInput("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyLCJleHAiOjI1MTYyMzkwMjJ9.X8bZ3m68J4V0J63s283R7Hk283s3s8H3ks3s8")} className="text-[11px] font-medium text-neutral-500 hover:text-neutral-900 transition-colors">Sample</button>
+              <button onClick={() => handleCopy(input, 'input')} className="text-neutral-400 hover:text-neutral-900 transition-colors p-0.5 ml-1" title="Copy">
+                {copied === 'input' ? <Check className="w-3.5 h-3.5 text-neutral-900" /> : <Copy className="w-3.5 h-3.5" />}
+              </button>
+            </div>
+          </div>
+          
+          <div className="flex-1 relative bg-white overflow-hidden">
+            <div className="absolute inset-0 p-4 font-mono text-xs sm:text-[13px] break-all whitespace-pre-wrap pointer-events-none leading-[1.6]">
+              <span className="text-neutral-900 font-bold">{headerPart}</span>
+              {payloadPart !== null && <span className="text-neutral-400">.</span>}
+              {payloadPart !== null && <span className="text-neutral-600 font-medium">{payloadPart}</span>}
+              {signaturePart !== null && <span className="text-neutral-400">.</span>}
+              {signaturePart !== null && <span className="text-neutral-400 font-medium">{signaturePart}</span>}
+            </div>
+            <textarea 
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              spellCheck={false}
+              placeholder="Paste your JWT here (eyJ...)"
+              className="absolute inset-0 p-4 w-full h-full font-mono text-xs sm:text-[13px] bg-transparent text-transparent caret-neutral-900 resize-none outline-none break-all leading-[1.6] placeholder:text-neutral-400"
+            />
+          </div>
 
- <div className="shrink-0 bg-white border-t border-zinc-200">
- <StatusBar
- isValid={isValid}
- inputLength={input.length}
- executionMs={execMs}
- />
- </div>
- </div>
+          <div className="shrink-0 bg-white border-t border-neutral-200">
+            <StatusBar
+              isValid={isValid}
+              inputLength={input.length}
+              executionMs={execMs}
+            />
+          </div>
+        </div>
 
- {/* Right Panel: Decoded Output */}
- <div className={cn("flex flex-col gap-4 overflow-y-auto pr-1 h-full", activeTab !=="output"&&"hidden lg:flex")}>
- 
- {/* Header Card */}
- <div className="border-l-2 border-l-rose-500 border border-zinc-200 bg-zinc-50 rounded-r-xl rounded-l-sm p-4 flex flex-col shrink-0">
- <div className="flex items-center justify-between mb-3">
- <div className="flex items-center gap-2">
- <Key className="w-3.5 h-3.5 text-rose-500"/>
- <span className="text-rose-500 font-semibold text-xs tracking-wider uppercase">Header</span>
- </div>
- {headerObj && (
- <span className="text-[10px] text-zinc-500 font-mono bg-zinc-200 px-1.5 py-0.5 rounded border border-zinc-300">Algorithm & Token Type</span>
- )}
- </div>
- <div className="font-mono text-[13px] text-zinc-800 bg-white ] p-3 rounded-lg border border-zinc-200 overflow-x-auto shadow-none">
- {headerObj ? <JsonViewer data={headerObj} /> : <span className="text-zinc-400 italic">No header data</span>}
- </div>
- </div>
+        {/* Right Pane: Decoded Output */}
+        <div className="flex flex-col h-full bg-neutral-50/30 min-h-0 overflow-y-auto">
+          {input.trim() === "" ? (
+            <div className="flex-1 flex flex-col items-center justify-center p-8 space-y-4">
+              <div className="w-full max-w-sm space-y-3 opacity-40 pointer-events-none">
+                <div className="h-20 bg-neutral-200 rounded-lg animate-pulse" />
+                <div className="h-40 bg-neutral-200 rounded-lg animate-pulse" />
+                <div className="h-16 bg-neutral-200 rounded-lg animate-pulse" />
+              </div>
+              <div className="text-center pt-2">
+                <p className="text-xs font-semibold text-neutral-500 mb-2 uppercase tracking-wider">No JWT Provided</p>
+                <button 
+                  onClick={() => setInput("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyLCJleHAiOjI1MTYyMzkwMjJ9.X8bZ3m68J4V0J63s283R7Hk283s3s8H3ks3s8")}
+                  className="px-3 py-1.5 bg-white border border-neutral-200 hover:bg-neutral-50 text-neutral-800 text-[11px] font-semibold rounded shadow-sm transition-colors"
+                >
+                  Load Sample Token
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="flex flex-col h-full divide-y divide-neutral-200">
+              
+              {/* Header Section */}
+              <div className="flex flex-col shrink-0 bg-white">
+                <div className="h-10 bg-neutral-50 flex items-center justify-between px-4 border-b border-neutral-200">
+                  <div className="flex items-center gap-2">
+                    <span className="text-[11px] font-bold text-neutral-500 uppercase tracking-wider font-mono">HEADER</span>
+                    {headerObj?.alg && (
+                      <span className="px-1.5 py-0.5 bg-neutral-100 border border-neutral-200 text-neutral-700 text-[9px] font-bold rounded uppercase font-mono">
+                        {headerObj.alg}
+                      </span>
+                    )}
+                  </div>
+                  <button onClick={() => handleCopy(JSON.stringify(headerObj, null, 2), 'header')} className="text-neutral-400 hover:text-neutral-900 transition-colors p-1" title="Copy JSON">
+                    {copied === 'header' ? <Check className="w-3.5 h-3.5 text-neutral-900" /> : <Copy className="w-3.5 h-3.5" />}
+                  </button>
+                </div>
+                <div className="p-4">
+                  <div className="font-mono text-xs text-neutral-800 bg-neutral-50 p-3 rounded-md border border-neutral-200 overflow-x-auto">
+                    {headerObj ? <JsonViewer data={headerObj} /> : <span className="text-neutral-400 italic">No header data</span>}
+                  </div>
+                </div>
+              </div>
 
- {/* Payload Card */}
- <div className="border-l-2 border-l-purple-500 border border-zinc-200 bg-zinc-50 rounded-r-xl rounded-l-sm p-4 flex flex-col flex-1 min-h-[220px]">
- <div className="flex items-center justify-between mb-3 shrink-0">
- <div className="flex items-center gap-2">
- <Database className="w-3.5 h-3.5 text-purple-500"/>
- <span className="text-purple-500 font-semibold text-xs tracking-wider uppercase">Payload (Claims)</span>
- </div>
- </div>
- <div className="font-mono text-[13px] text-zinc-800 bg-white ] p-3 rounded-lg border border-zinc-200 flex-1 overflow-y-auto shadow-none">
- {payloadObj ? <JsonViewer data={payloadObj} /> : <span className="text-zinc-400 italic">No payload data</span>}
- </div>
- </div>
+              {/* Payload Section */}
+              <div className="flex flex-col flex-1 bg-white">
+                <div className="h-10 bg-neutral-50 flex items-center justify-between px-4 border-b border-neutral-200 shrink-0">
+                  <div className="flex items-center gap-2">
+                    <span className="text-[11px] font-bold text-neutral-500 uppercase tracking-wider font-mono">PAYLOAD (CLAIMS)</span>
+                    <span className="px-1.5 py-0.5 bg-neutral-100 border border-neutral-200 text-neutral-700 text-[9px] font-bold rounded uppercase font-mono">
+                      DATA
+                    </span>
+                  </div>
+                  <button onClick={() => handleCopy(JSON.stringify(payloadObj, null, 2), 'payload')} className="text-neutral-400 hover:text-neutral-900 transition-colors p-1" title="Copy JSON">
+                    {copied === 'payload' ? <Check className="w-3.5 h-3.5 text-neutral-900" /> : <Copy className="w-3.5 h-3.5" />}
+                  </button>
+                </div>
+                <div className="p-4 flex-1">
+                  <div className="font-mono text-xs text-neutral-800 bg-neutral-50 p-3 rounded-md border border-neutral-200 h-full overflow-y-auto min-h-[160px]">
+                    {payloadObj ? <JsonViewer data={payloadObj} /> : <span className="text-neutral-400 italic">No payload data</span>}
+                  </div>
+                </div>
+              </div>
 
- {/* Signature Verification Card */}
- <div className="border-l-2 border-l-sky-500 border border-zinc-200 bg-zinc-50 rounded-r-xl rounded-l-sm p-4 flex flex-col shrink-0">
- <div className="flex items-center gap-2 mb-3">
- <ShieldCheck className="w-3.5 h-3.5 text-sky-500"/>
- <span className="text-sky-500 font-semibold text-xs tracking-wider uppercase">Signature Verification</span>
- </div>
- 
- <div className="flex flex-col gap-3">
- <div className="font-mono text-xs text-zinc-500 break-all bg-white ] p-3 rounded-lg border border-zinc-200 shadow-none">
- {signature ||"No signature"}
- </div>
- 
- {headerObj?.alg?.startsWith('HS') && (
- <div className="flex items-center gap-3 bg-white ] p-2 rounded-lg border border-zinc-200 shadow-none">
- <input 
- type="text"
- value={secret}
- onChange={e => setSecret(e.target.value)}
- placeholder={`${headerObj.alg} Secret Key`}
- className="flex-1 bg-transparent border-none outline-none text-xs font-mono text-zinc-900 px-2 placeholder:text-zinc-400"
- />
- {sigStatus ==="valid"&& (
- <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-blue-50 text-blue-600 border border-blue-200">
- <Check className="w-3.5 h-3.5"/>
- <span className="text-xs font-semibold">Signature Verified</span>
- </div>
- )}
- {sigStatus ==="invalid"&& secret.length > 0 && (
- <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-zinc-50 text-zinc-600 border border-zinc-200">
- <ShieldAlert className="w-3.5 h-3.5"/>
- <span className="text-xs font-semibold">Invalid Signature</span>
- </div>
- )}
- </div>
- )}
- {headerObj?.alg && !headerObj.alg.startsWith('HS') && (
- <p className="text-xs text-zinc-500 italic px-1">
- Signature verification is currently supported for HMAC (HS256/384/512) algorithms.
- </p>
- )}
- </div>
- </div>
+              {/* Signature Section */}
+              <div className="flex flex-col shrink-0 bg-white">
+                <div className="h-10 bg-neutral-50 flex items-center justify-between px-4 border-b border-neutral-200">
+                  <div className="flex items-center gap-2">
+                    <span className="text-[11px] font-bold text-neutral-500 uppercase tracking-wider font-mono">SIGNATURE STATUS</span>
+                  </div>
+                  {sigStatus === "valid" ? (
+                    <span className="px-1.5 py-0.5 bg-green-100 border border-green-200 text-green-800 text-[9px] font-bold rounded uppercase font-mono">
+                      VERIFIED
+                    </span>
+                  ) : sigStatus === "invalid" && secret.length > 0 ? (
+                    <span className="px-1.5 py-0.5 bg-red-100 border border-red-200 text-red-800 text-[9px] font-bold rounded uppercase font-mono">
+                      INVALID
+                    </span>
+                  ) : (
+                    <span className="px-1.5 py-0.5 bg-neutral-100 border border-neutral-200 text-neutral-600 text-[9px] font-bold rounded uppercase font-mono">
+                      UNVERIFIED
+                    </span>
+                  )}
+                </div>
+                <div className="p-4 flex flex-col gap-3">
+                  <div className="font-mono text-[11px] text-neutral-500 break-all bg-neutral-50 p-2 rounded border border-neutral-100">
+                    {signature || "No signature"}
+                  </div>
+                  {headerObj?.alg?.startsWith('HS') && (
+                    <div className="flex items-center gap-3 bg-white p-1.5 rounded-md border border-neutral-200 shadow-sm focus-within:border-neutral-400 focus-within:ring-1 focus-within:ring-neutral-400 transition-all">
+                      <input 
+                        type="text"
+                        value={secret}
+                        onChange={e => setSecret(e.target.value)}
+                        placeholder={`${headerObj.alg} Secret Key to Verify Signature...`}
+                        className="flex-1 bg-transparent border-none outline-none text-xs font-mono text-neutral-900 px-2 placeholder:text-neutral-400"
+                      />
+                    </div>
+                  )}
+                  {headerObj?.alg && !headerObj.alg.startsWith('HS') && (
+                    <p className="text-[10px] text-neutral-400 italic">
+                      Signature verification is currently supported for HMAC algorithms.
+                    </p>
+                  )}
+                </div>
+              </div>
 
- </div>
- </div>
- </div>
- </div>
- );
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
 }
