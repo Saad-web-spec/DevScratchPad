@@ -45,23 +45,27 @@
 
 | Category | Tool Name | Route | What It Does |
 | :--- | :--- | :--- | :--- |
-| **Code Formatting** | [JSON Formatter](https://devscratchpad.tech/json-formatter) | `/json-formatter` | Multi-indent (2/4 spaces) formatting, minification, and real-time syntax error line tracking. |
-| | [XML Formatter](https://devscratchpad.tech/xml-formatter) | `/xml-formatter` | Format, beautify, and minify XML data structures with indentation controls. |
-| | [SQL Formatter](https://devscratchpad.tech/sql-formatter) | `/sql-formatter` | Multi-dialect query beautifier (PostgreSQL, MySQL, SQLite, T-SQL, PL/SQL) with keyword casing. |
-| | [GraphQL Formatter](https://devscratchpad.tech/graphql-formatter) | `/graphql-formatter` | Formats and validates GraphQL queries and schemas using the official AST parser. |
-| **Security & Crypto** | [JWT Decoder](https://devscratchpad.tech/jwt-decoder) | `/jwt-decoder` | Safely decodes Header, Payload & Signature; auto-converts `exp`/`iat` timestamps to ISO dates. |
-| | [Hash Generator](https://devscratchpad.tech/hash-generator) | `/hash-generator` | Computes MD5 (SparkMD5), SHA-1, SHA-256, and SHA-512 in parallel client-side. |
-| | [HMAC Generator](https://devscratchpad.tech/hmac-generator) | `/hmac-generator` | Computes SHA256 & SHA512 HMAC signatures in Hex & Base64 for Stripe/GitHub webhook testing. |
-| | [Cron Visualizer](https://devscratchpad.tech/cron-visualizer) | `/cron-visualizer` | Translates complex cron schedules into plain English with a 5-column breakdown grid. |
-| | [IP / CIDR Calculator](https://devscratchpad.tech/cidr-calculator) | `/cidr-calculator` | Calculates IPv4 network address, broadcast, wildcard mask, and usable host bounds. |
-| **Code Converters** | [cURL Converter](https://devscratchpad.tech/curl-converter) | `/curl-converter` | Transforms cURL commands into executable JavaScript (`fetch`), Python (`requests`), or Go. |
-| | [JSON to TypeScript](https://devscratchpad.tech/json-to-typescript) | `/json-to-typescript` | Generates strongly-typed TypeScript interfaces and type definitions from raw JSON. |
-| | [YAML / JSON Converter](https://devscratchpad.tech/yaml-json) | `/yaml-json` | Bidirectional YAML ↔ JSON conversion preserving data structures with one-click swap. |
-| **Diff & Optimization** | [Diff Checker](https://devscratchpad.tech/diff-checker) | `/diff-checker` | Monaco side-by-side or inline code diffing with character-level additions and deletions. |
-| | [CSS & SVG Minifier](https://devscratchpad.tech/css-svg-minifier) | `/css-svg-minifier` | Strips comments and whitespace; displays byte savings and compression ratio. |
-| | [Regex Tester](https://devscratchpad.tech/regex-tester) | `/regex-tester` | Real-time RegExp testing with flags (`g`, `i`, `m`, `s`), match lists, and substitution preview. |
+| **Code Formatting** | [JSON Formatter](https://devscratchpad.tech/tools/json-formatter) | `/tools/json-formatter` | Multi-indent formatting, minification, and real-time syntax error line tracking. |
+| | [JSON Validator](https://devscratchpad.tech/tools/json-validator) | `/tools/json-validator` | Secure, strict JSON syntax validator to catch missing commas and string issues. |
+| | [XML Formatter](https://devscratchpad.tech/tools/xml-formatter) | `/tools/xml-formatter` | Format, beautify, and minify XML data structures with indentation controls. |
+| | [SQL Formatter](https://devscratchpad.tech/tools/sql-formatter) | `/tools/sql-formatter` | Multi-dialect query beautifier (PostgreSQL, MySQL, SQLite) with keyword casing. |
+| | [GraphQL Formatter](https://devscratchpad.tech/tools/graphql-formatter) | `/tools/graphql-formatter` | Formats and validates GraphQL queries and schemas using the official AST parser. |
+| **Security & Crypto** | [JWT Decoder](https://devscratchpad.tech/tools/jwt) | `/tools/jwt` | Safely decodes Header, Payload & Signature; auto-converts `exp`/`iat` timestamps. |
+| | [Hash Generator](https://devscratchpad.tech/tools/hash) | `/tools/hash` | Computes MD5, SHA-1, SHA-256, and SHA-512 in parallel client-side. |
+| | [HMAC Generator](https://devscratchpad.tech/tools/hmac-generator) | `/tools/hmac-generator` | Computes SHA256 & SHA512 HMAC signatures in Hex & Base64 for webhook testing. |
+| | [UUID Generator](https://devscratchpad.tech/tools/uuid-generator) | `/tools/uuid-generator` | Fast bulk v4 UUID generator using the native browser Crypto API. |
+| **Network & Time** | [Cron Visualizer](https://devscratchpad.tech/tools/cron) | `/tools/cron` | Translates complex cron schedules into plain English with a 5-column breakdown grid. |
+| | [IP / CIDR Calculator](https://devscratchpad.tech/tools/cidr-calculator) | `/tools/cidr-calculator` | Calculates IPv4 network address, broadcast, wildcard mask, and usable host bounds. |
+| **Code Converters** | [cURL to Fetch](https://devscratchpad.tech/tools/curl-to-fetch) | `/tools/curl-to-fetch` | Transforms cURL commands into executable JavaScript (`fetch`). |
+| | [cURL to Python](https://devscratchpad.tech/tools/curl-to-python) | `/tools/curl-to-python` | Transforms cURL commands into Python (`requests`). |
+| | [JSON to TypeScript](https://devscratchpad.tech/tools/json-to-ts) | `/tools/json-to-ts` | Generates strongly-typed TypeScript interfaces from raw JSON. |
+| | [JSON to Zod](https://devscratchpad.tech/tools/json-to-zod) | `/tools/json-to-zod` | Generates strict Zod schemas from raw JSON. |
+| | [YAML to JSON](https://devscratchpad.tech/tools/yaml-to-json) | `/tools/yaml-to-json` | Convert YAML configurations into JSON payloads. |
+| **Diff & Optimization** | [Diff Checker](https://devscratchpad.tech/tools/diff) | `/tools/diff` | Monaco side-by-side or inline code diffing with character-level additions. |
+| | [CSS & SVG Minifier](https://devscratchpad.tech/tools/minifier) | `/tools/minifier` | Strips comments and whitespace; displays byte savings and compression ratio. |
+| | [Regex Tester](https://devscratchpad.tech/tools/regex) | `/tools/regex` | Real-time RegExp testing with flags (`g`, `i`, `m`, `s`), match lists. |
 
----
+
 
 ## 🚀 Getting Started Locally
 

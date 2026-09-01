@@ -19,7 +19,7 @@ export const BLOG_POSTS: BlogPost[] = [
  seoDescription:"Learn how to write cron expressions with our complete cheat sheet. Covers syntax, examples, special characters, and a free visualizer.",
  publishedAt:"2026-08-28T00:00:00Z",
  updatedAt:"2026-08-28T00:00:00Z",
- relatedToolSlug:"cron-visualizer",
+ relatedToolSlug: "cron",
  content: `
 # Cron Expression Cheat Sheet
 
@@ -86,7 +86,7 @@ Send a weekly summary report on Friday at 5:00 PM:
 - **Missing Paths:** Always use absolute paths in your cron commands (e.g., \`/usr/bin/python3\` instead of \`python3\`) because cron has a very minimal \`$PATH\` environment.
 - **Syntax Errors:** Ensure you have exactly 5 (or 6 for some extended parsers) fields. Using a cron visualizer can help you catch off-by-one errors.
 
-Need help building or testing your cron expressions? Try our [Cron Visualizer](/cron-visualizer) tool.
+Need help building or testing your cron expressions? Try our [Cron Expression Visualizer](/tools/cron) tool.
  `,
  },
  {
@@ -97,7 +97,7 @@ Need help building or testing your cron expressions? Try our [Cron Visualizer](/
  seoDescription:"Step-by-step guide covering cURL flag mapping to Python requests (headers, body, auth, cookies, SSL) with complete code examples.",
  publishedAt:"2026-08-28T00:00:00Z",
  updatedAt:"2026-08-28T00:00:00Z",
- relatedToolSlug:"curl-converter",
+ relatedToolSlug: "curl-to-python",
  content: `
 # How to Convert cURL Commands to Python requests
 
@@ -233,7 +233,7 @@ If you are testing against a local server with a self-signed certificate, you ca
 response = requests.get('https://localhost:8443/test', verify=False)
 \`\`\`
 
-Want to convert your commands instantly? Try our [cURL to Python/JavaScript/Go Converter](/curl-converter).
+Want to convert your commands instantly? Try our [cURL to Python Converter](/tools/curl-to-python).
  `,
  },
  {
@@ -244,7 +244,7 @@ Want to convert your commands instantly? Try our [cURL to Python/JavaScript/Go C
  seoDescription:"Learn how to decode JSON Web Tokens (JWT). Covers structure, Base64URL vs Base64, decoding without a library, and common security mistakes.",
  publishedAt:"2026-08-28T00:00:00Z",
  updatedAt:"2026-08-28T00:00:00Z",
- relatedToolSlug:"jwt-decoder",
+ relatedToolSlug: "jwt",
  content: `
 # How to Decode JWT Tokens — A Developer's Complete Guide
 
@@ -323,7 +323,7 @@ def decode_jwt_payload(token):
 3. **Not verifying the signature:** Decoding the payload is not enough; you must cryptographically verify the signature before trusting the claims.
 4. **Ignoring expiration (\`exp\`):** Always check that the token is not expired before trusting it.
 
-Need to decode a token right now securely in your browser? Use our [JWT Decoder](/jwt-decoder) tool.
+Need to decode a token right now securely in your browser? Use our [JWT Decoder](/tools/jwt) tool.
  `,
  },
 ];
