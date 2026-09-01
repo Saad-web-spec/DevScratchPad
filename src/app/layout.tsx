@@ -12,18 +12,14 @@ export const metadata: Metadata = {
  },
  description:
 "Free online developer tools that work 100% offline. JSON formatter, JWT decoder, Base64 encoder, cURL converter & more. Zero server transmission. Your data never leaves your browser.",
- keywords: [
-"developer tools offline",
-"private developer tools",
-"client-side developer tools",
-"zero server transmission",
-"JSON formatter offline",
-"JWT decoder offline",
-"Base64 encoder offline",
-"diff checker private",
-"SQL formatter offline",
-"DevScratchpad",
- ],
+ robots: {
+ index: true,
+ follow: true,
+ googleBot: {
+ index: true,
+ follow: true,
+ },
+ },
  metadataBase: new URL(SITE_URL),
  openGraph: {
  type:"website",

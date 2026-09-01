@@ -3,36 +3,13 @@ import { ShieldCheck, ArrowRight, HelpCircle, CheckCircle2, Sparkles } from"luci
 import { TOOLS_REGISTRY, type ToolMeta } from"@/lib/tools/registry";
 import { SeoArticle } from "./SeoArticle";
 
-const RELATED_MAP: Record<string, string[]> = {
-  "json-formatter": ["json-to-typescript", "yaml-json", "css-svg-minifier", "diff-checker"],
-  "jwt-decoder": ["base64-decoder", "url-encoder", "hmac-generator", "hash-generator"],
-  "unix-timestamp": ["cron-visualizer", "jwt-decoder", "uuid-generator", "json-formatter"],
-  "curl-converter": ["json-formatter", "url-encoder", "base64-decoder", "yaml-json"],
-  "diff-checker": ["json-formatter", "css-svg-minifier", "markdown-previewer", "case-converter"],
-  "xml-formatter": ["json-formatter", "yaml-json", "diff-checker", "css-svg-minifier"],
-  "sql-formatter": ["json-formatter", "diff-checker", "regex-tester", "case-converter"],
-  "base64-decoder": ["jwt-decoder", "url-encoder", "hash-generator", "hmac-generator"],
-  "url-encoder": ["base64-decoder", "jwt-decoder", "curl-converter", "hash-generator"],
-  "hash-generator": ["hmac-generator", "jwt-decoder", "base64-decoder", "uuid-generator"],
-  "regex-tester": ["diff-checker", "json-formatter", "sql-formatter", "case-converter"],
-  "json-to-typescript": ["json-formatter", "yaml-json", "svg-to-jsx", "case-converter"],
-  "cron-visualizer": ["unix-timestamp", "regex-tester", "diff-checker", "uuid-generator"],
-  "yaml-json": ["json-formatter", "xml-formatter", "json-to-typescript", "diff-checker"],
-  "css-svg-minifier": ["svg-to-jsx", "diff-checker", "json-formatter", "xml-formatter"],
-  "graphql-formatter": ["json-formatter", "json-to-typescript", "yaml-json", "curl-converter"],
-  "markdown-previewer": ["diff-checker", "regex-tester", "css-svg-minifier", "case-converter"],
-  "hmac-generator": ["hash-generator", "jwt-decoder", "base64-decoder", "uuid-generator"],
-  "cidr-calculator": ["unix-timestamp", "regex-tester", "hash-generator", "cron-visualizer"],
-  "svg-to-jsx": ["css-svg-minifier", "json-to-typescript", "case-converter", "json-formatter"],
-  "uuid-generator": ["hash-generator", "hmac-generator", "unix-timestamp", "jwt-decoder"],
-  "case-converter": ["regex-tester", "diff-checker", "json-to-typescript", "sql-formatter"],
-};
-
 export function SeoContent({ tool }: { tool: ToolMeta }) {
- const relatedSlugs = RELATED_MAP[tool.slug] || ["json-formatter","jwt-decoder","diff-checker"];
- const relatedTools = relatedSlugs
- .map((s) => TOOLS_REGISTRY[s])
- .filter(Boolean);
+ const allTools = Object.values(TOOLS_REGISTRY);
+ const sameCategory = allTools.filter(t => t.slug !== tool.slug && t.category === tool.category);
+ const otherCategory = allTools.filter(t => t.slug !== tool.slug && t.category !== tool.category);
+ 
+ // Prefer same category, fallback to others if needed to fill 3 spots
+ const relatedTools = [...sameCategory, ...otherCategory].slice(0, 3);
 
  const jsonLdGraph = {
 "@context":"https://schema.org",

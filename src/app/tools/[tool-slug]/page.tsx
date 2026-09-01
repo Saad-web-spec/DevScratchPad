@@ -28,7 +28,6 @@ export async function generateMetadata({
  metadataBase: new URL(SITE_URL),
  title: tool.seoTitle,
  description: tool.seoDescription,
- keywords: tool.keywords,
  openGraph: {
  title: `${tool.seoTitle} | DevScratchpad`,
  description: tool.seoDescription,
