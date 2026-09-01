@@ -17,11 +17,11 @@ export const TOOLS_REGISTRY: Record<string, ToolMeta> = {
     name: "JSON Validator",
     shortName: "JSON Validator",
     category: "Formatters",
-    description: "Validate JSON syntax online and catch formatting errors instantly.",
+    description: "Validate JSON syntax online and catch formatting errors instantly. 100% private validation.",
     seoTitle: "JSON Validator Online — Check JSON Syntax",
-    seoDescription: "Free, offline JSON validator. Quickly check your JSON for syntax errors and ensure it is perfectly formatted.",
-    howToUse: ["Paste your raw JSON string into the editor.", "The validator will instantly highlight any syntax errors, missing commas, or structural issues."],
-    edgeCases: ["Extremely large JSON payloads", "Trailing commas (which are invalid in strict JSON)"],
+    seoDescription: "Validate JSON syntax online instantly. Catch formatting errors, missing commas, and invalid structures securely in your browser.",
+    howToUse: ["Paste your JSON string into the secure offline validator input.", "The engine continuously parses the structure in real-time, instantly highlighting lines with syntax errors like trailing commas or unescaped quotes.", "Review the error summary panel to understand the exact JSON parse failure.", "Fix the errors directly in the editor until the green 'Valid JSON' badge appears."],
+    edgeCases: ["Spotting hidden zero-width spaces or invalid unicode characters.", "Identifying unescaped quotes inside string values."],
     shortcuts: ["Ctrl/Cmd + V — Smart Magic Paste"]
   },
   "yaml-to-json": {
@@ -29,11 +29,11 @@ export const TOOLS_REGISTRY: Record<string, ToolMeta> = {
     name: "YAML to JSON",
     shortName: "YAML to JSON",
     category: "Converters",
-    description: "Convert YAML configurations to JSON format.",
+    description: "Convert YAML configuration files into standardized JSON payloads securely in your browser.",
     seoTitle: "YAML to JSON Converter Online — DevScratchpad",
-    seoDescription: "Convert YAML to JSON securely and instantly in your browser.",
-    howToUse: ["Paste your YAML code.", "Copy the converted JSON."],
-    edgeCases: ["Nested arrays and anchors in YAML"],
+    seoDescription: "Convert YAML to JSON online instantly. Free, secure, in-browser YAML to JSON parsing tool.",
+    howToUse: ["Paste your YAML configuration file (e.g., Docker Compose, CI/CD pipelines) into the editor.", "The parser instantly validates the YAML syntax and converts it into a standard JSON string.", "The output JSON is fully formatted and ready to be used in Node.js or web applications.", "Copy or download the resulting JSON file."],
+    edgeCases: ["Handling of YAML anchors and aliases.", "Complex nested arrays or multiline string blocks."],
     shortcuts: []
   },
   "json-to-yaml": {
@@ -41,11 +41,11 @@ export const TOOLS_REGISTRY: Record<string, ToolMeta> = {
     name: "JSON to YAML",
     shortName: "JSON to YAML",
     category: "Converters",
-    description: "Convert JSON objects to YAML configuration format.",
+    description: "Convert JSON objects into human-readable YAML configuration format.",
     seoTitle: "JSON to YAML Converter Online — DevScratchpad",
-    seoDescription: "Convert JSON to YAML securely and instantly in your browser.",
-    howToUse: ["Paste your JSON payload.", "Copy the generated YAML."],
-    edgeCases: ["Extremely large JSON structures"],
+    seoDescription: "Convert JSON to YAML online instantly. Free, private JSON to YAML configuration generator.",
+    howToUse: ["Paste your JSON payload into the editor.", "The tool automatically transforms the curly braces and brackets into indentation-based YAML format.", "Review the cleanly formatted YAML output, perfect for Kubernetes manifests or Ansible playbooks.", "Copy or download the resulting YAML file."],
+    edgeCases: ["Deeply nested JSON objects ensuring proper space indentation.", "Handling of null values or empty strings."],
     shortcuts: []
   },
   "curl-to-javascript": {
@@ -61,35 +61,25 @@ export const TOOLS_REGISTRY: Record<string, ToolMeta> = {
     shortcuts: []
   },
 "curl-to-python": { slug: "curl-to-python",
-  category: "Network", name: "cURL to Python", shortName: "cURL to Python", description: "Convert cURL to Python requests", seoTitle: "cURL to Python Converter Online — DevScratchpad", seoDescription: "Free online converter.",  howToUse: [], edgeCases: [], shortcuts: [] }, "curl-to-fetch": { slug: "curl-to-fetch",
-  category: "Network", name: "cURL to Fetch", shortName: "cURL to Fetch", description: "Convert cURL to Fetch", seoTitle: "cURL to Fetch Converter Online — Convert cURL to JavaScript", seoDescription: "Free online converter.",  howToUse: [], edgeCases: [], shortcuts: [] }, "curl-to-go": { slug: "curl-to-go",
+  category: "Network", name: "cURL to Python", shortName: "cURL to Python", description: "Transform complex cURL requests into clean, executable Python requests code.", seoTitle: "cURL to Python Converter Online — DevScratchpad", seoDescription: "Convert cURL commands to Python requests code instantly. Free, secure, in-browser cURL to Python conversion tool.",  howToUse: ["Copy a cURL command from your browser's network tab or API documentation.", "Paste the cURL syntax into the input pane.", "The tool automatically parses all headers, query parameters, auth tokens, and JSON payloads, instantly converting them into Python 'requests' library code.", "Copy the generated Python code and paste it directly into your script."], edgeCases: ["Complex multipart/form-data boundaries.", "Unusual or escaped quotation marks inside cURL data payloads.", "Authentication headers like Bearer or Basic."], shortcuts: [] }, "curl-to-fetch": { slug: "curl-to-fetch",
+  category: "Network", name: "cURL to Fetch", shortName: "cURL to Fetch", description: "Transform cURL commands into native JavaScript fetch API configurations.", seoTitle: "cURL to Fetch Converter Online — Convert cURL to JavaScript", seoDescription: "Convert cURL commands to JavaScript fetch() code. Free, secure, in-browser cURL to fetch converter.",  howToUse: ["Export a cURL request from Postman, Swagger, or Chrome DevTools.", "Paste the raw cURL command into the converter.", "It instantly maps the HTTP method, headers, and body into a native JavaScript Fetch API configuration object.", "Copy the generated Fetch code for use in your frontend web application or ServiceWorker."], edgeCases: ["Handling of automatic Content-Length headers.", "Parsing URL-encoded form data into Fetch body configurations."], shortcuts: [] }, "curl-to-go": { slug: "curl-to-go",
   category: "Network", name: "cURL to Go", shortName: "cURL to Go", description: "Convert cURL to Go", seoTitle: "cURL to Go Converter Online — DevScratchpad", seoDescription: "Free online converter.",  howToUse: [], edgeCases: [], shortcuts: [] }, "json-to-ts": { slug: "json-to-typescript",
-  category: "Converters", name: "JSON to TS", shortName: "JSON to TS", description: "JSON to TypeScript", seoTitle: "JSON to TypeScript Converter Online — DevScratchpad", seoDescription: "Free.",  howToUse: [], edgeCases: [], shortcuts: [] }, "json-to-zod": { slug: "json-to-zod",
-  category: "Converters", name: "JSON to Zod", shortName: "JSON to Zod", description: "JSON to Zod", seoTitle: "JSON to Zod Schema Generator Online — DevScratchpad", seoDescription: "Free.",  howToUse: [], edgeCases: [], shortcuts: [] }, "json-to-go": { slug: "json-to-go-struct",
+  category: "Converters", name: "JSON to TS", shortName: "JSON to TS", description: "Instantly generate strict TypeScript interfaces from JSON data payloads.", seoTitle: "JSON to TypeScript Converter Online — DevScratchpad", seoDescription: "Generate TypeScript interfaces from JSON data instantly. Secure, offline JSON to TS converter for developers.",  howToUse: ["Paste your sample JSON API response into the editor.", "The engine deeply analyzes the JSON structure, detecting data types, nested arrays, and objects.", "It instantly generates strongly-typed TypeScript interfaces and types corresponding to your data.", "Copy the generated interfaces to strictly type your frontend API requests."], edgeCases: ["Null values in the JSON (handled by generating optional '?' properties or union types).", "Empty arrays where the internal type must be inferred as 'any[]'."], shortcuts: [] }, "json-to-zod": { slug: "json-to-zod",
+  category: "Converters", name: "JSON to Zod", shortName: "JSON to Zod", description: "Infer and generate strict Zod runtime validation schemas from JSON data.", seoTitle: "JSON to Zod Schema Generator Online — DevScratchpad", seoDescription: "Generate Zod schemas from JSON payloads online. Free, private, in-browser JSON to Zod converter.",  howToUse: ["Paste a JSON object or API response into the input.", "The tool infers the schema types (strings, numbers, booleans, nested objects) in real-time.", "It generates a complete Zod schema definition (z.object, z.string, etc.) matching the payload.", "Copy the Zod schema to use for strict runtime validation in your TypeScript application."], edgeCases: ["Deeply nested objects converted into inline z.object() schemas.", "Arrays of objects mapped to z.array()."], shortcuts: [] }, "json-to-go": { slug: "json-to-go-struct",
   category: "Converters", name: "JSON to Go Struct", shortName: "JSON to Go", description: "JSON to Go", seoTitle: "JSON to Go Struct Converter Online — DevScratchpad", seoDescription: "Free.",  howToUse: [], edgeCases: [], shortcuts: [] }, 
 "json-formatter": {
  slug: "json-formatter",
   category: "Formatters",
  name:"JSON Formatter, Minifier & Validator",
  shortName:"JSON Formatter",
- description:"Format, validate, and minify JSON data",
+ description:"Format, validate, and beautify JSON directly in your browser. Ensure your data structure is correct and human-readable without sending it to a server.",
  seoTitle:
 "JSON Formatter & Beautifier Online — DevScratchpad",
  seoDescription:
-"Free online JSON formatter and validator — paste your JSON, format with 2 or 4 space indent, minify, and detect syntax errors instantly. No data sent to any server.",
+"Format, validate, and beautify JSON directly in your browser. 100% private, client-side JSON formatting with syntax highlighting and validation.",
  
- howToUse: [
-"Paste or type raw JSON into the left Input panel.",
-"Select your preferred indentation (2 spaces or 4 spaces) from the dropdown.",
-"Click 'Format' to pretty-print the JSON in the Output panel, or click 'Minify' to compress it.",
-"Real-time validation runs as you type — the status bar shows Valid (green) or Invalid (red) with exact error line.",
-"Click 'Copy' on the output panel to copy the result to your clipboard.",
- ],
- edgeCases: [
-"Trailing commas are not valid JSON and will be flagged as a syntax error.",
-"Single-quoted strings are not valid JSON — use double quotes.",
-"Very large JSON files (50MB+) may slow down formatting due to browser memory limits.",
- ],
+ howToUse: ["Paste your unformatted, minified, or messy JSON payload directly into the editor pane.", "The tool automatically detects syntax errors and instantly beautifies the JSON into a readable, strictly indented format.", "Expand or collapse nested objects using the gutter arrows.", "Click 'Copy' to copy the formatted JSON, or 'Download' to save it as a .json file locally."],
+ edgeCases: ["Missing quotes around keys or trailing commas (which will trigger a syntax validation warning).", "Extremely large JSON payloads (over 5MB) which are processed smoothly entirely within your browser's memory without crashing."],
  shortcuts: [
 "Ctrl/Cmd + K — Open Command Palette to switch tools instantly.",
  ],
@@ -147,19 +137,12 @@ export const TOOLS_REGISTRY: Record<string, ToolMeta> = {
   category: "Security",
     name: "UUID / ULID / NanoID Generator",
     shortName: "UUID Generator",
-    description: "Generate cryptographically secure UUID v4, UUID v7, ULID, and NanoIDs in bulk",
+    description: "Generate cryptographically secure v4 UUIDs locally in your browser.",
     seoTitle: "UUID Generator Online (v4) — DevScratchpad",
-    seoDescription: "Free online UUID and ULID generator — create secure UUID v4, time-ordered UUID v7, ULID, and NanoIDs in bulk with JSON and CSV export formats. 100% client-side.",
+    seoDescription: "Generate secure UUIDs (v4) online instantly. Free, offline bulk UUID generator tool.",
     
-    howToUse: [
-      "Select your identifier type: UUID v4, UUID v7 (time-ordered), ULID, or NanoID.",
-      "Choose the quantity to generate (up to 100).",
-      "Configure format options: Lines, JSON Array, or CSV.",
-      "Click 'Copy All' to copy the generated identifiers to your clipboard."
-    ],
-    edgeCases: [
-      "All IDs are generated locally in the browser using the Web Crypto API."
-    ],
+    howToUse: ["Select the number of UUIDs you wish to generate (e.g., 1, 10, or 100).", "Click 'Generate' to instantly create cryptographically secure, random v4 UUIDs using the browser's native Crypto API.", "Choose your preferred format (hyphens, no hyphens, or uppercase).", "Click the copy button to grab your unique identifiers."],
+    edgeCases: ["Generating thousands of UUIDs simultaneously without blocking the browser thread.", "Ensuring cryptographic randomness via window.crypto instead of Math.random()."],
     shortcuts: [
       "Ctrl/Cmd + K — Open Command Palette to switch tools instantly."
     ],

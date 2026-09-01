@@ -81,13 +81,7 @@ export function SeoContent({ tool }: { tool: ToolMeta }) {
  ]
  };
 
-  const explanation = `${tool.seoDescription || tool.description}
-
-How to use: ${tool.howToUse.join(" ")}
-
-Important Considerations: ${tool.edgeCases.join(" ")}
-
-This tool is strictly client-side. All processing runs in your local browser memory using JavaScript. No text, tokens, payloads, or logs are ever transmitted to any remote server or analytics engine. You can even use this tool offline.`;
+  const explanation = tool.seoDescription || tool.description;
 
   return (
     <>
@@ -98,6 +92,8 @@ This tool is strictly client-side. All processing runs in your local browser mem
       <SeoArticle
         title={`${tool.name} (Offline & Secure)`}
         explanation={explanation}
+        howToUse={tool.howToUse}
+        edgeCases={tool.edgeCases}
         shortcuts={tool.shortcuts || ["Ctrl/Cmd + V — Smart Magic Paste", "Ctrl/Cmd + K — Open Command Palette"]}
       />
       

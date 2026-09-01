@@ -6,9 +6,11 @@ interface SeoArticleProps {
   explanation: string;
   codeExamples?: { language: string; code: string }[];
   shortcuts: string[];
+  howToUse?: string[];
+  edgeCases?: string[];
 }
 
-export function SeoArticle({ title, explanation, codeExamples, shortcuts }: SeoArticleProps) {
+export function SeoArticle({ title, explanation, codeExamples, shortcuts, howToUse, edgeCases }: SeoArticleProps) {
   return (
     <article className="w-full bg-white border-t border-zinc-200">
       <div className="max-w-5xl mx-auto px-6 py-12 flex flex-col md:flex-row gap-12">
@@ -20,7 +22,33 @@ export function SeoArticle({ title, explanation, codeExamples, shortcuts }: SeoA
               {title}
             </h2>
             <div className="prose prose-sm prose-zinc text-zinc-600 leading-relaxed max-w-none">
-              <p>{explanation}</p>
+              <p className="text-base">{explanation}</p>
+              
+              {howToUse && howToUse.length > 0 && (
+                <>
+                  <h3 className="text-lg font-semibold text-zinc-900 mt-6 mb-2">How to use</h3>
+                  <ol className="list-decimal pl-5 space-y-1">
+                    {howToUse.map((step, idx) => (
+                      <li key={idx}>{step}</li>
+                    ))}
+                  </ol>
+                </>
+              )}
+
+              {edgeCases && edgeCases.length > 0 && (
+                <>
+                  <h3 className="text-lg font-semibold text-zinc-900 mt-6 mb-2">Important Considerations</h3>
+                  <ul className="list-disc pl-5 space-y-1">
+                    {edgeCases.map((caseItem, idx) => (
+                      <li key={idx}>{caseItem}</li>
+                    ))}
+                  </ul>
+                </>
+              )}
+
+              <div className="mt-8 p-4 bg-zinc-50 border border-zinc-200 rounded-md">
+                <p className="text-xs m-0"><strong>Privacy Notice:</strong> This tool is strictly client-side. All processing runs in your local browser memory using JavaScript. No text, tokens, payloads, or logs are ever transmitted to any remote server or analytics engine. You can even use this tool completely offline.</p>
+              </div>
             </div>
           </div>
 
