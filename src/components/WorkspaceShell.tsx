@@ -285,7 +285,7 @@ export function WorkspaceShell({ initialToolSlug, toolMeta, children }: Workspac
  ? getToolMeta(currentSlug)
  : toolMeta ?? undefined;
 
- const IMPLEMENTED_TOOLS = ["json-formatter", "jwt", "curl-to-python", "curl-to-fetch", "curl-to-go", "diff", "xml-formatter", "sql-formatter", "hash", "regex", "json-to-ts", "json-to-zod", "json-to-go", "cron", "yaml", "minifier", "graphql-formatter", "hmac-generator", "cidr-calculator", "svg-to-jsx", "uuid-generator"];
+ const IMPLEMENTED_TOOLS = ["json-formatter","json-validator","jwt","curl-to-python","curl-to-fetch","curl-to-go","curl-to-javascript","diff","xml-formatter","sql-formatter","hash","regex","json-to-ts","json-to-zod","json-to-go","cron","yaml","yaml-to-json","json-to-yaml","minifier","graphql-formatter","hmac-generator","cidr-calculator","svg-to-jsx","uuid-generator"];
 
  return (
  <div className="flex flex-col h-screen w-full bg-white overflow-hidden relative">

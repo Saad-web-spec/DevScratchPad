@@ -35,6 +35,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
  priority: 1.0,
  },
  blogIndex,
+  {
+    url: `${SITE_URL}/developer-tools`,
+    lastModified: new Date(),
+    changeFrequency: 'weekly',
+    priority: 0.9,
+  },
  ...routes,
  ...blogRoutes,
  ];

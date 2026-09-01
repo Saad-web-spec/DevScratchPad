@@ -9,19 +9,19 @@ const CATEGORIES = [
   },
   {
   name:"Security & Identifiers",
-  tools: ["uuid-generator","jwt-decoder","hash-generator","hmac-generator","base64-decoder"],
+  tools: ["uuid-generator","jwt-decoder","hash-generator","hmac-generator",],
   },
   {
   name:"Networking & Unix",
-  tools: ["unix-timestamp","cron-visualizer","cidr-calculator"],
+  tools: ["cron-visualizer","cidr-calculator"],
   },
   {
   name:"Code & Type Converters",
-  tools: ["json-to-typescript","svg-to-jsx","case-converter","curl-converter","yaml-json","url-encoder"],
+  tools: ["json-to-typescript","svg-to-jsx","curl-converter","yaml-json",],
   },
   {
   name:"Diff & Text Optimization",
-  tools: ["diff-checker","css-svg-minifier","markdown-previewer","regex-tester"],
+  tools: ["diff-checker","css-svg-minifier","regex-tester"],
   },
 ];
 
