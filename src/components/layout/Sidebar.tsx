@@ -5,7 +5,7 @@ import {
   FileJson, Database, Key, Binary, Hash, Type, Regex, Code, Clock,
   Terminal, SplitSquareHorizontal, History, Trash2,
   FileCode, Calendar, ArrowLeftRight, Minimize2, Sparkles, FileText, Shield, Network,
-  Fingerprint
+  Fingerprint, ShieldCheck, KeyRound, Lock
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -43,15 +43,24 @@ const NAV_CATEGORIES = [
     ],
   },
   {
-    title: "Utilities & Security",
+    title: "Security & Cryptography",
     items: [
+      { name: "Base64 & Hex Inspector", icon: Binary, id: "base64-inspector" },
       { name: "JWT Decoder", icon: Key, id: "jwt" },
-      { name: "UUID / ULID Generator", icon: Fingerprint, id: "uuid-generator" },
+      { name: "X.509 Certificate Decoder", icon: ShieldCheck, id: "cert-decoder" },
+      { name: "SSH Key Generator", icon: KeyRound, id: "ssh-key-generator" },
+      { name: "Password Hash & Verifier", icon: Lock, id: "password-hash" },
+      { name: "Hash Generator", icon: Hash, id: "hash" },
       { name: "HMAC Generator", icon: Shield, id: "hmac-generator" },
+      { name: "UUID / ULID Generator", icon: Fingerprint, id: "uuid-generator" },
+    ],
+  },
+  {
+    title: "Utilities & Network",
+    items: [
       { name: "CIDR Calculator", icon: Network, id: "cidr-calculator" },
       { name: "Cron Visualizer", icon: Calendar, id: "cron" },
       { name: "Diff Checker", icon: SplitSquareHorizontal, id: "diff" },
-      { name: "Hash Generator", icon: Hash, id: "hash" },
       { name: "Regex Tester", icon: Regex, id: "regex" },
     ],
   },

@@ -29,6 +29,14 @@ export const SIDEBAR_TO_SLUG: Record<string, string> = {
   "diff": "diff",
   "hash": "hash",
   "regex": "regex",
+  "base64-inspector": "base64-inspector",
+  "base64": "base64-inspector",
+  "cert-decoder": "cert-decoder",
+  "x509": "cert-decoder",
+  "ssh-key-generator": "ssh-key-generator",
+  "ssh-keygen": "ssh-key-generator",
+  "password-hash": "password-hash",
+  "bcrypt": "password-hash",
 };
 
 export const SLUG_TO_SIDEBAR: Record<string, string> = Object.fromEntries(

@@ -12,7 +12,7 @@
 
 <br/>
 
-[**Explore 19+ Tools**](https://devscratchpad.tech) • [**Report a Bug**](https://github.com/Saad-web-spec/DevScratchPad/issues/new) • [**Request a Feature**](https://github.com/Saad-web-spec/DevScratchPad/issues/new) • [**Submit a PR**](./CONTRIBUTING.md)
+[**Explore 23+ Tools**](https://devscratchpad.tech) • [**Report a Bug**](https://github.com/Saad-web-spec/DevScratchPad/issues/new) • [**Request a Feature**](https://github.com/Saad-web-spec/DevScratchPad/issues/new) • [**Submit a PR**](./CONTRIBUTING.md)
 
 </div>
 
@@ -41,7 +41,7 @@
 
 ---
 
-## 🛠️ The 19 Developer Utilities Matrix
+## 🛠️ The 23+ Developer Utilities Matrix
 
 | Category | Tool Name | Route | What It Does |
 | :--- | :--- | :--- | :--- |
@@ -50,7 +50,11 @@
 | | [XML Formatter](https://devscratchpad.tech/tools/xml-formatter) | `/tools/xml-formatter` | Format, beautify, and minify XML data structures with indentation controls. |
 | | [SQL Formatter](https://devscratchpad.tech/tools/sql-formatter) | `/tools/sql-formatter` | Multi-dialect query beautifier (PostgreSQL, MySQL, SQLite) with keyword casing. |
 | | [GraphQL Formatter](https://devscratchpad.tech/tools/graphql-formatter) | `/tools/graphql-formatter` | Formats and validates GraphQL queries and schemas using the official AST parser. |
-| **Security & Crypto** | [JWT Decoder](https://devscratchpad.tech/tools/jwt) | `/tools/jwt` | Safely decodes Header, Payload & Signature; auto-converts `exp`/`iat` timestamps. |
+| **Security & Crypto** | [Base64 & Hex Inspector](https://devscratchpad.tech/tools/base64-inspector) | `/tools/base64-inspector` | Multi-encoding converter, canonical hex dump, and live Data URL image previewer. |
+| | [JWT Decoder](https://devscratchpad.tech/tools/jwt) | `/tools/jwt` | Safely decodes Header, Payload & Signature; auto-converts `exp`/`iat` timestamps. |
+| | [X.509 Certificate Decoder](https://devscratchpad.tech/tools/cert-decoder) | `/tools/cert-decoder` | Decodes PEM certificates and CSRs with SANs, validity countdown, and fingerprints. |
+| | [SSH Key Generator](https://devscratchpad.tech/tools/ssh-key-generator) | `/tools/ssh-key-generator` | In-browser Ed25519/RSA/ECDSA keypair generator with OpenSSH Randomart. |
+| | [Password Hash & Verifier](https://devscratchpad.tech/tools/password-hash) | `/tools/password-hash` | Bcrypt ($2a/$2b), Argon2id, and PBKDF2 hashing and live verification matching. |
 | | [Hash Generator](https://devscratchpad.tech/tools/hash) | `/tools/hash` | Computes MD5, SHA-1, SHA-256, and SHA-512 in parallel client-side. |
 | | [HMAC Generator](https://devscratchpad.tech/tools/hmac-generator) | `/tools/hmac-generator` | Computes SHA256 & SHA512 HMAC signatures in Hex & Base64 for webhook testing. |
 | | [UUID Generator](https://devscratchpad.tech/tools/uuid-generator) | `/tools/uuid-generator` | Fast bulk v4 UUID generator using the native browser Crypto API. |
@@ -60,6 +64,7 @@
 | | [cURL to Python](https://devscratchpad.tech/tools/curl-to-python) | `/tools/curl-to-python` | Transforms cURL commands into Python (`requests`). |
 | | [JSON to TypeScript](https://devscratchpad.tech/tools/json-to-ts) | `/tools/json-to-ts` | Generates strongly-typed TypeScript interfaces from raw JSON. |
 | | [JSON to Zod](https://devscratchpad.tech/tools/json-to-zod) | `/tools/json-to-zod` | Generates strict Zod schemas from raw JSON. |
+| | [SVG to JSX](https://devscratchpad.tech/tools/svg-to-jsx) | `/tools/svg-to-jsx` | Convert raw SVG code to React JSX functional components. |
 | | [YAML to JSON](https://devscratchpad.tech/tools/yaml-to-json) | `/tools/yaml-to-json` | Convert YAML configurations into JSON payloads. |
 | **Diff & Optimization** | [Diff Checker](https://devscratchpad.tech/tools/diff) | `/tools/diff` | Monaco side-by-side or inline code diffing with character-level additions. |
 | | [CSS & SVG Minifier](https://devscratchpad.tech/tools/minifier) | `/tools/minifier` | Strips comments and whitespace; displays byte savings and compression ratio. |

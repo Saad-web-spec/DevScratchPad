@@ -453,6 +453,84 @@ export const TOOLS_REGISTRY: Record<string, ToolMeta> = {
     edgeCases: ["Catastrophic backtracking prevention and lookbehinds."],
     shortcuts: []
   },
+  "base64-inspector": {
+    slug: "base64-inspector",
+    category: "Security",
+    name: "Base64 / Hex / Binary Multi-Inspector & Image Previewer",
+    shortName: "Base64 & Hex Inspector",
+    description: "Auto-detects and converts between Base64, URL-Safe Base64, Hexadecimal streams, Canonical Hex Dumps, Binary octets, and Data URL images.",
+    seoTitle: "Base64 & Hex Inspector Online — Multi-Format Converter & Hex Dump",
+    seoDescription: "Free, 100% private Base64, Hex, Binary, and Data URL inspector. Convert encodings, view canonical hex dumps, and preview data URL images directly in your browser.",
+    howToUse: [
+      "Paste any string, Base64 payload, Hex stream, Binary bits, or Data URL image into the editor.",
+      "The tool auto-detects the encoding format and renders simultaneous multi-format conversions.",
+      "Switch to 'Canonical Hex Dump' to inspect byte offsets, hex pairs, and ASCII representation.",
+      "If an image Data URL is detected, view the live high-contrast preview canvas and download the file."
+    ],
+    edgeCases: [
+      "URL-safe unpadded Base64 strings (- and _).",
+      "Embedded PNG/JPEG/WEBP magic bytes in raw Base64."
+    ],
+    shortcuts: ["Ctrl/Cmd + K — Open Command Palette"]
+  },
+  "cert-decoder": {
+    slug: "cert-decoder",
+    category: "Security",
+    name: "X.509 Certificate & CSR Decoder",
+    shortName: "Certificate Decoder",
+    description: "Decode X.509 PEM certificates and PKCS#10 CSRs in your browser. Inspect Subject, Issuer, SANs, Validity countdown, and fingerprints.",
+    seoTitle: "X.509 Certificate & CSR Decoder Online — 100% Private SSL Inspector",
+    seoDescription: "Decode and inspect X.509 SSL/TLS certificates and CSR requests in your browser. View Subject Alternative Names (SANs), expiry dates, fingerprints, and key usages.",
+    howToUse: [
+      "Paste a PEM certificate (-----BEGIN CERTIFICATE-----) or CSR (-----BEGIN CERTIFICATE REQUEST-----), or upload a .crt/.pem file.",
+      "Instantly inspect certificate status, validity countdown, Common Name, and Issuer.",
+      "Review Subject Alternative Names (SANs) and Cryptographic Properties (Key size, algorithm, SHA-256 fingerprint)."
+    ],
+    edgeCases: [
+      "Expired or not-yet-valid certificates.",
+      "Wildcard DNS and multi-SAN SSL certificates."
+    ],
+    shortcuts: ["Ctrl/Cmd + K — Open Command Palette"]
+  },
+  "ssh-key-generator": {
+    slug: "ssh-key-generator",
+    category: "Security",
+    name: "SSH Keypair Generator & Randomart Visualizer",
+    shortName: "SSH Key Generator",
+    description: "Generate cryptographically secure Ed25519, RSA (2048/4096), and ECDSA SSH key pairs directly in your browser with OpenSSH Randomart.",
+    seoTitle: "SSH Key Generator Online (Ed25519, RSA, ECDSA) — OpenSSH Randomart",
+    seoDescription: "Generate secure SSH key pairs (Ed25519, RSA 4096, ECDSA) in your browser using WebCrypto API. Download .pub and .pem keys with OpenSSH Randomart visualizer.",
+    howToUse: [
+      "Select your desired algorithm (Ed25519 is recommended for modern servers).",
+      "Enter a custom comment or email identity (e.g. user@devscratchpad).",
+      "Copy or download your public key (id_ed25519.pub) and private key (PKCS#8 PEM).",
+      "View the iconic OpenSSH Drunken Bishop Randomart ASCII art visualizer."
+    ],
+    edgeCases: [
+      "Zero server transmission ensures private keys never leave your machine memory.",
+      "OpenSSH wire format binary serialization done completely client-side."
+    ],
+    shortcuts: ["Ctrl/Cmd + K — Open Command Palette"]
+  },
+  "password-hash": {
+    slug: "password-hash",
+    category: "Security",
+    name: "Bcrypt / Argon2 / PBKDF2 Password Hash Verifier & Generator",
+    shortName: "Password Hash & Verifier",
+    description: "Generate and verify passwords against Bcrypt ($2a/$2b), Argon2id, and PBKDF2 hashes with cost factor controls.",
+    seoTitle: "Bcrypt & Argon2 Hash Generator & Verifier Online — DevScratchpad",
+    seoDescription: "Generate Bcrypt, Argon2id, and PBKDF2 password hashes and verify candidate passwords against existing hashes entirely in your browser.",
+    howToUse: [
+      "Toggle between 'Generate Hash' and 'Verify Password Against Hash' modes.",
+      "In Generate mode: Enter plaintext password, adjust cost rounds or iterations, and copy generated hash.",
+      "In Verify mode: Paste an existing hash ($2b$10$...) and candidate password to receive an instant match verification badge."
+    ],
+    edgeCases: [
+      "Bcrypt 72-byte string truncation limits.",
+      "Support for $2a$, $2b$, and $2y$ hash dialect prefixes."
+    ],
+    shortcuts: ["Ctrl/Cmd + K — Open Command Palette"]
+  },
 };
 
 export const TOOL_SLUGS = Object.keys(TOOLS_REGISTRY);

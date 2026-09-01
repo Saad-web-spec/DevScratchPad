@@ -23,6 +23,9 @@ import {
   Shield,
   Network,
   Fingerprint,
+  ShieldCheck,
+  KeyRound,
+  Lock,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -50,7 +53,11 @@ const ALL_TOOLS = [
   { id: "yaml", name: "YAML / JSON Converter", category: "Converters", icon: ArrowLeftRight },
   { id: "yaml-to-json", name: "YAML to JSON", category: "Converters", icon: ArrowLeftRight },
   { id: "json-to-yaml", name: "JSON to YAML", category: "Converters", icon: ArrowLeftRight },
+  { id: "base64-inspector", name: "Base64 & Hex Inspector", category: "Security", icon: Binary },
   { id: "jwt", name: "JWT Decoder", category: "Security", icon: Key },
+  { id: "cert-decoder", name: "X.509 Certificate Decoder", category: "Security", icon: ShieldCheck },
+  { id: "ssh-key-generator", name: "SSH Key Generator", category: "Security", icon: KeyRound },
+  { id: "password-hash", name: "Password Hash & Verifier", category: "Security", icon: Lock },
   { id: "uuid-generator", name: "UUID / ULID Generator", category: "Security", icon: Fingerprint },
   { id: "hmac-generator", name: "HMAC Generator", category: "Security", icon: Shield },
   { id: "cidr-calculator", name: "CIDR Calculator", category: "Network", icon: Network },
