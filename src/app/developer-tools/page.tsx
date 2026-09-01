@@ -2,7 +2,8 @@ import { Metadata } from "next";
 import Link from "next/link";
 import { TOOLS_REGISTRY } from "@/lib/tools/registry";
 import { Sparkles, Terminal, FileCode, Shield, Code, Settings } from "lucide-react";
-import { TopBar } from "@/components/layout/TopBar";
+import { SiteHeader } from "@/components/layout/SiteHeader";
+import { SiteFooter } from "@/components/layout/SiteFooter";
 
 export const metadata: Metadata = {
   title: "Free Developer Tools Directory | DevScratchpad",
@@ -38,7 +39,7 @@ export default function DeveloperToolsPage() {
 
   return (
     <div className="min-h-screen bg-zinc-50 flex flex-col">
-      <TopBar />
+      <SiteHeader />
       
       <main className="flex-1 w-full max-w-5xl mx-auto px-6 py-12 md:py-20">
         <div className="text-center mb-16 space-y-4">
@@ -78,6 +79,8 @@ export default function DeveloperToolsPage() {
           ))}
         </div>
       </main>
+
+      <SiteFooter />
     </div>
   );
 }
