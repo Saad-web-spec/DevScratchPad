@@ -164,7 +164,7 @@ export function CertDecoderTool({
       </div>
 
       {/* Main Split Layout */}
-      <div className="flex-1 min-h-0 flex flex-col lg:flex-row divide-y lg:divide-y-0 lg:divide-x divide-zinc-200 overflow-hidden" id="cert-export-card">
+      <div className="flex-1 min-h-0 flex flex-col lg:flex-row divide-y lg:divide-y-0 lg:divide-x divide-zinc-100 overflow-hidden" id="cert-export-card">
         {/* Left: PEM / Raw Input Pane */}
         <div className="flex-1 flex flex-col min-w-0 bg-white">
           <div className="h-10 px-4 border-b border-zinc-200 flex items-center justify-between bg-zinc-50 shrink-0">
@@ -181,7 +181,7 @@ export function CertDecoderTool({
             </button>
           </div>
 
-          <div className="flex-1 p-4 overflow-y-auto">
+          <div className="flex-1 p-6 overflow-y-auto">
             <textarea
               value={input}
               onChange={(e) => setInput(e.target.value)}
@@ -193,9 +193,9 @@ export function CertDecoderTool({
         </div>
 
         {/* Right: Structured Certificate Inspector */}
-        <div className="flex-1 flex flex-col min-w-0 bg-zinc-50/50">
+        <div className="flex-1 flex flex-col min-w-0 bg-zinc-50/30">
           <div className="h-10 px-4 border-b border-zinc-200 flex items-center justify-between bg-zinc-50 shrink-0">
-            <div className="flex items-center gap-2 text-xs font-semibold text-zinc-800">
+            <div className="flex items-center gap-2 text-xs font-semibold text-zinc-900">
               <FileCheck className="w-4 h-4 text-blue-600" />
               <span>Decoded X.509 Certificate Details</span>
             </div>
@@ -210,17 +210,17 @@ export function CertDecoderTool({
             )}
           </div>
 
-          <div className="flex-1 p-4 overflow-y-auto min-h-0 space-y-4">
+          <div className="flex-1 p-6 overflow-y-auto min-h-0 space-y-4">
             {certData?.valid ? (
               <>
                 {/* Validity / Status Banner */}
                 {certData.type === "certificate" ? (
                   <div
                     className={cn(
-                      "p-4 rounded-xl border flex items-center justify-between gap-3 shadow-xs",
+                      "p-5 rounded-2xl border flex items-center justify-between gap-3 shadow-xs",
                       certData.validityStatus === "valid"
-                        ? "bg-emerald-50/70 border-emerald-200 text-emerald-950"
-                        : "bg-red-50/70 border-red-200 text-red-950"
+                        ? "bg-emerald-50 border-emerald-200 text-emerald-950"
+                        : "bg-red-50 border-red-200 text-red-950"
                     )}
                   >
                     <div className="flex items-center gap-3">
@@ -256,7 +256,7 @@ export function CertDecoderTool({
                 )}
 
                 {/* Subject Details */}
-                <div className="p-4 rounded-xl border border-zinc-200 bg-white shadow-xs">
+                <div className="p-6 rounded-2xl border border-zinc-200/60 bg-white shadow-sm shadow-xs">
                   <div className="flex items-center gap-2 mb-3 text-xs font-semibold text-zinc-900">
                     <Award className="w-4 h-4 text-blue-600" />
                     <span>Subject Details</span>
@@ -270,22 +270,22 @@ export function CertDecoderTool({
                     </div>
                     <div className="p-2.5 rounded-lg bg-zinc-50 border border-zinc-100">
                       <span className="text-zinc-600 block text-[11px] font-medium mb-0.5">Organization (O)</span>
-                      <span className="font-mono text-zinc-800">{certData.subject?.organization || "N/A"}</span>
+                      <span className="font-mono text-zinc-900">{certData.subject?.organization || "N/A"}</span>
                     </div>
                     <div className="p-2.5 rounded-lg bg-zinc-50 border border-zinc-100">
                       <span className="text-zinc-600 block text-[11px] font-medium mb-0.5">Country (C)</span>
-                      <span className="font-mono text-zinc-800">{certData.subject?.country || "N/A"}</span>
+                      <span className="font-mono text-zinc-900">{certData.subject?.country || "N/A"}</span>
                     </div>
                     <div className="p-2.5 rounded-lg bg-zinc-50 border border-zinc-100">
                       <span className="text-zinc-600 block text-[11px] font-medium mb-0.5">State / Province (ST)</span>
-                      <span className="font-mono text-zinc-800">{certData.subject?.stateOrProvince || "N/A"}</span>
+                      <span className="font-mono text-zinc-900">{certData.subject?.stateOrProvince || "N/A"}</span>
                     </div>
                   </div>
                 </div>
 
                 {/* Issuer Details (if certificate) */}
                 {certData.type === "certificate" && certData.issuer && (
-                  <div className="p-4 rounded-xl border border-zinc-200 bg-white shadow-xs">
+                  <div className="p-6 rounded-2xl border border-zinc-200/60 bg-white shadow-sm shadow-xs">
                     <div className="flex items-center gap-2 mb-3 text-xs font-semibold text-zinc-900">
                       <Globe className="w-4 h-4 text-emerald-600" />
                       <span>Issuer (Certificate Authority)</span>
@@ -299,7 +299,7 @@ export function CertDecoderTool({
                       </div>
                       <div className="p-2.5 rounded-lg bg-zinc-50 border border-zinc-100">
                         <span className="text-zinc-600 block text-[11px] font-medium mb-0.5">Issuer Organization</span>
-                        <span className="font-mono text-zinc-800">{certData.issuer.organization || "N/A"}</span>
+                        <span className="font-mono text-zinc-900">{certData.issuer.organization || "N/A"}</span>
                       </div>
                     </div>
                   </div>
@@ -307,7 +307,7 @@ export function CertDecoderTool({
 
                 {/* Subject Alternative Names (SANs) */}
                 {certData.sans && certData.sans.length > 0 && (
-                  <div className="p-4 rounded-xl border border-zinc-200 bg-white shadow-xs">
+                  <div className="p-6 rounded-2xl border border-zinc-200/60 bg-white shadow-sm shadow-xs">
                     <div className="flex items-center gap-2 mb-2.5 text-xs font-semibold text-zinc-900">
                       <Globe className="w-4 h-4 text-purple-600" />
                       <span>Subject Alternative Names (SANs)</span>
@@ -326,7 +326,7 @@ export function CertDecoderTool({
                 )}
 
                 {/* Cryptographic Properties */}
-                <div className="p-4 rounded-xl border border-zinc-200 bg-white shadow-xs">
+                <div className="p-6 rounded-2xl border border-zinc-200/60 bg-white shadow-sm shadow-xs">
                   <div className="flex items-center gap-2 mb-3 text-xs font-semibold text-zinc-900">
                     <Lock className="w-4 h-4 text-amber-600" />
                     <span>Cryptographic Properties</span>
@@ -352,7 +352,7 @@ export function CertDecoderTool({
                       <div className="p-2.5 rounded-lg bg-zinc-50 border border-zinc-100 flex items-center justify-between text-xs">
                         <div className="min-w-0 mr-2">
                           <span className="text-[11px] font-sans font-medium text-zinc-600 block">SHA-256 Fingerprint</span>
-                          <span className="font-mono text-zinc-800 break-all text-[11px]">{certData.fingerprintSha256}</span>
+                          <span className="font-mono text-zinc-900 break-all text-[11px]">{certData.fingerprintSha256}</span>
                         </div>
                         <button
                           onClick={() => handleCopy(certData.fingerprintSha256!, "sha256_fp")}
@@ -366,7 +366,7 @@ export function CertDecoderTool({
                       <div className="p-2.5 rounded-lg bg-zinc-50 border border-zinc-100 flex items-center justify-between text-xs">
                         <div className="min-w-0 mr-2">
                           <span className="text-[11px] font-sans font-medium text-zinc-600 block">SHA-1 Fingerprint</span>
-                          <span className="font-mono text-zinc-800 break-all text-[11px]">{certData.fingerprintSha1}</span>
+                          <span className="font-mono text-zinc-900 break-all text-[11px]">{certData.fingerprintSha1}</span>
                         </div>
                         <button
                           onClick={() => handleCopy(certData.fingerprintSha1!, "sha1_fp")}
@@ -381,7 +381,7 @@ export function CertDecoderTool({
 
                 {/* Key Usages / Extensions */}
                 {certData.keyUsages && certData.keyUsages.length > 0 && (
-                  <div className="p-4 rounded-xl border border-zinc-200 bg-white shadow-xs">
+                  <div className="p-6 rounded-2xl border border-zinc-200/60 bg-white shadow-sm shadow-xs">
                     <div className="flex items-center gap-2 mb-2 text-xs font-semibold text-zinc-900">
                       <Layers className="w-4 h-4 text-indigo-600" />
                       <span>Key Usages</span>
@@ -402,7 +402,7 @@ export function CertDecoderTool({
             ) : (
               <div className="p-8 text-center text-zinc-600 flex flex-col items-center justify-center h-full">
                 <ShieldAlert className="w-10 h-10 text-red-500 mb-2" />
-                <span className="font-semibold text-zinc-800 text-sm">
+                <span className="font-semibold text-zinc-900 text-sm">
                   {certData?.error || "Invalid PEM certificate format"}
                 </span>
                 <span className="text-xs text-zinc-600 mt-1 max-w-sm">

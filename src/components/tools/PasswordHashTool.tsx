@@ -165,14 +165,14 @@ export function PasswordHashTool({
       {/* Top Controls Bar */}
       <div className="h-12 border-b border-zinc-200 px-4 flex items-center justify-between gap-2 shrink-0 bg-white">
         {/* Mode Toggle */}
-        <div className="flex items-center p-0.5 rounded-lg bg-zinc-100 border border-zinc-200">
+        <div className="flex items-center p-0.5 rounded-lg bg-zinc-100/70 border border-zinc-200/60">
           <button
             onClick={() => setMode("generate")}
             className={cn(
               "px-3 py-1 rounded-md text-xs font-medium transition-colors",
               mode === "generate"
-                ? "bg-zinc-900 text-white shadow-xs"
-                : "text-zinc-600 hover:text-zinc-900"
+                ? "bg-white text-zinc-900 shadow-sm ring-1 ring-black/5 font-semibold"
+                : "text-zinc-500 hover:text-zinc-900 hover:bg-zinc-200/50"
             )}
           >
             Generate Hash
@@ -182,8 +182,8 @@ export function PasswordHashTool({
             className={cn(
               "px-3 py-1 rounded-md text-xs font-medium transition-colors",
               mode === "verify"
-                ? "bg-zinc-900 text-white shadow-xs"
-                : "text-zinc-600 hover:text-zinc-900"
+                ? "bg-white text-zinc-900 shadow-sm ring-1 ring-black/5 font-semibold"
+                : "text-zinc-500 hover:text-zinc-900 hover:bg-zinc-200/50"
             )}
           >
             Verify Password Against Hash
@@ -211,7 +211,7 @@ export function PasswordHashTool({
         {mode === "generate" ? (
           <>
             {/* Left Column: Generator Parameters */}
-            <div className="w-full lg:w-96 flex flex-col min-w-0 bg-zinc-50/50 p-4 overflow-y-auto space-y-4 shrink-0">
+            <div className="w-full lg:w-96 flex flex-col min-w-0 bg-zinc-50/30 p-6 overflow-y-auto space-y-6 shrink-0">
               {/* Plaintext Password Input */}
               <div>
                 <div className="flex items-center justify-between mb-1">
@@ -229,16 +229,16 @@ export function PasswordHashTool({
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Enter password to hash..."
-                  className="w-full px-3 py-2 rounded-lg border border-zinc-200 bg-white font-mono text-xs text-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-900"
+                  className="w-full px-3 py-2.5 rounded-lg border border-zinc-200 bg-white font-mono text-xs text-zinc-900 focus:outline-none focus:ring-1 focus:ring-blue-500 transition-shadow"
                 />
               </div>
 
               {/* Algorithm Picker */}
               <div>
-                <span className="text-xs font-semibold text-zinc-900 block mb-1.5">
+                <span className="text-xs font-semibold text-zinc-900 block mb-2">
                   Hashing Algorithm
                 </span>
-                <div className="space-y-1.5">
+                <div className="space-y-2">
                   {ALGORITHMS.map((a) => {
                     const isSelected = algo === a.id;
                     return (
@@ -246,18 +246,18 @@ export function PasswordHashTool({
                         key={a.id}
                         onClick={() => setAlgo(a.id)}
                         className={cn(
-                          "w-full text-left p-2.5 rounded-lg border transition-all text-xs",
+                          "w-full text-left p-3 rounded-xl border transition-all text-xs",
                           isSelected
-                            ? "bg-white border-zinc-900 shadow-xs ring-1 ring-zinc-900"
-                            : "bg-white border-zinc-200 hover:border-zinc-300 text-zinc-600"
+                            ? "bg-blue-50/50 border-blue-200 shadow-sm ring-1 ring-blue-500"
+                            : "bg-white border-zinc-200 hover:border-zinc-300 text-zinc-600 shadow-xs"
                         )}
                       >
-                        <div className="flex items-center justify-between mb-0.5">
-                          <span className="font-semibold text-zinc-900">{a.name}</span>
+                        <div className="flex items-center justify-between mb-1">
+                          <span className={cn("font-semibold", isSelected ? "text-blue-900" : "text-zinc-900")}>{a.name}</span>
                           <span
                             className={cn(
                               "px-1.5 py-0.5 rounded text-[10px] font-medium",
-                              isSelected ? "bg-zinc-900 text-white" : "bg-zinc-100 text-zinc-600"
+                              isSelected ? "bg-blue-100 text-blue-700" : "bg-zinc-100 text-zinc-600"
                             )}
                           >
                             {a.tag}

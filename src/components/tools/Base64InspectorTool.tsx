@@ -134,7 +134,7 @@ export function Base64InspectorTool({
           })}
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center p-0.5 rounded-lg bg-zinc-100/70 border border-zinc-200/60">
           <ShareButton toolSlug="base64-inspector" data={input} />
           <EmbedButton toolSlug="base64-inspector" data={input} />
           <ExportImageButton code={conversions.hexDump || input} language="text" />
@@ -142,7 +142,7 @@ export function Base64InspectorTool({
       </div>
 
       {/* Main Workspace Layout */}
-      <div className="flex-1 min-h-0 flex flex-col lg:flex-row divide-y lg:divide-y-0 lg:divide-x divide-zinc-200 overflow-hidden" id="base64-export-card">
+      <div className="flex-1 min-h-0 flex flex-col lg:flex-row divide-y lg:divide-y-0 lg:divide-x divide-zinc-100 overflow-hidden" id="base64-export-card">
         {/* Left / Top: Input Pane */}
         <div className="flex-1 flex flex-col min-w-0 bg-white">
           <div className="h-10 px-4 border-b border-zinc-200 flex items-center justify-between bg-zinc-50/50 shrink-0">
@@ -181,14 +181,14 @@ export function Base64InspectorTool({
               value={input}
               onChange={(e) => setInput(e.target.value)}
               placeholder="Paste any text, Base64 string, Hex stream, Binary bits, or Data URL image..."
-              className="w-full h-full min-h-[180px] font-mono text-xs text-zinc-900 bg-transparent resize-none border-0 outline-none focus:ring-0 leading-relaxed placeholder:text-zinc-600"
+              className="w-full h-full min-h-[220px] font-mono text-xs text-zinc-900 bg-transparent resize-none border-0 outline-none focus:ring-0 leading-relaxed placeholder:text-zinc-600"
               spellCheck={false}
             />
           </div>
 
           {/* Live Image Preview Banner if Data URL or Image Base64 is Detected */}
           {conversions.dataUrlInfo.isImage && conversions.dataUrlInfo.fullDataUrl && (
-            <div className="border-t border-zinc-200 p-4 bg-zinc-50">
+            <div className="border-t border-zinc-100 p-6 bg-zinc-50/50">
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2 text-xs font-medium text-zinc-800">
                   <ImageIcon className="w-4 h-4 text-emerald-600" />
@@ -221,14 +221,14 @@ export function Base64InspectorTool({
         {/* Right / Bottom: Multi-Encoding Output Grid */}
         <div className="flex-1 flex flex-col min-w-0 bg-zinc-50/50">
           <div className="h-10 px-4 border-b border-zinc-200 flex items-center justify-between bg-zinc-50 shrink-0">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center p-0.5 rounded-lg bg-zinc-100/70 border border-zinc-200/60">
               <button
                 onClick={() => setActiveTab("cards")}
                 className={cn(
-                  "px-3 py-1 rounded text-xs font-medium transition-colors",
+                  "px-3 py-1 rounded-md text-xs font-medium transition-colors",
                   activeTab === "cards"
-                    ? "bg-zinc-900 text-white shadow-xs"
-                    : "text-zinc-600 hover:text-zinc-900"
+                    ? "bg-white text-zinc-900 shadow-sm ring-1 ring-black/5 font-semibold"
+                    : "text-zinc-500 hover:text-zinc-900 hover:bg-zinc-200/50"
                 )}
               >
                 Multi-Format Cards
@@ -236,10 +236,10 @@ export function Base64InspectorTool({
               <button
                 onClick={() => setActiveTab("hexdump")}
                 className={cn(
-                  "px-3 py-1 rounded text-xs font-medium transition-colors",
+                  "px-3 py-1 rounded-md text-xs font-medium transition-colors",
                   activeTab === "hexdump"
-                    ? "bg-zinc-900 text-white shadow-xs"
-                    : "text-zinc-600 hover:text-zinc-900"
+                    ? "bg-white text-zinc-900 shadow-sm ring-1 ring-black/5 font-semibold"
+                    : "text-zinc-500 hover:text-zinc-900 hover:bg-zinc-200/50"
                 )}
               >
                 Canonical Hex Dump

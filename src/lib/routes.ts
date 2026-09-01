@@ -30,18 +30,19 @@ export const SIDEBAR_TO_SLUG: Record<string, string> = {
   "hash": "hash",
   "regex": "regex",
   "base64-inspector": "base64-inspector",
-  "base64": "base64-inspector",
   "cert-decoder": "cert-decoder",
-  "x509": "cert-decoder",
   "ssh-key-generator": "ssh-key-generator",
-  "ssh-keygen": "ssh-key-generator",
   "password-hash": "password-hash",
-  "bcrypt": "password-hash",
 };
 
-export const SLUG_TO_SIDEBAR: Record<string, string> = Object.fromEntries(
-  Object.entries(SIDEBAR_TO_SLUG).map(([k, v]) => [v, k])
-);
+export const SLUG_TO_SIDEBAR: Record<string, string> = {
+  ...Object.fromEntries(Object.entries(SIDEBAR_TO_SLUG).map(([k, v]) => [v, k])),
+  // Aliases
+  "base64": "base64-inspector",
+  "x509": "cert-decoder",
+  "ssh-keygen": "ssh-key-generator",
+  "bcrypt": "password-hash",
+};
 
 export function getToolUrl(sidebarId: string): string {
   const slug = SIDEBAR_TO_SLUG[sidebarId] || sidebarId;

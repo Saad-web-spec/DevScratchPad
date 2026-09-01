@@ -151,7 +151,7 @@ export function SshKeyGeneratorTool({
       {/* Main Workspace Layout */}
       <div className="flex-1 min-h-0 flex flex-col lg:flex-row divide-y lg:divide-y-0 lg:divide-x divide-zinc-200 overflow-hidden" id="ssh-export-card">
         {/* Left Column: Key Parameters & Algorithm Configuration */}
-        <div className="w-full lg:w-80 flex flex-col min-w-0 bg-zinc-50/50 p-4 overflow-y-auto space-y-4 shrink-0">
+        <div className="w-full lg:w-96 flex flex-col min-w-0 bg-zinc-50/30 p-6 overflow-y-auto space-y-6 shrink-0">
           <div>
             <span className="text-xs font-semibold text-zinc-900 block mb-1">Key Algorithm</span>
             <div className="space-y-2">
@@ -164,7 +164,7 @@ export function SshKeyGeneratorTool({
                     className={cn(
                       "w-full text-left p-3 rounded-lg border transition-all text-xs",
                       isSelected
-                        ? "bg-white border-zinc-900 shadow-xs ring-1 ring-zinc-900"
+                        ? "bg-blue-50/50 border-blue-200 shadow-sm ring-1 ring-blue-500"
                         : "bg-white border-zinc-200 hover:border-zinc-300 text-zinc-600"
                     )}
                   >
@@ -173,7 +173,7 @@ export function SshKeyGeneratorTool({
                       <span
                         className={cn(
                           "px-2 py-0.5 rounded text-[10px] font-medium",
-                          isSelected ? "bg-zinc-900 text-white" : "bg-zinc-100 text-zinc-600"
+                          isSelected ? "bg-blue-100 text-blue-700" : "bg-zinc-100 text-zinc-600"
                         )}
                       >
                         {a.tag}
@@ -213,11 +213,11 @@ export function SshKeyGeneratorTool({
         </div>
 
         {/* Right Column: Generated Keys & Randomart */}
-        <div className="flex-1 flex flex-col min-w-0 bg-white overflow-y-auto p-4 space-y-4">
+        <div className="flex-1 flex flex-col min-w-0 bg-white overflow-y-auto p-6 space-y-6 lg:p-8 lg:space-y-8">
           {keypair ? (
             <>
               {/* Public Key Card */}
-              <div className="p-4 rounded-xl border border-zinc-200 bg-white shadow-xs">
+              <div className="p-6 rounded-2xl border border-zinc-200/60 bg-white shadow-sm">
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center gap-2 text-xs font-semibold text-zinc-900">
                     <KeyRound className="w-4 h-4 text-emerald-600" />
@@ -243,13 +243,13 @@ export function SshKeyGeneratorTool({
                     </button>
                   </div>
                 </div>
-                <pre className="font-mono text-xs text-zinc-800 break-all whitespace-pre-wrap bg-zinc-50 p-3 rounded-lg border border-zinc-100 select-all leading-relaxed">
+                <pre className="font-mono text-xs text-zinc-800 break-all whitespace-pre-wrap bg-zinc-50/50 p-4 rounded-xl border border-zinc-100/50 select-all leading-relaxed">
                   {keypair.publicKeyOpenSSH}
                 </pre>
               </div>
 
               {/* Private Key Card */}
-              <div className="p-4 rounded-xl border border-zinc-200 bg-white shadow-xs">
+              <div className="p-6 rounded-2xl border border-zinc-200/60 bg-white shadow-sm">
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center gap-2 text-xs font-semibold text-zinc-900">
                     <Shield className="w-4 h-4 text-amber-600" />
@@ -282,7 +282,7 @@ export function SshKeyGeneratorTool({
                 <div className="relative">
                   <pre
                     className={cn(
-                      "font-mono text-xs text-zinc-800 break-all whitespace-pre-wrap bg-zinc-50 p-3 rounded-lg border border-zinc-100 max-h-36 overflow-y-auto leading-relaxed select-all",
+                      "font-mono text-xs text-zinc-800 break-all whitespace-pre-wrap bg-zinc-50/50 p-4 rounded-xl border border-zinc-100/50 max-h-36 overflow-y-auto leading-relaxed select-all",
                       !showPrivateKey && "blur-xs select-none"
                     )}
                   >
@@ -305,13 +305,13 @@ export function SshKeyGeneratorTool({
               {/* Fingerprints & Randomart Grid */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {/* Fingerprints */}
-                <div className="p-4 rounded-xl border border-zinc-200 bg-white shadow-xs flex flex-col justify-between">
+                <div className="p-6 rounded-2xl border border-zinc-200/60 bg-white shadow-sm flex flex-col justify-between">
                   <div className="flex items-center gap-2 mb-3 text-xs font-semibold text-zinc-900">
                     <Fingerprint className="w-4 h-4 text-purple-600" />
                     <span>Public Key Fingerprints</span>
                   </div>
                   <div className="space-y-3 text-xs">
-                    <div className="p-2.5 rounded-lg bg-zinc-50 border border-zinc-100">
+                    <div className="p-4 rounded-xl bg-zinc-50/50 border border-zinc-100/50">
                       <div className="flex items-center justify-between mb-1">
                         <span className="text-[11px] font-medium text-zinc-600">SHA-256 Fingerprint</span>
                         <button
@@ -324,7 +324,7 @@ export function SshKeyGeneratorTool({
                       <span className="font-mono text-zinc-900 break-all">{keypair.fingerprintSha256}</span>
                     </div>
 
-                    <div className="p-2.5 rounded-lg bg-zinc-50 border border-zinc-100">
+                    <div className="p-4 rounded-xl bg-zinc-50/50 border border-zinc-100/50">
                       <div className="flex items-center justify-between mb-1">
                         <span className="text-[11px] font-medium text-zinc-600">MD5 (Legacy) Fingerprint</span>
                         <button
