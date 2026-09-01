@@ -60,7 +60,7 @@ export function HomeSeoContent() {
 "itemListElement": allTools.map((tool, idx) => ({
 "@type":"ListItem",
 "position": idx + 1,
-"url": `https://www.devscratchpad.tech/${tool.slug}`,
+"url": `https://www.devscratchpad.tech/tools/${tool.slug}`,
 "name": tool.name
  }))
  },
@@ -156,7 +156,7 @@ export function HomeSeoContent() {
  return (
  <Link
  key={tool.slug}
- href={`/${tool.slug}`}
+ href={`/tools/${tool.slug}`}
  className="group flex items-center justify-between p-3.5 bg-zinc-50 ] hover:bg-zinc-100 border border-zinc-200 ] rounded-xl transition-all"
  >
  <div>

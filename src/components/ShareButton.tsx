@@ -62,7 +62,7 @@ export function ShareButton({ toolSlug, data, className }: ShareButtonProps) {
  if (data === undefined || data === null) return;
  const encoded = encodeShareData(data);
  const origin = typeof window !=="undefined"? window.location.origin :"";
- const shareUrl = `${origin}/${toolSlug}#data=${encoded}`;
+ const shareUrl = `${origin}/tools/${toolSlug}#data=${encoded}`;
 
  // Update URL hash in address bar without scrolling
  if (typeof window !=="undefined") {

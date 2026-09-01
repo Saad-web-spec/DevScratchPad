@@ -117,7 +117,7 @@ export default async function BlogPostPage({
  Related Tool
  </h3>
  <Link
- href={`/${toolMeta.slug}`}
+ href={`/tools/${toolMeta.slug}`}
  className="group flex flex-col sm:flex-row items-start sm:items-center justify-between p-5 bg-zinc-50 ] border border-zinc-200 ] rounded-xl hover:bg-zinc-100 transition-all"
  >
  <div className="flex items-center gap-4 mb-4 sm:mb-0">

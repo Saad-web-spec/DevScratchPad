@@ -1,12 +1,13 @@
 import { MetadataRoute } from"next";
 import { TOOL_SLUGS } from"@/lib/tools/registry";
 import { BLOG_SLUGS } from"@/lib/blog/posts";
+import { ROUTES } from"@/lib/routes";
 
 const SITE_URL ="https://www.devscratchpad.tech";
 
 export default function sitemap(): MetadataRoute.Sitemap {
  const routes = TOOL_SLUGS.map((slug) => ({
- url: `${SITE_URL}/${slug}`,
+ url: `${SITE_URL}${ROUTES.tool(slug)}`,
  lastModified: new Date("2026-08-31"),
  changeFrequency:"weekly"as const,
  priority: 0.8,

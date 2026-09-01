@@ -38,9 +38,9 @@ export function SeoContent({ tool }: { tool: ToolMeta }) {
 "@graph": [
  {
 "@type":"WebApplication",
-"@id": `https://www.devscratchpad.tech/${tool.slug}#webapp`,
+"@id": `https://www.devscratchpad.tech/tools/${tool.slug}#webapp`,
 "name": `${tool.name} Online`,
-"url": `https://www.devscratchpad.tech/${tool.slug}`,
+"url": `https://www.devscratchpad.tech/tools/${tool.slug}`,
 "applicationCategory":"DeveloperApplication",
 "operatingSystem":"All",
 "browserRequirements":"Requires JavaScript",
@@ -53,7 +53,7 @@ export function SeoContent({ tool }: { tool: ToolMeta }) {
  },
  {
 "@type":"HowTo",
-"@id": `https://www.devscratchpad.tech/${tool.slug}#howto`,
+"@id": `https://www.devscratchpad.tech/tools/${tool.slug}#howto`,
 "name": `How to use ${tool.name} Online`,
 "description": `Step-by-step guide to use ${tool.name} with 100% in-browser client-side privacy.`,
 "step": tool.howToUse.map((step, idx) => ({
@@ -65,7 +65,7 @@ export function SeoContent({ tool }: { tool: ToolMeta }) {
  },
  {
 "@type":"FAQPage",
-"@id": `https://www.devscratchpad.tech/${tool.slug}#faq`,
+"@id": `https://www.devscratchpad.tech/tools/${tool.slug}#faq`,
 "mainEntity": [
  {
 "@type":"Question",
@@ -97,7 +97,7 @@ export function SeoContent({ tool }: { tool: ToolMeta }) {
 "@type":"BreadcrumbList",
 "itemListElement": [
  {"@type":"ListItem","position": 1,"name":"DevScratchpad","item":"https://www.devscratchpad.tech"},
- {"@type":"ListItem","position": 2,"name": tool.name,"item": `https://www.devscratchpad.tech/${tool.slug}` }
+ {"@type":"ListItem","position": 2,"name": tool.name,"item": `https://www.devscratchpad.tech/tools/${tool.slug}` }
  ]
  }
  ]
@@ -219,7 +219,7 @@ export function SeoContent({ tool }: { tool: ToolMeta }) {
  {relatedTools.map((rel) => (
  <Link
  key={rel.slug}
- href={`/${rel.slug}`}
+ href={`/tools/${rel.slug}`}
  className="group flex items-center justify-between p-3.5 bg-zinc-50 ] hover:bg-zinc-100 border border-zinc-200 ] rounded-xl transition-all"
  >
  <div>

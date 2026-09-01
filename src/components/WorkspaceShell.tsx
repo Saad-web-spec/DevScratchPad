@@ -35,60 +35,32 @@ import { X, Sparkles } from "lucide-react";
 import { useRouter } from"next/navigation";
 import { decodeShareData } from"@/components/ShareButton";
 
-// Bidirectional map between sidebar IDs and URL slugs
-const SIDEBAR_TO_SLUG: Record<string, string> = {
-"json-formatter":"json-formatter",
- jwt:"jwt-decoder",
- timestamp:"unix-timestamp",
- curl:"curl-converter",
- diff:"diff-checker",
-"xml-formatter":"xml-formatter",
-"sql-formatter":"sql-formatter",
- base64:"base64-decoder",
- url:"url-encoder",
- hash:"hash-generator",
- regex:"regex-tester",
-"json-to-ts":"json-to-typescript",
- cron:"cron-visualizer",
- yaml:"yaml-json",
- minifier:"css-svg-minifier",
-"graphql-formatter":"graphql-formatter",
-"markdown-previewer":"markdown-previewer",
-"hmac-generator":"hmac-generator",
-"cidr-calculator":"cidr-calculator",
-"svg-to-jsx":"svg-to-jsx",
-"uuid-generator":"uuid-generator",
-"case-converter":"case-converter",
-};
+import { SIDEBAR_TO_SLUG, SLUG_TO_SIDEBAR, getToolUrl } from "@/lib/routes";
 
 const SIDEBAR_TO_NAME: Record<string, string> = {
-"json-formatter":"JSON Formatter",
+ "json-formatter":"JSON Formatter",
  jwt:"JWT Decoder",
  timestamp:"Unix Timestamp",
  curl:"cURL Converter",
  diff:"Diff Checker",
-"xml-formatter":"XML Formatter",
-"sql-formatter":"SQL Formatter",
+ "xml-formatter":"XML Formatter",
+ "sql-formatter":"SQL Formatter",
  base64:"Base64 Decoder",
  url:"URL Encoder",
  hash:"Hash Generator",
  regex:"Regex Tester",
-"json-to-ts":"JSON to TypeScript",
+ "json-to-ts":"JSON to TypeScript",
  cron:"Cron Visualizer",
  yaml:"YAML Converter",
  minifier:"CSS/SVG Minifier",
-"graphql-formatter":"GraphQL Formatter",
-"markdown-previewer":"Markdown Previewer",
-"hmac-generator":"HMAC Generator",
-"cidr-calculator":"CIDR Calculator",
-"svg-to-jsx":"SVG to JSX",
-"uuid-generator":"UUID Generator",
-"case-converter":"Case Converter",
+ "graphql-formatter":"GraphQL Formatter",
+ "markdown-previewer":"Markdown Previewer",
+ "hmac-generator":"HMAC Generator",
+ "cidr-calculator":"CIDR Calculator",
+ "svg-to-jsx":"SVG to JSX",
+ "uuid-generator":"UUID Generator",
+ "case-converter":"Case Converter",
 };
-
-const SLUG_TO_SIDEBAR: Record<string, string> = Object.fromEntries(
- Object.entries(SIDEBAR_TO_SLUG).map(([k, v]) => [v, k])
-);
 
 interface WorkspaceShellProps {
  initialToolSlug?: string;
@@ -218,10 +190,7 @@ export function WorkspaceShell({ initialToolSlug, toolMeta, children }: Workspac
           setActiveTool(detectedToolId);
           setRestoredInput(cleanedText);
 
-          const slug = SIDEBAR_TO_SLUG[detectedToolId];
-          if (slug) {
-            router.push(`/${slug}`, { scroll: false });
-          }
+          router.push(getToolUrl(detectedToolId), { scroll: false });
 
           setMagicPasteToast({ message: `Auto-detected ${toolName}. Switched tools!`, visible: true });
           setTimeout(() => setMagicPasteToast(null), 3500);
@@ -299,21 +268,13 @@ export function WorkspaceShell({ initialToolSlug, toolMeta, children }: Workspac
  setInputLength(0);
  setExecMs(0);
 
- const slug = SIDEBAR_TO_SLUG[sidebarId];
- if (slug) {
- router.push(`/${slug}`, { scroll: false });
- } else {
- router.push("/", { scroll: false });
- }
+ router.push(getToolUrl(sidebarId), { scroll: false });
  };
 
  const handleRestoreHistory = (entry: HistoryEntry) => {
  setActiveTool(entry.toolId);
  setRestoredInput(entry.input);
- const slug = SIDEBAR_TO_SLUG[entry.toolId];
- if (slug) {
- router.push(`/${slug}`, { scroll: false });
- }
+ router.push(getToolUrl(entry.toolId), { scroll: false });
  };
 
  // Log to history when a format/convert action is performed
@@ -618,7 +579,7 @@ export function WorkspaceShell({ initialToolSlug, toolMeta, children }: Workspac
   )}
  {isEmbed && (
  <a
- href={`https://www.devscratchpad.tech/${currentSlug || ''}`}
+ href={`https://www.devscratchpad.tech/tools/${currentSlug || ''}`}
  target="_blank"
  rel="noopener noreferrer"
  className="absolute bottom-10 right-4 bg-zinc-900/90 hover:bg-black text-zinc-900 px-3 py-1.5 rounded-full text-xs font-medium shadow-lg backdrop-blur-sm border border-white/10 transition-transform hover:scale-105 z-50 flex items-center gap-1.5"
