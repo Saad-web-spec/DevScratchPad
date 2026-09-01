@@ -128,196 +128,206 @@ export function CertDecoderTool({
 
   return (
     <div className="flex flex-col h-full bg-white">
-      {/* Top Bar */}
-      <div className="h-12 border-b border-zinc-200 px-4 flex items-center justify-between gap-2 shrink-0 bg-white">
-        <div className="flex items-center gap-2">
-          <label className="flex items-center gap-1.5 px-3 py-1 rounded-md bg-zinc-900 text-white text-xs font-medium hover:bg-zinc-800 transition-colors cursor-pointer">
+      {/* Top Controls Bar (Unified Clean Header) */}
+      <div className="h-10 border-b border-neutral-200 px-4 flex items-center justify-between gap-4 shrink-0 bg-white">
+        <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar">
+          <label className="border border-neutral-300 bg-white text-neutral-800 text-xs px-3 py-1.5 rounded-md flex items-center gap-2 hover:bg-neutral-50 cursor-pointer transition-colors shadow-sm">
             <Upload className="w-3.5 h-3.5" />
-            <span>Upload Certificate (.crt, .pem, .csr)</span>
-            <input
-              type="file"
-              accept=".pem,.crt,.cer,.csr,.txt"
-              onChange={handleFileUpload}
-              className="hidden"
-            />
+            <span className="font-medium">Upload Certificate</span>
+            <input type="file" className="hidden" onChange={handleFileUpload} accept=".pem,.crt,.cer,.csr,.txt" />
           </label>
 
-          <button
-            onClick={() => setInput(SAMPLE_CERT)}
-            className="px-2.5 py-1 rounded-md text-xs font-medium text-zinc-600 hover:text-zinc-900 hover:bg-zinc-100 transition-colors"
-          >
-            Sample Certificate
-          </button>
-          <button
-            onClick={() => setInput(SAMPLE_CSR)}
-            className="px-2.5 py-1 rounded-md text-xs font-medium text-zinc-600 hover:text-zinc-900 hover:bg-zinc-100 transition-colors"
-          >
-            Sample CSR
-          </button>
+          <div className="h-4 w-px bg-neutral-200 mx-1" />
+
+          <div className="flex items-center p-0.5 rounded-md bg-neutral-100/50 border border-neutral-200">
+            <button
+              onClick={() => setInput(SAMPLE_CERT)}
+              className="px-2.5 py-1 rounded text-[11px] font-medium text-neutral-500 hover:text-neutral-900 transition-colors whitespace-nowrap"
+            >
+              Sample Cert
+            </button>
+            <button
+              onClick={() => setInput(SAMPLE_CSR)}
+              className="px-2.5 py-1 rounded text-[11px] font-medium text-neutral-500 hover:text-neutral-900 transition-colors whitespace-nowrap"
+            >
+              Sample CSR
+            </button>
+          </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5">
           <ShareButton toolSlug="cert-decoder" data={input} />
           <EmbedButton toolSlug="cert-decoder" data={input} />
           <ExportImageButton code={input} language="text" />
         </div>
       </div>
 
-      {/* Main Split Layout */}
-      <div className="flex-1 min-h-0 flex flex-col lg:flex-row divide-y lg:divide-y-0 lg:divide-x divide-zinc-100 overflow-hidden" id="cert-export-card">
-        {/* Left: PEM / Raw Input Pane */}
-        <div className="flex-1 flex flex-col min-w-0 bg-white">
-          <div className="h-10 px-4 border-b border-zinc-200 flex items-center justify-between bg-zinc-50 shrink-0">
-            <div className="flex items-center gap-2 text-xs font-medium text-zinc-700">
-              <Lock className="w-4 h-4 text-zinc-500" />
-              <span>PEM Certificate or CSR Payload</span>
-            </div>
+      {/* Main Workspace Layout (Strict Dual-Pane Grid) */}
+      <div className="flex-1 min-h-[600px] grid grid-cols-1 lg:grid-cols-2 divide-y lg:divide-y-0 lg:divide-x divide-neutral-200 overflow-hidden bg-neutral-50/30" id="cert-decoder-export">
+        {/* Left Pane: Input Editor */}
+        <div className="flex flex-col h-full bg-white relative min-h-0">
+          <div className="h-10 border-b border-neutral-200 bg-neutral-50/50 flex items-center justify-between px-4 shrink-0">
+            <span className="text-xs font-mono font-semibold text-neutral-700">PEM / CSR Input</span>
             <button
               onClick={() => setInput("")}
-              className="p-1 rounded text-zinc-600 hover:text-zinc-600 hover:bg-zinc-50 transition-colors"
+              className="p-1.5 rounded text-neutral-400 hover:text-neutral-900 hover:bg-neutral-200/50 transition-colors flex items-center justify-center"
               title="Clear input"
             >
               <Trash2 className="w-3.5 h-3.5" />
             </button>
           </div>
-
-          <div className="flex-1 p-6 overflow-y-auto">
+          <div className="flex-1 p-0 overflow-y-auto relative">
             <textarea
               value={input}
               onChange={(e) => setInput(e.target.value)}
               placeholder="Paste your -----BEGIN CERTIFICATE----- or -----BEGIN CERTIFICATE REQUEST----- here..."
-              className="w-full h-full min-h-[220px] font-mono text-xs text-zinc-900 bg-transparent resize-none border-0 outline-none focus:ring-0 leading-relaxed placeholder:text-zinc-600"
+              className="w-full h-full p-4 font-mono text-sm text-neutral-900 bg-transparent resize-none border-0 outline-none focus:ring-0 leading-relaxed placeholder:text-neutral-400"
               spellCheck={false}
             />
           </div>
         </div>
 
-        {/* Right: Structured Certificate Inspector */}
-        <div className="flex-1 flex flex-col min-w-0 bg-zinc-50/30">
-          <div className="h-10 px-4 border-b border-zinc-200 flex items-center justify-between bg-zinc-50 shrink-0">
-            <div className="flex items-center gap-2 text-xs font-semibold text-zinc-900">
-              <FileCheck className="w-4 h-4 text-blue-600" />
-              <span>Decoded X.509 Certificate Details</span>
-            </div>
-            {certData?.fingerprintSha256 && (
+        {/* Right Pane: Parsed Output */}
+        <div className="flex flex-col h-full bg-neutral-50/30 min-h-0">
+          <div className="h-10 border-b border-neutral-200 bg-neutral-50/50 flex items-center justify-between px-4 shrink-0">
+            <span className="text-xs font-mono font-semibold text-neutral-700">Parsed Certificate Details</span>
+            {certData?.valid && (
               <button
-                onClick={() => handleCopy(certData.fingerprintSha256!, "sha256")}
-                className="flex items-center gap-1 text-[11px] font-mono text-zinc-500 hover:text-zinc-900"
+                onClick={() => handleCopy(JSON.stringify(certData, null, 2), "json_dump")}
+                className="flex items-center gap-1.5 px-2 py-1 rounded text-[11px] font-medium text-neutral-500 hover:text-neutral-900 hover:bg-neutral-200/50 transition-colors"
               >
-                {copiedKey === "sha256" ? <Check className="w-3 h-3 text-blue-600" /> : <Copy className="w-3 h-3" />}
-                <span>Copy SHA-256</span>
+                {copiedKey === "json_dump" ? <Check className="w-3.5 h-3.5 text-neutral-900" /> : <Copy className="w-3.5 h-3.5" />}
+                <span>Copy JSON</span>
               </button>
             )}
           </div>
 
-          <div className="flex-1 p-6 overflow-y-auto min-h-0 space-y-4">
-            {certData?.valid ? (
-              <>
-                {/* Validity / Status Banner */}
-                {certData.type === "certificate" ? (
-                  <div
-                    className={cn(
-                      "p-5 rounded-2xl border flex items-center justify-between gap-3 shadow-xs",
-                      certData.validityStatus === "valid"
-                        ? "bg-blue-50 border-blue-200 text-blue-900"
-                        : "bg-red-50 border-red-200 text-red-950"
-                    )}
-                  >
-                    <div className="flex items-center gap-3">
-                      {certData.validityStatus === "valid" ? (
-                        <ShieldCheck className="w-6 h-6 text-blue-600 shrink-0" />
-                      ) : (
-                        <ShieldAlert className="w-6 h-6 text-red-600 shrink-0" />
-                      )}
+          <div className="flex-1 overflow-y-auto p-4 relative">
+            {!certData?.valid ? (
+              input.trim().length === 0 ? (
+                /* Empty State Skeleton */
+                <div className="space-y-4 opacity-40 select-none pointer-events-none">
+                  <div className="bg-neutral-50 border border-neutral-200 rounded-lg p-3">
+                    <div className="text-xs font-semibold text-neutral-700 mb-3">General Information</div>
+                    <div className="grid grid-cols-1 gap-3">
                       <div>
-                        <div className="font-semibold text-sm">
-                          {certData.validityStatus === "valid"
-                            ? `Valid Certificate — Expires in ${certData.daysRemaining} days`
-                            : "Expired Certificate"}
-                        </div>
-                        <div className="text-xs text-zinc-600 flex items-center gap-2 mt-0.5 font-mono">
-                          <span>Valid from {certData.notBefore?.slice(0, 10)}</span>
-                          <span>&bull;</span>
-                          <span>Until {certData.notAfter?.slice(0, 10)}</span>
-                        </div>
+                        <span className="text-[10px] text-neutral-500 uppercase tracking-wider block mb-1">Subject CN</span>
+                        <div className="h-4 bg-neutral-200 rounded w-1/2"></div>
+                      </div>
+                      <div>
+                        <span className="text-[10px] text-neutral-500 uppercase tracking-wider block mb-1">Issuer CN</span>
+                        <div className="h-4 bg-neutral-200 rounded w-1/3"></div>
+                      </div>
+                      <div>
+                        <span className="text-[10px] text-neutral-500 uppercase tracking-wider block mb-1">Serial Number</span>
+                        <div className="h-4 bg-neutral-200 rounded w-2/3"></div>
                       </div>
                     </div>
                   </div>
-                ) : (
-                  <div className="p-4 rounded-xl border border-blue-200 bg-blue-50/70 text-blue-950 flex items-center gap-3 shadow-xs">
-                    <FileCheck className="w-6 h-6 text-blue-600 shrink-0" />
-                    <div>
-                      <div className="font-semibold text-sm">Certificate Signing Request (PKCS#10 CSR)</div>
-                      <div className="text-xs text-blue-700 mt-0.5">
-                        Ready for submission to a Certificate Authority (CA)
+                  <div className="bg-neutral-50 border border-neutral-200 rounded-lg p-3">
+                    <div className="text-xs font-semibold text-neutral-700 mb-3">Validity Period</div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <span className="text-[10px] text-neutral-500 uppercase tracking-wider block mb-1">Not Before</span>
+                        <div className="h-4 bg-neutral-200 rounded w-3/4"></div>
                       </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* Subject Details */}
-                <div className="p-6 rounded-2xl border border-zinc-200/60 bg-white shadow-sm shadow-xs">
-                  <div className="flex items-center gap-2 mb-3 text-xs font-semibold text-zinc-900">
-                    <Award className="w-4 h-4 text-blue-600" />
-                    <span>Subject Details</span>
-                  </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-                    <div className="p-2.5 rounded-lg bg-zinc-50 border border-zinc-100">
-                      <span className="text-zinc-600 block text-[11px] font-medium mb-0.5">Common Name (CN)</span>
-                      <span className="font-mono font-semibold text-zinc-900 break-all">
-                        {certData.subject?.commonName || "N/A"}
-                      </span>
-                    </div>
-                    <div className="p-2.5 rounded-lg bg-zinc-50 border border-zinc-100">
-                      <span className="text-zinc-600 block text-[11px] font-medium mb-0.5">Organization (O)</span>
-                      <span className="font-mono text-zinc-900">{certData.subject?.organization || "N/A"}</span>
-                    </div>
-                    <div className="p-2.5 rounded-lg bg-zinc-50 border border-zinc-100">
-                      <span className="text-zinc-600 block text-[11px] font-medium mb-0.5">Country (C)</span>
-                      <span className="font-mono text-zinc-900">{certData.subject?.country || "N/A"}</span>
-                    </div>
-                    <div className="p-2.5 rounded-lg bg-zinc-50 border border-zinc-100">
-                      <span className="text-zinc-600 block text-[11px] font-medium mb-0.5">State / Province (ST)</span>
-                      <span className="font-mono text-zinc-900">{certData.subject?.stateOrProvince || "N/A"}</span>
+                      <div>
+                        <span className="text-[10px] text-neutral-500 uppercase tracking-wider block mb-1">Not After</span>
+                        <div className="h-4 bg-neutral-200 rounded w-3/4"></div>
+                      </div>
                     </div>
                   </div>
                 </div>
+              ) : (
+                /* Error State Banner */
+                <div className="bg-red-50 border-l-4 border-red-500 p-3 text-xs text-red-700 font-mono rounded-r-md mb-4 shadow-sm">
+                  <div className="font-semibold mb-1 flex items-center gap-1.5">
+                    <ShieldAlert className="w-3.5 h-3.5" />
+                    Parsing Error
+                  </div>
+                  <div className="mb-2 leading-relaxed">{certData?.error || "Invalid PEM certificate format."}</div>
+                  <div className="text-[11px] opacity-80 font-sans bg-red-100/50 p-1.5 rounded">
+                    <strong>Tip:</strong> Ensure headers like <code>-----BEGIN CERTIFICATE-----</code> are intact with no truncated base64 lines.
+                  </div>
+                </div>
+              )
+            ) : (
+              /* Valid Certificate Data */
+              <div className="space-y-4">
+                {/* Header Badge */}
+                <div className="flex items-center gap-2 mb-2">
+                  <span className={cn(
+                    "px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider border",
+                    certData.type === "certificate" 
+                      ? "bg-blue-50 text-blue-700 border-blue-200" 
+                      : "bg-amber-50 text-amber-700 border-amber-200"
+                  )}>
+                    {certData.type === "certificate" ? "X.509 Certificate" : "Certificate Signing Request (CSR)"}
+                  </span>
+                </div>
 
-                {/* Issuer Details (if certificate) */}
-                {certData.type === "certificate" && certData.issuer && (
-                  <div className="p-6 rounded-2xl border border-zinc-200/60 bg-white shadow-sm shadow-xs">
-                    <div className="flex items-center gap-2 mb-3 text-xs font-semibold text-zinc-900">
-                      <Globe className="w-4 h-4 text-blue-600" />
-                      <span>Issuer (Certificate Authority)</span>
-                    </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-                      <div className="p-2.5 rounded-lg bg-zinc-50 border border-zinc-100">
-                        <span className="text-zinc-600 block text-[11px] font-medium mb-0.5">Issuer CN</span>
-                        <span className="font-mono font-semibold text-zinc-900 break-all">
-                          {certData.issuer.commonName || "N/A"}
-                        </span>
+                {/* General Details */}
+                <div className="bg-neutral-50 border border-neutral-200 rounded-lg p-3">
+                  <div className="text-xs font-semibold text-neutral-700 mb-3 border-b border-neutral-100 pb-2">General</div>
+                  <div className="grid grid-cols-1 gap-3">
+                    {certData.subject?.commonName && (
+                      <div>
+                        <span className="text-[10px] text-neutral-500 uppercase tracking-wider block mb-0.5">Subject CN</span>
+                        <span className="font-mono text-sm text-neutral-900 break-all">{certData.subject.commonName}</span>
                       </div>
-                      <div className="p-2.5 rounded-lg bg-zinc-50 border border-zinc-100">
-                        <span className="text-zinc-600 block text-[11px] font-medium mb-0.5">Issuer Organization</span>
-                        <span className="font-mono text-zinc-900">{certData.issuer.organization || "N/A"}</span>
+                    )}
+                    {certData.type === "certificate" && certData.issuer?.commonName && (
+                      <div>
+                        <span className="text-[10px] text-neutral-500 uppercase tracking-wider block mb-0.5">Issuer CN</span>
+                        <span className="font-mono text-sm text-neutral-900 break-all">{certData.issuer.commonName}</span>
+                      </div>
+                    )}
+                    {certData.serialNumber && (
+                      <div>
+                        <span className="text-[10px] text-neutral-500 uppercase tracking-wider block mb-0.5">Serial Number</span>
+                        <span className="font-mono text-sm text-neutral-900 break-all">{certData.serialNumber}</span>
+                      </div>
+                    )}
+                    {certData.signatureAlgorithm && (
+                      <div>
+                        <span className="text-[10px] text-neutral-500 uppercase tracking-wider block mb-0.5">Signature Algorithm</span>
+                        <span className="font-mono text-sm text-neutral-900">{certData.signatureAlgorithm}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Validity */}
+                {certData.type === "certificate" && certData.notBefore && certData.notAfter && (
+                  <div className="bg-neutral-50 border border-neutral-200 rounded-lg p-3">
+                    <div className="flex items-center justify-between border-b border-neutral-100 pb-2 mb-3">
+                      <span className="text-xs font-semibold text-neutral-700">Validity Period</span>
+                      {certData.isExpired ? (
+                        <span className="px-2 py-0.5 bg-red-100 text-red-700 border border-red-200 rounded text-[10px] font-bold uppercase tracking-wider">Expired</span>
+                      ) : (
+                        <span className="px-2 py-0.5 bg-green-100 text-green-700 border border-green-200 rounded text-[10px] font-bold uppercase tracking-wider">Active</span>
+                      )}
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div>
+                        <span className="text-[10px] text-neutral-500 uppercase tracking-wider block mb-0.5">Not Before</span>
+                        <span className="font-mono text-sm text-neutral-900">{new Date(certData.notBefore).toLocaleString()}</span>
+                      </div>
+                      <div>
+                        <span className="text-[10px] text-neutral-500 uppercase tracking-wider block mb-0.5">Not After</span>
+                        <span className="font-mono text-sm text-neutral-900">{new Date(certData.notAfter).toLocaleString()}</span>
                       </div>
                     </div>
                   </div>
                 )}
 
-                {/* Subject Alternative Names (SANs) */}
+                {/* SANs */}
                 {certData.sans && certData.sans.length > 0 && (
-                  <div className="p-6 rounded-2xl border border-zinc-200/60 bg-white shadow-sm shadow-xs">
-                    <div className="flex items-center gap-2 mb-2.5 text-xs font-semibold text-zinc-900">
-                      <Globe className="w-4 h-4 text-purple-600" />
-                      <span>Subject Alternative Names (SANs)</span>
-                    </div>
+                  <div className="bg-neutral-50 border border-neutral-200 rounded-lg p-3">
+                    <div className="text-xs font-semibold text-neutral-700 mb-3 border-b border-neutral-100 pb-2">Subject Alternative Names</div>
                     <div className="flex flex-wrap gap-1.5">
                       {certData.sans.map((san, i) => (
-                        <span
-                          key={i}
-                          className="px-2.5 py-1 rounded-md bg-purple-50 border border-purple-200 text-purple-800 font-mono text-xs"
-                        >
+                        <span key={i} className="px-2 py-1 rounded bg-white border border-neutral-200 text-neutral-700 font-mono text-xs">
                           {san}
                         </span>
                       ))}
@@ -325,89 +335,72 @@ export function CertDecoderTool({
                   </div>
                 )}
 
-                {/* Cryptographic Properties */}
-                <div className="p-6 rounded-2xl border border-zinc-200/60 bg-white shadow-sm shadow-xs">
-                  <div className="flex items-center gap-2 mb-3 text-xs font-semibold text-zinc-900">
-                    <Lock className="w-4 h-4 text-amber-600" />
-                    <span>Cryptographic Properties</span>
-                  </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs font-mono">
-                    <div className="p-2.5 rounded-lg bg-zinc-50 border border-zinc-100">
-                      <span className="text-zinc-600 block text-[11px] font-sans font-medium mb-0.5">Public Key Algorithm</span>
-                      <span className="font-semibold text-zinc-900">{certData.publicKeyAlgorithm}</span>
+                {/* Public Key Info */}
+                <div className="bg-neutral-50 border border-neutral-200 rounded-lg p-3">
+                  <div className="text-xs font-semibold text-neutral-700 mb-3 border-b border-neutral-100 pb-2">Public Key Info</div>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                    <div>
+                      <span className="text-[10px] text-neutral-500 uppercase tracking-wider block mb-0.5">Algorithm</span>
+                      <span className="font-mono text-sm text-neutral-900">{certData.publicKeyAlgorithm}</span>
                     </div>
-                    <div className="p-2.5 rounded-lg bg-zinc-50 border border-zinc-100">
-                      <span className="text-zinc-600 block text-[11px] font-sans font-medium mb-0.5">Key Size</span>
-                      <span className="font-semibold text-zinc-900">{certData.publicKeySize}</span>
+                    <div>
+                      <span className="text-[10px] text-neutral-500 uppercase tracking-wider block mb-0.5">Key Size</span>
+                      <span className="font-mono text-sm text-neutral-900">{certData.publicKeySize}</span>
                     </div>
-                    <div className="p-2.5 rounded-lg bg-zinc-50 border border-zinc-100">
-                      <span className="text-zinc-600 block text-[11px] font-sans font-medium mb-0.5">Signature Algorithm</span>
-                      <span className="font-semibold text-zinc-900">{certData.signatureAlgorithm}</span>
-                    </div>
-                  </div>
-
-                  {/* Fingerprints */}
-                  <div className="mt-3 space-y-2">
-                    {certData.fingerprintSha256 && (
-                      <div className="p-2.5 rounded-lg bg-zinc-50 border border-zinc-100 flex items-center justify-between text-xs">
-                        <div className="min-w-0 mr-2">
-                          <span className="text-[11px] font-sans font-medium text-zinc-600 block">SHA-256 Fingerprint</span>
-                          <span className="font-mono text-zinc-900 break-all text-[11px]">{certData.fingerprintSha256}</span>
-                        </div>
-                        <button
-                          onClick={() => handleCopy(certData.fingerprintSha256!, "sha256_fp")}
-                          className="p-1 rounded text-zinc-500 hover:text-zinc-900"
-                        >
-                          {copiedKey === "sha256_fp" ? <Check className="w-3.5 h-3.5 text-blue-600" /> : <Copy className="w-3.5 h-3.5" />}
-                        </button>
-                      </div>
-                    )}
-                    {certData.fingerprintSha1 && (
-                      <div className="p-2.5 rounded-lg bg-zinc-50 border border-zinc-100 flex items-center justify-between text-xs">
-                        <div className="min-w-0 mr-2">
-                          <span className="text-[11px] font-sans font-medium text-zinc-600 block">SHA-1 Fingerprint</span>
-                          <span className="font-mono text-zinc-900 break-all text-[11px]">{certData.fingerprintSha1}</span>
-                        </div>
-                        <button
-                          onClick={() => handleCopy(certData.fingerprintSha1!, "sha1_fp")}
-                          className="p-1 rounded text-zinc-500 hover:text-zinc-900"
-                        >
-                          {copiedKey === "sha1_fp" ? <Check className="w-3.5 h-3.5 text-blue-600" /> : <Copy className="w-3.5 h-3.5" />}
-                        </button>
-                      </div>
-                    )}
                   </div>
                 </div>
 
+                {/* Fingerprints */}
+                {(certData.fingerprintSha256 || certData.fingerprintSha1) && (
+                  <div className="bg-neutral-50 border border-neutral-200 rounded-lg p-3">
+                    <div className="text-xs font-semibold text-neutral-700 mb-3 border-b border-neutral-100 pb-2">Fingerprints</div>
+                    <div className="space-y-3">
+                      {certData.fingerprintSha256 && (
+                        <div>
+                          <div className="flex items-center justify-between mb-0.5">
+                            <span className="text-[10px] text-neutral-500 uppercase tracking-wider">SHA-256</span>
+                            <button
+                              onClick={() => handleCopy(certData.fingerprintSha256!, "sha256")}
+                              className="text-neutral-400 hover:text-neutral-900 transition-colors"
+                            >
+                              {copiedKey === "sha256" ? <Check className="w-3.5 h-3.5 text-neutral-900" /> : <Copy className="w-3.5 h-3.5" />}
+                            </button>
+                          </div>
+                          <span className="font-mono text-sm text-neutral-900 break-all leading-tight block">{certData.fingerprintSha256}</span>
+                        </div>
+                      )}
+                      {certData.fingerprintSha1 && (
+                        <div>
+                          <div className="flex items-center justify-between mb-0.5">
+                            <span className="text-[10px] text-neutral-500 uppercase tracking-wider">SHA-1</span>
+                            <button
+                              onClick={() => handleCopy(certData.fingerprintSha1!, "sha1")}
+                              className="text-neutral-400 hover:text-neutral-900 transition-colors"
+                            >
+                              {copiedKey === "sha1" ? <Check className="w-3.5 h-3.5 text-neutral-900" /> : <Copy className="w-3.5 h-3.5" />}
+                            </button>
+                          </div>
+                          <span className="font-mono text-sm text-neutral-900 break-all leading-tight block">{certData.fingerprintSha1}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+                
                 {/* Key Usages / Extensions */}
                 {certData.keyUsages && certData.keyUsages.length > 0 && (
-                  <div className="p-6 rounded-2xl border border-zinc-200/60 bg-white shadow-sm shadow-xs">
-                    <div className="flex items-center gap-2 mb-2 text-xs font-semibold text-zinc-900">
-                      <Layers className="w-4 h-4 text-indigo-600" />
-                      <span>Key Usages</span>
-                    </div>
+                  <div className="bg-neutral-50 border border-neutral-200 rounded-lg p-3">
+                    <div className="text-xs font-semibold text-neutral-700 mb-3 border-b border-neutral-100 pb-2">Key Usages</div>
                     <div className="flex flex-wrap gap-1.5">
                       {certData.keyUsages.map((usage, i) => (
-                        <span
-                          key={i}
-                          className="px-2 py-0.5 rounded bg-indigo-50 border border-indigo-200 text-indigo-800 text-xs font-medium"
-                        >
+                        <span key={i} className="px-2 py-1 rounded bg-white border border-neutral-200 text-neutral-700 font-mono text-xs">
                           {usage}
                         </span>
                       ))}
                     </div>
                   </div>
                 )}
-              </>
-            ) : (
-              <div className="p-8 text-center text-zinc-600 flex flex-col items-center justify-center h-full">
-                <ShieldAlert className="w-10 h-10 text-red-500 mb-2" />
-                <span className="font-semibold text-zinc-900 text-sm">
-                  {certData?.error || "Invalid PEM certificate format"}
-                </span>
-                <span className="text-xs text-zinc-600 mt-1 max-w-sm">
-                  Ensure your input contains valid -----BEGIN CERTIFICATE----- or -----BEGIN CERTIFICATE REQUEST----- headers.
-                </span>
+
               </div>
             )}
           </div>
