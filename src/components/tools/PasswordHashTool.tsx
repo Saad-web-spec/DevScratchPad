@@ -199,7 +199,7 @@ export function PasswordHashTool({
         {/* Left Pane: Configuration & Input */}
         <div className="flex flex-col h-full bg-white relative min-h-0">
           <div className="h-10 border-b border-neutral-200 bg-neutral-50/50 flex items-center justify-between px-4 shrink-0">
-            <span className="text-xs font-mono font-semibold text-neutral-700">
+            <span className="text-xs font-semibold text-neutral-800 tracking-wide font-sans">
               {mode === "generate" ? "Hash Configuration" : "Verification Inputs"}
             </span>
           </div>
@@ -372,15 +372,17 @@ export function PasswordHashTool({
         {/* Right Pane: Output */}
         <div className="flex flex-col h-full bg-neutral-50/30 min-h-0">
           <div className="h-10 border-b border-neutral-200 bg-neutral-50/50 flex items-center justify-between px-4 shrink-0">
-            <span className="text-xs font-mono font-semibold text-neutral-700 flex items-center gap-3">
-              {mode === "generate" ? "Generated Hash Output" : "Verification Status"}
+            <div className="flex items-center gap-2.5">
+              <span className="text-xs font-semibold text-neutral-800 tracking-wide font-sans">
+                {mode === "generate" ? "Generated Hash Output" : "Verification Status"}
+              </span>
               {mode === "verify" && (
                 <VerificationBadge 
                   status={!verifyResult ? 'idle' : verifyResult.isMatch ? 'success' : 'error'}
-                  text={!verifyResult ? 'Waiting for input...' : verifyResult.isMatch ? 'Match' : 'Mismatch'}
+                  text={!verifyResult ? 'Waiting for input' : verifyResult.isMatch ? 'Match' : 'Mismatch'}
                 />
               )}
-            </span>
+            </div>
             {mode === "generate" && genResult && (
               <button
                 onClick={() => handleCopy(genResult.hash, "gen_hash")}
@@ -420,53 +422,51 @@ export function PasswordHashTool({
                 {verifyResult ? (
                   <div
                     className={cn(
-                      "p-6 rounded-lg border flex flex-col items-start gap-4 shadow-sm",
+                      "p-5 rounded-xl border flex flex-col items-start gap-3.5 transition-all",
                       verifyResult.isMatch
-                        ? "bg-green-50 border-green-200 text-green-900"
+                        ? "bg-emerald-50/60 border-emerald-200/80 text-emerald-950"
                         : verifyResult.error
-                        ? "bg-amber-50 border-amber-200 text-amber-950"
-                        : "bg-red-50 border-red-200 text-red-900"
+                        ? "bg-amber-50/60 border-amber-200/80 text-amber-950"
+                        : "bg-rose-50/60 border-rose-200/80 text-rose-950"
                     )}
                   >
-                    <div className="flex items-center gap-3.5 w-full">
+                    <div className="flex items-start gap-3 w-full">
                       {verifyResult.isMatch ? (
-                        <CheckCircle2 className="w-8 h-8 text-green-600 shrink-0" />
+                        <div className="w-8 h-8 rounded-lg bg-emerald-100/80 border border-emerald-200 text-emerald-700 flex items-center justify-center shrink-0 mt-0.5">
+                          <Check className="w-4 h-4 stroke-[2.5]" />
+                        </div>
                       ) : verifyResult.error ? (
-                        <ShieldAlert className="w-8 h-8 text-amber-600 shrink-0" />
+                        <div className="w-8 h-8 rounded-lg bg-amber-100/80 border border-amber-200 text-amber-700 flex items-center justify-center shrink-0 mt-0.5">
+                          <AlertCircle className="w-4 h-4 stroke-[2.5]" />
+                        </div>
                       ) : (
-                        <XCircle className="w-8 h-8 text-red-600 shrink-0" />
+                        <div className="w-8 h-8 rounded-lg bg-rose-100/80 border border-rose-200 text-rose-700 flex items-center justify-center shrink-0 mt-0.5">
+                          <X className="w-4 h-4 stroke-[2.5]" />
+                        </div>
                       )}
-                      <div className="flex-1">
-                        <div className="font-bold text-base">
+                      <div className="flex-1 min-w-0">
+                        <div className="font-semibold text-sm tracking-tight text-neutral-900">
                           {verifyResult.isMatch
                             ? "Password Matches Hash"
                             : verifyResult.error
                             ? "Verification Failed"
-                            : "Password Does NOT Match Hash"}
+                            : "Password Does Not Match Hash"}
                         </div>
-                        <div className="text-[11px] opacity-80 mt-0.5 font-mono">
+                        <div className="text-[11px] text-neutral-500 mt-0.5 font-mono">
                           {verifyResult.error ||
-                            `Algorithm: ${verifyResult.algorithmDetected} � Verified in ${verifyResult.executionMs} ms`}
+                            `Algorithm: ${verifyResult.algorithmDetected} • Checked in ${verifyResult.executionMs} ms`}
                         </div>
                       </div>
                     </div>
 
-                    <div className="w-full">
-                      <span
-                        className={cn(
-                          "px-3 py-1 rounded text-[11px] font-bold uppercase tracking-wider border",
-                          verifyResult.isMatch
-                            ? "bg-green-100 text-green-800 border-green-200"
-                            : verifyResult.error
-                            ? "bg-amber-100 text-amber-800 border-amber-200"
-                            : "bg-red-100 text-red-800 border-red-200"
-                        )}
-                      >
-                        {verifyResult.isMatch ? "VALID MATCH" : verifyResult.error ? "FORMAT ERROR" : "NO MATCH"}
-                      </span>
+                    <div className="pt-1">
+                      <VerificationBadge 
+                        status={verifyResult.isMatch ? "success" : "error"}
+                        text={verifyResult.isMatch ? "Valid Match" : verifyResult.error ? "Format Error" : "No Match"}
+                      />
                     </div>
                   </div>
-                ) : (
+                ) : ( (
                   <div className="p-8 text-center text-neutral-400 font-mono text-sm">
                     Awaiting verification inputs...
                   </div>
