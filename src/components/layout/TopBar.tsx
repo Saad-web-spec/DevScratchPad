@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from"react";
 import { Search, Save, Menu, MoreVertical, Lock } from"lucide-react";
+import { InstallAppButton } from "./InstallAppButton";
 
 interface TopBarProps {
  onOpenCommandPalette?: () => void;
@@ -67,6 +68,7 @@ export function TopBar({ onOpenCommandPalette, onOpenMobileMenu }: TopBarProps) 
 
  {/* Desktop Action Buttons */}
  <div className="hidden md:flex items-center gap-3">
+ <InstallAppButton />
  <div className="bg-neutral-900 text-neutral-100 text-xs px-2.5 py-1 rounded-md flex items-center gap-1.5"><Lock className="w-3 h-3" /> 100% Local</div>
  <div className="w-px h-6 bg-zinc-200 mx-1"></div>
  <button

@@ -15,9 +15,10 @@ import {
 
 const NAV_CATEGORIES = [
   {
-    title: "Formatters & Minifiers",
+    title: "Data Formatters & Validators",
     items: [
       { name: "JSON Formatter", icon: FileJson, id: "json-formatter" },
+      { name: "JSON Schema Validator", icon: ShieldCheck, id: "json-schema-validator" },
       { name: "XML Formatter", icon: Code, id: "xml-formatter" },
       { name: "SQL Formatter", icon: Database, id: "sql-formatter" },
       { name: "GraphQL Formatter", icon: Sparkles, id: "graphql-formatter" },
@@ -25,43 +26,45 @@ const NAV_CATEGORIES = [
     ],
   },
   {
-    title: "cURL Converter",
+    title: "Data Generators & Mocks",
     items: [
-      { name: "cURL to Fetch", icon: Terminal, id: "curl-to-fetch" },
-      { name: "cURL to Python", icon: Terminal, id: "curl-to-python" },
-      { name: "cURL to Go", icon: Terminal, id: "curl-to-go" },
-    ],
-  },
-  {
-    title: "Converters & Types",
-    items: [
-      { name: "JSON to TypeScript", icon: FileCode, id: "json-to-ts" },
-      { name: "JSON to Zod", icon: FileCode, id: "json-to-zod" },
-      { name: "JSON to Go Struct", icon: FileCode, id: "json-to-go" },
-      { name: "SVG to JSX", icon: FileCode, id: "svg-to-jsx" },
-      { name: "YAML / JSON", icon: ArrowLeftRight, id: "yaml" },
+      { name: "Mock Data Generator", icon: Database, id: "mock-data-generator" },
+      { name: "UUID / ULID Generator", icon: Fingerprint, id: "uuid-generator" },
     ],
   },
   {
     title: "Security & Cryptography",
     items: [
-      { name: "Base64 & Hex Inspector", icon: Binary, id: "base64-inspector" },
       { name: "JWT Decoder", icon: Key, id: "jwt" },
-      { name: "X.509 Certificate Decoder", icon: ShieldCheck, id: "cert-decoder" },
-      { name: "SSH Key Generator", icon: KeyRound, id: "ssh-key-generator" },
-      { name: "Password Hash & Verifier", icon: Lock, id: "password-hash" },
+      { name: "Base64 & Hex Inspector", icon: Binary, id: "base64-inspector" },
       { name: "Hash Generator", icon: Hash, id: "hash" },
       { name: "HMAC Generator", icon: Shield, id: "hmac-generator" },
-      { name: "UUID / ULID Generator", icon: Fingerprint, id: "uuid-generator" },
+      { name: "Password Hash & Verifier", icon: Lock, id: "password-hash" },
+      { name: "X.509 Cert Decoder", icon: ShieldCheck, id: "cert-decoder" },
+      { name: "SSH Key Generator", icon: KeyRound, id: "ssh-key-generator" },
     ],
   },
   {
-    title: "Utilities & Network",
+    title: "Code & Type Converters",
     items: [
-      { name: "CIDR Calculator", icon: Network, id: "cidr-calculator" },
-      { name: "Cron Visualizer", icon: Calendar, id: "cron" },
-      { name: "Diff Checker", icon: SplitSquareHorizontal, id: "diff" },
+      { name: "JSON to TypeScript", icon: FileCode, id: "json-to-ts" },
+      { name: "JSON to Zod", icon: FileCode, id: "json-to-zod" },
+      { name: "JSON to Go Struct", icon: FileCode, id: "json-to-go" },
+      { name: "YAML / JSON", icon: ArrowLeftRight, id: "yaml" },
+      { name: "cURL to Fetch", icon: Terminal, id: "curl-to-fetch" },
+      { name: "cURL to Python", icon: Terminal, id: "curl-to-python" },
+      { name: "cURL to Go", icon: Terminal, id: "curl-to-go" },
+      { name: "SVG to JSX", icon: FileCode, id: "svg-to-jsx" },
+    ],
+  },
+  {
+    title: "Time, Network & Utilities",
+    items: [
+      { name: "Epoch / Timestamp", icon: Clock, id: "epoch-converter" },
       { name: "Regex Tester", icon: Regex, id: "regex" },
+      { name: "Diff Checker", icon: SplitSquareHorizontal, id: "diff" },
+      { name: "Cron Visualizer", icon: Calendar, id: "cron" },
+      { name: "CIDR Calculator", icon: Network, id: "cidr-calculator" },
     ],
   },
 ];

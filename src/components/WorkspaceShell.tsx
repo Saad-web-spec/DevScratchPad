@@ -3,6 +3,8 @@
 import { useState, useEffect, useCallback } from "react";
 import { TopBar } from "@/components/layout/TopBar";
 import { Sidebar } from "@/components/layout/Sidebar";
+import { TabsBar } from "@/components/layout/TabsBar";
+import { useWorkspaceTabs } from "@/hooks/useWorkspaceTabs";
 import dynamic from "next/dynamic";
 
 // Dynamically import tools to code-split heavy dependencies
@@ -27,6 +29,9 @@ const Base64InspectorTool = dynamic(() => import("@/components/tools/Base64Inspe
 const CertDecoderTool = dynamic(() => import("@/components/tools/CertDecoderTool").then(mod => mod.CertDecoderTool), { ssr: false });
 const SshKeyGeneratorTool = dynamic(() => import("@/components/tools/SshKeyGeneratorTool").then(mod => mod.SshKeyGeneratorTool), { ssr: false });
 const PasswordHashTool = dynamic(() => import("@/components/tools/PasswordHashTool").then(mod => mod.PasswordHashTool), { ssr: false });
+const JsonSchemaValidatorTool = dynamic(() => import("@/components/tools/JsonSchemaValidatorTool").then(mod => mod.JsonSchemaValidatorTool), { ssr: false });
+const MockDataGeneratorTool = dynamic(() => import("@/components/tools/MockDataGeneratorTool").then(mod => mod.MockDataGeneratorTool), { ssr: false });
+const TimestampConverterTool = dynamic(() => import("@/components/tools/TimestampConverterTool").then(mod => mod.TimestampConverterTool), { ssr: false });
 
 import { CommandPalette } from "@/components/modals/CommandPalette";
 import { getToolMeta, type ToolMeta } from "@/lib/tools/registry";
@@ -66,6 +71,9 @@ const SIDEBAR_TO_NAME: Record<string, string> = {
   "ssh-keygen": "SSH Key Generator",
   "password-hash": "Password Hash Verifier",
   bcrypt: "Password Hash Verifier",
+  "json-schema-validator": "JSON Schema Validator",
+  "mock-data-generator": "Mock Data Generator",
+  "epoch-converter": "Epoch Converter",
 };
 
 interface WorkspaceShellProps {
@@ -81,19 +89,19 @@ export function WorkspaceShell({ initialToolSlug, toolMeta, children }: Workspac
     ? SLUG_TO_SIDEBAR[initialToolSlug] || "json-formatter"
     : "json-formatter";
 
-  const [activeTool, setActiveTool] = useState(initialSidebarId);
+  const { tabs, activeTabId: activeTool, isLoaded, openTab, closeTab } = useWorkspaceTabs(initialSidebarId);
 
-  // Sync activeTool with URL when user navigates
+  // Sync activeTool with URL when user navigates via sidebar or tabs
   useEffect(() => {
     if (initialToolSlug) {
       const sidebarId = SLUG_TO_SIDEBAR[initialToolSlug];
       if (sidebarId && sidebarId !== activeTool) {
-        setActiveTool(sidebarId);
+        openTab(sidebarId);
       }
     } else if (activeTool !== "json-formatter") {
-      setActiveTool("json-formatter");
+      openTab("json-formatter");
     }
-  }, [initialToolSlug]);
+  }, [initialToolSlug, openTab]);
 
   const [isCommandPaletteOpen, setCommandPaletteOpen] = useState(false);
   const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false);
@@ -159,7 +167,7 @@ export function WorkspaceShell({ initialToolSlug, toolMeta, children }: Workspac
   }, []);
 
   const handleToolChange = (sidebarId: string) => {
-    setActiveTool(sidebarId);
+    openTab(sidebarId);
     setRestoredInput(null);
     setIsValid(true);
     setErrorMsg(undefined);
@@ -169,9 +177,23 @@ export function WorkspaceShell({ initialToolSlug, toolMeta, children }: Workspac
 
     router.push(getToolUrl(sidebarId), { scroll: false });
   };
+  
+  const handleCloseTab = (sidebarId: string) => {
+    closeTab(sidebarId);
+    // Determine which tab is active next since activeTool hasn't updated in this closure
+    const filtered = tabs.filter(t => t.id !== sidebarId);
+    if (filtered.length > 0) {
+      const latest = [...filtered].sort((a, b) => b.lastAccessed - a.lastAccessed)[0];
+      if (activeTool === sidebarId) {
+         router.push(getToolUrl(latest.id), { scroll: false });
+      }
+    } else {
+       router.push(getToolUrl("json-formatter"), { scroll: false });
+    }
+  };
 
   const handleRestoreHistory = (entry: HistoryEntry) => {
-    setActiveTool(entry.toolId);
+    openTab(entry.toolId);
     setRestoredInput(entry.input);
     router.push(getToolUrl(entry.toolId), { scroll: false });
   };
@@ -224,6 +246,9 @@ export function WorkspaceShell({ initialToolSlug, toolMeta, children }: Workspac
     "ssh-keygen",
     "password-hash",
     "bcrypt",
+    "json-schema-validator",
+    "mock-data-generator",
+    "epoch-converter",
   ];
 
   return (
@@ -291,209 +316,245 @@ export function WorkspaceShell({ initialToolSlug, toolMeta, children }: Workspac
           </div>
         )}
 
-        <main className="flex-1 flex flex-col min-w-0 bg-white overflow-y-auto">
+        <main className="flex-1 flex flex-col min-w-0 bg-white overflow-y-auto relative">
+          {!isEmbed && isLoaded && (
+            <div className="sticky top-0 z-20">
+              <TabsBar 
+                tabs={tabs} 
+                activeTabId={activeTool} 
+                onSelectTab={handleToolChange} 
+                onCloseTab={handleCloseTab} 
+              />
+            </div>
+          )}
           <div className="flex-1 min-h-0 relative flex flex-col">
-            <div className="min-h-[calc(100vh-3.5rem)] relative flex flex-col border-b border-zinc-200">
-              {(activeTool === "json-formatter" || activeTool === "json-validator") && (
-                <JsonFormatterTool
-                  onValidationChange={handleValidationChange}
-                  onStatsChange={handleStatsChange}
-                  onLogHistory={handleLogHistory}
-                  restoredInput={restoredInput}
-                />
-              )}
-              {activeTool === "jwt" && (
-                <JwtDecoderTool
-                  onValidationChange={handleValidationChange}
-                  onStatsChange={handleStatsChange}
-                  restoredInput={restoredInput}
-                />
-              )}
-              {activeTool === "curl-to-python" && (
-                <CurlConverterTool
-                  fixedTarget="python"
-                  onValidationChange={handleValidationChange}
-                  onStatsChange={handleStatsChange}
-                  restoredInput={restoredInput}
-                />
-              )}
-              {(activeTool === "curl-to-fetch" || activeTool === "curl-to-javascript") && (
-                <CurlConverterTool
-                  fixedTarget="javascript"
-                  onValidationChange={handleValidationChange}
-                  onStatsChange={handleStatsChange}
-                  restoredInput={restoredInput}
-                />
-              )}
-              {activeTool === "curl-to-go" && (
-                <CurlConverterTool
-                  fixedTarget="go"
-                  onValidationChange={handleValidationChange}
-                  onStatsChange={handleStatsChange}
-                  restoredInput={restoredInput}
-                />
-              )}
-              {(activeTool === "yaml" || activeTool === "yaml-to-json" || activeTool === "json-to-yaml") && (
-                <YamlConverterTool
-                  onValidationChange={handleValidationChange}
-                  onStatsChange={handleStatsChange}
-                  onLogHistory={handleLogHistory}
-                  restoredInput={restoredInput}
-                />
-              )}
-              {activeTool === "diff" && <DiffCheckerTool restoredInput={restoredInput} />}
-              {activeTool === "xml-formatter" && (
-                <XmlFormatterTool
-                  onValidationChange={handleValidationChange}
-                  onStatsChange={handleStatsChange}
-                  onLogHistory={handleLogHistory}
-                  restoredInput={restoredInput}
-                />
-              )}
-              {activeTool === "sql-formatter" && (
-                <SqlFormatterTool
-                  onValidationChange={handleValidationChange}
-                  onStatsChange={handleStatsChange}
-                  onLogHistory={handleLogHistory}
-                  restoredInput={restoredInput}
-                />
-              )}
-              {activeTool === "hash" && (
-                <HashGeneratorTool
-                  onValidationChange={handleValidationChange}
-                  onStatsChange={handleStatsChange}
-                  onLogHistory={handleLogHistory}
-                  restoredInput={restoredInput}
-                />
-              )}
-              {activeTool === "regex" && (
-                <RegexTesterTool
-                  onValidationChange={handleValidationChange}
-                  onStatsChange={handleStatsChange}
-                  onLogHistory={handleLogHistory}
-                  restoredInput={restoredInput}
-                />
-              )}
-              {activeTool === "json-to-ts" && (
-                <JsonToTsTool
-                  fixedTarget="typescript"
-                  onValidationChange={handleValidationChange}
-                  onStatsChange={handleStatsChange}
-                  onLogHistory={handleLogHistory}
-                  restoredInput={restoredInput}
-                />
-              )}
-              {activeTool === "json-to-zod" && (
-                <JsonToTsTool
-                  fixedTarget="zod"
-                  onValidationChange={handleValidationChange}
-                  onStatsChange={handleStatsChange}
-                  onLogHistory={handleLogHistory}
-                  restoredInput={restoredInput}
-                />
-              )}
-              {activeTool === "json-to-go" && (
-                <JsonToTsTool
-                  fixedTarget="go"
-                  onValidationChange={handleValidationChange}
-                  onStatsChange={handleStatsChange}
-                  onLogHistory={handleLogHistory}
-                  restoredInput={restoredInput}
-                />
-              )}
-              {activeTool === "cron" && (
-                <CronVisualizerTool
-                  onValidationChange={handleValidationChange}
-                  onStatsChange={handleStatsChange}
-                  onLogHistory={handleLogHistory}
-                  restoredInput={restoredInput}
-                />
-              )}
-              {activeTool === "minifier" && (
-                <MinifierTool
-                  onValidationChange={handleValidationChange}
-                  onStatsChange={handleStatsChange}
-                  onLogHistory={handleLogHistory}
-                  restoredInput={restoredInput}
-                />
-              )}
-              {activeTool === "graphql-formatter" && (
-                <GraphqlFormatterTool
-                  onValidationChange={handleValidationChange}
-                  onStatsChange={handleStatsChange}
-                  onLogHistory={handleLogHistory}
-                  restoredInput={restoredInput}
-                />
-              )}
-              {activeTool === "hmac-generator" && (
-                <HmacGeneratorTool
-                  onValidationChange={handleValidationChange}
-                  onStatsChange={handleStatsChange}
-                  onLogHistory={handleLogHistory}
-                  restoredInput={restoredInput}
-                />
-              )}
-              {activeTool === "cidr-calculator" && (
-                <CidrCalculatorTool
-                  onValidationChange={handleValidationChange}
-                  onStatsChange={handleStatsChange}
-                  onLogHistory={handleLogHistory}
-                  restoredInput={restoredInput}
-                />
-              )}
-              {activeTool === "svg-to-jsx" && (
-                <SvgToJsxTool
-                  onValidationChange={handleValidationChange}
-                  onStatsChange={handleStatsChange}
-                  restoredInput={restoredInput}
-                />
-              )}
-              {activeTool === "uuid-generator" && (
-                <UuidGeneratorTool
-                  onValidationChange={handleValidationChange}
-                  onStatsChange={handleStatsChange}
-                  onLogHistory={handleLogHistory}
-                  restoredInput={restoredInput}
-                />
-              )}
-              {(activeTool === "base64-inspector" || activeTool === "base64") && (
-                <Base64InspectorTool
-                  onValidationChange={handleValidationChange}
-                  onStatsChange={handleStatsChange}
-                  onLogHistory={handleLogHistory}
-                  restoredInput={restoredInput}
-                />
-              )}
-              {(activeTool === "cert-decoder" || activeTool === "x509") && (
-                <CertDecoderTool
-                  onValidationChange={handleValidationChange}
-                  onStatsChange={handleStatsChange}
-                  onLogHistory={handleLogHistory}
-                  restoredInput={restoredInput}
-                />
-              )}
-              {(activeTool === "ssh-key-generator" || activeTool === "ssh-keygen") && (
-                <SshKeyGeneratorTool
-                  onValidationChange={handleValidationChange}
-                  onStatsChange={handleStatsChange}
-                  onLogHistory={handleLogHistory}
-                  restoredInput={restoredInput}
-                />
-              )}
-              {(activeTool === "password-hash" || activeTool === "bcrypt") && (
-                <PasswordHashTool
-                  onValidationChange={handleValidationChange}
-                  onStatsChange={handleStatsChange}
-                  onLogHistory={handleLogHistory}
-                  restoredInput={restoredInput}
-                />
-              )}
-              {!IMPLEMENTED_TOOLS.includes(activeTool) && (
-                <div className="flex flex-col items-center justify-center h-full text-zinc-400">
-                  <p className="text-lg font-medium text-zinc-500 mb-2">Coming Soon</p>
-                  <p className="text-sm">This tool will be available in a future update.</p>
-                </div>
-              )}
+            <div className="min-h-[calc(100vh-3.5rem-36px)] relative flex flex-col border-b border-zinc-200">
+              {tabs.map((tab) => {
+                const isActive = tab.id === activeTool;
+                return (
+                  <div key={tab.id} className={`absolute inset-0 flex flex-col w-full h-full bg-white ${!isActive ? "hidden" : ""}`}>
+                    {(tab.id === "json-formatter" || tab.id === "json-validator") && (
+                      <JsonFormatterTool
+                        onValidationChange={handleValidationChange}
+                        onStatsChange={handleStatsChange}
+                        onLogHistory={handleLogHistory}
+                        restoredInput={isActive ? restoredInput : null}
+                      />
+                    )}
+                    {tab.id === "jwt" && (
+                      <JwtDecoderTool
+                        onValidationChange={handleValidationChange}
+                        onStatsChange={handleStatsChange}
+                        restoredInput={isActive ? restoredInput : null}
+                      />
+                    )}
+                    {tab.id === "curl-to-python" && (
+                      <CurlConverterTool
+                        fixedTarget="python"
+                        onValidationChange={handleValidationChange}
+                        onStatsChange={handleStatsChange}
+                        restoredInput={isActive ? restoredInput : null}
+                      />
+                    )}
+                    {(tab.id === "curl-to-fetch" || tab.id === "curl-to-javascript") && (
+                      <CurlConverterTool
+                        fixedTarget="javascript"
+                        onValidationChange={handleValidationChange}
+                        onStatsChange={handleStatsChange}
+                        restoredInput={isActive ? restoredInput : null}
+                      />
+                    )}
+                    {tab.id === "curl-to-go" && (
+                      <CurlConverterTool
+                        fixedTarget="go"
+                        onValidationChange={handleValidationChange}
+                        onStatsChange={handleStatsChange}
+                        restoredInput={isActive ? restoredInput : null}
+                      />
+                    )}
+                    {(tab.id === "yaml" || tab.id === "yaml-to-json" || tab.id === "json-to-yaml") && (
+                      <YamlConverterTool
+                        onValidationChange={handleValidationChange}
+                        onStatsChange={handleStatsChange}
+                        onLogHistory={handleLogHistory}
+                        restoredInput={isActive ? restoredInput : null}
+                      />
+                    )}
+                    {tab.id === "diff" && <DiffCheckerTool restoredInput={isActive ? restoredInput : null} />}
+                    {tab.id === "xml-formatter" && (
+                      <XmlFormatterTool
+                        onValidationChange={handleValidationChange}
+                        onStatsChange={handleStatsChange}
+                        onLogHistory={handleLogHistory}
+                        restoredInput={isActive ? restoredInput : null}
+                      />
+                    )}
+                    {tab.id === "sql-formatter" && (
+                      <SqlFormatterTool
+                        onValidationChange={handleValidationChange}
+                        onStatsChange={handleStatsChange}
+                        onLogHistory={handleLogHistory}
+                        restoredInput={isActive ? restoredInput : null}
+                      />
+                    )}
+                    {tab.id === "hash" && (
+                      <HashGeneratorTool
+                        onValidationChange={handleValidationChange}
+                        onStatsChange={handleStatsChange}
+                        onLogHistory={handleLogHistory}
+                        restoredInput={isActive ? restoredInput : null}
+                      />
+                    )}
+                    {tab.id === "regex" && (
+                      <RegexTesterTool
+                        onValidationChange={handleValidationChange}
+                        onStatsChange={handleStatsChange}
+                        onLogHistory={handleLogHistory}
+                        restoredInput={isActive ? restoredInput : null}
+                      />
+                    )}
+                    {tab.id === "json-to-ts" && (
+                      <JsonToTsTool
+                        fixedTarget="typescript"
+                        onValidationChange={handleValidationChange}
+                        onStatsChange={handleStatsChange}
+                        onLogHistory={handleLogHistory}
+                        restoredInput={isActive ? restoredInput : null}
+                      />
+                    )}
+                    {tab.id === "json-to-zod" && (
+                      <JsonToTsTool
+                        fixedTarget="zod"
+                        onValidationChange={handleValidationChange}
+                        onStatsChange={handleStatsChange}
+                        onLogHistory={handleLogHistory}
+                        restoredInput={isActive ? restoredInput : null}
+                      />
+                    )}
+                    {tab.id === "json-to-go" && (
+                      <JsonToTsTool
+                        fixedTarget="go"
+                        onValidationChange={handleValidationChange}
+                        onStatsChange={handleStatsChange}
+                        onLogHistory={handleLogHistory}
+                        restoredInput={isActive ? restoredInput : null}
+                      />
+                    )}
+                    {tab.id === "cron" && (
+                      <CronVisualizerTool
+                        onValidationChange={handleValidationChange}
+                        onStatsChange={handleStatsChange}
+                        onLogHistory={handleLogHistory}
+                        restoredInput={isActive ? restoredInput : null}
+                      />
+                    )}
+                    {tab.id === "minifier" && (
+                      <MinifierTool
+                        onValidationChange={handleValidationChange}
+                        onStatsChange={handleStatsChange}
+                        onLogHistory={handleLogHistory}
+                        restoredInput={isActive ? restoredInput : null}
+                      />
+                    )}
+                    {tab.id === "graphql-formatter" && (
+                      <GraphqlFormatterTool
+                        onValidationChange={handleValidationChange}
+                        onStatsChange={handleStatsChange}
+                        onLogHistory={handleLogHistory}
+                        restoredInput={isActive ? restoredInput : null}
+                      />
+                    )}
+                    {tab.id === "hmac-generator" && (
+                      <HmacGeneratorTool
+                        onValidationChange={handleValidationChange}
+                        onStatsChange={handleStatsChange}
+                        onLogHistory={handleLogHistory}
+                        restoredInput={isActive ? restoredInput : null}
+                      />
+                    )}
+                    {tab.id === "cidr-calculator" && (
+                      <CidrCalculatorTool
+                        onValidationChange={handleValidationChange}
+                        onStatsChange={handleStatsChange}
+                        onLogHistory={handleLogHistory}
+                        restoredInput={isActive ? restoredInput : null}
+                      />
+                    )}
+                    {tab.id === "svg-to-jsx" && (
+                      <SvgToJsxTool
+                        onValidationChange={handleValidationChange}
+                        onStatsChange={handleStatsChange}
+                        restoredInput={isActive ? restoredInput : null}
+                      />
+                    )}
+                    {tab.id === "uuid-generator" && (
+                      <UuidGeneratorTool
+                        onValidationChange={handleValidationChange}
+                        onStatsChange={handleStatsChange}
+                        onLogHistory={handleLogHistory}
+                        restoredInput={isActive ? restoredInput : null}
+                      />
+                    )}
+                    {(tab.id === "base64-inspector" || tab.id === "base64") && (
+                      <Base64InspectorTool
+                        onValidationChange={handleValidationChange}
+                        onStatsChange={handleStatsChange}
+                        onLogHistory={handleLogHistory}
+                        restoredInput={isActive ? restoredInput : null}
+                      />
+                    )}
+                    {(tab.id === "cert-decoder" || tab.id === "x509") && (
+                      <CertDecoderTool
+                        onValidationChange={handleValidationChange}
+                        onStatsChange={handleStatsChange}
+                        onLogHistory={handleLogHistory}
+                        restoredInput={isActive ? restoredInput : null}
+                      />
+                    )}
+                    {(tab.id === "ssh-key-generator" || tab.id === "ssh-keygen") && (
+                      <SshKeyGeneratorTool
+                        onValidationChange={handleValidationChange}
+                        onStatsChange={handleStatsChange}
+                        onLogHistory={handleLogHistory}
+                        restoredInput={isActive ? restoredInput : null}
+                      />
+                    )}
+                    {(tab.id === "password-hash" || tab.id === "bcrypt") && (
+                      <PasswordHashTool
+                        onValidationChange={handleValidationChange}
+                        onStatsChange={handleStatsChange}
+                        onLogHistory={handleLogHistory}
+                        restoredInput={isActive ? restoredInput : null}
+                      />
+                    )}
+                    {tab.id === "json-schema-validator" && (
+                      <JsonSchemaValidatorTool
+                        onValidationChange={handleValidationChange}
+                        onStatsChange={handleStatsChange}
+                        restoredInput={isActive ? restoredInput : null}
+                      />
+                    )}
+                    {tab.id === "mock-data-generator" && (
+                      <MockDataGeneratorTool
+                        onValidationChange={handleValidationChange}
+                        onStatsChange={handleStatsChange}
+                        restoredInput={isActive ? restoredInput : null}
+                      />
+                    )}
+                    {tab.id === "epoch-converter" && (
+                      <TimestampConverterTool
+                        restoredInput={isActive ? restoredInput : null}
+                      />
+                    )}
+                    {!IMPLEMENTED_TOOLS.includes(tab.id) && (
+                      <div className="flex flex-col items-center justify-center h-full text-zinc-400">
+                        <p className="text-lg font-medium text-zinc-500 mb-2">Coming Soon</p>
+                        <p className="text-sm">This tool will be available in a future update.</p>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
 
             {!isEmbed && children}

@@ -28,7 +28,6 @@ export const metadata: Metadata = {
     "privacy focused tools",
   ],
   authors: [{ name: "DevScratchpad" }],
-  manifest: "/manifest.json",
   robots: {
     index: true,
     follow: true,
@@ -71,21 +70,6 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
         <link rel="preconnect" href="https://cdn.jsdelivr.net" crossOrigin="anonymous" />
         <link rel="dns-prefetch" href="https://cdn.jsdelivr.net" />
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `
-              if ('serviceWorker' in navigator) {
-                window.addEventListener('load', function() {
-                  navigator.serviceWorker.register('/sw.js').then(function(registration) {
-                    console.log('ServiceWorker registration successful');
-                  }, function(err) {
-                    console.log('ServiceWorker registration failed: ', err);
-                  });
-                });
-              }
-            `,
-          }}
-        />
       </head>
       <body
         className={`antialiased min-h-screen flex flex-col bg-white text-zinc-900 ${inter.className}`}

@@ -33,6 +33,9 @@ export const SIDEBAR_TO_SLUG: Record<string, string> = {
   "cert-decoder": "cert-decoder",
   "ssh-key-generator": "ssh-key-generator",
   "password-hash": "password-hash",
+  "json-schema-validator": "json-schema-validator",
+  "mock-data-generator": "mock-data-generator",
+  "epoch-converter": "epoch-converter",
 };
 
 export const SLUG_TO_SIDEBAR: Record<string, string> = {

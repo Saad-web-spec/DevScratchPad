@@ -1,429 +1,177 @@
 export interface ToolMeta {
   slug: string;
+  category: string;
   name: string;
   shortName: string;
   description: string;
   seoTitle: string;
   seoDescription: string;
-  category: string;
   howToUse: string[];
-  edgeCases: string[];
+  edgeCases?: string[];
   shortcuts: string[];
 }
 
 export const TOOLS_REGISTRY: Record<string, ToolMeta> = {
   "json-formatter": {
     slug: "json-formatter",
-    category: "Formatters",
-    name: "JSON Formatter, Minifier & Validator",
+    category: "Data Formatters & Validators",
+    name: "JSON Formatter & Validator",
     shortName: "JSON Formatter",
-    description: "Format, validate, and beautify JSON directly in your browser. Ensure your data structure is correct and human-readable without sending it to a server.",
-    seoTitle: "JSON Formatter & Beautifier Online — DevScratchpad",
-    seoDescription: "Format, validate, and beautify JSON directly in your browser. 100% private, client-side JSON formatting with syntax highlighting and validation.",
+    description: "Format, validate, and minify JSON with interactive syntax highlighting and sorting.",
+    seoTitle: "JSON Formatter & Validator Online — Secure & Offline",
+    seoDescription: "Free online JSON formatter and validator. Format, minify, and lint JSON data locally in your browser. No server uploads.",
     howToUse: [
-      "Paste your unformatted, minified, or messy JSON payload directly into the editor pane.",
-      "The tool automatically detects syntax errors and instantly beautifies the JSON into a readable, strictly indented format.",
-      "Expand or collapse nested objects using the gutter arrows.",
-      "Click 'Copy' to copy the formatted JSON, or 'Download' to save it as a .json file locally."
+      "Paste your unformatted JSON data into the editor.",
+      "The tool will automatically validate and format it with proper indentation.",
+      "Use the 'Minify' button to strip whitespace, or 'Sort Keys' to alphabetize the structure."
     ],
     edgeCases: [
-      "Missing quotes around keys or trailing commas (which will trigger a syntax validation warning).",
-      "Extremely large JSON payloads (over 5MB) which are processed smoothly entirely within your browser's memory without crashing."
+      "Extremely large JSON payloads (50MB+) are supported via Monaco Editor.",
+      "Handles deeply nested structures and displays precise line-number validation errors."
     ],
-    shortcuts: ["Ctrl/Cmd + K — Open Command Palette to switch tools instantly."]
+    shortcuts: ["Ctrl/Cmd + V — Smart Magic Paste", "Ctrl/Cmd + K — Open Command Palette"]
   },
-  "json-validator": {
-    slug: "json-validator",
-    name: "JSON Validator",
-    shortName: "JSON Validator",
-    category: "Formatters",
-    description: "Validate JSON syntax online and catch formatting errors instantly. 100% private validation.",
-    seoTitle: "JSON Validator Online — Check JSON Syntax",
-    seoDescription: "Validate JSON syntax online instantly. Catch formatting errors, missing commas, and invalid structures securely in your browser.",
+  "json-schema-validator": {
+    slug: "json-schema-validator",
+    category: "Data Formatters & Validators",
+    name: "JSON Schema Validator",
+    shortName: "JSON Schema Validator",
+    description: "Validate JSON data against draft-07/2020-12 schemas with real-time error highlighting.",
+    seoTitle: "JSON Schema Validator Online — AJV Secure & Offline",
+    seoDescription: "Validate JSON data against JSON Schema specs entirely in your browser using AJV. Free, private, and fast.",
     howToUse: [
-      "Paste your JSON string into the secure offline validator input.",
-      "The engine continuously parses the structure in real-time, instantly highlighting lines with syntax errors like trailing commas or unescaped quotes.",
-      "Review the error summary panel to understand the exact JSON parse failure.",
-      "Fix the errors directly in the editor until the green 'Valid JSON' badge appears."
+      "Paste your JSON data in the left editor.",
+      "Paste your JSON Schema in the right editor.",
+      "Validation runs instantly, highlighting exact lines with schema violations."
     ],
-    edgeCases: [
-      "Spotting hidden zero-width spaces or invalid unicode characters.",
-      "Identifying unescaped quotes inside string values."
-    ],
-    shortcuts: ["Ctrl/Cmd + V — Smart Magic Paste"]
+    edgeCases: ["Unsupported external schema references ($ref)."],
+    shortcuts: []
   },
   "xml-formatter": {
     slug: "xml-formatter",
-    name: "XML Formatter & Beautifier",
+    category: "Data Formatters & Validators",
+    name: "XML Formatter",
     shortName: "XML Formatter",
-    category: "Formatters",
-    description: "Format, beautify, and minify XML data structures with indentation controls directly in your browser.",
-    seoTitle: "XML Formatter & Beautifier Online — DevScratchpad",
-    seoDescription: "Format and beautify XML online. Indentation controls, tree folding, and error highlighting without sending data to servers.",
+    description: "Pretty print and format XML documents.",
+    seoTitle: "XML Formatter Online — DevScratchpad",
+    seoDescription: "Format and pretty-print XML documents entirely in your browser.",
     howToUse: [
-      "Paste your raw or minified XML document into the left editor.",
-      "The tool validates your XML tags and indents child nodes cleanly.",
-      "Copy or download the formatted XML output."
+      "Paste raw XML into the editor.",
+      "The engine will parse and format the DOM tree with correct indentation."
     ],
-    edgeCases: ["Self-closing tags and XML namespaces."],
-    shortcuts: ["Ctrl/Cmd + K — Open Command Palette"]
+    shortcuts: []
   },
   "sql-formatter": {
     slug: "sql-formatter",
-    name: "SQL Formatter & Query Beautifier",
+    category: "Data Formatters & Validators",
+    name: "SQL Formatter",
     shortName: "SQL Formatter",
-    category: "Formatters",
-    description: "Multi-dialect SQL beautifier supporting PostgreSQL, MySQL, SQLite, T-SQL, and BigQuery with keyword casing.",
-    seoTitle: "SQL Formatter Online — Beautify SQL Queries",
-    seoDescription: "Beautify and format SQL queries online with support for PostgreSQL, MySQL, SQLite, and uppercase keyword formatting.",
+    description: "Format SQL queries (PostgreSQL, MySQL, SQLite, standard SQL) with proper indentation.",
+    seoTitle: "SQL Formatter Online — DevScratchpad",
+    seoDescription: "Format SQL queries online. Supports PostgreSQL, MySQL, and generic SQL dialects.",
     howToUse: [
-      "Paste messy SQL queries into the editor.",
-      "Select your SQL dialect (PostgreSQL, MySQL, SQLite, etc.) and keyword casing style.",
-      "Copy clean, indented SQL code instantly."
+      "Paste your unformatted SQL query.",
+      "Select your target SQL dialect.",
+      "View the pretty-printed, capitalized SQL output."
     ],
-    edgeCases: ["Complex subqueries, window functions, and multi-line comments."],
-    shortcuts: ["Ctrl/Cmd + K — Open Command Palette"]
+    shortcuts: []
   },
   "graphql-formatter": {
     slug: "graphql-formatter",
-    name: "GraphQL Formatter & Validator",
+    category: "Data Formatters & Validators",
+    name: "GraphQL Formatter",
     shortName: "GraphQL Formatter",
-    category: "Formatters",
-    description: "Formats and validates GraphQL queries, mutations, and schemas using the official AST parser.",
-    seoTitle: "GraphQL Formatter & Validator Online — DevScratchpad",
-    seoDescription: "Format, validate, and beautify GraphQL queries and schemas online with syntax checking.",
+    description: "Format GraphQL queries, mutations, and schema definitions.",
+    seoTitle: "GraphQL Formatter Online — DevScratchpad",
+    seoDescription: "Format and pretty-print GraphQL queries and schemas.",
     howToUse: [
-      "Paste your GraphQL query, mutation, or schema definition.",
-      "The AST parser automatically validates the structure and aligns field selections.",
-      "Copy formatted GraphQL query."
+      "Paste your GraphQL query or schema.",
+      "The tool validates syntax and applies standard Prettier formatting."
     ],
-    edgeCases: ["Nested fragment spreads and directive definitions."],
-    shortcuts: ["Ctrl/Cmd + K — Open Command Palette"]
+    shortcuts: []
   },
   "minifier": {
     slug: "minifier",
-    name: "CSS & SVG Minifier",
+    category: "Data Formatters & Validators",
+    name: "CSS / SVG / HTML Minifier",
     shortName: "Minifier",
-    category: "Formatters",
-    description: "Strips comments and whitespace from CSS and SVG code; displays byte savings and compression ratio.",
-    seoTitle: "CSS & SVG Minifier Online — Compress Web Code",
-    seoDescription: "Minify CSS stylesheets and SVG graphics online to reduce asset payload and improve website performance.",
+    description: "Minify and compress CSS stylesheets, SVG graphics, and HTML documents.",
+    seoTitle: "CSS/SVG/HTML Minifier Online — DevScratchpad",
+    seoDescription: "Minify CSS, SVG, and HTML online instantly. Reduce file sizes securely in your browser.",
     howToUse: [
-      "Paste raw CSS stylesheet or SVG code.",
-      "The engine strips redundant whitespace and comments.",
-      "Inspect the byte savings and copy minified output."
-    ],
-    edgeCases: ["Preserving CSS calc() spaces and SVG path coordinates."],
-    shortcuts: ["Ctrl/Cmd + K — Open Command Palette"]
-  },
-  "curl-to-python": {
-    slug: "curl-to-python",
-    category: "Network",
-    name: "cURL to Python Converter",
-    shortName: "cURL to Python",
-    description: "Transform complex cURL requests into clean, executable Python requests code.",
-    seoTitle: "cURL to Python Converter Online — DevScratchpad",
-    seoDescription: "Convert cURL commands to Python requests code instantly. Free, secure, in-browser cURL to Python conversion tool.",
-    howToUse: [
-      "Copy a cURL command from your browser's network tab or API documentation.",
-      "Paste the cURL syntax into the input pane.",
-      "The tool automatically parses all headers, query parameters, auth tokens, and JSON payloads, instantly converting them into Python 'requests' library code.",
-      "Copy the generated Python code and paste it directly into your script."
-    ],
-    edgeCases: [
-      "Complex multipart/form-data boundaries.",
-      "Unusual or escaped quotation marks inside cURL data payloads.",
-      "Authentication headers like Bearer or Basic."
+      "Select the input type (CSS, SVG, HTML).",
+      "Paste your raw code.",
+      "Copy the compressed output and view the byte savings."
     ],
     shortcuts: []
   },
-  "curl-to-fetch": {
-    slug: "curl-to-fetch",
-    category: "Network",
-    name: "cURL to Fetch Converter",
-    shortName: "cURL to Fetch",
-    description: "Transform cURL commands into native JavaScript fetch API configurations.",
-    seoTitle: "cURL to Fetch Converter Online — Convert cURL to JavaScript",
-    seoDescription: "Convert cURL commands to JavaScript fetch() code. Free, secure, in-browser cURL to fetch converter.",
+  "mock-data-generator": {
+    slug: "mock-data-generator",
+    category: "Data Generators & Mocks",
+    name: "Mock Data Generator",
+    shortName: "Mock Generator",
+    description: "Generate thousands of rows of realistic dummy data (JSON, CSV, SQL) using Faker.js.",
+    seoTitle: "Mock Data Generator Online — DevScratchpad",
+    seoDescription: "Generate massive amounts of realistic mock data in JSON, CSV, or SQL formats entirely in your browser using Faker.js.",
     howToUse: [
-      "Export a cURL request from Postman, Swagger, or Chrome DevTools.",
-      "Paste the raw cURL command into the converter.",
-      "It instantly maps the HTTP method, headers, and body into a native JavaScript Fetch API configuration object.",
-      "Copy the generated Fetch code for use in your frontend web application or ServiceWorker."
+      "Define your schema using Faker template fields (e.g. {{person.firstName}}).",
+      "Set the number of rows to generate.",
+      "Export as JSON, CSV, or SQL Insert statements."
     ],
-    edgeCases: [
-      "Handling of automatic Content-Length headers.",
-      "Parsing URL-encoded form data into Fetch body configurations."
-    ],
+    edgeCases: ["Generating more than 100,000 rows might slow down the browser."],
     shortcuts: []
   },
-  "curl-to-go": {
-    slug: "curl-to-go",
-    category: "Network",
-    name: "cURL to Go Converter",
-    shortName: "cURL to Go",
-    description: "Convert cURL commands into clean Go net/http code.",
-    seoTitle: "cURL to Go Converter Online — DevScratchpad",
-    seoDescription: "Convert cURL commands into native Golang net/http request code instantly.",
+  "uuid-generator": {
+    slug: "uuid-generator",
+    category: "Data Generators & Mocks",
+    name: "UUID / ULID / NanoID Generator",
+    shortName: "UUID Generator",
+    description: "Generate cryptographically secure UUIDv4, ULID, and NanoID strings in bulk.",
+    seoTitle: "UUID, ULID & NanoID Generator Online — Bulk IDs",
+    seoDescription: "Generate secure UUIDs (v4), ULIDs, and NanoIDs in bulk directly in your browser. 100% private.",
     howToUse: [
-      "Paste cURL request syntax.",
-      "Instantly receive strongly typed Go code using standard net/http and ioutil.",
-      "Copy the generated Go snippet."
-    ],
-    edgeCases: ["Byte buffer construction for binary payloads."],
-    shortcuts: []
-  },
-  "curl-to-javascript": {
-    slug: "curl-to-javascript",
-    category: "Network",
-    name: "cURL to JavaScript (Node)",
-    shortName: "cURL to JS",
-    description: "Convert cURL commands into Node.js / JavaScript Fetch code.",
-    seoTitle: "cURL to JavaScript Converter — Convert cURL to Fetch/Node",
-    seoDescription: "Convert cURL requests to JavaScript (Node.js/Fetch) code online.",
-    howToUse: ["Paste a cURL command.", "Copy the JavaScript fetch code."],
-    edgeCases: ["Complex multipart form data"],
-    shortcuts: []
-  },
-  "json-to-ts": {
-    slug: "json-to-ts",
-    category: "Converters",
-    name: "JSON to TypeScript",
-    shortName: "JSON to TS",
-    description: "Instantly generate strict TypeScript interfaces from JSON data payloads.",
-    seoTitle: "JSON to TypeScript Converter Online — DevScratchpad",
-    seoDescription: "Generate TypeScript interfaces from JSON data instantly. Secure, offline JSON to TS converter for developers.",
-    howToUse: [
-      "Paste your sample JSON API response into the editor.",
-      "The engine deeply analyzes the JSON structure, detecting data types, nested arrays, and objects.",
-      "It instantly generates strongly-typed TypeScript interfaces and types corresponding to your data.",
-      "Copy the generated interfaces to strictly type your frontend API requests."
-    ],
-    edgeCases: [
-      "Null values in the JSON (handled by generating optional '?' properties or union types).",
-      "Empty arrays where the internal type must be inferred as 'any[]'."
-    ],
-    shortcuts: []
-  },
-  "json-to-zod": {
-    slug: "json-to-zod",
-    category: "Converters",
-    name: "JSON to Zod Schema",
-    shortName: "JSON to Zod",
-    description: "Infer and generate strict Zod runtime validation schemas from JSON data.",
-    seoTitle: "JSON to Zod Schema Generator Online — DevScratchpad",
-    seoDescription: "Generate Zod schemas from JSON payloads online. Free, private, in-browser JSON to Zod converter.",
-    howToUse: [
-      "Paste a JSON object or API response into the input.",
-      "The tool infers the schema types (strings, numbers, booleans, nested objects) in real-time.",
-      "It generates a complete Zod schema definition (z.object, z.string, etc.) matching the payload.",
-      "Copy the Zod schema to use for strict runtime validation in your TypeScript application."
-    ],
-    edgeCases: [
-      "Deeply nested objects converted into inline z.object() schemas.",
-      "Arrays of objects mapped to z.array()."
-    ],
-    shortcuts: []
-  },
-  "json-to-go": {
-    slug: "json-to-go",
-    category: "Converters",
-    name: "JSON to Go Struct",
-    shortName: "JSON to Go",
-    description: "Generate Go structs with json struct tags from raw JSON payloads.",
-    seoTitle: "JSON to Go Struct Converter Online — DevScratchpad",
-    seoDescription: "Generate strongly-typed Go (Golang) struct models from JSON data with json tags.",
-    howToUse: [
-      "Paste JSON data payload.",
-      "Instantly receive typed Golang struct definitions with json tags.",
-      "Copy the struct for use in your Go backend."
-    ],
-    edgeCases: ["Nested anonymous structs vs named structs."],
-    shortcuts: []
-  },
-  "svg-to-jsx": {
-    slug: "svg-to-jsx",
-    category: "Converters",
-    name: "SVG to JSX Converter",
-    shortName: "SVG to JSX",
-    description: "Convert raw SVG code to React JSX functional components",
-    seoTitle: "SVG to JSX Converter Online — DevScratchpad",
-    seoDescription: "Free online SVG to JSX converter — paste your raw SVG and get a ready-to-use React functional component with camelCase attributes. No servers, 100% private.",
-    howToUse: [
-      "Paste your raw SVG code into the left Input panel.",
-      "Click 'Convert' to transform standard HTML attributes (like class and fill-rule) into React-compatible camelCase attributes.",
-      "Click 'Copy' on the output panel to copy your React functional component."
-    ],
-    edgeCases: [
-      "Complex SVGs with invalid syntax may not parse completely.",
-      "Styles inside style tags are not automatically converted to React style objects."
-    ],
-    shortcuts: ["Ctrl/Cmd + K — Open Command Palette to switch tools instantly."]
-  },
-  "yaml": {
-    slug: "yaml",
-    category: "Converters",
-    name: "YAML / JSON Converter",
-    shortName: "YAML Converter",
-    description: "Bidirectional YAML ↔ JSON conversion preserving data structures with one-click swap.",
-    seoTitle: "YAML to JSON & JSON to YAML Converter Online — DevScratchpad",
-    seoDescription: "Convert between YAML and JSON bidirectionally online in your browser. Fast, accurate, and completely offline.",
-    howToUse: [
-      "Paste YAML or JSON data.",
-      "Toggle between YAML to JSON or JSON to YAML.",
-      "Copy converted output."
-    ],
-    edgeCases: ["YAML multi-document streams and anchors."],
-    shortcuts: []
-  },
-  "yaml-to-json": {
-    slug: "yaml-to-json",
-    name: "YAML to JSON",
-    shortName: "YAML to JSON",
-    category: "Converters",
-    description: "Convert YAML configuration files into standardized JSON payloads securely in your browser.",
-    seoTitle: "YAML to JSON Converter Online — DevScratchpad",
-    seoDescription: "Convert YAML to JSON online instantly. Free, secure, in-browser YAML to JSON parsing tool.",
-    howToUse: [
-      "Paste your YAML configuration file (e.g., Docker Compose, CI/CD pipelines) into the editor.",
-      "The parser instantly validates the YAML syntax and converts it into a standard JSON string.",
-      "The output JSON is fully formatted and ready to be used in Node.js or web applications.",
-      "Copy or download the resulting JSON file."
-    ],
-    edgeCases: [
-      "Handling of YAML anchors and aliases.",
-      "Complex nested arrays or multiline string blocks."
-    ],
-    shortcuts: []
-  },
-  "json-to-yaml": {
-    slug: "json-to-yaml",
-    name: "JSON to YAML",
-    shortName: "JSON to YAML",
-    category: "Converters",
-    description: "Convert JSON objects into human-readable YAML configuration format.",
-    seoTitle: "JSON to YAML Converter Online — DevScratchpad",
-    seoDescription: "Convert JSON to YAML online instantly. Free, private JSON to YAML configuration generator.",
-    howToUse: [
-      "Paste your JSON payload into the editor.",
-      "The tool automatically transforms the curly braces and brackets into indentation-based YAML format.",
-      "Review the cleanly formatted YAML output, perfect for Kubernetes manifests or Ansible playbooks.",
-      "Copy or download the resulting YAML file."
-    ],
-    edgeCases: [
-      "Deeply nested JSON objects ensuring proper space indentation.",
-      "Handling of null values or empty strings."
+      "Select the ID format (UUIDv4, ULID, or NanoID).",
+      "Specify the quantity to generate (up to 10,000 at once).",
+      "Click Generate and copy the list."
     ],
     shortcuts: []
   },
   "jwt": {
     slug: "jwt",
-    category: "Security",
-    name: "JWT Decoder",
+    category: "Security & Cryptography",
+    name: "JWT Decoder & Inspector",
     shortName: "JWT Decoder",
-    description: "Decode JSON Web Tokens instantly and securely in your browser.",
-    seoTitle: "JWT Decoder Online — Decode Tokens Safely & Privately",
-    seoDescription: "Free online JWT decoder — paste any JSON Web Token to decode header, payload, and signature. Auto-converts exp/iat timestamps to readable dates. 100% client-side.",
+    description: "Decode JSON Web Tokens securely. Inspect claims, header, and signature status locally.",
+    seoTitle: "JWT Decoder Online — Secure JSON Web Token Inspector",
+    seoDescription: "Decode and inspect JWTs (JSON Web Tokens) locally in your browser. We never log or transmit your tokens to a server.",
     howToUse: [
-      "Paste a standard JWT string (starting with 'eyJ...') into the left input area.",
-      "The token is automatically split into Header, Payload, and Signature sections.",
-      "Timestamp claims like 'exp', 'iat', and 'nbf' are automatically converted to human-readable ISO dates.",
-      "Click 'Copy' on any section to copy the decoded JSON to your clipboard."
+      "Paste your base64-encoded JWT into the input field.",
+      "The tool automatically splits and decodes the Header and Payload claims.",
+      "Verify expiration dates (exp, iat, nbf) automatically converted to local time."
     ],
-    edgeCases: [
-      "Only standard 3-part JWTs (header.payload.signature) are supported.",
-      "Encrypted JWTs (JWE) cannot be decoded without the encryption key.",
-      "The signature is displayed raw — this tool does not verify signatures."
-    ],
-    shortcuts: ["Ctrl/Cmd + K — Open Command Palette to switch tools instantly."]
-  },
-  "uuid-generator": {
-    slug: "uuid-generator",
-    category: "Security",
-    name: "UUID / ULID / NanoID Generator",
-    shortName: "UUID Generator",
-    description: "Generate cryptographically secure v4 UUIDs, ULIDs, and NanoIDs locally in your browser.",
-    seoTitle: "UUID Generator Online (v4) — DevScratchpad",
-    seoDescription: "Generate secure UUIDs (v4) online instantly. Free, offline bulk UUID generator tool.",
-    howToUse: [
-      "Select the number of UUIDs you wish to generate (e.g., 1, 10, or 100).",
-      "Click 'Generate' to instantly create cryptographically secure, random v4 UUIDs using the browser's native Crypto API.",
-      "Choose your preferred format (hyphens, no hyphens, or uppercase).",
-      "Click the copy button to grab your unique identifiers."
-    ],
-    edgeCases: [
-      "Generating thousands of UUIDs simultaneously without blocking the browser thread.",
-      "Ensuring cryptographic randomness via window.crypto instead of Math.random()."
-    ],
-    shortcuts: ["Ctrl/Cmd + K — Open Command Palette to switch tools instantly."]
-  },
-  "hmac-generator": {
-    slug: "hmac-generator",
-    category: "Security",
-    name: "HMAC Generator & Signer",
-    shortName: "HMAC Generator",
-    description: "Computes SHA256 & SHA512 HMAC signatures in Hex & Base64 for Stripe/GitHub webhook verification.",
-    seoTitle: "HMAC Generator Online (SHA256, SHA512) — DevScratchpad",
-    seoDescription: "Generate HMAC signatures online using SHA-256, SHA-512, MD5 with secret keys. Client-side webhook testing.",
-    howToUse: [
-      "Enter your payload string and secret key.",
-      "Choose HMAC hashing algorithm (SHA256, SHA512, etc.).",
-      "Copy the computed Hex or Base64 signature."
-    ],
-    edgeCases: ["Binary key formats vs UTF-8 string keys."],
+    edgeCases: ["Malformed tokens or invalid base64 padding."],
     shortcuts: []
   },
-  "cidr-calculator": {
-    slug: "cidr-calculator",
-    category: "Network",
-    name: "IP & CIDR Calculator",
-    shortName: "CIDR Calculator",
-    description: "Calculates IPv4 network address, broadcast, wildcard mask, and usable host bounds.",
-    seoTitle: "CIDR Calculator & IPv4 Subnet Mask Visualizer — DevScratchpad",
-    seoDescription: "Calculate IP subnets, CIDR ranges, network address, broadcast address, and usable host capacity online.",
+  "base64-inspector": {
+    slug: "base64-inspector",
+    category: "Security & Cryptography",
+    name: "Base64 / Hex / Binary Multi-Inspector & Image Previewer",
+    shortName: "Base64 & Hex Inspector",
+    description: "Auto-detects and converts between Base64, URL-Safe Base64, Hexadecimal streams, Canonical Hex Dumps, Binary octets, and Data URL images.",
+    seoTitle: "Base64 & Hex Inspector Online — Multi-Format Converter & Hex Dump",
+    seoDescription: "Free, 100% private Base64, Hex, Binary, and Data URL inspector. Convert encodings, view canonical hex dumps, and preview data URL images directly in your browser.",
     howToUse: [
-      "Enter an IP address with subnet mask or CIDR prefix (e.g. 192.168.1.0/24).",
-      "The tool calculates network boundaries, broadcast IP, and total usable addresses.",
-      "View detailed bitmask breakdown."
+      "Paste any string, Base64 payload, Hex stream, Binary bits, or Data URL image into the editor.",
+      "The tool auto-detects the encoding format and renders simultaneous multi-format conversions.",
+      "Switch to 'Canonical Hex Dump' to inspect byte offsets, hex pairs, and ASCII representation.",
+      "If an image Data URL is detected, view the live high-contrast preview canvas and download the file."
     ],
-    edgeCases: ["/31 and /32 point-to-point subnets."],
-    shortcuts: []
-  },
-  "cron": {
-    slug: "cron",
-    category: "Network",
-    name: "Cron Expression Visualizer",
-    shortName: "Cron Visualizer",
-    description: "Translates complex cron schedules into plain English with a 5-column breakdown grid.",
-    seoTitle: "Cron Expression Visualizer & Generator — DevScratchpad",
-    seoDescription: "Translate cron expressions into human-readable English schedules with next execution date forecasting.",
-    howToUse: [
-      "Paste any standard 5-field cron expression.",
-      "Inspect the translated plain English description and column breakdown.",
-      "View next scheduled execution timestamps."
-    ],
-    edgeCases: ["Non-standard day of week numbering (0 vs 7)."],
-    shortcuts: []
-  },
-  "diff": {
-    slug: "diff",
-    category: "Utilities",
-    name: "Diff Checker & Text Compare",
-    shortName: "Diff Checker",
-    description: "Monaco side-by-side or inline code diffing with character-level additions and deletions.",
-    seoTitle: "Diff Checker Online — Side-by-Side Code Compare",
-    seoDescription: "Compare text and code side-by-side online. Highlights character-level differences and additions.",
-    howToUse: [
-      "Paste original text in left pane and modified text in right pane.",
-      "Toggle between side-by-side and inline diff modes.",
-      "Inspect character-level highlighting."
-    ],
-    edgeCases: ["Large files over 10,000 lines."],
-    shortcuts: []
+    edgeCases: ["URL-safe unpadded Base64 strings (- and _).", "Embedded PNG/JPEG/WEBP magic bytes in raw Base64."],
+    shortcuts: ["Ctrl/Cmd + K — Open Command Palette"]
   },
   "hash": {
     slug: "hash",
-    category: "Security",
+    category: "Security & Cryptography",
     name: "Hash Generator (MD5, SHA256, SHA512)",
     shortName: "Hash Generator",
     description: "Computes MD5, SHA-1, SHA-256, and SHA-512 in parallel client-side in your browser.",
@@ -437,9 +185,201 @@ export const TOOLS_REGISTRY: Record<string, ToolMeta> = {
     edgeCases: ["Unicode character normalization in hashing."],
     shortcuts: []
   },
+  "hmac-generator": {
+    slug: "hmac-generator",
+    category: "Security & Cryptography",
+    name: "HMAC Generator",
+    shortName: "HMAC Generator",
+    description: "Compute Hash-based Message Authentication Codes (HMAC) using SHA256, SHA512, etc.",
+    seoTitle: "HMAC Generator Online — SHA256, SHA512 Mac Authentication",
+    seoDescription: "Generate HMAC signatures securely in your browser using a secret key and payload.",
+    howToUse: [
+      "Enter your secret key.",
+      "Enter the message payload.",
+      "Select the hash algorithm and view the HMAC output."
+    ],
+    shortcuts: []
+  },
+  "password-hash": {
+    slug: "password-hash",
+    category: "Security & Cryptography",
+    name: "Bcrypt / Argon2 / PBKDF2 Password Hash Verifier & Generator",
+    shortName: "Password Hash & Verifier",
+    description: "Generate and verify passwords against Bcrypt ($2a/$2b), Argon2id, and PBKDF2 hashes with cost factor controls.",
+    seoTitle: "Bcrypt & Argon2 Hash Generator & Verifier Online — DevScratchpad",
+    seoDescription: "Generate Bcrypt, Argon2id, and PBKDF2 password hashes and verify candidate passwords against existing hashes entirely in your browser.",
+    howToUse: [
+      "Toggle between 'Generate Hash' and 'Verify Password Against Hash' modes.",
+      "In Generate mode: Enter plaintext password, adjust cost rounds or iterations, and copy generated hash.",
+      "In Verify mode: Paste an existing hash ($2b$10$...) and candidate password to receive an instant match verification badge."
+    ],
+    edgeCases: ["Bcrypt 72-byte string truncation limits.", "Support for $2a$, $2b$, and $2y$ hash dialect prefixes."],
+    shortcuts: ["Ctrl/Cmd + K — Open Command Palette"]
+  },
+  "cert-decoder": {
+    slug: "cert-decoder",
+    category: "Security & Cryptography",
+    name: "X.509 Certificate & CSR Decoder",
+    shortName: "Certificate Decoder",
+    description: "Decode X.509 PEM certificates and PKCS#10 CSRs in your browser. Inspect Subject, Issuer, SANs, Validity countdown, and fingerprints.",
+    seoTitle: "X.509 Certificate & CSR Decoder Online — 100% Private SSL Inspector",
+    seoDescription: "Decode and inspect X.509 SSL/TLS certificates and CSR requests in your browser. View Subject Alternative Names (SANs), expiry dates, fingerprints, and key usages.",
+    howToUse: [
+      "Paste a PEM certificate (-----BEGIN CERTIFICATE-----) or CSR (-----BEGIN CERTIFICATE REQUEST-----), or upload a .crt/.pem file.",
+      "Instantly inspect certificate status, validity countdown, Common Name, and Issuer.",
+      "Review Subject Alternative Names (SANs) and Cryptographic Properties (Key size, algorithm, SHA-256 fingerprint)."
+    ],
+    edgeCases: ["Expired or not-yet-valid certificates.", "Wildcard DNS and multi-SAN SSL certificates."],
+    shortcuts: ["Ctrl/Cmd + K — Open Command Palette"]
+  },
+  "ssh-key-generator": {
+    slug: "ssh-key-generator",
+    category: "Security & Cryptography",
+    name: "SSH Keypair Generator & Randomart Visualizer",
+    shortName: "SSH Key Generator",
+    description: "Generate cryptographically secure Ed25519, RSA (2048/4096), and ECDSA SSH key pairs directly in your browser with OpenSSH Randomart.",
+    seoTitle: "SSH Key Generator Online (Ed25519, RSA, ECDSA) — OpenSSH Randomart",
+    seoDescription: "Generate secure SSH key pairs (Ed25519, RSA 4096, ECDSA) in your browser using WebCrypto API. Download .pub and .pem keys with OpenSSH Randomart visualizer.",
+    howToUse: [
+      "Select your desired algorithm (Ed25519 is recommended for modern servers).",
+      "Enter a custom comment or email identity (e.g. user@devscratchpad).",
+      "Copy or download your public key (id_ed25519.pub) and private key (PKCS#8 PEM).",
+      "View the iconic OpenSSH Drunken Bishop Randomart ASCII art visualizer."
+    ],
+    edgeCases: ["Zero server transmission ensures private keys never leave your machine memory.", "OpenSSH wire format binary serialization done completely client-side."],
+    shortcuts: ["Ctrl/Cmd + K — Open Command Palette"]
+  },
+  "json-to-ts": {
+    slug: "json-to-ts",
+    category: "Code & Type Converters",
+    name: "JSON to TypeScript Interfaces",
+    shortName: "JSON to TS",
+    description: "Instantly infer TypeScript interfaces and types from a JSON payload.",
+    seoTitle: "JSON to TypeScript Interface Generator Online — DevScratchpad",
+    seoDescription: "Convert JSON payloads into strict TypeScript interfaces instantly in your browser.",
+    howToUse: [
+      "Paste your JSON payload into the left editor.",
+      "The engine infers arrays, nested objects, and primitives.",
+      "Copy the exported TypeScript interfaces from the right editor."
+    ],
+    shortcuts: []
+  },
+  "json-to-zod": {
+    slug: "json-to-zod",
+    category: "Code & Type Converters",
+    name: "JSON to Zod Schema",
+    shortName: "JSON to Zod",
+    description: "Infer Zod validation schemas directly from JSON payloads.",
+    seoTitle: "JSON to Zod Schema Generator Online — DevScratchpad",
+    seoDescription: "Generate Zod runtime validation schemas from JSON examples online.",
+    howToUse: [
+      "Paste your JSON payload into the left editor.",
+      "Copy the corresponding Zod schema code from the right editor."
+    ],
+    shortcuts: []
+  },
+  "json-to-go": {
+    slug: "json-to-go",
+    category: "Code & Type Converters",
+    name: "JSON to Go Struct",
+    shortName: "JSON to Go",
+    description: "Convert JSON payloads into Go struct definitions with json tags.",
+    seoTitle: "JSON to Go Struct Generator Online — DevScratchpad",
+    seoDescription: "Automatically generate Go structs from JSON data securely in your browser.",
+    howToUse: [
+      "Paste your JSON payload into the left editor.",
+      "Copy the generated Go structs with `json` tags from the right editor."
+    ],
+    shortcuts: []
+  },
+  "yaml": {
+    slug: "yaml",
+    category: "Code & Type Converters",
+    name: "YAML to JSON / JSON to YAML Converter",
+    shortName: "YAML / JSON",
+    description: "Bidirectional YAML and JSON conversion with syntax validation.",
+    seoTitle: "YAML to JSON Converter Online — DevScratchpad",
+    seoDescription: "Convert YAML to JSON and JSON to YAML instantly online.",
+    howToUse: [
+      "Paste YAML or JSON into the left pane.",
+      "The tool auto-detects the format and converts it to the counterpart on the right."
+    ],
+    shortcuts: []
+  },
+  "curl-to-fetch": {
+    slug: "curl-to-fetch",
+    category: "Code & Type Converters",
+    name: "cURL to JavaScript Fetch",
+    shortName: "cURL to Fetch",
+    description: "Translate bash cURL commands into JavaScript fetch() API calls.",
+    seoTitle: "cURL to Fetch Converter Online — DevScratchpad",
+    seoDescription: "Convert cURL commands into JavaScript fetch() code snippets instantly.",
+    howToUse: [
+      "Paste a bash `curl` command into the input.",
+      "Copy the ready-to-use JavaScript `fetch()` syntax."
+    ],
+    shortcuts: []
+  },
+  "curl-to-python": {
+    slug: "curl-to-python",
+    category: "Code & Type Converters",
+    name: "cURL to Python Requests",
+    shortName: "cURL to Python",
+    description: "Translate bash cURL commands into Python `requests` code.",
+    seoTitle: "cURL to Python Requests Converter Online — DevScratchpad",
+    seoDescription: "Convert cURL commands into Python requests boilerplate instantly.",
+    howToUse: [
+      "Paste a bash `curl` command.",
+      "Copy the Python `requests` script."
+    ],
+    shortcuts: []
+  },
+  "curl-to-go": {
+    slug: "curl-to-go",
+    category: "Code & Type Converters",
+    name: "cURL to Go HTTP Request",
+    shortName: "cURL to Go",
+    description: "Translate bash cURL commands into Go `net/http` client code.",
+    seoTitle: "cURL to Go HTTP Request Converter Online — DevScratchpad",
+    seoDescription: "Convert cURL commands into Go net/http boilerplate code instantly.",
+    howToUse: [
+      "Paste a bash `curl` command.",
+      "Copy the Go HTTP request client code."
+    ],
+    shortcuts: []
+  },
+  "svg-to-jsx": {
+    slug: "svg-to-jsx",
+    category: "Code & Type Converters",
+    name: "SVG to JSX Converter",
+    shortName: "SVG to JSX",
+    description: "Convert raw SVG markup into React JSX/TSX components.",
+    seoTitle: "SVG to React JSX Converter Online — DevScratchpad",
+    seoDescription: "Convert raw SVG icons into React JSX and TSX components instantly.",
+    howToUse: [
+      "Paste raw SVG markup into the left editor.",
+      "Copy the React component code from the right editor."
+    ],
+    shortcuts: []
+  },
+  "epoch-converter": {
+    slug: "epoch-converter",
+    category: "Time, Network & Utilities",
+    name: "Epoch / Timestamp Converter",
+    shortName: "Epoch Converter",
+    description: "Convert Unix epoch timestamps to human-readable dates (Local and UTC).",
+    seoTitle: "Epoch & Unix Timestamp Converter Online — DevScratchpad",
+    seoDescription: "Convert Unix timestamps to readable dates, seconds to milliseconds, and format times.",
+    howToUse: [
+      "Enter an epoch timestamp (seconds or milliseconds).",
+      "View the localized and UTC date equivalents.",
+      "Or, pick a calendar date to generate an epoch timestamp."
+    ],
+    shortcuts: []
+  },
   "regex": {
     slug: "regex",
-    category: "Utilities",
+    category: "Time, Network & Utilities",
     name: "Regex Tester & Matcher",
     shortName: "Regex Tester",
     description: "Real-time RegExp testing with flags (g, i, m, s), match lists, and substitution preview.",
@@ -453,84 +393,54 @@ export const TOOLS_REGISTRY: Record<string, ToolMeta> = {
     edgeCases: ["Catastrophic backtracking prevention and lookbehinds."],
     shortcuts: []
   },
-  "base64-inspector": {
-    slug: "base64-inspector",
-    category: "Security",
-    name: "Base64 / Hex / Binary Multi-Inspector & Image Previewer",
-    shortName: "Base64 & Hex Inspector",
-    description: "Auto-detects and converts between Base64, URL-Safe Base64, Hexadecimal streams, Canonical Hex Dumps, Binary octets, and Data URL images.",
-    seoTitle: "Base64 & Hex Inspector Online — Multi-Format Converter & Hex Dump",
-    seoDescription: "Free, 100% private Base64, Hex, Binary, and Data URL inspector. Convert encodings, view canonical hex dumps, and preview data URL images directly in your browser.",
+  "diff": {
+    slug: "diff",
+    category: "Time, Network & Utilities",
+    name: "Diff Checker & Text Compare",
+    shortName: "Diff Checker",
+    description: "Monaco side-by-side or inline code diffing with character-level additions and deletions.",
+    seoTitle: "Diff Checker Online — Side-by-Side Code Compare",
+    seoDescription: "Compare text and code side-by-side online. Highlights character-level differences and additions.",
     howToUse: [
-      "Paste any string, Base64 payload, Hex stream, Binary bits, or Data URL image into the editor.",
-      "The tool auto-detects the encoding format and renders simultaneous multi-format conversions.",
-      "Switch to 'Canonical Hex Dump' to inspect byte offsets, hex pairs, and ASCII representation.",
-      "If an image Data URL is detected, view the live high-contrast preview canvas and download the file."
+      "Paste original text in left pane and modified text in right pane.",
+      "Toggle between side-by-side and inline diff modes.",
+      "Inspect character-level highlighting."
     ],
-    edgeCases: [
-      "URL-safe unpadded Base64 strings (- and _).",
-      "Embedded PNG/JPEG/WEBP magic bytes in raw Base64."
-    ],
-    shortcuts: ["Ctrl/Cmd + K — Open Command Palette"]
+    edgeCases: ["Large files over 10,000 lines."],
+    shortcuts: []
   },
-  "cert-decoder": {
-    slug: "cert-decoder",
-    category: "Security",
-    name: "X.509 Certificate & CSR Decoder",
-    shortName: "Certificate Decoder",
-    description: "Decode X.509 PEM certificates and PKCS#10 CSRs in your browser. Inspect Subject, Issuer, SANs, Validity countdown, and fingerprints.",
-    seoTitle: "X.509 Certificate & CSR Decoder Online — 100% Private SSL Inspector",
-    seoDescription: "Decode and inspect X.509 SSL/TLS certificates and CSR requests in your browser. View Subject Alternative Names (SANs), expiry dates, fingerprints, and key usages.",
+  "cron": {
+    slug: "cron",
+    category: "Time, Network & Utilities",
+    name: "Cron Expression Visualizer",
+    shortName: "Cron Visualizer",
+    description: "Translates complex cron schedules into plain English with a 5-column breakdown grid.",
+    seoTitle: "Cron Expression Visualizer & Generator — DevScratchpad",
+    seoDescription: "Translate cron expressions into human-readable English schedules with next execution date forecasting.",
     howToUse: [
-      "Paste a PEM certificate (-----BEGIN CERTIFICATE-----) or CSR (-----BEGIN CERTIFICATE REQUEST-----), or upload a .crt/.pem file.",
-      "Instantly inspect certificate status, validity countdown, Common Name, and Issuer.",
-      "Review Subject Alternative Names (SANs) and Cryptographic Properties (Key size, algorithm, SHA-256 fingerprint)."
+      "Paste any standard 5-field cron expression.",
+      "Inspect the translated plain English description and column breakdown.",
+      "View next scheduled execution timestamps."
     ],
-    edgeCases: [
-      "Expired or not-yet-valid certificates.",
-      "Wildcard DNS and multi-SAN SSL certificates."
-    ],
-    shortcuts: ["Ctrl/Cmd + K — Open Command Palette"]
+    edgeCases: ["Non-standard day of week numbering (0 vs 7)."],
+    shortcuts: []
   },
-  "ssh-key-generator": {
-    slug: "ssh-key-generator",
-    category: "Security",
-    name: "SSH Keypair Generator & Randomart Visualizer",
-    shortName: "SSH Key Generator",
-    description: "Generate cryptographically secure Ed25519, RSA (2048/4096), and ECDSA SSH key pairs directly in your browser with OpenSSH Randomart.",
-    seoTitle: "SSH Key Generator Online (Ed25519, RSA, ECDSA) — OpenSSH Randomart",
-    seoDescription: "Generate secure SSH key pairs (Ed25519, RSA 4096, ECDSA) in your browser using WebCrypto API. Download .pub and .pem keys with OpenSSH Randomart visualizer.",
+  "cidr-calculator": {
+    slug: "cidr-calculator",
+    category: "Time, Network & Utilities",
+    name: "CIDR Calculator & Subnet Inspector",
+    shortName: "CIDR Calculator",
+    description: "Calculate IPv4 and IPv6 subnet masks, broadcast addresses, and usable ranges.",
+    seoTitle: "CIDR & Subnet Calculator Online — IP Range Inspector",
+    seoDescription: "Calculate IPv4/IPv6 subnets, view CIDR notation, netmasks, broadcast IP, and usable host ranges.",
     howToUse: [
-      "Select your desired algorithm (Ed25519 is recommended for modern servers).",
-      "Enter a custom comment or email identity (e.g. user@devscratchpad).",
-      "Copy or download your public key (id_ed25519.pub) and private key (PKCS#8 PEM).",
-      "View the iconic OpenSSH Drunken Bishop Randomart ASCII art visualizer."
+      "Enter an IP address and CIDR suffix (e.g. 192.168.1.0/24).",
+      "The tool calculates network boundaries, broadcast IP, and total usable addresses.",
+      "View detailed bitmask breakdown."
     ],
-    edgeCases: [
-      "Zero server transmission ensures private keys never leave your machine memory.",
-      "OpenSSH wire format binary serialization done completely client-side."
-    ],
-    shortcuts: ["Ctrl/Cmd + K — Open Command Palette"]
-  },
-  "password-hash": {
-    slug: "password-hash",
-    category: "Security",
-    name: "Bcrypt / Argon2 / PBKDF2 Password Hash Verifier & Generator",
-    shortName: "Password Hash & Verifier",
-    description: "Generate and verify passwords against Bcrypt ($2a/$2b), Argon2id, and PBKDF2 hashes with cost factor controls.",
-    seoTitle: "Bcrypt & Argon2 Hash Generator & Verifier Online — DevScratchpad",
-    seoDescription: "Generate Bcrypt, Argon2id, and PBKDF2 password hashes and verify candidate passwords against existing hashes entirely in your browser.",
-    howToUse: [
-      "Toggle between 'Generate Hash' and 'Verify Password Against Hash' modes.",
-      "In Generate mode: Enter plaintext password, adjust cost rounds or iterations, and copy generated hash.",
-      "In Verify mode: Paste an existing hash ($2b$10$...) and candidate password to receive an instant match verification badge."
-    ],
-    edgeCases: [
-      "Bcrypt 72-byte string truncation limits.",
-      "Support for $2a$, $2b$, and $2y$ hash dialect prefixes."
-    ],
-    shortcuts: ["Ctrl/Cmd + K — Open Command Palette"]
-  },
+    edgeCases: ["/31 and /32 point-to-point subnets."],
+    shortcuts: []
+  }
 };
 
 export const TOOL_SLUGS = Object.keys(TOOLS_REGISTRY);
