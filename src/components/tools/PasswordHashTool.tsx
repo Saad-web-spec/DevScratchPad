@@ -26,6 +26,8 @@ import {
   CheckCircle2,
   XCircle,
   Sparkles,
+  X,
+  AlertCircle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { VerificationBadge } from "@/components/ui/VerificationBadge";
