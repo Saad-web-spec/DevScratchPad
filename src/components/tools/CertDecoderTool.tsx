@@ -70,7 +70,7 @@ export function CertDecoderTool({
   onLogHistory,
   restoredInput,
 }: CertDecoderToolProps) {
-  const [input, setInput] = useState<string>(SAMPLE_CERT);
+  const [input, setInput] = useState<string>("");
   const [certData, setCertData] = useState<DecodedCertificate | null>(null);
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
 
@@ -83,7 +83,6 @@ export function CertDecoderTool({
   useEffect(() => {
     let isCancelled = false;
     const start = performance.now();
-
     decodeCertificateOrCsr(input).then((res) => {
       if (!isCancelled) {
         setCertData(res);
@@ -136,23 +135,6 @@ export function CertDecoderTool({
             <span className="font-medium">Upload Certificate</span>
             <input type="file" className="hidden" onChange={handleFileUpload} accept=".pem,.crt,.cer,.csr,.txt" />
           </label>
-
-          <div className="h-4 w-px bg-neutral-200 mx-1" />
-
-          <div className="flex items-center p-0.5 rounded-md bg-neutral-100/50 border border-neutral-200">
-            <button
-              onClick={() => setInput(SAMPLE_CERT)}
-              className="px-2.5 py-1 rounded text-[11px] font-medium text-neutral-500 hover:text-neutral-900 transition-colors whitespace-nowrap"
-            >
-              Sample Cert
-            </button>
-            <button
-              onClick={() => setInput(SAMPLE_CSR)}
-              className="px-2.5 py-1 rounded text-[11px] font-medium text-neutral-500 hover:text-neutral-900 transition-colors whitespace-nowrap"
-            >
-              Sample CSR
-            </button>
-          </div>
         </div>
 
         <div className="flex items-center gap-1.5">
@@ -202,205 +184,203 @@ export function CertDecoderTool({
             )}
           </div>
 
-          <div className="flex-1 overflow-y-auto p-4 relative">
+          <div className="flex-1 overflow-y-auto relative bg-white dark:bg-neutral-950">
             {!certData?.valid ? (
               input.trim().length === 0 ? (
-                /* Empty State Skeleton */
-                <div className="space-y-4 opacity-40 select-none pointer-events-none">
-                  <div className="bg-neutral-50 border border-neutral-200 rounded-lg p-3">
-                    <div className="text-xs font-semibold text-neutral-700 mb-3">General Information</div>
-                    <div className="grid grid-cols-1 gap-3">
-                      <div>
-                        <span className="text-[10px] text-neutral-500 uppercase tracking-wider block mb-1">Subject CN</span>
-                        <div className="h-4 bg-neutral-200 rounded w-1/2"></div>
-                      </div>
-                      <div>
-                        <span className="text-[10px] text-neutral-500 uppercase tracking-wider block mb-1">Issuer CN</span>
-                        <div className="h-4 bg-neutral-200 rounded w-1/3"></div>
-                      </div>
-                      <div>
-                        <span className="text-[10px] text-neutral-500 uppercase tracking-wider block mb-1">Serial Number</span>
-                        <div className="h-4 bg-neutral-200 rounded w-2/3"></div>
-                      </div>
-                    </div>
+                /* Empty State Skeleton (Grid) */
+                <div className="select-none pointer-events-none pb-8">
+                  <div className="text-[11px] font-semibold text-neutral-500 uppercase tracking-wider bg-neutral-50 dark:bg-neutral-900/50 px-3 py-1.5 border-y border-neutral-200 dark:border-neutral-800 first:border-t-0">
+                    Subject & Issuer
                   </div>
-                  <div className="bg-neutral-50 border border-neutral-200 rounded-lg p-3">
-                    <div className="text-xs font-semibold text-neutral-700 mb-3">Validity Period</div>
-                    <div className="grid grid-cols-2 gap-3">
-                      <div>
-                        <span className="text-[10px] text-neutral-500 uppercase tracking-wider block mb-1">Not Before</span>
-                        <div className="h-4 bg-neutral-200 rounded w-3/4"></div>
-                      </div>
-                      <div>
-                        <span className="text-[10px] text-neutral-500 uppercase tracking-wider block mb-1">Not After</span>
-                        <div className="h-4 bg-neutral-200 rounded w-3/4"></div>
-                      </div>
-                    </div>
+                  <div className="grid grid-cols-[130px_1fr] gap-4 px-3 py-2 border-b border-neutral-100 dark:border-neutral-800/50">
+                    <span className="text-neutral-500 font-medium whitespace-nowrap text-xs">Subject CN</span>
+                    <div className="h-4 bg-neutral-100 dark:bg-neutral-800 rounded w-1/2 mt-0.5"></div>
+                  </div>
+                  <div className="grid grid-cols-[130px_1fr] gap-4 px-3 py-2 border-b border-neutral-100 dark:border-neutral-800/50">
+                    <span className="text-neutral-500 font-medium whitespace-nowrap text-xs">Issuer CN</span>
+                    <div className="h-4 bg-neutral-100 dark:bg-neutral-800 rounded w-1/3 mt-0.5"></div>
+                  </div>
+                  <div className="grid grid-cols-[130px_1fr] gap-4 px-3 py-2 border-b border-neutral-100 dark:border-neutral-800/50">
+                    <span className="text-neutral-500 font-medium whitespace-nowrap text-xs">Serial Number</span>
+                    <div className="h-4 bg-neutral-100 dark:bg-neutral-800 rounded w-2/3 mt-0.5"></div>
+                  </div>
+
+                  <div className="text-[11px] font-semibold text-neutral-500 uppercase tracking-wider bg-neutral-50 dark:bg-neutral-900/50 px-3 py-1.5 border-y border-neutral-200 dark:border-neutral-800 mt-4">
+                    Validity Period
+                  </div>
+                  <div className="grid grid-cols-[130px_1fr] gap-4 px-3 py-2 border-b border-neutral-100 dark:border-neutral-800/50">
+                    <span className="text-neutral-500 font-medium whitespace-nowrap text-xs">Not Before</span>
+                    <div className="h-4 bg-neutral-100 dark:bg-neutral-800 rounded w-1/2 mt-0.5"></div>
+                  </div>
+                  <div className="grid grid-cols-[130px_1fr] gap-4 px-3 py-2 border-b border-neutral-100 dark:border-neutral-800/50">
+                    <span className="text-neutral-500 font-medium whitespace-nowrap text-xs">Not After</span>
+                    <div className="h-4 bg-neutral-100 dark:bg-neutral-800 rounded w-1/2 mt-0.5"></div>
                   </div>
                 </div>
               ) : (
-                /* Error State Banner */
-                <div className="bg-red-50 border-l-4 border-red-500 p-3 text-xs text-red-700 font-mono rounded-r-md mb-4 shadow-sm">
-                  <div className="font-semibold mb-1 flex items-center gap-1.5">
-                    <ShieldAlert className="w-3.5 h-3.5" />
-                    Parsing Error
-                  </div>
-                  <div className="mb-2 leading-relaxed">{certData?.error || "Invalid PEM certificate format."}</div>
-                  <div className="text-[11px] opacity-80 font-sans bg-red-100/50 p-1.5 rounded">
-                    <strong>Tip:</strong> Ensure headers like <code>-----BEGIN CERTIFICATE-----</code> are intact with no truncated base64 lines.
+                /* Error State Banner (Flattened) */
+                <div className="p-4">
+                  <div className="bg-red-50/50 dark:bg-red-950/20 border border-red-200 dark:border-red-900/50 rounded-md p-4">
+                    <div className="flex items-center gap-2 mb-2">
+                      <ShieldAlert className="w-4 h-4 text-red-600 dark:text-red-400" />
+                      <span className="text-xs font-bold tracking-wider text-red-600 dark:text-red-400 uppercase">Parsing Error</span>
+                    </div>
+                    <div className="font-mono text-[13px] text-red-900 dark:text-red-200 mt-2 mb-3">
+                      {certData?.error || "Invalid PEM certificate format."}
+                    </div>
+                    <div className="text-xs text-neutral-600 dark:text-neutral-400 flex items-center gap-2">
+                      <span className="font-semibold text-neutral-900 dark:text-neutral-100">Tip:</span> 
+                      <span>Ensure headers like <code className="bg-white dark:bg-black border border-neutral-200 dark:border-neutral-700 px-1.5 py-0.5 rounded font-mono text-neutral-800 dark:text-neutral-200 mx-1">-----BEGIN CERTIFICATE-----</code> are intact.</span>
+                    </div>
                   </div>
                 </div>
               )
             ) : (
-              /* Valid Certificate Data */
-              <div className="space-y-4">
-                {/* Header Badge */}
-                <div className="flex items-center gap-2 mb-2">
-                  <span className={cn(
-                    "px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider border",
-                    certData.type === "certificate" 
-                      ? "bg-blue-50 text-blue-700 border-blue-200" 
-                      : "bg-amber-50 text-amber-700 border-amber-200"
-                  )}>
+              /* Valid Certificate Data (High-Density Property Grid) */
+              <div className="pb-8">
+                {/* Type Badge */}
+                <div className="px-3 py-3 border-b border-neutral-100 dark:border-neutral-800/50 flex items-center justify-between bg-white dark:bg-neutral-950">
+                  <span className="text-xs font-semibold text-neutral-700 dark:text-neutral-300">
                     {certData.type === "certificate" ? "X.509 Certificate" : "Certificate Signing Request (CSR)"}
                   </span>
                 </div>
 
-                {/* General Details */}
-                <div className="bg-neutral-50 border border-neutral-200 rounded-lg p-3">
-                  <div className="text-xs font-semibold text-neutral-700 mb-3 border-b border-neutral-100 pb-2">General</div>
-                  <div className="grid grid-cols-1 gap-3">
-                    {certData.subject?.commonName && (
-                      <div>
-                        <span className="text-[10px] text-neutral-500 uppercase tracking-wider block mb-0.5">Subject CN</span>
-                        <span className="font-mono text-sm text-neutral-900 break-all">{certData.subject.commonName}</span>
-                      </div>
-                    )}
-                    {certData.type === "certificate" && certData.issuer?.commonName && (
-                      <div>
-                        <span className="text-[10px] text-neutral-500 uppercase tracking-wider block mb-0.5">Issuer CN</span>
-                        <span className="font-mono text-sm text-neutral-900 break-all">{certData.issuer.commonName}</span>
-                      </div>
-                    )}
-                    {certData.serialNumber && (
-                      <div>
-                        <span className="text-[10px] text-neutral-500 uppercase tracking-wider block mb-0.5">Serial Number</span>
-                        <span className="font-mono text-sm text-neutral-900 break-all">{certData.serialNumber}</span>
-                      </div>
-                    )}
-                    {certData.signatureAlgorithm && (
-                      <div>
-                        <span className="text-[10px] text-neutral-500 uppercase tracking-wider block mb-0.5">Signature Algorithm</span>
-                        <span className="font-mono text-sm text-neutral-900">{certData.signatureAlgorithm}</span>
-                      </div>
-                    )}
-                  </div>
+                <div className="text-[11px] font-semibold text-neutral-500 uppercase tracking-wider bg-neutral-50 dark:bg-neutral-900/50 px-3 py-1.5 border-y border-neutral-200 dark:border-neutral-800">
+                  Subject & Issuer
                 </div>
+                {certData.subject?.commonName && (
+                  <div className="grid grid-cols-[130px_1fr] gap-4 px-3 py-2 border-b border-neutral-100 dark:border-neutral-800/50 hover:bg-neutral-50/50 dark:hover:bg-neutral-900/20 text-xs transition-colors">
+                    <span className="text-neutral-500 font-medium whitespace-nowrap">Subject CN</span>
+                    <span className="font-mono text-neutral-900 dark:text-neutral-200 break-all">{certData.subject.commonName}</span>
+                  </div>
+                )}
+                {certData.type === "certificate" && certData.issuer?.commonName && (
+                  <div className="grid grid-cols-[130px_1fr] gap-4 px-3 py-2 border-b border-neutral-100 dark:border-neutral-800/50 hover:bg-neutral-50/50 dark:hover:bg-neutral-900/20 text-xs transition-colors">
+                    <span className="text-neutral-500 font-medium whitespace-nowrap">Issuer CN</span>
+                    <span className="font-mono text-neutral-900 dark:text-neutral-200 break-all">{certData.issuer.commonName}</span>
+                  </div>
+                )}
+                {certData.serialNumber && (
+                  <div className="grid grid-cols-[130px_1fr] gap-4 px-3 py-2 border-b border-neutral-100 dark:border-neutral-800/50 hover:bg-neutral-50/50 dark:hover:bg-neutral-900/20 text-xs transition-colors">
+                    <span className="text-neutral-500 font-medium whitespace-nowrap">Serial Number</span>
+                    <span className="font-mono text-neutral-900 dark:text-neutral-200 break-all">{certData.serialNumber}</span>
+                  </div>
+                )}
+                {certData.signatureAlgorithm && (
+                  <div className="grid grid-cols-[130px_1fr] gap-4 px-3 py-2 border-b border-neutral-100 dark:border-neutral-800/50 hover:bg-neutral-50/50 dark:hover:bg-neutral-900/20 text-xs transition-colors">
+                    <span className="text-neutral-500 font-medium whitespace-nowrap">Signature Algorithm</span>
+                    <span className="font-mono text-neutral-900 dark:text-neutral-200 break-all">{certData.signatureAlgorithm}</span>
+                  </div>
+                )}
 
-                {/* Validity */}
                 {certData.type === "certificate" && certData.notBefore && certData.notAfter && (
-                  <div className="bg-neutral-50 border border-neutral-200 rounded-lg p-3">
-                    <div className="flex items-center justify-between border-b border-neutral-100 pb-2 mb-3">
-                      <span className="text-xs font-semibold text-neutral-700">Validity Period</span>
-                      {certData.isExpired ? (
-                        <span className="px-2 py-0.5 bg-red-100 text-red-700 border border-red-200 rounded text-[10px] font-bold uppercase tracking-wider">Expired</span>
-                      ) : (
-                        <span className="px-2 py-0.5 bg-green-100 text-green-700 border border-green-200 rounded text-[10px] font-bold uppercase tracking-wider">Active</span>
-                      )}
+                  <>
+                    <div className="text-[11px] font-semibold text-neutral-500 uppercase tracking-wider bg-neutral-50 dark:bg-neutral-900/50 px-3 py-1.5 border-y border-neutral-200 dark:border-neutral-800 mt-4">
+                      Validity Period
                     </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      <div>
-                        <span className="text-[10px] text-neutral-500 uppercase tracking-wider block mb-0.5">Not Before</span>
-                        <span className="font-mono text-sm text-neutral-900">{new Date(certData.notBefore).toLocaleString()}</span>
-                      </div>
-                      <div>
-                        <span className="text-[10px] text-neutral-500 uppercase tracking-wider block mb-0.5">Not After</span>
-                        <span className="font-mono text-sm text-neutral-900">{new Date(certData.notAfter).toLocaleString()}</span>
+                    <div className="grid grid-cols-[130px_1fr] gap-4 px-3 py-2 border-b border-neutral-100 dark:border-neutral-800/50 hover:bg-neutral-50/50 dark:hover:bg-neutral-900/20 text-xs transition-colors">
+                      <span className="text-neutral-500 font-medium whitespace-nowrap">Not Before</span>
+                      <span className="font-mono text-neutral-900 dark:text-neutral-200">{new Date(certData.notBefore).toLocaleString()}</span>
+                    </div>
+                    <div className="grid grid-cols-[130px_1fr] gap-4 px-3 py-2 border-b border-neutral-100 dark:border-neutral-800/50 hover:bg-neutral-50/50 dark:hover:bg-neutral-900/20 text-xs transition-colors">
+                      <span className="text-neutral-500 font-medium whitespace-nowrap flex items-center h-full">Not After</span>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="font-mono text-neutral-900 dark:text-neutral-200">{new Date(certData.notAfter).toLocaleString()}</span>
+                        {certData.isExpired ? (
+                          <span className="px-1.5 py-0.5 bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-800/50 rounded text-[9px] font-bold uppercase tracking-wider">Expired</span>
+                        ) : (
+                          <span className="px-1.5 py-0.5 bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-400 border border-green-200 dark:border-green-800/50 rounded text-[9px] font-bold uppercase tracking-wider">Valid</span>
+                        )}
                       </div>
                     </div>
-                  </div>
+                  </>
                 )}
 
-                {/* SANs */}
                 {certData.sans && certData.sans.length > 0 && (
-                  <div className="bg-neutral-50 border border-neutral-200 rounded-lg p-3">
-                    <div className="text-xs font-semibold text-neutral-700 mb-3 border-b border-neutral-100 pb-2">Subject Alternative Names</div>
-                    <div className="flex flex-wrap gap-1.5">
-                      {certData.sans.map((san, i) => (
-                        <span key={i} className="px-2 py-1 rounded bg-white border border-neutral-200 text-neutral-700 font-mono text-xs">
-                          {san}
-                        </span>
-                      ))}
+                  <>
+                    <div className="text-[11px] font-semibold text-neutral-500 uppercase tracking-wider bg-neutral-50 dark:bg-neutral-900/50 px-3 py-1.5 border-y border-neutral-200 dark:border-neutral-800 mt-4">
+                      Subject Alternative Names
                     </div>
-                  </div>
+                    <div className="grid grid-cols-[130px_1fr] gap-4 px-3 py-2 border-b border-neutral-100 dark:border-neutral-800/50 hover:bg-neutral-50/50 dark:hover:bg-neutral-900/20 text-xs transition-colors">
+                      <span className="text-neutral-500 font-medium whitespace-nowrap mt-0.5">SANs</span>
+                      <div className="flex flex-wrap gap-1.5">
+                        {certData.sans.map((san, i) => (
+                          <span key={i} className="bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 text-neutral-700 dark:text-neutral-300 px-2 py-0.5 rounded-md font-mono text-[11px]">
+                            {san}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  </>
                 )}
 
-                {/* Public Key Info */}
-                <div className="bg-neutral-50 border border-neutral-200 rounded-lg p-3">
-                  <div className="text-xs font-semibold text-neutral-700 mb-3 border-b border-neutral-100 pb-2">Public Key Info</div>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                    <div>
-                      <span className="text-[10px] text-neutral-500 uppercase tracking-wider block mb-0.5">Algorithm</span>
-                      <span className="font-mono text-sm text-neutral-900">{certData.publicKeyAlgorithm}</span>
-                    </div>
-                    <div>
-                      <span className="text-[10px] text-neutral-500 uppercase tracking-wider block mb-0.5">Key Size</span>
-                      <span className="font-mono text-sm text-neutral-900">{certData.publicKeySize}</span>
-                    </div>
-                  </div>
+                <div className="text-[11px] font-semibold text-neutral-500 uppercase tracking-wider bg-neutral-50 dark:bg-neutral-900/50 px-3 py-1.5 border-y border-neutral-200 dark:border-neutral-800 mt-4">
+                  Public Key Info
+                </div>
+                <div className="grid grid-cols-[130px_1fr] gap-4 px-3 py-2 border-b border-neutral-100 dark:border-neutral-800/50 hover:bg-neutral-50/50 dark:hover:bg-neutral-900/20 text-xs transition-colors">
+                  <span className="text-neutral-500 font-medium whitespace-nowrap">Algorithm</span>
+                  <span className="font-mono text-neutral-900 dark:text-neutral-200">{certData.publicKeyAlgorithm}</span>
+                </div>
+                <div className="grid grid-cols-[130px_1fr] gap-4 px-3 py-2 border-b border-neutral-100 dark:border-neutral-800/50 hover:bg-neutral-50/50 dark:hover:bg-neutral-900/20 text-xs transition-colors">
+                  <span className="text-neutral-500 font-medium whitespace-nowrap">Key Size</span>
+                  <span className="font-mono text-neutral-900 dark:text-neutral-200">{certData.publicKeySize}</span>
                 </div>
 
-                {/* Fingerprints */}
                 {(certData.fingerprintSha256 || certData.fingerprintSha1) && (
-                  <div className="bg-neutral-50 border border-neutral-200 rounded-lg p-3">
-                    <div className="text-xs font-semibold text-neutral-700 mb-3 border-b border-neutral-100 pb-2">Fingerprints</div>
-                    <div className="space-y-3">
-                      {certData.fingerprintSha256 && (
-                        <div>
-                          <div className="flex items-center justify-between mb-0.5">
-                            <span className="text-[10px] text-neutral-500 uppercase tracking-wider">SHA-256</span>
-                            <button
-                              onClick={() => handleCopy(certData.fingerprintSha256!, "sha256")}
-                              className="text-neutral-400 hover:text-neutral-900 transition-colors"
-                            >
-                              {copiedKey === "sha256" ? <Check className="w-3.5 h-3.5 text-neutral-900" /> : <Copy className="w-3.5 h-3.5" />}
-                            </button>
-                          </div>
-                          <span className="font-mono text-sm text-neutral-900 break-all leading-tight block">{certData.fingerprintSha256}</span>
-                        </div>
-                      )}
-                      {certData.fingerprintSha1 && (
-                        <div>
-                          <div className="flex items-center justify-between mb-0.5">
-                            <span className="text-[10px] text-neutral-500 uppercase tracking-wider">SHA-1</span>
-                            <button
-                              onClick={() => handleCopy(certData.fingerprintSha1!, "sha1")}
-                              className="text-neutral-400 hover:text-neutral-900 transition-colors"
-                            >
-                              {copiedKey === "sha1" ? <Check className="w-3.5 h-3.5 text-neutral-900" /> : <Copy className="w-3.5 h-3.5" />}
-                            </button>
-                          </div>
-                          <span className="font-mono text-sm text-neutral-900 break-all leading-tight block">{certData.fingerprintSha1}</span>
-                        </div>
-                      )}
+                  <>
+                    <div className="text-[11px] font-semibold text-neutral-500 uppercase tracking-wider bg-neutral-50 dark:bg-neutral-900/50 px-3 py-1.5 border-y border-neutral-200 dark:border-neutral-800 mt-4">
+                      Fingerprints
                     </div>
-                  </div>
-                )}
-                
-                {/* Key Usages / Extensions */}
-                {certData.keyUsages && certData.keyUsages.length > 0 && (
-                  <div className="bg-neutral-50 border border-neutral-200 rounded-lg p-3">
-                    <div className="text-xs font-semibold text-neutral-700 mb-3 border-b border-neutral-100 pb-2">Key Usages</div>
-                    <div className="flex flex-wrap gap-1.5">
-                      {certData.keyUsages.map((usage, i) => (
-                        <span key={i} className="px-2 py-1 rounded bg-white border border-neutral-200 text-neutral-700 font-mono text-xs">
-                          {usage}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
+                    {certData.fingerprintSha256 && (
+                      <div className="group grid grid-cols-[130px_1fr] gap-4 px-3 py-2 border-b border-neutral-100 dark:border-neutral-800/50 hover:bg-neutral-50/50 dark:hover:bg-neutral-900/20 text-xs transition-colors">
+                        <span className="text-neutral-500 font-medium whitespace-nowrap mt-0.5">SHA-256</span>
+                        <div className="flex items-start justify-between gap-2">
+                          <span className="font-mono text-neutral-900 dark:text-neutral-200 break-all">{certData.fingerprintSha256}</span>
+                          <button
+                            onClick={() => handleCopy(certData.fingerprintSha256!, "sha256")}
+                            className="opacity-0 group-hover:opacity-100 text-neutral-400 hover:text-neutral-900 dark:hover:text-white transition-all p-0.5 rounded hover:bg-neutral-200 dark:hover:bg-neutral-700 shrink-0"
+                            title="Copy SHA-256"
+                          >
+                            {copiedKey === "sha256" ? <Check className="w-3.5 h-3.5 text-green-600 dark:text-green-400" /> : <Copy className="w-3.5 h-3.5" />}
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                    {certData.fingerprintSha1 && (
+                      <div className="group grid grid-cols-[130px_1fr] gap-4 px-3 py-2 border-b border-neutral-100 dark:border-neutral-800/50 hover:bg-neutral-50/50 dark:hover:bg-neutral-900/20 text-xs transition-colors">
+                        <span className="text-neutral-500 font-medium whitespace-nowrap mt-0.5">SHA-1</span>
+                        <div className="flex items-start justify-between gap-2">
+                          <span className="font-mono text-neutral-900 dark:text-neutral-200 break-all">{certData.fingerprintSha1}</span>
+                          <button
+                            onClick={() => handleCopy(certData.fingerprintSha1!, "sha1")}
+                            className="opacity-0 group-hover:opacity-100 text-neutral-400 hover:text-neutral-900 dark:hover:text-white transition-all p-0.5 rounded hover:bg-neutral-200 dark:hover:bg-neutral-700 shrink-0"
+                            title="Copy SHA-1"
+                          >
+                            {copiedKey === "sha1" ? <Check className="w-3.5 h-3.5 text-green-600 dark:text-green-400" /> : <Copy className="w-3.5 h-3.5" />}
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </>
                 )}
 
+                {certData.keyUsages && certData.keyUsages.length > 0 && (
+                  <>
+                    <div className="text-[11px] font-semibold text-neutral-500 uppercase tracking-wider bg-neutral-50 dark:bg-neutral-900/50 px-3 py-1.5 border-y border-neutral-200 dark:border-neutral-800 mt-4">
+                      Key Usages
+                    </div>
+                    <div className="grid grid-cols-[130px_1fr] gap-4 px-3 py-2 border-b border-neutral-100 dark:border-neutral-800/50 hover:bg-neutral-50/50 dark:hover:bg-neutral-900/20 text-xs transition-colors">
+                      <span className="text-neutral-500 font-medium whitespace-nowrap mt-0.5">Usages</span>
+                      <div className="flex flex-wrap gap-1.5">
+                        {certData.keyUsages.map((usage, i) => (
+                          <span key={i} className="bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 text-neutral-700 dark:text-neutral-300 px-2 py-0.5 rounded-md font-mono text-[11px]">
+                            {usage}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  </>
+                )}
               </div>
             )}
           </div>
