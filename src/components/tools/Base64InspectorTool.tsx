@@ -60,19 +60,22 @@ export function Base64InspectorTool({
   }, [input]);
 
   // Conversions computation
-  const conversions: InspectorConversions = useMemo(() => {
+  const { conversions, execMs, isValid, error } = useMemo(() => {
     const start = performance.now();
     try {
       const result = inspectAndConvert(input, forcedFormat);
       const end = performance.now();
-      onValidationChange(true);
-      onStatsChange(input.length, Math.round((end - start) * 10) / 10);
-      return result;
+      return { conversions: result, execMs: end - start, isValid: true };
     } catch (err: any) {
-      onValidationChange(false, err.message);
-      return inspectAndConvert(input);
+      const end = performance.now();
+      return { conversions: inspectAndConvert(input), execMs: end - start, isValid: false, error: err.message };
     }
-  }, [input, forcedFormat, onValidationChange, onStatsChange]);
+  }, [input, forcedFormat]);
+
+  useEffect(() => {
+    onValidationChange(isValid, error);
+    onStatsChange(input.length, Math.round(execMs * 10) / 10);
+  }, [isValid, error, input.length, execMs, onValidationChange, onStatsChange]);
 
   const handleCopy = (text: string, key: string) => {
     if (!text) return;
