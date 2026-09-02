@@ -332,7 +332,7 @@ export function WorkspaceShell({ initialToolSlug, toolMeta, children }: Workspac
               {tabs.map((tab) => {
                 const isActive = tab.id === activeTool;
                 return (
-                  <div key={tab.id} className={`absolute inset-0 flex flex-col w-full h-full bg-white ${!isActive ? "hidden" : ""}`}>
+                  <div key={tab.id} className={`flex-1 flex-col w-full bg-white ${!isActive ? "hidden" : "flex"}`}>
                     {(tab.id === "json-formatter" || tab.id === "json-validator") && (
                       <JsonFormatterTool
                         onValidationChange={handleValidationChange}
