@@ -18,7 +18,7 @@ export const TOOLS_REGISTRY: Record<string, ToolMeta> = {
     name: "JSON Formatter & Validator",
     shortName: "JSON Formatter",
     description: "Format, validate, and minify JSON with interactive syntax highlighting and sorting.",
-    seoTitle: "JSON Formatter & Validator Online — Secure & Offline",
+    seoTitle: "JSON Formatter - Privacy Backed & 100% Client-Side Developer Tools",
     seoDescription: "Free online JSON formatter and validator. Format, minify, and lint JSON data locally in your browser. No server uploads.",
     howToUse: [
       "Paste your unformatted JSON data into the editor.",
@@ -127,7 +127,7 @@ export const TOOLS_REGISTRY: Record<string, ToolMeta> = {
     name: "UUID / ULID / NanoID Generator",
     shortName: "UUID Generator",
     description: "Generate cryptographically secure UUIDv4, ULID, and NanoID strings in bulk.",
-    seoTitle: "UUID, ULID & NanoID Generator Online — Bulk IDs",
+    seoTitle: "UUID & ULID Generator - Developer Tools for Privacy Backed Bulk IDs",
     seoDescription: "Generate secure UUIDs (v4), ULIDs, and NanoIDs in bulk directly in your browser. 100% private.",
     howToUse: [
       "Select the ID format (UUIDv4, ULID, or NanoID).",
@@ -255,7 +255,7 @@ export const TOOLS_REGISTRY: Record<string, ToolMeta> = {
     name: "JSON to TypeScript Interfaces",
     shortName: "JSON to TS",
     description: "Instantly infer TypeScript interfaces and types from a JSON payload.",
-    seoTitle: "JSON to TypeScript Interface Generator Online — DevScratchpad",
+    seoTitle: "JSON to TypeScript Converter - Privacy Backed Developer Scratchpad",
     seoDescription: "Convert JSON payloads into strict TypeScript interfaces instantly in your browser.",
     howToUse: [
       "Paste your JSON payload into the left editor.",
@@ -298,8 +298,8 @@ export const TOOLS_REGISTRY: Record<string, ToolMeta> = {
     name: "YAML to JSON / JSON to YAML Converter",
     shortName: "YAML / JSON",
     description: "Bidirectional YAML and JSON conversion with syntax validation.",
-    seoTitle: "YAML to JSON Converter Online — DevScratchpad",
-    seoDescription: "Convert YAML to JSON and JSON to YAML instantly online.",
+    seoTitle: "YAML to JSON Converter - 100% Client-Side Developer Scratchpad",
+    seoDescription: "Convert YAML to JSON and JSON to YAML securely with our 100% offline, zero server transmission developer tools and scratch pad.",
     howToUse: [
       "Paste YAML or JSON into the left pane.",
       "The tool auto-detects the format and converts it to the counterpart on the right."
@@ -340,8 +340,8 @@ export const TOOLS_REGISTRY: Record<string, ToolMeta> = {
     name: "cURL to Go HTTP Request",
     shortName: "cURL to Go",
     description: "Translate bash cURL commands into Go `net/http` client code.",
-    seoTitle: "cURL to Go HTTP Request Converter Online — DevScratchpad",
-    seoDescription: "Convert cURL commands into Go net/http boilerplate code instantly.",
+    seoTitle: "cURL to Go & Python - 100% Client-Side Developer Tools",
+    seoDescription: "Translate cURL to Go, Fetch, and Python instantly. 100% offline, privacy backed code generation developer tools by DevScratchpad.",
     howToUse: [
       "Paste a bash `curl` command.",
       "Copy the Go HTTP request client code."

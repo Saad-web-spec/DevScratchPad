@@ -11,14 +11,21 @@ const SITE_URL = "https://www.devscratchpad.tech";
 export const metadata: Metadata = {
   title: {
     template: "%s | DevScratchpad",
-    default: "DevScratchpad - 100% Offline, Private Developer Tools",
+    default: "DevScratchpad - 100% Offline, Privacy Backed Developer Tools",
   },
   description:
-    "Free online developer tools that work 100% offline. JSON formatter, JWT decoder, Base64 encoder, SSH key generator, Password hashing, and more. Zero server transmission. Your data never leaves your browser.",
+    "Massive collection of free online developer tools that work 100% offline. JSON formatter, YAML to JSON, cURL to Go, JWT decoder, Base64 encoder, SSH key generator, Password hashing, and more. Zero server transmission, 100% client-side privacy backed scratch pad for developers.",
   keywords: [
     "developer tools",
-    "offline tools",
+    "developers",
+    "devscratchpad",
+    "devscratchpad.tech",
+    "scratch pad",
+    "developer scratchpad",
     "json formatter",
+    "json formatter- privacy backed",
+    "yaml to json",
+    "curl to go",
     "jwt decoder",
     "base64 encoder",
     "ssh key generator",
@@ -26,6 +33,8 @@ export const metadata: Metadata = {
     "x509 cert decoder",
     "cron expression visualizer",
     "privacy focused tools",
+    "zero server transmission",
+    "100% client-side developer tools"
   ],
   authors: [{ name: "DevScratchpad" }],
   robots: {
@@ -42,15 +51,15 @@ export const metadata: Metadata = {
     siteName: "DevScratchpad",
     locale: "en_US",
     url: SITE_URL,
-    title: "DevScratchpad - 100% Offline, Private Developer Tools",
+    title: "DevScratchpad - 100% Offline, Privacy Backed Developer Tools",
     description:
-      "Free online developer tools that work 100% offline. Zero server transmission.",
+      "Massive collection of free online developer tools that work 100% offline. Zero server transmission. Privacy backed scratch pad for developers.",
   },
   twitter: {
     card: "summary_large_image",
-    title: "DevScratchpad - 100% Offline, Private Developer Tools",
+    title: "DevScratchpad - 100% Offline, Privacy Backed Developer Tools",
     description:
-      "Free online developer tools that work 100% offline. Zero server transmission.",
+      "Massive collection of free online developer tools that work 100% offline. Zero server transmission. Privacy backed scratch pad for developers.",
   },
   alternates: {
     canonical: SITE_URL,

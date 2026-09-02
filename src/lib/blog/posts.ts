@@ -857,6 +857,140 @@ As a developer, you will frequently encounter mystery Base64 strings in API resp
 Instead of writing custom scripts to decode them, you can use our [Base64 & Hex Inspector](/tools/base64-inspector). It features an auto-detecting engine that instantly translates your input into Plain Text, raw Binary Octets, and a canonical Dark-Slate Hex Dump. If the string contains a Data URL or raw image bytes, it will even render a live image preview directly in your browser.
 `
   }
+  ,
+  {
+    slug: "json-formatter-privacy-backed-developer-tools",
+    title: "JSON Formatter: Privacy Backed & 100% Client-Side Developer Tools",
+    seoTitle: "JSON Formatter - Privacy Backed Developer Tools | DevScratchpad",
+    description: "Learn why a privacy-backed JSON formatter is essential for developers. 100% client-side, zero server transmission formatting for sensitive API payloads.",
+    seoDescription: "Secure JSON formatter for developers. Privacy backed, 100% client-side, zero server transmission. Formatting sensitive API payloads offline on DevScratchpad.",
+    publishedAt: "2026-09-02T12:00:00Z",
+    updatedAt: "2026-09-02T12:00:00Z",
+    relatedToolSlug: "json",
+    content: `
+As a developer, you work with JSON data every single day. From decoding API responses to parsing configuration files, JSON is the lingua franca of modern web development. But there is a massive hidden risk when you search for a "JSON formatter" online.
+
+## The Problem with Cloud JSON Formatters
+
+Most online developer tools and scratch pads send your pasted payloads to a remote backend server to be parsed, formatted, and returned. This means:
+*   **Data Leakage:** If you paste a production API response containing PII (Personally Identifiable Information) or sensitive tokens, it is transmitted over the network and potentially logged on a third-party server.
+*   **Latency:** Sending data round-trip to a server is slow, especially for large payloads.
+*   **Downtime:** If the third-party server goes down, your tool breaks.
+
+## Enter the Privacy Backed JSON Formatter
+
+DevScratchpad takes a different approach. Our **JSON formatter is privacy backed**. What does that mean?
+
+1.  **100% Client-Side:** The formatting engine runs entirely within your browser using modern Web APIs.
+2.  **Zero Server Transmission:** Your data **never** leaves your machine. It is not sent over the network, it is not saved to a database, and it is not logged in our analytics.
+3.  **Offline Capable:** Because DevScratchpad is a Progressive Web App (PWA), you can load the site once and use the JSON formatter completely offline.
+
+<div className="my-8 rounded-xl overflow-hidden border border-zinc-200">
+  <img src="/screenshots/google_search_1.jpg" alt="DevScratchpad JSON Formatter Google Search Results showing Privacy Backed Developer Tools" className="w-full h-auto" />
+</div>
+
+## How Our Engine Works
+
+When you paste an unformatted JSON string into our scratch pad, our Monaco-powered editor instantly kicks in. It utilizes a highly optimized Abstract Syntax Tree (AST) parser to validate the JSON structure and pretty-print it.
+
+It also automatically catches trailing commas, missing quotes, and other common JSON syntax errors, providing real-time line-by-line feedback.
+
+## Essential Developer Tools for Modern Workflows
+
+A good **scratch pad** is more than just a single formatter. On **DevScratchpad**, we've built a massive suite of developer tools that adhere to the exact same privacy-backed philosophy:
+
+*   [JWT Decoder](/tools/jwt)
+*   [YAML to JSON Converter](/tools/yaml)
+*   [Base64 Inspector](/tools/base64-inspector)
+
+Stop risking your company's data. Switch to a **100% client-side developer scratchpad** today.
+`
+  },
+  {
+    slug: "yaml-to-json-conversion-developers",
+    title: "YAML to JSON Conversion for Modern Cloud Developers",
+    seoTitle: "YAML to JSON Converter - Developer Tools & Scratch Pad",
+    description: "Deep dive into YAML and JSON data structures, and how developers can securely convert between them using a zero server transmission scratch pad.",
+    seoDescription: "Convert YAML to JSON securely with our 100% offline developer tools. DevScratchpad provides privacy backed converters for Kubernetes and Cloud engineers.",
+    publishedAt: "2026-09-02T13:00:00Z",
+    updatedAt: "2026-09-02T13:00:00Z",
+    relatedToolSlug: "yaml",
+    content: `
+Cloud infrastructure and DevOps heavily rely on two data serialization formats: **YAML** and **JSON**. While JSON is the standard for APIs and web communication, YAML has become the de facto standard for configuration management (Kubernetes, Docker Compose, CI/CD pipelines).
+
+As developers build and debug these systems, the need to rapidly translate YAML manifests into JSON payloads is constant.
+
+## Why Converting Between YAML and JSON is Tricky
+
+While JSON is a strict subset of YAML 1.2, the reverse is not true. YAML includes complex features like:
+*   Anchors and Aliases (\`&\` and \`*\`)
+*   Multi-line string block scalars (\`|\` and \`>\`)
+*   Explicit typing and tags
+*   Complex mapping keys
+
+When developers need to parse a Kubernetes manifest into a JSON-based policy engine (like OPA), they need a reliable **YAML to JSON converter**.
+
+## DevScratchpad: The Developer Scratchpad for Conversions
+
+Just like our JSON formatter, our **YAML to JSON converter** is completely privacy backed. 
+
+When you paste your company's proprietary CI/CD pipeline configuration into our tool, it is converted entirely in your browser memory. **Zero server transmission** ensures your infrastructure secrets, tokens, and proprietary architectures are never leaked.
+
+<div className="my-8 rounded-xl overflow-hidden border border-zinc-200">
+  <img src="/screenshots/google_search_2.jpg" alt="DevScratchpad YAML to JSON Converter tool showing offline capabilities" className="w-full h-auto" />
+</div>
+
+## Beyond YAML: A Comprehensive Developer Workspace
+
+**DevScratchpad** is designed to be the ultimate offline **scratch pad** for engineers. We provide massive utility without sacrificing security. Our suite of **developer tools** includes:
+
+*   Bidirectional YAML / JSON conversion
+*   cURL to Go and cURL to Python translations
+*   JSON to TypeScript interface generation
+
+All tools execute instantly, 100% client-side. The next time you need to manipulate data, don't just use any random site—use a dedicated, privacy-first developer scratchpad.
+`
+  },
+  {
+    slug: "curl-to-go-javascript-python-code-generators",
+    title: "Translating cURL to Go, Fetch, and Python Requests",
+    seoTitle: "cURL to Go & Python - 100% Client-Side Developer Tools",
+    description: "Learn how to instantly translate bash cURL commands into production-ready Go, JavaScript, and Python code using offline developer tools.",
+    seoDescription: "Translate cURL to Go, Fetch, and Python instantly. 100% offline, privacy backed code generation developer tools by DevScratchpad.",
+    publishedAt: "2026-09-02T14:00:00Z",
+    updatedAt: "2026-09-02T14:00:00Z",
+    relatedToolSlug: "curl-to-go",
+    content: `
+Every API documentation site on the internet provides examples in one universal format: **cURL**. 
+
+Bash cURL commands are great for testing endpoints in the terminal, but as **developers**, we ultimately need to translate those commands into the languages our applications are written in: Go, Python, or JavaScript.
+
+## The Anatomy of a cURL Request
+
+A typical cURL command contains several critical components that must be mapped correctly:
+1.  **HTTP Method:** (\`-X POST\`, \`-X GET\`)
+2.  **Headers:** (\`-H "Authorization: Bearer token"\`, \`-H "Content-Type: application/json"\`)
+3.  **Data/Body:** (\`-d '{"key": "value"}'\`, \`--data-raw\`)
+4.  **Query Parameters:** Embedded in the URL string.
+
+Manually translating these into a \`net/http\` client in Go or a \`requests.post()\` call in Python is tedious and error-prone.
+
+## The cURL to Go / Python Converter
+
+On **DevScratchpad**, we've built a suite of **developer tools** dedicated to code translation. Our **cURL to Go** and **cURL to Python** tools instantly parse the bash command and output production-ready code.
+
+### 100% Client-Side Code Generation
+
+Code generation involves parsing your API tokens and payloads. Most online converters send your cURL command to a backend regex parser. 
+
+Our **privacy backed** philosophy means the AST parsing happens directly in your browser. We offer **zero server transmission**. Your API keys and proprietary payloads remain secure within your local **scratch pad**.
+
+## Maximize Your Developer Velocity
+
+Don't waste time handwriting HTTP boilerplates. Utilize a **developer scratchpad** that respects your privacy and accelerates your workflow. Explore our full suite of offline tools today.
+`
+  }
+
 ];
 
 export function getBlogPost(slug: string): BlogPost | undefined {
