@@ -885,9 +885,7 @@ DevScratchpad takes a different approach. Our **JSON formatter is privacy backed
 2.  **Zero Server Transmission:** Your data **never** leaves your machine. It is not sent over the network, it is not saved to a database, and it is not logged in our analytics.
 3.  **Offline Capable:** Because DevScratchpad is a Progressive Web App (PWA), you can load the site once and use the JSON formatter completely offline.
 
-<div className="my-8 rounded-xl overflow-hidden border border-zinc-200">
-  <img src="/screenshots/google_search_1.jpg" alt="DevScratchpad JSON Formatter Google Search Results showing Privacy Backed Developer Tools" className="w-full h-auto" />
-</div>
+
 
 ## How Our Engine Works
 
@@ -936,9 +934,7 @@ Just like our JSON formatter, our **YAML to JSON converter** is completely priva
 
 When you paste your company's proprietary CI/CD pipeline configuration into our tool, it is converted entirely in your browser memory. **Zero server transmission** ensures your infrastructure secrets, tokens, and proprietary architectures are never leaked.
 
-<div className="my-8 rounded-xl overflow-hidden border border-zinc-200">
-  <img src="/screenshots/google_search_2.jpg" alt="DevScratchpad YAML to JSON Converter tool showing offline capabilities" className="w-full h-auto" />
-</div>
+
 
 ## Beyond YAML: A Comprehensive Developer Workspace
 
