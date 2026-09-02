@@ -248,7 +248,6 @@ export function JwtDecoderTool({ onValidationChange, onStatsChange, restoredInpu
             <span className="text-xs font-mono font-semibold text-neutral-700">ENCODED TOKEN</span>
             <div className="flex items-center gap-1.5">
               <button onClick={() => setInput("")} className="text-[11px] font-medium text-neutral-500 hover:text-neutral-900 transition-colors">Clear</button>
-              <button onClick={() => setInput("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyLCJleHAiOjI1MTYyMzkwMjJ9.X8bZ3m68J4V0J63s283R7Hk283s3s8H3ks3s8")} className="text-[11px] font-medium text-neutral-500 hover:text-neutral-900 transition-colors">Sample</button>
               <button onClick={() => handleCopy(input, 'input')} className="text-neutral-400 hover:text-neutral-900 transition-colors p-0.5 ml-1" title="Copy">
                 {copied === 'input' ? <Check className="w-3.5 h-3.5 text-neutral-900" /> : <Copy className="w-3.5 h-3.5" />}
               </button>
@@ -283,24 +282,6 @@ export function JwtDecoderTool({ onValidationChange, onStatsChange, restoredInpu
 
         {/* Right Pane: Decoded Output */}
         <div className="flex flex-col h-full bg-neutral-50/30 min-h-0 overflow-y-auto">
-          {input.trim() === "" ? (
-            <div className="flex-1 flex flex-col items-center justify-center p-8 space-y-4">
-              <div className="w-full max-w-sm space-y-3 opacity-40 pointer-events-none">
-                <div className="h-20 bg-neutral-200 rounded-lg animate-pulse" />
-                <div className="h-40 bg-neutral-200 rounded-lg animate-pulse" />
-                <div className="h-16 bg-neutral-200 rounded-lg animate-pulse" />
-              </div>
-              <div className="text-center pt-2">
-                <p className="text-xs font-semibold text-neutral-500 mb-2 uppercase tracking-wider">No JWT Provided</p>
-                <button 
-                  onClick={() => setInput("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyLCJleHAiOjI1MTYyMzkwMjJ9.X8bZ3m68J4V0J63s283R7Hk283s3s8H3ks3s8")}
-                  className="px-3 py-1.5 bg-white border border-neutral-200 hover:bg-neutral-50 text-neutral-800 text-[11px] font-semibold rounded shadow-sm transition-colors"
-                >
-                  Load Sample Token
-                </button>
-              </div>
-            </div>
-          ) : (
             <div className="flex flex-col h-full divide-y divide-neutral-200">
               
               {/* Header Section */}
@@ -389,7 +370,6 @@ export function JwtDecoderTool({ onValidationChange, onStatsChange, restoredInpu
               </div>
 
             </div>
-          )}
         </div>
       </div>
     </div>
