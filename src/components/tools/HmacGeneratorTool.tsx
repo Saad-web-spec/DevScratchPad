@@ -22,7 +22,8 @@ import {
  XCircle,
  Shield } from"lucide-react";
 import { cn } from"@/lib/utils";
-import { ValidationBadge } from"@/components/layout/StatusBar";
+import { ValidationBadge } from "@/components/layout/StatusBar";
+import { VerificationBadge } from "@/components/ui/VerificationBadge";
 
 interface HmacGeneratorToolProps {
  onValidationChange: (isValid: boolean, error?: string, line?: number) => void;
@@ -448,6 +449,10 @@ export function HmacGeneratorTool({
  <span className="text-sm font-semibold text-zinc-800 flex items-center gap-2">
  <ArrowRightLeft className="w-4 h-4 text-zinc-900"/>
  Verify Expected Signature
+ <VerificationBadge 
+   status={!compareSignature ? 'idle' : verificationResult?.match ? 'success' : 'error'} 
+   text={!compareSignature ? 'Waiting for signature...' : verificationResult?.match ? 'Match' : 'Mismatch'}
+ />
  </span>
  <span className="text-[10px] font-medium px-2 py-0.5 rounded bg-zinc-200/50 text-zinc-600 border border-zinc-200">
  {showVerifier ?"Collapse":"Expand"}

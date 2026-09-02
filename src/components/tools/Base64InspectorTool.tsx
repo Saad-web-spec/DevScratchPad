@@ -101,7 +101,7 @@ export function Base64InspectorTool({
   ];
 
   return (
-    <div className="flex flex-col h-full bg-white">
+    <div className="flex flex-col h-full bg-white overflow-y-auto relative">
       {/* Top Controls Bar (Unified Clean Header) */}
       <div className="h-10 border-b border-neutral-200 px-4 flex items-center justify-between gap-4 shrink-0 bg-white">
         <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar">

@@ -28,6 +28,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { VerificationBadge } from "@/components/ui/VerificationBadge";
 import { addSnapshot } from "@/lib/storage";
 
 interface PasswordHashToolProps {
@@ -161,7 +162,7 @@ export function PasswordHashTool({
   };
 
   return (
-    <div className="flex flex-col h-full bg-white">
+    <div className="flex flex-col h-full bg-white overflow-y-auto relative">
       {/* Top Controls Bar (Unified Clean Header) */}
       <div className="h-10 border-b border-neutral-200 px-4 flex items-center justify-between gap-4 shrink-0 bg-white">
         <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar">
@@ -371,8 +372,14 @@ export function PasswordHashTool({
         {/* Right Pane: Output */}
         <div className="flex flex-col h-full bg-neutral-50/30 min-h-0">
           <div className="h-10 border-b border-neutral-200 bg-neutral-50/50 flex items-center justify-between px-4 shrink-0">
-            <span className="text-xs font-mono font-semibold text-neutral-700">
+            <span className="text-xs font-mono font-semibold text-neutral-700 flex items-center gap-3">
               {mode === "generate" ? "Generated Hash Output" : "Verification Status"}
+              {mode === "verify" && (
+                <VerificationBadge 
+                  status={!verifyResult ? 'idle' : verifyResult.isMatch ? 'success' : 'error'}
+                  text={!verifyResult ? 'Waiting for input...' : verifyResult.isMatch ? 'Match' : 'Mismatch'}
+                />
+              )}
             </span>
             {mode === "generate" && genResult && (
               <button

@@ -123,7 +123,7 @@ export function RegexTesterTool({
  };
 
  return (
- <div className="flex flex-col h-full bg-[#09090B] w-full overflow-hidden relative">
+ <div className="flex flex-col h-full bg-[#09090B] w-full overflow-y-auto relative">
  {/* Tool Header */}
  <div className="min-h-14 border-b border-zinc-200 flex items-center justify-between gap-2 overflow-x-auto no-scrollbar py-2 px-3 md:px-4 bg-white shrink-0 sticky top-0 z-10">
  <div className="flex items-center gap-2">
