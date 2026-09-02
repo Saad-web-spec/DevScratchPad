@@ -252,7 +252,7 @@ export function Base64InspectorTool({
                     <button
                       onClick={() => handleCopy(conversions.plainText, "text")}
                       className="text-neutral-400 hover:text-neutral-900 transition-colors"
-                      title="Copy plain text"
+                      aria-label="Copy plain text" title="Copy plain text"
                     >
                       {copiedKey === "text" ? <Check className="w-3.5 h-3.5 text-neutral-900" /> : <Copy className="w-3.5 h-3.5" />}
                     </button>
@@ -269,7 +269,7 @@ export function Base64InspectorTool({
                     <button
                       onClick={() => handleCopy(conversions.base64, "b64")}
                       className="text-neutral-400 hover:text-neutral-900 transition-colors"
-                      title="Copy Base64"
+                      aria-label="Copy Base64" title="Copy Base64"
                     >
                       {copiedKey === "b64" ? <Check className="w-3.5 h-3.5 text-neutral-900" /> : <Copy className="w-3.5 h-3.5" />}
                     </button>
@@ -286,7 +286,7 @@ export function Base64InspectorTool({
                     <button
                       onClick={() => handleCopy(conversions.base64Url, "b64url")}
                       className="text-neutral-400 hover:text-neutral-900 transition-colors"
-                      title="Copy URL-safe Base64"
+                      aria-label="Copy URL-safe Base64" title="Copy URL-safe Base64"
                     >
                       {copiedKey === "b64url" ? <Check className="w-3.5 h-3.5 text-neutral-900" /> : <Copy className="w-3.5 h-3.5" />}
                     </button>
@@ -303,7 +303,7 @@ export function Base64InspectorTool({
                     <button
                       onClick={() => handleCopy(conversions.hexStream, "hex")}
                       className="text-neutral-400 hover:text-neutral-900 transition-colors"
-                      title="Copy Hex"
+                      aria-label="Copy Hex" title="Copy Hex"
                     >
                       {copiedKey === "hex" ? <Check className="w-3.5 h-3.5 text-neutral-900" /> : <Copy className="w-3.5 h-3.5" />}
                     </button>
@@ -320,7 +320,7 @@ export function Base64InspectorTool({
                     <button
                       onClick={() => handleCopy(conversions.binary, "bin")}
                       className="text-neutral-400 hover:text-neutral-900 transition-colors"
-                      title="Copy Binary"
+                      aria-label="Copy Binary" title="Copy Binary"
                     >
                       {copiedKey === "bin" ? <Check className="w-3.5 h-3.5 text-neutral-900" /> : <Copy className="w-3.5 h-3.5" />}
                     </button>
@@ -337,7 +337,7 @@ export function Base64InspectorTool({
                     <button
                       onClick={() => handleCopy(conversions.urlEncoded, "url")}
                       className="text-neutral-400 hover:text-neutral-900 transition-colors"
-                      title="Copy URL encoded"
+                      aria-label="Copy URL encoded" title="Copy URL encoded"
                     >
                       {copiedKey === "url" ? <Check className="w-3.5 h-3.5 text-neutral-900" /> : <Copy className="w-3.5 h-3.5" />}
                     </button>

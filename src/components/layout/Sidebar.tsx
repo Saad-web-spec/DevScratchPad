@@ -113,6 +113,7 @@ export function Sidebar({
  return (
  <aside className={cn("w-60 bg-zinc-50 border-r border-zinc-200 flex flex-col h-full shrink-0 overflow-y-auto transition-colors", className)}>
  <div className="flex-1 py-4">
+ <nav aria-label="Main Navigation">
  {NAV_CATEGORIES.map((category) => (
  <div key={category.title} className="mb-5">
  <h3 className="px-4 text-[10px] font-semibold text-zinc-400 uppercase tracking-widest mb-1.5">
@@ -148,6 +149,7 @@ export function Sidebar({
  </ul>
  </div>
  ))}
+ </nav>
  </div>
 
  {/* History Drawer Toggle */}

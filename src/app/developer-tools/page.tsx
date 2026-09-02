@@ -6,11 +6,20 @@ import { SiteHeader } from "@/components/layout/SiteHeader";
 import { SiteFooter } from "@/components/layout/SiteFooter";
 
 export const metadata: Metadata = {
-  title: "Developer Tools Directory (20+ Offline Utilities) | DevScratchpad",
+  title: "Developer Tools Directory (20+ Offline Utilities)",
   description: "Explore the complete directory of 100% offline, privacy-first developer utilities. JSON formatters, cURL converters, JWT decoders, and regex testers.",
   alternates: {
     canonical: "https://www.devscratchpad.tech/developer-tools",
-  }
+  },
+  openGraph: {
+    title: "Developer Tools Directory (20+ Offline Utilities)",
+    description: "Explore the complete directory of 100% offline, privacy-first developer utilities. JSON formatters, cURL converters, JWT decoders, and regex testers.",
+    url: "https://www.devscratchpad.tech/developer-tools",
+  },
+  twitter: {
+    title: "Developer Tools Directory (20+ Offline Utilities)",
+    description: "Explore the complete directory of 100% offline, privacy-first developer utilities. JSON formatters, cURL converters, JWT decoders, and regex testers.",
+  },
 };
 
 export default function DeveloperToolsPage() {

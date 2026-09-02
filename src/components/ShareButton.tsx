@@ -81,6 +81,7 @@ export function ShareButton({ toolSlug, data, className }: ShareButtonProps) {
 "bg-transparent hover:bg-zinc-100 text-zinc-600 rounded-md h-8 w-8 flex items-center justify-center transition-colors shrink-0",
  className
  )}
+ aria-label="Share tool"
  title="Generate and copy shareable link for this tool"
  >
  {copied ? (

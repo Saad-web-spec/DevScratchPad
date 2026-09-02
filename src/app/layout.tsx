@@ -1,19 +1,34 @@
-import type { Metadata } from"next";
-import { Analytics } from"@vercel/analytics/react";
-import { ThemeProvider } from"@/lib/theme";
-import"./globals.css";
+import type { Metadata } from "next";
+import { Analytics } from "@vercel/analytics/react";
+import { ThemeProvider } from "@/lib/theme";
+import { Inter } from "next/font/google";
+import "./globals.css";
 
-const SITE_URL ="https://www.devscratchpad.tech";
+const inter = Inter({ subsets: ["latin"] });
+
+const SITE_URL = "https://www.devscratchpad.tech";
 
 export const metadata: Metadata = {
   title: {
     template: "%s | DevScratchpad",
-    default: "DevScratchpad � 100% Offline, Private Developer Tools",
+    default: "DevScratchpad - 100% Offline, Private Developer Tools",
   },
   description:
     "Free online developer tools that work 100% offline. JSON formatter, JWT decoder, Base64 encoder, SSH key generator, Password hashing, and more. Zero server transmission. Your data never leaves your browser.",
-  keywords: ["developer tools", "offline tools", "json formatter", "jwt decoder", "base64 encoder", "ssh key generator", "password hash verifier", "x509 cert decoder", "cron expression visualizer", "privacy focused tools"],
+  keywords: [
+    "developer tools",
+    "offline tools",
+    "json formatter",
+    "jwt decoder",
+    "base64 encoder",
+    "ssh key generator",
+    "password hash verifier",
+    "x509 cert decoder",
+    "cron expression visualizer",
+    "privacy focused tools",
+  ],
   authors: [{ name: "DevScratchpad" }],
+  manifest: "/manifest.json",
   robots: {
     index: true,
     follow: true,
@@ -28,15 +43,15 @@ export const metadata: Metadata = {
     siteName: "DevScratchpad",
     locale: "en_US",
     url: SITE_URL,
-    title: "DevScratchpad � 100% Offline, Private Developer Tools",
-    description: "Free online developer tools that work 100% offline. Zero server transmission.",
-    images: [{ url: `${SITE_URL}/opengraph-image`, width: 1200, height: 630 }],
+    title: "DevScratchpad - 100% Offline, Private Developer Tools",
+    description:
+      "Free online developer tools that work 100% offline. Zero server transmission.",
   },
   twitter: {
     card: "summary_large_image",
-    title: "DevScratchpad � 100% Offline, Private Developer Tools",
-    description: "Free online developer tools that work 100% offline. Zero server transmission.",
-    images: [`${SITE_URL}/opengraph-image`],
+    title: "DevScratchpad - 100% Offline, Private Developer Tools",
+    description:
+      "Free online developer tools that work 100% offline. Zero server transmission.",
   },
   alternates: {
     canonical: SITE_URL,
@@ -44,9 +59,9 @@ export const metadata: Metadata = {
 };
 
 export default function RootLayout({
- children,
+  children,
 }: Readonly<{
- children: React.ReactNode;
+  children: React.ReactNode;
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
@@ -54,7 +69,6 @@ export default function RootLayout({
         <meta name="theme-color" content="#ffffff" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-        <link rel="manifest" href="/manifest.json" />
         <link rel="preconnect" href="https://cdn.jsdelivr.net" crossOrigin="anonymous" />
         <link rel="dns-prefetch" href="https://cdn.jsdelivr.net" />
         <script
@@ -73,10 +87,10 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body className="antialiased min-h-screen flex flex-col bg-white text-zinc-900">
-        <ThemeProvider>
-          {children}
-        </ThemeProvider>
+      <body
+        className={`antialiased min-h-screen flex flex-col bg-white text-zinc-900 ${inter.className}`}
+      >
+        <ThemeProvider>{children}</ThemeProvider>
         <Analytics />
       </body>
     </html>

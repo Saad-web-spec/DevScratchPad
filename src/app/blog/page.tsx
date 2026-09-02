@@ -19,13 +19,11 @@ export const metadata: Metadata = {
     url: `${SITE_URL}/blog`,
     type: "website",
     siteName: "DevScratchpad",
-    images: [{ url: `${SITE_URL}/opengraph-image`, width: 1200, height: 630 }],
   },
   twitter: {
     card: "summary_large_image",
     title: "Engineering Guides, Cheat Sheets & Tutorials | DevScratchpad",
     description: "In-depth technical guides, cheat sheets, and practical references for developers.",
-    images: [`${SITE_URL}/opengraph-image`],
   },
 };
 

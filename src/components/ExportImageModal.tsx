@@ -299,6 +299,7 @@ export function ExportImageModal({ isOpen, onClose, code, language }: ExportImag
  type="button"
  role="switch"
  aria-checked={showLineNumbers}
+ aria-label="Toggle line numbers"
  onClick={() => setShowLineNumbers(!showLineNumbers)}
  className={cn(
 "w-10 h-5.5 rounded-full transition-colors relative focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2",

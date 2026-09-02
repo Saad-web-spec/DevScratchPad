@@ -45,6 +45,7 @@ export function EmbedButton({ toolSlug, data, className }: EmbedButtonProps) {
 "bg-transparent hover:bg-zinc-100 text-zinc-600 rounded-md h-8 w-8 flex items-center justify-center transition-colors shrink-0",
  className
  )}
+ aria-label="Embed tool"
  title="Get embed code to put this tool on your own site"
  >
  <Code2 className="w-3.5 h-3.5 text-zinc-500"/>
