@@ -466,7 +466,7 @@ export function PasswordHashTool({
                       />
                     </div>
                   </div>
-                ) : ( (
+                ) : (
                   <div className="p-8 text-center text-neutral-400 font-mono text-sm">
                     Awaiting verification inputs...
                   </div>
