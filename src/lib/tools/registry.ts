@@ -440,25 +440,6 @@ export const TOOLS_REGISTRY: Record<string, ToolMeta> = {
     ],
     edgeCases: ["/31 and /32 point-to-point subnets."],
     shortcuts: []
-  },
-  "ai-rules-generator": {
-    slug: "ai-rules-generator",
-    category: "AI & Workflows",
-    name: "AI Agent Rules Generator",
-    shortName: "AI Rules Studio",
-    description: "Generate highly optimized .cursorrules and CLAUDE.md files for AI coding assistants.",
-    seoTitle: "AI Agent Rules Generator (.cursorrules & CLAUDE.md) — DevScratchpad",
-    seoDescription: "Generate strict, optimized AI instructions for Cursor and Claude. Define tech stack, coding conventions, and edge cases to prevent AI hallucinations.",
-    howToUse: [
-      "Select your tech stack and core conventions on the left pane.",
-      "Add any custom directives specific to your architecture.",
-      "Toggle between .cursorrules (Markdown with frontmatter) and CLAUDE.md (XML-tagged) output formats.",
-      "Copy the generated markdown and save it in the root of your project."
-    ],
-    edgeCases: [
-      "Always apply glob targeting carefully if converting to modern .mdc format to save AI context window tokens."
-    ],
-    shortcuts: ["Ctrl/Cmd + K — Open Command Palette"]
   }
 };
 
