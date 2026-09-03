@@ -13,6 +13,20 @@ const withSerwist = withSerwistInit({
 
 const nextConfig: NextConfig = {
   devIndicators: false,
+  async redirects() {
+    return [
+      {
+        source: "/learn",
+        destination: "/blog",
+        permanent: true,
+      },
+      {
+        source: "/guides",
+        destination: "/blog",
+        permanent: true,
+      },
+    ];
+  },
   async headers() {
     return [
       {

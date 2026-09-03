@@ -36,7 +36,7 @@ export function SiteFooter() {
               <li><Link href="/tools/curl-to-fetch" className="hover:text-zinc-900 transition-colors">cURL to Fetch</Link></li>
               <li><Link href="/tools/json-to-ts" className="hover:text-zinc-900 transition-colors">JSON to TypeScript</Link></li>
               <li><Link href="/tools/json-to-zod" className="hover:text-zinc-900 transition-colors">JSON to Zod Schema</Link></li>
-              <li><Link href="/tools/yaml-to-json" className="hover:text-zinc-900 transition-colors">YAML to JSON</Link></li>
+              <li><Link href="/tools/yaml" className="hover:text-zinc-900 transition-colors">YAML to JSON</Link></li>
               <li><Link href="/tools/svg-to-jsx" className="hover:text-zinc-900 transition-colors">SVG to JSX (React)</Link></li>
             </ul>
           </div>
@@ -46,7 +46,7 @@ export function SiteFooter() {
             <h4 className="text-xs font-mono font-semibold text-zinc-900 uppercase tracking-wider">Utilities</h4>
             <ul className="space-y-1.5 text-xs text-zinc-600">
               <li><Link href="/tools/json-formatter" className="hover:text-zinc-900 transition-colors">JSON Formatter</Link></li>
-              <li><Link href="/tools/json-validator" className="hover:text-zinc-900 transition-colors">JSON Syntax Validator</Link></li>
+              <li><Link href="/tools/json-schema-validator" className="hover:text-zinc-900 transition-colors">JSON Syntax Validator</Link></li>
               <li><Link href="/tools/jwt" className="hover:text-zinc-900 transition-colors">JWT Token Decoder</Link></li>
               <li><Link href="/tools/uuid-generator" className="hover:text-zinc-900 transition-colors">UUID v4 Generator</Link></li>
               <li><Link href="/tools/cron" className="hover:text-zinc-900 transition-colors">Cron Schedule Visualizer</Link></li>
