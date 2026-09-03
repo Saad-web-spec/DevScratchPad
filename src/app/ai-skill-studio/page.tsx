@@ -2,7 +2,7 @@ import { Metadata } from "next";
 import { ClaudeSkillsClient } from "../claude-skills/ClaudeSkillsClient";
 
 export const metadata: Metadata = {
-  title: "AI Skill Studio — Free SKILL.md, CLAUDE.md & Cursor Rules Generator",
+  title: "AI Skill Studio - Free SKILL.md, CLAUDE.md & Cursor Rules Generator",
   description:
     "Free browser-based generator for SKILL.md, CLAUDE.md, Cursor .mdc rules, and AGENTS.md. 100% client-side, zero API key required, offline-capable AI agent configuration architect.",
   alternates: {
@@ -20,14 +20,14 @@ export const metadata: Metadata = {
     "cursor mdc rules",
   ],
   openGraph: {
-    title: "AI Skill Studio — Free SKILL.md, CLAUDE.md & Cursor Rules Generator",
+    title: "AI Skill Studio - Free SKILL.md, CLAUDE.md & Cursor Rules Generator",
     description:
       "Generate production-grade Claude Code skills (SKILL.md), CLAUDE.md project guidelines, and Cursor rules with deep nuances, flexible conventions, and client-side privacy.",
     url: "https://www.devscratchpad.tech/ai-skill-studio",
     type: "website",
   },
   twitter: {
-    title: "AI Skill Studio — Free SKILL.md, CLAUDE.md & Cursor Rules Generator",
+    title: "AI Skill Studio - Free SKILL.md, CLAUDE.md & Cursor Rules Generator",
     description:
       "Generate production-grade Claude Code skills (SKILL.md), CLAUDE.md guidelines, and Cursor .mdc rules with client-side privacy.",
   },
