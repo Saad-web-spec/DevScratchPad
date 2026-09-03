@@ -1183,9 +1183,9 @@ ${exampleBad.trim()}
             <span className="hidden md:inline-flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-semibold bg-zinc-900 text-white rounded-full border border-zinc-800 shadow-xs">
               <span>Cursor .mdc + Claude Ready</span>
             </span>
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 sm:px-2.5 sm:py-1 text-[10px] sm:text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-full shadow-xs">
-              <CheckCircle2 className="w-3 h-3 text-emerald-600" />
-              <span className="hidden xs:inline">100% </span>Client-Side
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-bold bg-emerald-50 text-emerald-800 border border-emerald-300 rounded-full shadow-xs whitespace-nowrap">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0 shadow-[0_0_6px_rgba(16,185,129,0.8)]" />
+              <span>Client-Side</span>
             </span>
           </div>
         </div>
