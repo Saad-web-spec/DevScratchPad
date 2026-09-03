@@ -23,6 +23,7 @@ export const SIDEBAR_TO_SLUG: Record<string, string> = {
   "json-to-yaml": "json-to-yaml",
   "jwt": "jwt",
   "uuid-generator": "uuid-generator",
+  "ai-rules-generator": "ai-rules-generator",
   "hmac-generator": "hmac-generator",
   "cidr-calculator": "cidr-calculator",
   "cron": "cron",

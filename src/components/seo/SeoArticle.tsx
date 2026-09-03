@@ -83,8 +83,9 @@ export function SeoArticle({ title, explanation, codeExamples, shortcuts, howToU
             </div>
             <ul className="divide-y divide-neutral-100">
               {shortcuts.map((shortcut, idx) => {
-                const [keys, ...descParts] = shortcut.split("�");
-                const desc = descParts.join("�").trim();
+                const parts = shortcut.split(/\s+[—–-]\s+/);
+                const keys = parts[0] || shortcut;
+                const desc = parts.slice(1).join(' — ') || keys;
                 return (
                   <li key={idx} className="p-3 flex flex-col gap-1">
                     <span className="text-xs font-mono text-neutral-800 font-medium">

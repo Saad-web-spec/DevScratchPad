@@ -32,6 +32,7 @@ const PasswordHashTool = dynamic(() => import("@/components/tools/PasswordHashTo
 const JsonSchemaValidatorTool = dynamic(() => import("@/components/tools/JsonSchemaValidatorTool").then(mod => mod.JsonSchemaValidatorTool), { ssr: false });
 const MockDataGeneratorTool = dynamic(() => import("@/components/tools/MockDataGeneratorTool").then(mod => mod.MockDataGeneratorTool), { ssr: false });
 const TimestampConverterTool = dynamic(() => import("@/components/tools/TimestampConverterTool").then(mod => mod.TimestampConverterTool), { ssr: false });
+const AiRulesGeneratorTool = dynamic(() => import("@/components/tools/AiRulesGeneratorTool").then(mod => mod.AiRulesGeneratorTool), { ssr: false });
 
 import { CommandPalette } from "@/components/modals/CommandPalette";
 import { getToolMeta, type ToolMeta } from "@/lib/tools/registry";
@@ -263,6 +264,7 @@ export function WorkspaceShell({ initialToolSlug, toolMeta, children }: Workspac
 
 
   const IMPLEMENTED_TOOLS = [
+    "ai-rules-generator",
     "json-formatter",
     "json-validator",
     "jwt",
@@ -595,6 +597,9 @@ export function WorkspaceShell({ initialToolSlug, toolMeta, children }: Workspac
                       <TimestampConverterTool
                         restoredInput={isActive ? restoredInput : null}
                       />
+                    )}
+                    {tab.id === "ai-rules-generator" && (
+                      <AiRulesGeneratorTool />
                     )}
                     {!IMPLEMENTED_TOOLS.includes(tab.id) && (
                       <div className="flex flex-col items-center justify-center h-full text-zinc-400">

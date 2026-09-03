@@ -41,10 +41,18 @@ export function SiteHeader() {
 
         {/* Right Side Actions */}
         <div className="flex items-center gap-3">
+          <Link
+            href="/ai-skill-studio"
+            className="hidden md:flex bg-orange-50 hover:bg-orange-100 text-orange-700 border border-orange-200 text-xs px-2.5 py-1 rounded-md items-center gap-1.5 transition-colors font-semibold shadow-xs hover:shadow-sm"
+            title="AI Skill Studio"
+          >
+            <img src="/ai-skill-icon.png" className="w-4 h-3.5 object-contain" alt="AI Skill Studio" />
+            <span>AI Skill Studio</span>
+          </Link>
           <div className="hidden md:flex bg-neutral-900 text-neutral-100 text-xs px-2.5 py-1 rounded-md items-center gap-1.5"><Lock className="w-3 h-3" /> 100% Local</div>
 
           <Link
-            href="/"
+            href="/workspace"
             className="flex items-center gap-2 px-3.5 py-1.5 bg-zinc-900 hover:bg-zinc-800 text-white rounded-md text-xs font-medium transition-all shadow-none"
           >
             <span>Open Tool Workspace</span>

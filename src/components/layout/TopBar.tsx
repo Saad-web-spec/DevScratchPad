@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from"react";
 import { Search, Save, Menu, MoreVertical, Lock } from"lucide-react";
+import Link from "next/link";
 import { InstallAppButton } from "./InstallAppButton";
 
 interface TopBarProps {
@@ -69,6 +70,14 @@ export function TopBar({ onOpenCommandPalette, onOpenMobileMenu }: TopBarProps) 
  {/* Desktop Action Buttons */}
  <div className="hidden md:flex items-center gap-3">
  <InstallAppButton />
+ <Link
+   href="/ai-skill-studio"
+   className="bg-orange-50 hover:bg-orange-100 text-orange-700 border border-orange-200 text-xs px-2.5 py-1 rounded-md flex items-center gap-1.5 transition-colors font-semibold shadow-xs hover:shadow-sm"
+   title="AI Skill Studio"
+ >
+    <img src="/ai-skill-icon.png" className="w-4 h-3.5 object-contain" alt="AI Skill Studio" />
+   <span>AI Skill Studio</span>
+ </Link>
  <div className="bg-neutral-900 text-neutral-100 text-xs px-2.5 py-1 rounded-md flex items-center gap-1.5"><Lock className="w-3 h-3" /> 100% Local</div>
  <div className="w-px h-6 bg-zinc-200 mx-1"></div>
  <button
@@ -91,7 +100,15 @@ export function TopBar({ onOpenCommandPalette, onOpenMobileMenu }: TopBarProps) 
  </button>
 
  {isOverflowOpen && (
- <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-none border border-zinc-200 py-1 z-50 animate-in fade-in zoom-in-95 duration-100">
+ <div className="absolute right-0 mt-2 w-52 bg-white rounded-xl shadow-lg border border-zinc-200 py-1 z-50 animate-in fade-in zoom-in-95 duration-100">
+ <Link
+ href="/ai-skill-studio"
+ onClick={() => setIsOverflowOpen(false)}
+ className="w-full flex items-center gap-2 px-4 py-2.5 text-xs text-zinc-900 hover:bg-zinc-50 font-semibold transition-colors text-left border-b border-zinc-100"
+ >
+ <img src="/ai-skill-icon.png" className="w-3.5 h-3.5 object-contain" alt="AI Skill Studio" />
+ <span>AI Skill Studio</span>
+ </Link>
  <button
  onClick={handleSaveWorkspace}
  className="w-full flex items-center gap-2 px-4 py-2.5 text-xs text-zinc-700 hover:bg-zinc-50 font-medium transition-colors text-left"
