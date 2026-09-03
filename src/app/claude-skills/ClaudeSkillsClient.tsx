@@ -522,6 +522,7 @@ export function ClaudeSkillsClient() {
   const [lastAutoSaved, setLastAutoSaved] = useState<string | null>(null);
   const [isManifestModalOpen, setIsManifestModalOpen] = useState(false);
   const [isExportingZip, setIsExportingZip] = useState(false);
+  const [mobileTab, setMobileTab] = useState<"form" | "editor">("form");
 
   // LocalStorage state restore on mount
   useEffect(() => {
@@ -1154,46 +1155,48 @@ ${exampleBad.trim()}
     <div suppressHydrationWarning className="min-h-screen bg-zinc-50 flex flex-col font-sans selection:bg-orange-500 selection:text-white">
       {/* Top Navigation Bar */}
       <header className="sticky top-0 z-40 w-full bg-white border-b border-zinc-200 shadow-xs">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between gap-3">
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 h-14 flex items-center justify-between gap-2">
           {/* Left: Back button & Title */}
-          <div className="flex items-center gap-3 sm:gap-4 overflow-hidden">
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0">
             <Link
               href="/workspace"
-              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold text-zinc-700 hover:text-zinc-900 bg-zinc-100 hover:bg-zinc-200 transition-all border border-zinc-200/80 active:scale-95 shrink-0"
+              className="flex items-center gap-1.5 px-2 py-1.5 sm:px-2.5 sm:py-1.5 rounded-lg text-xs font-semibold text-zinc-700 hover:text-zinc-900 bg-zinc-100 hover:bg-zinc-200 transition-all border border-zinc-200/80 active:scale-95 shrink-0"
               title="Open Developer Tools Workspace"
             >
               <ArrowLeft className="w-3.5 h-3.5" />
-              <span>Developer Tools Workspace</span>
+              <span className="hidden sm:inline">Developer Tools </span>
+              <span>Workspace</span>
             </Link>
 
             <div className="h-4 w-px bg-zinc-200 shrink-0 hidden sm:block" />
 
-            <div className="flex items-center gap-2 truncate">
-              <img src="/ai-skill-icon.png" alt="AI Skill Studio" className="w-6 h-5 object-contain shrink-0" />
-              <h1 className="text-sm sm:text-base font-bold text-zinc-900 tracking-tight truncate">
+            <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
+              <img src="/ai-skill-icon.png" alt="AI Skill Studio" className="w-5 h-4 sm:w-6 sm:h-5 object-contain shrink-0" />
+              <h1 className="text-xs sm:text-base font-bold text-zinc-900 tracking-tight truncate">
                 AI Skill Studio
               </h1>
             </div>
           </div>
 
-          {/* Right: Status Indicators (without cursor symbol) */}
-          <div className="flex items-center gap-2 shrink-0">
-            <span className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-semibold bg-zinc-900 text-white rounded-full border border-zinc-800 shadow-xs">
+          {/* Right: Status Indicators */}
+          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+            <span className="hidden md:inline-flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-semibold bg-zinc-900 text-white rounded-full border border-zinc-800 shadow-xs">
               <span>Cursor .mdc + Claude Ready</span>
             </span>
-            <span className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-full shadow-xs">
-              <CheckCircle2 className="w-3 h-3 text-emerald-600" /> 100% Client-Side
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 sm:px-2.5 sm:py-1 text-[10px] sm:text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-full shadow-xs">
+              <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+              <span className="hidden xs:inline">100% </span>Client-Side
             </span>
           </div>
         </div>
 
         {/* Quick Presets Sub-Bar */}
-        <div className="border-t border-zinc-100 bg-zinc-50/90 px-4 sm:px-6 py-1.5 overflow-x-auto no-scrollbar">
-          <div className="max-w-7xl mx-auto flex items-center gap-2">
+        <div className="border-t border-zinc-100 bg-zinc-50/90 px-3 sm:px-6 py-1.5 overflow-x-auto scrollbar-none">
+          <div className="max-w-7xl mx-auto flex items-center gap-2 min-w-max">
             <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider shrink-0 flex items-center gap-1">
               <Zap className="w-3 h-3 text-zinc-800" /> Presets:
             </span>
-            <div className="flex items-center gap-1.5 overflow-x-auto py-0.5">
+            <div className="flex items-center gap-1.5 py-0.5">
               {PRESETS.map((preset) => {
                 const isActive = selectedPresetId === preset.id;
                 const isCursorPreset = preset.id === "cursor-mdc-pro";
@@ -1202,7 +1205,7 @@ ${exampleBad.trim()}
                     key={preset.id}
                     onClick={() => handleApplyPreset(preset)}
                     className={cn(
-                      "px-2.5 py-1 text-xs font-medium rounded-md whitespace-nowrap transition-all flex items-center gap-1.5 border max-w-[180px] overflow-hidden",
+                      "px-2.5 py-1 text-xs font-medium rounded-md whitespace-nowrap transition-all flex items-center gap-1.5 border shrink-0",
                       isActive
                         ? isCursorPreset
                           ? "bg-black text-white border-black shadow-xs font-semibold"
@@ -1211,7 +1214,7 @@ ${exampleBad.trim()}
                     )}
                   >
                     {isCursorPreset && <img src="/cursor-icon.png" className="w-3 h-3 object-contain shrink-0" alt="Cursor" />}
-                    <span className="truncate">{preset.name}</span>
+                    <span>{preset.name}</span>
                     <span
                       className={cn(
                         "text-[9px] px-1 py-px rounded font-mono shrink-0",
@@ -1232,13 +1235,51 @@ ${exampleBad.trim()}
         </div>
       </header>
 
+      {/* Mobile View Mode Switcher (visible only on < lg) */}
+      <div className="lg:hidden px-3 pt-3 max-w-7xl mx-auto w-full">
+        <div className="flex items-center p-1 bg-zinc-200/80 rounded-xl border border-zinc-300/80 shadow-inner">
+          <button
+            type="button"
+            onClick={() => setMobileTab("form")}
+            className={cn(
+              "flex-1 flex items-center justify-center gap-1.5 py-2 text-xs font-bold rounded-lg transition-all",
+              mobileTab === "form"
+                ? "bg-white text-zinc-900 shadow-xs"
+                : "text-zinc-600 hover:text-zinc-900"
+            )}
+          >
+            <Sliders className="w-3.5 h-3.5 text-orange-500" />
+            <span>Configure</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setMobileTab("editor")}
+            className={cn(
+              "flex-1 flex items-center justify-center gap-1.5 py-2 text-xs font-bold rounded-lg transition-all",
+              mobileTab === "editor"
+                ? "bg-zinc-900 text-white shadow-xs"
+                : "text-zinc-600 hover:text-zinc-900"
+            )}
+          >
+            <Terminal className="w-3.5 h-3.5 text-emerald-400" />
+            <span>Editor & Export</span>
+            <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-zinc-700 text-zinc-200 font-mono leading-none">
+              {activeContent.split("\n").length}L
+            </span>
+          </button>
+        </div>
+      </div>
+
       {/* Main Workspace Area: Split Screen */}
-      <main className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-        {/* Left Column: Generator Controls (7 cols on large) */}
-        <div className="lg:col-span-6 space-y-6">
+      <main className="flex-1 max-w-7xl w-full mx-auto p-3 sm:p-6 grid grid-cols-1 lg:grid-cols-12 gap-6 items-start pb-24 lg:pb-6">
+        {/* Left Column: Generator Controls */}
+        <div className={cn(
+          "lg:col-span-6 space-y-4 sm:space-y-6",
+          mobileTab === "editor" ? "hidden lg:block" : "block"
+        )}>
           {/* Format Selector Card */}
-          <div className="bg-white rounded-xl border border-zinc-200 p-4 shadow-xs">
-            <label className="text-xs font-bold uppercase tracking-wider text-zinc-500 mb-2.5 block flex items-center justify-between">
+          <div className="bg-white rounded-xl border border-zinc-200 p-3.5 sm:p-4 shadow-xs">
+            <label className="text-xs font-bold uppercase tracking-wider text-zinc-500 mb-2.5 flex flex-col sm:flex-row sm:items-center justify-between gap-0.5">
               <span>Target Standard & File Format</span>
               <span className="text-[10px] text-zinc-400 font-normal">Select AI runtime</span>
             </label>
@@ -1246,17 +1287,17 @@ ${exampleBad.trim()}
               <button
                 onClick={() => setFormat("cursor_mdc")}
                 className={cn(
-                  "p-2.5 rounded-lg border text-left transition-all flex flex-col gap-1",
+                  "p-2 sm:p-2.5 rounded-lg border text-left transition-all flex flex-col gap-1 overflow-hidden",
                   format === "cursor_mdc"
                     ? "border-black bg-zinc-950 text-white shadow-sm ring-1 ring-black"
                     : "border-zinc-200 bg-white hover:bg-zinc-50 text-zinc-700"
                 )}
               >
-                <div className="flex items-center gap-1.5 font-semibold text-xs">
-                  <img src="/cursor-icon.png" alt="Cursor" className="w-3.5 h-3.5 object-contain" />
-                  <span>.cursorrules</span>
+                <div className="flex items-center gap-1.5 font-semibold text-xs truncate">
+                  <img src="/cursor-icon.png" alt="Cursor" className="w-3.5 h-3.5 object-contain shrink-0" />
+                  <span className="truncate">.cursorrules</span>
                 </div>
-                <span className={cn("text-[10px] leading-tight", format === "cursor_mdc" ? "text-zinc-400" : "text-zinc-500")}>
+                <span className={cn("text-[10px] leading-tight truncate", format === "cursor_mdc" ? "text-zinc-400" : "text-zinc-500")}>
                   Cursor .mdc Rules
                 </span>
               </button>
@@ -1264,59 +1305,59 @@ ${exampleBad.trim()}
               <button
                 onClick={() => setFormat("skill_md")}
                 className={cn(
-                  "p-2.5 rounded-lg border text-left transition-all flex flex-col gap-1",
+                  "p-2 sm:p-2.5 rounded-lg border text-left transition-all flex flex-col gap-1 overflow-hidden",
                   format === "skill_md"
                     ? "border-orange-500 bg-orange-50/60 text-orange-950 shadow-xs ring-1 ring-orange-500/20"
                     : "border-zinc-200 bg-white hover:bg-zinc-50 text-zinc-700"
                 )}
               >
-                <div className="flex items-center gap-1.5 font-semibold text-xs">
-                  <img src="/ai-skill-icon.png" alt="Claude" className="w-3.5 h-3.5 object-contain" />
-                  <span>SKILL.md</span>
+                <div className="flex items-center gap-1.5 font-semibold text-xs truncate">
+                  <img src="/ai-skill-icon.png" alt="Claude" className="w-3.5 h-3.5 object-contain shrink-0" />
+                  <span className="truncate">SKILL.md</span>
                 </div>
-                <span className="text-[10px] text-zinc-500 leading-tight">Claude Code / Agent Skill</span>
+                <span className="text-[10px] text-zinc-500 leading-tight truncate">Claude Code / Skill</span>
               </button>
 
               <button
                 onClick={() => setFormat("claude_md")}
                 className={cn(
-                  "p-2.5 rounded-lg border text-left transition-all flex flex-col gap-1",
+                  "p-2 sm:p-2.5 rounded-lg border text-left transition-all flex flex-col gap-1 overflow-hidden",
                   format === "claude_md"
                     ? "border-amber-500 bg-amber-50/60 text-amber-950 shadow-xs ring-1 ring-amber-500/20"
                     : "border-zinc-200 bg-white hover:bg-zinc-50 text-zinc-700"
                 )}
               >
-                <div className="flex items-center gap-1.5 font-semibold text-xs">
-                  <BookOpen className="w-3.5 h-3.5 text-amber-500" />
-                  <span>CLAUDE.md</span>
+                <div className="flex items-center gap-1.5 font-semibold text-xs truncate">
+                  <BookOpen className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                  <span className="truncate">CLAUDE.md</span>
                 </div>
-                <span className="text-[10px] text-zinc-500 leading-tight">Project Root Guidelines</span>
+                <span className="text-[10px] text-zinc-500 leading-tight truncate">Root Guidelines</span>
               </button>
 
               <button
                 onClick={() => setFormat("agents_md")}
                 className={cn(
-                  "p-2.5 rounded-lg border text-left transition-all flex flex-col gap-1",
+                  "p-2 sm:p-2.5 rounded-lg border text-left transition-all flex flex-col gap-1 overflow-hidden",
                   format === "agents_md"
                     ? "border-emerald-600 bg-emerald-50/60 text-emerald-950 shadow-xs ring-1 ring-emerald-600/20"
                     : "border-zinc-200 bg-white hover:bg-zinc-50 text-zinc-700"
                 )}
               >
-                <div className="flex items-center gap-1.5 font-semibold text-xs">
-                  <Cpu className="w-3.5 h-3.5 text-emerald-600" />
-                  <span>AGENTS.md</span>
+                <div className="flex items-center gap-1.5 font-semibold text-xs truncate">
+                  <Cpu className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                  <span className="truncate">AGENTS.md</span>
                 </div>
-                <span className="text-[10px] text-zinc-500 leading-tight">Multi-Agent Systems</span>
+                <span className="text-[10px] text-zinc-500 leading-tight truncate">Multi-Agent</span>
               </button>
             </div>
           </div>
 
           {/* Cursor Rule Scope Card (Visible only when format is cursor_mdc) */}
           {format === "cursor_mdc" && (
-            <div className="bg-white rounded-xl border border-zinc-200 p-4 shadow-xs space-y-3">
-              <div className="flex items-center justify-between border-b border-zinc-100 pb-2.5">
+            <div className="bg-white rounded-xl border border-zinc-200 p-3.5 sm:p-4 shadow-xs space-y-3">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-zinc-100 pb-2.5 gap-1">
                 <div className="flex items-center gap-2">
-                  <FolderGit2 className="w-4 h-4 text-zinc-900" />
+                  <FolderGit2 className="w-4 h-4 text-zinc-900 shrink-0" />
                   <h3 className="text-sm font-bold text-zinc-900">Cursor Rule Scope</h3>
                 </div>
                 <span className="text-[10px] text-zinc-400 font-mono">.cursor/rules/*.mdc</span>
@@ -1357,19 +1398,19 @@ ${exampleBad.trim()}
           )}
 
           {/* Identity & Trigger Configuration */}
-          <div className="bg-white rounded-xl border border-zinc-200 p-5 shadow-xs space-y-4">
-            <div className="flex items-center justify-between border-b border-zinc-100 pb-3">
+          <div className="bg-white rounded-xl border border-zinc-200 p-4 sm:p-5 shadow-xs space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-zinc-100 pb-3 gap-2.5">
               <div className="flex items-center gap-2">
-                <Terminal className="w-4 h-4 text-zinc-700" />
+                <Terminal className="w-4 h-4 text-zinc-700 shrink-0" />
                 <h3 className="text-sm font-bold text-zinc-900">Identity & Activation Rules</h3>
               </div>
               <button
                 type="button"
                 onClick={synthesizeFromContext}
-                className="flex items-center gap-1.5 text-[11px] font-semibold text-orange-700 hover:text-orange-800 bg-orange-50 hover:bg-orange-100 border border-orange-200/90 px-2.5 py-1 rounded-md transition-all active:scale-95 shadow-xs"
+                className="flex items-center justify-center gap-1.5 text-[11px] font-semibold text-orange-700 hover:text-orange-800 bg-orange-50 hover:bg-orange-100 border border-orange-200/90 px-2.5 py-1.5 rounded-md transition-all active:scale-95 shadow-xs w-full sm:w-auto shrink-0"
                 title="Synthesizes triggers, procedures, and directives from all 12 current form fields and stack context"
               >
-                <Cpu className="w-3.5 h-3.5 text-orange-600" />
+                <Cpu className="w-3.5 h-3.5 text-orange-600 shrink-0" />
                 <span>Synthesize from Context</span>
               </button>
             </div>
@@ -1399,7 +1440,7 @@ ${exampleBad.trim()}
             </div>
 
             <div className="space-y-1.5">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col sm:flex-row sm:items-baseline justify-between gap-0.5 sm:gap-2">
                 <label className="text-xs font-semibold text-zinc-700">
                   Activation Trigger
                 </label>
@@ -1428,18 +1469,18 @@ ${exampleBad.trim()}
 
           {/* Tech Stack Customization */}
           <div className="bg-white rounded-xl border border-zinc-200 p-3.5 sm:p-4 shadow-xs space-y-3">
-            <div className="flex items-center justify-between border-b border-zinc-100 pb-2.5">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-zinc-100 pb-2.5 gap-2">
               <div className="flex items-center gap-2">
-                <Layers className="w-4 h-4 text-zinc-700" />
+                <Layers className="w-4 h-4 text-zinc-700 shrink-0" />
                 <h3 className="text-sm font-bold text-zinc-900">Technology Stack Context</h3>
               </div>
               <button
                 type="button"
                 onClick={() => setIsManifestModalOpen(true)}
-                className="flex items-center gap-1.5 text-[11px] font-semibold text-zinc-700 hover:text-orange-700 bg-zinc-100 hover:bg-orange-50 border border-zinc-200 hover:border-orange-200 px-2.5 py-1 rounded-md transition-all active:scale-95 shadow-xs cursor-pointer"
+                className="flex items-center justify-center gap-1.5 text-[11px] font-semibold text-zinc-700 hover:text-orange-700 bg-zinc-100 hover:bg-orange-50 border border-zinc-200 hover:border-orange-200 px-2.5 py-1.5 rounded-md transition-all active:scale-95 shadow-xs cursor-pointer w-full sm:w-auto shrink-0"
                 title="Auto-detect stack from package.json, pyproject.toml, Cargo.toml, or go.mod"
               >
-                <UploadCloud className="w-3.5 h-3.5 text-orange-600" />
+                <UploadCloud className="w-3.5 h-3.5 text-orange-600 shrink-0" />
                 <span>Auto-Detect from Manifest</span>
               </button>
             </div>
@@ -1488,10 +1529,10 @@ ${exampleBad.trim()}
           </div>
 
           {/* Philosophy & Non-Rigid Style Preferences */}
-          <div className="bg-white rounded-xl border border-zinc-200 p-3 shadow-xs space-y-3">
-            <div className="flex items-center justify-between border-b border-zinc-100 pb-2.5">
+          <div className="bg-white rounded-xl border border-zinc-200 p-3 sm:p-3.5 shadow-xs space-y-3">
+            <div className="flex flex-col sm:flex-row sm:items-baseline justify-between border-b border-zinc-100 pb-2.5 gap-1">
               <div className="flex items-center gap-2">
-                <Sliders className="w-4 h-4 text-zinc-700" />
+                <Sliders className="w-4 h-4 text-zinc-700 shrink-0" />
                 <h3 className="text-sm font-bold text-zinc-900">Engineering Philosophy</h3>
               </div>
               <span className="text-[10px] text-zinc-500 font-medium">Flexible & Adaptable</span>
@@ -1523,10 +1564,10 @@ ${exampleBad.trim()}
           </div>
 
           {/* Nuanced Agent Behavioral Guardrails */}
-          <div className="bg-white rounded-xl border border-zinc-200 p-3 shadow-xs space-y-3">
-            <div className="flex items-center justify-between border-b border-zinc-100 pb-2.5">
+          <div className="bg-white rounded-xl border border-zinc-200 p-3 sm:p-3.5 shadow-xs space-y-3">
+            <div className="flex flex-col sm:flex-row sm:items-baseline justify-between border-b border-zinc-100 pb-2.5 gap-1">
               <div className="flex items-center gap-2">
-                <ShieldCheck className="w-4 h-4 text-emerald-600" />
+                <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
                 <h3 className="text-sm font-bold text-zinc-900">Agent Behavioral Guardrails</h3>
               </div>
               <span className="text-[10px] text-zinc-400">Select active rules</span>
@@ -1561,10 +1602,10 @@ ${exampleBad.trim()}
           </div>
 
           {/* Architectural & Code Quality Conventions */}
-          <div className="bg-white rounded-xl border border-zinc-200 p-3 shadow-xs space-y-3">
-            <div className="flex items-center justify-between border-b border-zinc-100 pb-2.5">
+          <div className="bg-white rounded-xl border border-zinc-200 p-3 sm:p-3.5 shadow-xs space-y-3">
+            <div className="flex flex-col sm:flex-row sm:items-baseline justify-between border-b border-zinc-100 pb-2.5 gap-1">
               <div className="flex items-center gap-2">
-                <Settings2 className="w-4 h-4 text-zinc-700" />
+                <Settings2 className="w-4 h-4 text-zinc-700 shrink-0" />
                 <h3 className="text-sm font-bold text-zinc-900">Architectural & Code Quality Conventions</h3>
               </div>
               <span className="text-[10px] text-zinc-400">Less rigid & configurable</span>
@@ -1602,7 +1643,7 @@ ${exampleBad.trim()}
           <div className="bg-white rounded-xl border border-zinc-200 p-3.5 sm:p-4 shadow-xs space-y-3">
             <div className="flex items-center justify-between border-b border-zinc-100 pb-2.5">
               <div className="flex items-center gap-2">
-                <BookOpen className="w-4 h-4 text-zinc-700" />
+                <BookOpen className="w-4 h-4 text-zinc-700 shrink-0" />
                 <h3 className="text-sm font-bold text-zinc-900">Step-by-Step Workflow Procedures</h3>
               </div>
             </div>
@@ -1632,17 +1673,16 @@ ${exampleBad.trim()}
 
         {/* Right Column: Sticky Real-time Editor & Unified Action Group */}
         <div
-          className="lg:col-span-6 flex flex-col space-y-2.5"
-          style={{
-            position: "sticky",
-            top: "1.5rem",
-            maxHeight: "calc(100vh - 3rem)",
-          }}
+          className={cn(
+            "lg:col-span-6 flex flex-col space-y-2.5 w-full",
+            mobileTab === "form" ? "hidden lg:flex" : "flex",
+            "lg:sticky lg:top-6 lg:max-h-[calc(100vh-3rem)]"
+          )}
         >
           {/* Main Card containing Header + Monaco Editor */}
           <div className="bg-zinc-900 rounded-xl border border-zinc-800 shadow-md flex flex-col overflow-hidden">
             {/* File Tab Header with Unified Action Group */}
-            <div className="px-3.5 py-2 flex items-center justify-between border-b border-zinc-800 bg-zinc-900/95 shrink-0 gap-2">
+            <div className="px-3 py-2 flex flex-wrap sm:flex-nowrap items-center justify-between border-b border-zinc-800 bg-zinc-900/95 shrink-0 gap-2">
               <div className="flex items-center gap-2 min-w-0">
                 <div
                   className={cn(
@@ -1679,7 +1719,7 @@ ${exampleBad.trim()}
               <div className="flex items-center bg-zinc-800/90 rounded-lg p-0.5 border border-zinc-700/60 shadow-xs shrink-0">
                 <button
                   onClick={handleCopy}
-                  className="flex items-center gap-1.5 px-2.5 py-1 text-xs text-zinc-300 hover:text-white hover:bg-zinc-700/60 rounded-md transition-colors font-medium cursor-pointer"
+                  className="flex items-center gap-1 sm:gap-1.5 px-2 sm:px-2.5 py-1 text-xs text-zinc-300 hover:text-white hover:bg-zinc-700/60 rounded-md transition-colors font-medium cursor-pointer"
                   title="Copy code to clipboard"
                 >
                   {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
@@ -1690,7 +1730,7 @@ ${exampleBad.trim()}
 
                 <button
                   onClick={handleDownload}
-                  className="flex items-center gap-1.5 px-2.5 py-1 text-xs text-zinc-300 hover:text-white hover:bg-zinc-700/60 rounded-md transition-colors font-medium cursor-pointer"
+                  className="flex items-center gap-1 sm:gap-1.5 px-2 sm:px-2.5 py-1 text-xs text-zinc-300 hover:text-white hover:bg-zinc-700/60 rounded-md transition-colors font-medium cursor-pointer"
                   title={`Download ${currentFileName}`}
                 >
                   <Download className="w-3.5 h-3.5" />
@@ -1703,7 +1743,7 @@ ${exampleBad.trim()}
                   onClick={handleExportZip}
                   disabled={isExportingZip}
                   className={cn(
-                    "flex items-center gap-1.5 px-2.5 py-1 text-xs text-white rounded-md transition-colors font-semibold shadow-xs cursor-pointer disabled:opacity-50 shrink-0",
+                    "flex items-center gap-1 sm:gap-1.5 px-2 sm:px-2.5 py-1 text-xs text-white rounded-md transition-colors font-semibold shadow-xs cursor-pointer disabled:opacity-50 shrink-0",
                     format === "cursor_mdc"
                       ? "bg-zinc-800 hover:bg-black border border-zinc-600"
                       : "bg-orange-600 hover:bg-orange-500"
@@ -1717,7 +1757,7 @@ ${exampleBad.trim()}
             </div>
 
             {/* Editor Container with Explicit Height, Editable Mode, and Instant Fallback */}
-            <div className="h-[550px] lg:h-[calc(100vh-14rem)] min-h-[460px] relative overflow-hidden bg-zinc-950">
+            <div className="h-[460px] sm:h-[550px] lg:h-[calc(100vh-14rem)] min-h-[400px] relative overflow-hidden bg-zinc-950">
               <Editor
                 height="100%"
                 language="markdown"
@@ -1737,7 +1777,7 @@ ${exampleBad.trim()}
                 options={{
                   readOnly: false,
                   minimap: { enabled: false },
-                  fontSize: 12.5,
+                  fontSize: 12,
                   fontFamily: "'JetBrains Mono', 'Fira Code', Menlo, Consolas, monospace",
                   wordWrap: "on",
                   lineNumbers: "on",
@@ -1782,6 +1822,54 @@ ${exampleBad.trim()}
           </div>
         </div>
       </main>
+
+      {/* Mobile Floating Action Bar (Sticky at bottom on < lg) */}
+      <div className="lg:hidden fixed bottom-3 left-3 right-3 z-40">
+        {mobileTab === "form" ? (
+          <button
+            type="button"
+            onClick={() => {
+              setMobileTab("editor");
+              window.scrollTo({ top: 0, behavior: "smooth" });
+            }}
+            className="w-full bg-zinc-900/95 hover:bg-black text-white px-4 py-3 rounded-xl shadow-2xl border border-zinc-700/90 flex items-center justify-between backdrop-blur-md transition-all active:scale-[0.98]"
+          >
+            <div className="flex items-center gap-2 min-w-0">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shrink-0" />
+              <span className="text-xs font-semibold truncate">{currentFileName} Ready</span>
+              <span className="text-[10px] font-mono bg-zinc-800 px-1.5 py-0.5 rounded text-zinc-300 shrink-0">
+                {activeContent.split("\n").length}L
+              </span>
+            </div>
+            <div className="flex items-center gap-1 text-xs font-bold text-orange-400 shrink-0">
+              <span>View Code</span>
+              <ArrowLeft className="w-3.5 h-3.5 rotate-180" />
+            </div>
+          </button>
+        ) : (
+          <div className="flex items-center gap-2 bg-zinc-900/95 p-1.5 rounded-xl shadow-2xl border border-zinc-700/90 backdrop-blur-md">
+            <button
+              type="button"
+              onClick={() => {
+                setMobileTab("form");
+                window.scrollTo({ top: 0, behavior: "smooth" });
+              }}
+              className="flex-1 flex items-center justify-center gap-1.5 bg-zinc-800 hover:bg-zinc-700 text-white text-xs font-semibold py-2.5 rounded-lg transition-all active:scale-95"
+            >
+              <ArrowLeft className="w-3.5 h-3.5" />
+              <span>Edit Settings</span>
+            </button>
+            <button
+              type="button"
+              onClick={handleCopy}
+              className="flex-1 flex items-center justify-center gap-1.5 bg-orange-600 hover:bg-orange-500 text-white text-xs font-bold py-2.5 rounded-lg transition-all active:scale-95 shadow-xs"
+            >
+              {copied ? <Check className="w-3.5 h-3.5 text-white" /> : <Copy className="w-3.5 h-3.5" />}
+              <span>{copied ? "Copied!" : "Copy Code"}</span>
+            </button>
+          </div>
+        )}
+      </div>
 
       {/* Manifest Import Modal (P2) */}
       <ManifestImportModal
