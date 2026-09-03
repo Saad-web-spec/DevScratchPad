@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import "highlight.js/styles/github-dark.css";
 
 /* High-craft monochromatic typography for engineering blog & articles */
 @layer utilities {
@@ -138,11 +139,11 @@
     border: 1px solid #e4e4e7;
   }
   .prose pre code {
-    background-color: transparent;
+    background-color: transparent !important;
     border: none;
     padding: 0;
     font-size: inherit;
-    color: #e4e4e7;
+    color: inherit;
     line-height: inherit;
   }
   .prose a {

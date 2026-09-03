@@ -2,7 +2,9 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, ChevronRight, Terminal, ArrowRight, ArrowUpRight, Clock, ShieldCheck, Tag, Sparkles } from "lucide-react";
-import { marked } from "marked";
+import { Marked } from "marked";
+import { markedHighlight } from "marked-highlight";
+import hljs from "highlight.js";
 import { getBlogPost, BLOG_SLUGS, BLOG_POSTS } from "@/lib/blog/posts";
 import { getToolMeta } from "@/lib/tools/registry";
 import { SiteHeader } from "@/components/layout/SiteHeader";
@@ -10,6 +12,18 @@ import { SiteFooter } from "@/components/layout/SiteFooter";
 import { TableOfContents } from "@/components/blog/TableOfContents";
 import { InteractiveToolWidget } from "@/components/blog/InteractiveToolWidget";
 import { FaqAccordion } from "@/components/blog/FaqAccordion";
+import { CodeBlockEnricher } from "@/components/blog/CodeBlockEnricher";
+
+const marked = new Marked(
+  markedHighlight({
+    emptyLangClass: 'hljs',
+    langPrefix: 'hljs language-',
+    highlight(code, lang) {
+      const language = hljs.getLanguage(lang) ? lang : 'plaintext';
+      return hljs.highlight(code, { language }).value;
+    }
+  })
+);
 
 const SITE_URL = "https://www.devscratchpad.tech";
 
@@ -171,86 +185,95 @@ export default async function BlogPostPage({
         />
       )}
 
-      <main className="flex-1 w-full max-w-5xl mx-auto px-4 sm:px-6 py-8 md:py-12">
-        {/* Minimalist Breadcrumb Navigation */}
-        <div className="flex flex-wrap items-center gap-2 text-xs font-mono text-zinc-500 mb-6">
-          <Link href="/" className="hover:text-zinc-900 transition-colors">
-            root
-          </Link>
-          <span>/</span>
-          <Link href="/blog" className="hover:text-zinc-900 transition-colors">
-            learning-hub
-          </Link>
-          <span>/</span>
-          <span className="text-zinc-500">{post.category.toLowerCase().replace(/[^a-z0-9]+/g, "-")}</span>
-          <span>/</span>
-          <span className="text-zinc-800 truncate max-w-[220px] sm:max-w-none">
-            {post.slug}
-          </span>
-        </div>
-
-        {/* Back Link */}
-        <Link
-          href="/blog"
-          className="inline-flex items-center text-xs font-mono text-zinc-500 hover:text-zinc-900 transition-colors mb-6 group"
-        >
-          <ArrowLeft className="w-3.5 h-3.5 mr-1 group-hover:-translate-x-1 transition-transform" />
-          <span>← Back to Learning Hub</span>
-        </Link>
-
-        {/* Main Article Document Card */}
-        <article className="bg-white border border-zinc-200 rounded-xl p-6 sm:p-10 md:p-12 mb-12 shadow-sm">
-          {/* Article Header Metadata */}
-          <header className="border-b border-zinc-200 pb-6 mb-8">
-            <div className="flex flex-wrap items-center gap-2 text-xs font-mono text-zinc-500 mb-4">
-              <span className="px-2 py-0.5 bg-zinc-100 border border-zinc-200 text-zinc-700 rounded font-medium">
-                {post.category.toUpperCase()}
+      <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 py-8 md:py-12">
+        <div className="flex flex-col lg:flex-row gap-8 items-start relative">
+          
+          {/* Left Column: Main Content */}
+          <div className="flex-1 w-full min-w-0">
+            {/* Minimalist Breadcrumb Navigation */}
+            <div className="flex flex-wrap items-center gap-2 text-xs font-mono text-zinc-500 mb-6">
+              <Link href="/" className="hover:text-zinc-900 transition-colors">
+                root
+              </Link>
+              <span>/</span>
+              <Link href="/blog" className="hover:text-zinc-900 transition-colors">
+                learning-hub
+              </Link>
+              <span>/</span>
+              <span className="text-zinc-500">{post.category.toLowerCase().replace(/[^a-z0-9]+/g, "-")}</span>
+              <span>/</span>
+              <span className="text-zinc-800 truncate max-w-[220px] sm:max-w-none">
+                {post.slug}
               </span>
-              {post.type === "cheat-sheet" && (
-                <span className="px-2 py-0.5 bg-amber-50 border border-amber-200 text-amber-800 rounded font-medium">
-                  CHEAT SHEET
-                </span>
-              )}
-              <span>•</span>
-              <span className="flex items-center gap-1">
-                <Clock className="w-3 h-3 text-zinc-400" />
-                {post.readTime}
-              </span>
-              <span>•</span>
-              <span>{post.difficulty}</span>
-              <span>•</span>
-              <time suppressHydrationWarning>
-                {formatUtcDate(post.publishedAt)}
-              </time>
-              <span>•</span>
-              <span className="text-emerald-700 font-medium">100% Client-Side Verified</span>
             </div>
 
-            <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight text-zinc-900 leading-tight mb-3">
-              {post.title}
-            </h1>
+            {/* Back Link */}
+            <Link
+              href="/blog"
+              className="inline-flex items-center text-xs font-mono text-zinc-500 hover:text-zinc-900 transition-colors mb-6 group"
+            >
+              <ArrowLeft className="w-3.5 h-3.5 mr-1 group-hover:-translate-x-1 transition-transform" />
+              <span>← Back to Learning Hub</span>
+            </Link>
 
-            <p className="text-sm sm:text-base text-zinc-600 leading-relaxed max-w-3xl mb-4">
-              {post.description}
-            </p>
+            {/* Main Article Document Card */}
+            <article className="bg-white border border-zinc-200 rounded-xl p-6 sm:p-10 md:p-12 mb-12 shadow-sm relative">
+              {/* Inject the Client Component to enrich code blocks with Copy buttons */}
+              <CodeBlockEnricher />
 
-            {/* Tags list */}
-            {post.tags && post.tags.length > 0 && (
-              <div className="flex flex-wrap items-center gap-1.5 pt-2">
-                {post.tags.map((tag) => (
-                  <span
-                    key={tag}
-                    className="text-[10px] font-mono text-zinc-500 bg-zinc-50 border border-zinc-200 px-1.5 py-0.5 rounded"
-                  >
-                    #{tag}
+              {/* Article Header Metadata */}
+              <header className="border-b border-zinc-200 pb-6 mb-8">
+                <div className="flex flex-wrap items-center gap-2 text-xs font-mono text-zinc-500 mb-4">
+                  <span className="px-2 py-0.5 bg-zinc-100 border border-zinc-200 text-zinc-700 rounded font-medium">
+                    {post.category.toUpperCase()}
                   </span>
-                ))}
-              </div>
-            )}
-          </header>
+                  {post.type === "cheat-sheet" && (
+                    <span className="px-2 py-0.5 bg-amber-50 border border-amber-200 text-amber-800 rounded font-medium">
+                      CHEAT SHEET
+                    </span>
+                  )}
+                  <span>•</span>
+                  <span className="flex items-center gap-1">
+                    <Clock className="w-3 h-3 text-zinc-400" />
+                    {post.readTime}
+                  </span>
+                  <span>•</span>
+                  <span>{post.difficulty}</span>
+                  <span>•</span>
+                  <time suppressHydrationWarning>
+                    {formatUtcDate(post.publishedAt)}
+                  </time>
+                  <span>•</span>
+                  <span className="text-emerald-700 font-medium">100% Client-Side Verified</span>
+                </div>
 
-          {/* Interactive Table of Contents */}
-          <TableOfContents />
+                <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight text-zinc-900 leading-tight mb-3">
+                  {post.title}
+                </h1>
+
+                <p className="text-sm sm:text-base text-zinc-600 leading-relaxed max-w-3xl mb-4">
+                  {post.description}
+                </p>
+
+                {/* Tags list */}
+                {post.tags && post.tags.length > 0 && (
+                  <div className="flex flex-wrap items-center gap-1.5 pt-2">
+                    {post.tags.map((tag) => (
+                      <span
+                        key={tag}
+                        className="text-[10px] font-mono text-zinc-500 bg-zinc-50 border border-zinc-200 px-1.5 py-0.5 rounded"
+                      >
+                        #{tag}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </header>
+
+              {/* Mobile Table of Contents */}
+              <div className="block lg:hidden">
+                <TableOfContents />
+              </div>
 
           {/* Interactive Preset Sandbox (if provided) */}
           {post.interactivePreset && (
@@ -340,6 +363,14 @@ export default async function BlogPostPage({
             </div>
           </div>
         )}
+          </div> {/* End Left Column */}
+
+          {/* Right Column: Sticky Sidebar TOC */}
+          <div className="hidden lg:block w-72 shrink-0 sticky top-24">
+            <TableOfContents />
+          </div>
+
+        </div> {/* End Flex Container */}
       </main>
 
       <SiteFooter />
