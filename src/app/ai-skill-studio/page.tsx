@@ -27,12 +27,23 @@ export const metadata: Metadata = {
     siteName: "DevScratchpad",
     locale: "en_US",
     type: "website",
+    images: [
+      {
+        url: "https://www.devscratchpad.tech/og-ai-skill-studio.png",
+        secureUrl: "https://www.devscratchpad.tech/og-ai-skill-studio.png",
+        width: 1200,
+        height: 630,
+        alt: "AI Skill Studio - Free SKILL.md, CLAUDE.md & Cursor Rules Generator",
+        type: "image/png",
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
     title: "AI Skill Studio - Free SKILL.md, CLAUDE.md & Cursor Rules Generator",
     description:
       "Generate production-grade Claude Code skills (SKILL.md), CLAUDE.md guidelines, and Cursor .mdc rules with client-side privacy.",
+    images: ["https://www.devscratchpad.tech/og-ai-skill-studio.png"],
   },
 };
 
