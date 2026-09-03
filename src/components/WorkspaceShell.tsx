@@ -40,6 +40,7 @@ import { X, Sparkles } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { decodeShareData } from "@/components/ShareButton";
 import { SIDEBAR_TO_SLUG, SLUG_TO_SIDEBAR, getToolUrl } from "@/lib/routes";
+import { useMagicPaste } from "@/hooks/useMagicPaste";
 
 const SIDEBAR_TO_NAME: Record<string, string> = {
   "json-formatter": "JSON Formatter",
@@ -84,6 +85,9 @@ interface WorkspaceShellProps {
 
 export function WorkspaceShell({ initialToolSlug, toolMeta, children }: WorkspaceShellProps) {
   const router = useRouter();
+  
+  // Enable global magic paste auto-detection
+  useMagicPaste();
 
   const initialSidebarId = initialToolSlug
     ? SLUG_TO_SIDEBAR[initialToolSlug] || "json-formatter"
