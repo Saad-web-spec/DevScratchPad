@@ -1328,7 +1328,7 @@ ${exampleBad.trim()}
                 )}
               >
                 <div className="flex items-center gap-1.5 font-semibold text-xs truncate">
-                  <BookOpen className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                  <img src="/claude-icon.png" alt="Claude" className="w-3.5 h-3.5 object-contain shrink-0" />
                   <span className="truncate">CLAUDE.md</span>
                 </div>
                 <span className="text-[10px] text-zinc-500 leading-tight truncate">Root Guidelines</span>
@@ -1794,6 +1794,8 @@ ${exampleBad.trim()}
             <div className="flex items-center gap-1.5 font-semibold text-zinc-900">
               {format === "cursor_mdc" ? (
                 <img src="/cursor-icon.png" alt="Cursor" className="w-3.5 h-3.5 object-contain" />
+              ) : format === "claude_md" ? (
+                <img src="/claude-icon.png" alt="Claude" className="w-3.5 h-3.5 object-contain" />
               ) : (
                 <FolderGit2 className={cn("w-3.5 h-3.5", format === "skill_md" ? "text-orange-500" : "text-zinc-800")} />
               )}
