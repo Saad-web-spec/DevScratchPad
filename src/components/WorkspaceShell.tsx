@@ -112,6 +112,20 @@ export function WorkspaceShell({ initialToolSlug, toolMeta, children }: Workspac
   const [magicPasteToast, setMagicPasteToast] = useState<{ message: string; visible: boolean } | null>(null);
   const [restoredInput, setRestoredInput] = useState<string | null>(null);
 
+  // Global Ctrl+K / Cmd+K Command Palette Shortcut Listener
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && (e.key === "k" || e.key === "K")) {
+        e.preventDefault();
+        e.stopPropagation();
+        setCommandPaletteOpen((prev) => !prev);
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown, true);
+    return () => window.removeEventListener("keydown", handleKeyDown, true);
+  }, []);
+
   // Status Bar State
   const [isValid, setIsValid] = useState(true);
   const [errorMsg, setErrorMsg] = useState<string | undefined>();
