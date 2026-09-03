@@ -24,9 +24,12 @@ export const metadata: Metadata = {
     description:
       "Generate production-grade Claude Code skills (SKILL.md), CLAUDE.md project guidelines, and Cursor rules with deep nuances, flexible conventions, and client-side privacy.",
     url: "https://www.devscratchpad.tech/ai-skill-studio",
+    siteName: "DevScratchpad",
+    locale: "en_US",
     type: "website",
   },
   twitter: {
+    card: "summary_large_image",
     title: "AI Skill Studio - Free SKILL.md, CLAUDE.md & Cursor Rules Generator",
     description:
       "Generate production-grade Claude Code skills (SKILL.md), CLAUDE.md guidelines, and Cursor .mdc rules with client-side privacy.",
