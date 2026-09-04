@@ -98,6 +98,7 @@ export function decodeStudioState(hashStr: string): Partial<StudioWorkspaceState
       if (params.has("g")) state.globPattern = params.get("g")!;
       if (params.has("a")) state.alwaysApply = params.get("a") === "1";
       if (params.has("sl")) state.isSlugLocked = params.get("sl") === "1";
+      if (params.has("mcp")) state.mcpPresetId = params.get("mcp")!;
       return state;
     }
 
@@ -123,7 +124,9 @@ export function createShareableUrl(state: Partial<StudioWorkspaceState>): string
   const keys = Object.keys(state).filter(
     (k) => (state as any)[k] !== undefined && (state as any)[k] !== null && (state as any)[k] !== ""
   );
-  const isPresetOnly = keys.every((k) => k === "selectedPresetId" || k === "format");
+  const isPresetOnly = keys.every(
+    (k) => k === "selectedPresetId" || k === "format" || (k === "mcpPresetId" && state.mcpPresetId === "filesystem")
+  );
 
   if (isPresetOnly && state.selectedPresetId) {
     const fmt = (state.format || "skill_md") as any;
@@ -135,7 +138,7 @@ export function createShareableUrl(state: Partial<StudioWorkspaceState>): string
     }
   }
 
-  // Option 2: Super-short URL fragment (#p=nextjs-pro&f=cursor_mdc) for simple overrides
+  // Option 2: Super-short URL fragment (#p=nextjs-pro&f=cursor_mdc&mcp=github) for simple overrides
   const hasLargeFields = Boolean(
     state.procedures ||
     state.description ||
@@ -144,8 +147,7 @@ export function createShareableUrl(state: Partial<StudioWorkspaceState>): string
     state.exampleBad ||
     state.editorContent ||
     (state.behaviors && state.behaviors.length > 0) ||
-    (state.conventions && state.conventions.length > 0) ||
-    state.mcpArgs
+    (state.conventions && state.conventions.length > 0)
   );
 
   const baseUrl = `${window.location.origin}${window.location.pathname}`;
@@ -164,9 +166,10 @@ export function createShareableUrl(state: Partial<StudioWorkspaceState>): string
     if (state.globPattern && state.globPattern !== "**/*") params.set("g", state.globPattern);
     if (state.alwaysApply) params.set("a", "1");
     if (state.isSlugLocked) params.set("sl", "1");
+    if (state.mcpPresetId && state.mcpPresetId !== "filesystem") params.set("mcp", state.mcpPresetId);
 
     const qs = params.toString();
-    if (qs.length > 0 && qs.length < 120) {
+    if (qs.length > 0 && qs.length < 160) {
       return `${baseUrl}#${qs}`;
     }
   }

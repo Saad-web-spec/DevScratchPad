@@ -896,12 +896,38 @@ export function ClaudeSkillsClient({ initialFormat, initialPresetId }: ClaudeSki
         if (s.format && s.format !== "subagent_json") setFormat(s.format);
         if (s.globPattern) setGlobPattern(s.globPattern);
         if (typeof s.alwaysApply === "boolean") setAlwaysApply(s.alwaysApply);
-        if (s.mcpPresetId) setMcpPresetId(s.mcpPresetId);
-        if (s.mcpServerName) setMcpServerName(s.mcpServerName);
-        if (s.mcpCommand) setMcpCommand(s.mcpCommand);
-        if (s.mcpArgs) setMcpArgs(s.mcpArgs);
-        if (s.mcpEnvKey !== undefined) setMcpEnvKey(s.mcpEnvKey);
-        if (s.mcpEnvValue !== undefined) setMcpEnvValue(s.mcpEnvValue);
+        if (s.mcpPresetId) {
+          setMcpPresetId(s.mcpPresetId);
+          const matchedMcp = MCP_PRESETS.find((p) => p.id === s.mcpPresetId);
+          if (matchedMcp) {
+            setMcpServerName(s.mcpServerName ?? matchedMcp.name);
+            setMcpCommand(s.mcpCommand ?? matchedMcp.command);
+            setMcpArgs(s.mcpArgs ?? matchedMcp.args.join("\n"));
+            const defaultEnvKeys = Object.keys(matchedMcp.env);
+            if (s.mcpEnvKey !== undefined) {
+              setMcpEnvKey(s.mcpEnvKey);
+              setMcpEnvValue(s.mcpEnvValue ?? "");
+            } else if (defaultEnvKeys.length > 0) {
+              setMcpEnvKey(defaultEnvKeys[0]);
+              setMcpEnvValue(matchedMcp.env[defaultEnvKeys[0]] || "");
+            } else {
+              setMcpEnvKey("");
+              setMcpEnvValue("");
+            }
+          } else {
+            if (s.mcpServerName) setMcpServerName(s.mcpServerName);
+            if (s.mcpCommand) setMcpCommand(s.mcpCommand);
+            if (s.mcpArgs) setMcpArgs(s.mcpArgs);
+            if (s.mcpEnvKey !== undefined) setMcpEnvKey(s.mcpEnvKey);
+            if (s.mcpEnvValue !== undefined) setMcpEnvValue(s.mcpEnvValue);
+          }
+        } else {
+          if (s.mcpServerName) setMcpServerName(s.mcpServerName);
+          if (s.mcpCommand) setMcpCommand(s.mcpCommand);
+          if (s.mcpArgs) setMcpArgs(s.mcpArgs);
+          if (s.mcpEnvKey !== undefined) setMcpEnvKey(s.mcpEnvKey);
+          if (s.mcpEnvValue !== undefined) setMcpEnvValue(s.mcpEnvValue);
+        }
         if (s.editorContent && s.isManuallyEdited) {
           setEditorContent(s.editorContent);
           setIsManuallyEdited(true);
@@ -1691,11 +1717,24 @@ ${exampleBad.trim()}
 
       if (!isDefaultMcp) {
         if (mcpPresetId) stateToShare.mcpPresetId = mcpPresetId;
-        if (mcpServerName) stateToShare.mcpServerName = mcpServerName;
-        if (mcpCommand) stateToShare.mcpCommand = mcpCommand;
-        if (mcpArgs) stateToShare.mcpArgs = mcpArgs;
-        if (mcpEnvKey) stateToShare.mcpEnvKey = mcpEnvKey;
-        if (mcpEnvValue) stateToShare.mcpEnvValue = mcpEnvValue;
+        const matchedMcp = MCP_PRESETS.find((p) => p.id === mcpPresetId);
+        const isExactPresetMatch =
+          matchedMcp &&
+          mcpServerName === matchedMcp.name &&
+          mcpCommand === matchedMcp.command &&
+          mcpArgs === matchedMcp.args.join("\n") &&
+          (Object.keys(matchedMcp.env).length === 0
+            ? !mcpEnvKey && !mcpEnvValue
+            : mcpEnvKey === Object.keys(matchedMcp.env)[0] && mcpEnvValue === matchedMcp.env[Object.keys(matchedMcp.env)[0]]);
+
+        // Only include verbose command/args/env if customized beyond preset
+        if (!isExactPresetMatch) {
+          if (mcpServerName) stateToShare.mcpServerName = mcpServerName;
+          if (mcpCommand) stateToShare.mcpCommand = mcpCommand;
+          if (mcpArgs) stateToShare.mcpArgs = mcpArgs;
+          if (mcpEnvKey) stateToShare.mcpEnvKey = mcpEnvKey;
+          if (mcpEnvValue) stateToShare.mcpEnvValue = mcpEnvValue;
+        }
       }
 
       // Diff against bestPreset to only store actual modifications
