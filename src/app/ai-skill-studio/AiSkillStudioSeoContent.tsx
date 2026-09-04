@@ -30,10 +30,10 @@ export function AiSkillStudioSeoContent() {
         {/* 2. Format Comparison Matrix */}
         <section className="space-y-6">
           <div className="space-y-2">
-            <h3 className="text-xl font-bold tracking-tight text-zinc-900 flex items-center gap-2">
+            <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-zinc-900 flex items-center gap-2">
               <Layers className="w-5 h-5 text-orange-600" />
               Comparing Modern AI Agent Configuration Formats
-            </h3>
+            </h2>
             <p className="text-xs sm:text-sm text-zinc-600">
               Different AI coding companions and IDEs parse instructions through distinct specifications. Here is how each target format functions in production:
             </p>
@@ -47,7 +47,7 @@ export function AiSkillStudioSeoContent() {
                 </span>
                 <span className="text-xs text-zinc-500 font-mono">Claude Code & Agentic CLI</span>
               </div>
-              <h4 className="font-semibold text-zinc-900 text-sm">Claude Code Agent Skills</h4>
+              <h3 className="font-semibold text-zinc-900 text-sm">Claude Code Agent Skills</h3>
               <p className="text-xs text-zinc-600 leading-relaxed">
                 Packaged modular instructions equipped with YAML frontmatter (<code className="font-mono">name</code> and <code className="font-mono">description</code>). Claude Code evaluates the description dynamically, loading the skill into context only when triggered by relevant developer tasks or explicit slash commands.
               </p>
@@ -63,7 +63,7 @@ export function AiSkillStudioSeoContent() {
                 </span>
                 <span className="text-xs text-zinc-500 font-mono">Cursor IDE (Modern Standard)</span>
               </div>
-              <h4 className="font-semibold text-zinc-900 text-sm">Cursor Modular Project Rules</h4>
+              <h3 className="font-semibold text-zinc-900 text-sm">Cursor Modular Project Rules</h3>
               <p className="text-xs text-zinc-600 leading-relaxed">
                 Supersedes the legacy monolithic <code className="font-mono">.cursorrules</code> file. Modern Cursor rules live under <code className="font-mono">.cursor/rules/*.mdc</code> with structured frontmatter specifying glob patterns (<code className="font-mono">globs: [&quot;**/*.tsx&quot;]</code>) and an <code className="font-mono">alwaysApply</code> flag to minimize prompt token overhead.
               </p>
@@ -79,7 +79,7 @@ export function AiSkillStudioSeoContent() {
                 </span>
                 <span className="text-xs text-zinc-500 font-mono">Project Root Repository Context</span>
               </div>
-              <h4 className="font-semibold text-zinc-900 text-sm">Anthropic Root Instructions</h4>
+              <h3 className="font-semibold text-zinc-900 text-sm">Anthropic Root Instructions</h3>
               <p className="text-xs text-zinc-600 leading-relaxed">
                 Located at the repository root, <code className="font-mono">CLAUDE.md</code> is ingested automatically by Claude Code and Claude.ai project instances. Uses semantic XML tags (<code className="font-mono">&lt;project_context&gt;</code>, <code className="font-mono">&lt;tech_stack&gt;</code>, <code className="font-mono">&lt;workflows_and_procedures&gt;</code>) to preserve high token density.
               </p>
@@ -95,7 +95,7 @@ export function AiSkillStudioSeoContent() {
                 </span>
                 <span className="text-xs text-zinc-500 font-mono">Multi-Agent Systems & Antigravity</span>
               </div>
-              <h4 className="font-semibold text-zinc-900 text-sm">Multi-Agent Protocol Specifications</h4>
+              <h3 className="font-semibold text-zinc-900 text-sm">Multi-Agent Protocol Specifications</h3>
               <p className="text-xs text-zinc-600 leading-relaxed">
                 Standardized configuration for agentic frameworks (Antigravity, CrewAI, AutoGen). Contains demarcated rule blocks (<code className="font-mono">&lt;!-- BEGIN:agent-rules --&gt;</code>) that establish specialized roles, architectural boundaries, and operational guardrails for autonomous multi-agent loops.
               </p>
@@ -111,7 +111,7 @@ export function AiSkillStudioSeoContent() {
                 </span>
                 <span className="text-xs text-zinc-500 font-mono">Model Context Protocol (MCP)</span>
               </div>
-              <h4 className="font-semibold text-zinc-900 text-sm">MCP Server Configurations</h4>
+              <h3 className="font-semibold text-zinc-900 text-sm">MCP Server Configurations</h3>
               <p className="text-xs text-zinc-600 leading-relaxed">
                 Standardized configuration block for local and remote Model Context Protocol (MCP) servers. Configures executable commands, environment credentials, and connection arguments for tools like filesystem inspection, GitHub API, PostgreSQL, and web fetchers.
               </p>
@@ -125,10 +125,10 @@ export function AiSkillStudioSeoContent() {
         {/* 3. How to Generate in 3 Steps */}
         <section className="space-y-6">
           <div className="space-y-2">
-            <h3 className="text-xl font-bold tracking-tight text-zinc-900 flex items-center gap-2">
+            <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-zinc-900 flex items-center gap-2">
               <CheckCircle2 className="w-5 h-5 text-emerald-600" />
               How to Generate & Deploy AI Agent Skills in 3 Steps
-            </h3>
+            </h2>
             <p className="text-xs sm:text-sm text-zinc-600">
               Streamline your prompt engineering and rule management pipeline:
             </p>
@@ -137,21 +137,21 @@ export function AiSkillStudioSeoContent() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="border border-zinc-200 p-5 rounded-lg bg-white space-y-2 shadow-2xs">
               <span className="font-mono text-xs font-bold text-zinc-400">STEP 01</span>
-              <h4 className="font-semibold text-zinc-900 text-sm">Select Preset or Import Manifest</h4>
+              <h3 className="font-semibold text-zinc-900 text-sm">Select Preset or Import Manifest</h3>
               <p className="text-xs text-zinc-600 leading-relaxed">
                 Choose a production-grade preset (Next.js 15, FastAPI, Cursor .mdc Pro, Codebase Auditor) or drop your <code className="font-mono text-[11px]">package.json</code> or <code className="font-mono text-[11px]">Cargo.toml</code> to auto-detect your stack.
               </p>
             </div>
             <div className="border border-zinc-200 p-5 rounded-lg bg-white space-y-2 shadow-2xs">
               <span className="font-mono text-xs font-bold text-zinc-400">STEP 02</span>
-              <h4 className="font-semibold text-zinc-900 text-sm">Configure Guardrails & Philosophy</h4>
+              <h3 className="font-semibold text-zinc-900 text-sm">Configure Guardrails & Philosophy</h3>
               <p className="text-xs text-zinc-600 leading-relaxed">
                 Toggle essential engineering behaviors (e.g., surgical diffs, guard clauses, typed schemas, strict accessibility) and input reference code examples for immediate model grounding.
               </p>
             </div>
             <div className="border border-zinc-200 p-5 rounded-lg bg-white space-y-2 shadow-2xs">
               <span className="font-mono text-xs font-bold text-zinc-400">STEP 03</span>
-              <h4 className="font-semibold text-zinc-900 text-sm">Export Unified AI Kit (.zip)</h4>
+              <h3 className="font-semibold text-zinc-900 text-sm">Export Unified AI Kit (.zip)</h3>
               <p className="text-xs text-zinc-600 leading-relaxed">
                 Download a unified archive containing formatted <code className="font-mono text-[11px]">.cursor/rules/*.mdc</code>, <code className="font-mono text-[11px]">.claude/skills/SKILL.md</code>, <code className="font-mono text-[11px]">CLAUDE.md</code>, <code className="font-mono text-[11px]">AGENTS.md</code>, and installation documentation.
               </p>
@@ -165,9 +165,9 @@ export function AiSkillStudioSeoContent() {
             <ShieldCheck className="w-5 h-5 text-emerald-600" />
             <span>Zero-Telemetry Client-Side Security Guarantee</span>
           </div>
-          <h3 className="text-lg font-bold text-zinc-900 tracking-tight">
+          <h2 className="text-lg sm:text-xl font-bold text-zinc-900 tracking-tight">
             Why Enterprise Engineers Use In-Browser Skill Generation
-          </h3>
+          </h2>
           <p className="text-xs sm:text-sm text-zinc-600 leading-relaxed">
             Cloud-based AI prompt builders require uploading your project names, internal repository architectures, and confidential engineering guidelines to remote databases. <strong>AI Skill Studio executes 100% in local browser memory.</strong> No network requests transmit your prompt inputs, manifests, or generated rules. It operates offline, requires zero API keys, and creates zero telemetry footprint.
           </p>
@@ -176,10 +176,10 @@ export function AiSkillStudioSeoContent() {
         {/* 5. Frequently Asked Questions (FAQ) Accordion */}
         <section className="space-y-6">
           <div className="space-y-2">
-            <h3 className="text-xl font-bold tracking-tight text-zinc-900 flex items-center gap-2">
+            <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-zinc-900 flex items-center gap-2">
               <HelpCircle className="w-5 h-5 text-orange-600" />
               Frequently Asked Questions (FAQ)
-            </h3>
+            </h2>
             <p className="text-xs sm:text-sm text-zinc-600">
               Everything you need to know about configuring skills and project rules for AI coding assistants.
             </p>

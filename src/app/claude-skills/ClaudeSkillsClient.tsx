@@ -25,11 +25,22 @@ import {
   AlertTriangle,
   AlertCircle,
   ExternalLink,
+  Lock,
+  Unlock,
+  Gauge,
+  Sparkles,
+  ChevronDown,
+  ChevronUp,
+  X,
+  Info,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { downloadAiKitZip } from "./lib/zipExporter";
 import { ManifestImportModal } from "./components/ManifestImportModal";
 import { ParsedManifestResult } from "./lib/manifestParser";
+import { generateSafeSlug, validateTriggerPhrase } from "./lib/slugUtils";
+import { saveToStorageEnvelope, loadFromStorageEnvelope, STORAGE_KEY_V2 } from "./lib/storageEnvelope";
+import { auditRuleQuality, RuleAuditReport, AuditIssue } from "./lib/ruleAuditor";
 
 // Dynamically import Monaco Editor to prevent SSR issues
 const Editor = dynamic(() => import("@monaco-editor/react"), {
@@ -605,6 +616,38 @@ export function ClaudeSkillsClient() {
   const [isExportingZip, setIsExportingZip] = useState(false);
   const [mobileTab, setMobileTab] = useState<"form" | "editor">("form");
 
+  // Slug lock & Static Analysis Audit Panel State
+  const [isSlugLocked, setIsSlugLocked] = useState(false);
+  const [showAuditPanel, setShowAuditPanel] = useState(false);
+
+  // Title & Slug synchronization handlers
+  const handleTitleChange = (newTitle: string) => {
+    setSkillTitle(newTitle);
+    if (!isSlugLocked) {
+      setSkillName(generateSafeSlug(newTitle));
+    }
+  };
+
+  const handleSlugChange = (rawSlug: string) => {
+    const safe = rawSlug.toLowerCase().replace(/[\s_./\\]+/g, "-").replace(/[^a-z0-9-]/g, "");
+    setSkillName(safe);
+    setIsSlugLocked(true);
+  };
+
+  const toggleSlugLock = () => {
+    if (isSlugLocked) {
+      setIsSlugLocked(false);
+      setSkillName(generateSafeSlug(skillTitle));
+    } else {
+      setIsSlugLocked(true);
+    }
+  };
+
+  // Real-time Activation Trigger Validation
+  const triggerValidation = useMemo(() => {
+    return validateTriggerPhrase(description);
+  }, [description]);
+
   // MCP Server state
   const [mcpPresetId, setMcpPresetId] = useState<string>("filesystem");
   const [mcpServerName, setMcpServerName] = useState<string>("filesystem");
@@ -747,14 +790,14 @@ export function ClaudeSkillsClient() {
     }
   };
 
-  // LocalStorage state restore on mount
+  // Storage envelope state restore on mount (with automatic v1 legacy migration)
   useEffect(() => {
     try {
-      const saved = localStorage.getItem("ai-skill-studio-state");
-      if (saved) {
-        const s = JSON.parse(saved);
+      const s = loadFromStorageEnvelope<any>();
+      if (s) {
         if (s.skillName) setSkillName(s.skillName);
         if (s.skillTitle) setSkillTitle(s.skillTitle);
+        if (typeof s.isSlugLocked === "boolean") setIsSlugLocked(s.isSlugLocked);
         if (s.description) setDescription(s.description);
         if (s.role) setRole(s.role);
         if (s.framework) setFramework(s.framework);
@@ -786,53 +829,52 @@ export function ClaudeSkillsClient() {
     setIsMounted(true);
   }, []);
 
-  // Debounced LocalStorage Auto-Save
+  // Debounced Versioned Envelope Auto-Save
   useEffect(() => {
     if (!isMounted) return;
     const timer = setTimeout(() => {
-      try {
-        localStorage.setItem(
-          "ai-skill-studio-state",
-          JSON.stringify({
-            skillName,
-            skillTitle,
-            description,
-            role,
-            framework,
-            language,
-            styling,
-            database,
-            philosophy,
-            behaviors,
-            conventions,
-            procedures,
-            customDirectives,
-            exampleGood,
-            exampleBad,
-            format,
-            globPattern,
-            alwaysApply,
-            mcpPresetId,
-            mcpServerName,
-            mcpCommand,
-            mcpArgs,
-            mcpEnvKey,
-            mcpEnvValue,
-            editorContent,
-            isManuallyEdited,
-          })
-        );
+      const res = saveToStorageEnvelope(STORAGE_KEY_V2, {
+        skillName,
+        skillTitle,
+        isSlugLocked,
+        description,
+        role,
+        framework,
+        language,
+        styling,
+        database,
+        philosophy,
+        behaviors,
+        conventions,
+        procedures,
+        customDirectives,
+        exampleGood,
+        exampleBad,
+        format,
+        globPattern,
+        alwaysApply,
+        mcpPresetId,
+        mcpServerName,
+        mcpCommand,
+        mcpArgs,
+        mcpEnvKey,
+        mcpEnvValue,
+        editorContent,
+        isManuallyEdited,
+      });
+      if (res.success) {
         const now = new Date();
         setLastAutoSaved(
           now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" })
         );
-      } catch {}
+      }
     }, 500);
     return () => clearTimeout(timer);
   }, [
     isMounted,
     skillName,
     skillTitle,
+    isSlugLocked,
     description,
     role,
     framework,
@@ -863,6 +905,7 @@ export function ClaudeSkillsClient() {
   const handleApplyPreset = (preset: SkillPreset) => {
     setSelectedPresetId(preset.id);
     setSkillName(preset.slug);
+    setIsSlugLocked(false);
     setSkillTitle(preset.title);
     setDescription(preset.description);
     setRole(preset.role);
@@ -898,7 +941,10 @@ export function ClaudeSkillsClient() {
     if (manifest.styling) setStyling(manifest.styling);
     if (manifest.database) setDatabase(manifest.database);
     if (manifest.suggestedRole) setRole(manifest.suggestedRole);
-    if (manifest.suggestedSkillName) setSkillName(manifest.suggestedSkillName);
+    if (manifest.suggestedSkillName) {
+      setSkillName(generateSafeSlug(manifest.suggestedSkillName));
+      setIsSlugLocked(true);
+    }
     setIsManuallyEdited(false);
   };
 
@@ -1356,6 +1402,27 @@ ${exampleBad.trim()}
 
   // Active content being viewed/copied/downloaded
   const activeContent = isManuallyEdited ? editorContent : generatedContent;
+
+  // Real-time Rule Quality & Security Audit Engine
+  const auditReport = useMemo(() => {
+    return auditRuleQuality({
+      content: activeContent,
+      format,
+      description,
+      globPattern,
+      alwaysApply,
+      exampleGood,
+      exampleBad,
+    });
+  }, [
+    activeContent,
+    format,
+    description,
+    globPattern,
+    alwaysApply,
+    exampleGood,
+    exampleBad,
+  ]);
 
 
   // Export Complete AI Workspace Suite as ZIP
@@ -1920,11 +1987,35 @@ ${exampleBad.trim()}
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-zinc-700">Skill Identifier (Kebab Case)</label>
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-semibold text-zinc-700">Skill Identifier (Kebab Case)</label>
+                  <button
+                    type="button"
+                    onClick={toggleSlugLock}
+                    className="inline-flex items-center gap-1 text-[10px] font-mono text-zinc-500 hover:text-zinc-900 transition-colors cursor-pointer px-1 py-0.5 rounded hover:bg-zinc-100"
+                    title={
+                      isSlugLocked
+                        ? "Identifier is locked from auto-syncing with Display Title. Click to unlock."
+                        : "Identifier is auto-syncing with Display Title. Click to lock."
+                    }
+                  >
+                    {isSlugLocked ? (
+                      <>
+                        <Lock className="w-3 h-3 text-orange-600" />
+                        <span className="text-orange-700 font-semibold">Locked</span>
+                      </>
+                    ) : (
+                      <>
+                        <Unlock className="w-3 h-3 text-zinc-400" />
+                        <span>Auto-sync</span>
+                      </>
+                    )}
+                  </button>
+                </div>
                 <input
                   type="text"
                   value={skillName}
-                  onChange={(e) => setSkillName(e.target.value)}
+                  onChange={(e) => handleSlugChange(e.target.value)}
                   placeholder="e.g. codebase-auditor"
                   className="w-full px-3 py-1.5 border border-zinc-200 rounded-lg text-xs font-mono focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500"
                 />
@@ -1935,7 +2026,7 @@ ${exampleBad.trim()}
                 <input
                   type="text"
                   value={skillTitle}
-                  onChange={(e) => setSkillTitle(e.target.value)}
+                  onChange={(e) => handleTitleChange(e.target.value)}
                   placeholder="e.g. Codebase Health & Security Auditor"
                   className="w-full px-3 py-1.5 border border-zinc-200 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500"
                 />
@@ -1956,6 +2047,36 @@ ${exampleBad.trim()}
                 placeholder="When should the AI activate this skill? (e.g., progressive disclosure condition for Claude Code or file globs for Cursor .mdc rules)..."
                 className="w-full p-3 border border-zinc-200 rounded-lg text-xs leading-relaxed focus:outline-none focus:ring-2 focus:ring-zinc-900/10 focus:border-zinc-900 min-h-[105px] resize-y"
               />
+
+              {/* Activation Trigger Validation Feedback */}
+              {description.trim().length > 0 && (!triggerValidation.isValid || triggerValidation.severity) && (
+                <div
+                  className={cn(
+                    "flex items-start gap-2 p-2.5 rounded-lg border text-xs leading-relaxed transition-all",
+                    triggerValidation.severity === "warning" || !triggerValidation.isValid
+                      ? "bg-amber-50/80 border-amber-200/90 text-amber-900"
+                      : "bg-blue-50/80 border-blue-200/90 text-blue-900"
+                  )}
+                >
+                  <AlertTriangle
+                    className={cn(
+                      "w-4 h-4 shrink-0 mt-0.5",
+                      triggerValidation.severity === "warning" || !triggerValidation.isValid
+                        ? "text-amber-600"
+                        : "text-blue-600"
+                    )}
+                  />
+                  <div className="space-y-0.5">
+                    <p className="font-semibold text-[11px]">{triggerValidation.message}</p>
+                    {triggerValidation.recommendation && (
+                      <p className="text-[10px] text-zinc-600">
+                        <span className="font-semibold text-zinc-700">Tip: </span>
+                        {triggerValidation.recommendation}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
 
             <div className="space-y-1.5">
@@ -2202,6 +2323,32 @@ ${exampleBad.trim()}
                   {activeContent.split("\n").length} lines
                 </span>
 
+                {/* Rule Quality & Security Audit Badge Button */}
+                <button
+                  type="button"
+                  onClick={() => setShowAuditPanel((prev) => !prev)}
+                  className={cn(
+                    "inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[10px] font-mono border transition-all cursor-pointer shrink-0 shadow-xs",
+                    auditReport.overallScore >= 90
+                      ? "bg-emerald-950/90 text-emerald-300 border-emerald-700/80 hover:bg-emerald-900/90"
+                      : auditReport.overallScore >= 80
+                      ? "bg-green-950/90 text-green-300 border-green-700/80 hover:bg-green-900/90"
+                      : auditReport.overallScore >= 70
+                      ? "bg-amber-950/90 text-amber-300 border-amber-700/80 hover:bg-amber-900/90"
+                      : "bg-rose-950/90 text-rose-300 border-rose-700/80 hover:bg-rose-900/90"
+                  )}
+                  title="Click to view static rule quality score, token density, and security audit diagnostics"
+                >
+                  <Gauge className="w-2.5 h-2.5 shrink-0 text-orange-400" />
+                  <span className="font-semibold">{auditReport.overallScore}/100</span>
+                  <span className="font-bold uppercase tracking-wider">{auditReport.grade}</span>
+                  {showAuditPanel ? (
+                    <ChevronUp className="w-2.5 h-2.5 opacity-70" />
+                  ) : (
+                    <ChevronDown className="w-2.5 h-2.5 opacity-70" />
+                  )}
+                </button>
+
                 {lastAutoSaved && (
                   <span className="hidden xl:inline-flex items-center gap-1 text-[10px] text-zinc-400 font-mono shrink-0">
                     <CheckCircle2 className="w-2.5 h-2.5 text-emerald-400" /> Auto-saved
@@ -2262,6 +2409,105 @@ ${exampleBad.trim()}
                 </button>
               </div>
             </div>
+
+            {/* Rule Quality Audit Diagnostic Drawer */}
+            {showAuditPanel && (
+              <div className="bg-zinc-950 border-b border-zinc-800 p-3.5 sm:p-4 text-zinc-100 max-h-[320px] overflow-y-auto space-y-3 font-sans animate-in slide-in-from-top-2 duration-150 scrollbar-thin">
+                <div className="flex items-center justify-between border-b border-zinc-800 pb-2">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <div className="flex items-center gap-1.5 font-bold text-xs sm:text-sm">
+                      <Gauge className="w-4 h-4 text-orange-400" />
+                      <span>Rule Quality & Security Audit</span>
+                    </div>
+                    <span
+                      className={cn(
+                        "px-2 py-0.5 rounded text-[10px] font-mono font-bold uppercase",
+                        auditReport.overallScore >= 90
+                          ? "bg-emerald-900/60 text-emerald-300 border border-emerald-700"
+                          : auditReport.overallScore >= 80
+                          ? "bg-green-900/60 text-green-300 border border-green-700"
+                          : auditReport.overallScore >= 70
+                          ? "bg-amber-900/60 text-amber-300 border border-amber-700"
+                          : "bg-rose-900/60 text-rose-300 border border-rose-700"
+                      )}
+                    >
+                      {auditReport.overallScore}/100 · {auditReport.gradeLabel}
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setShowAuditPanel(false)}
+                    className="text-zinc-400 hover:text-white p-1 rounded hover:bg-zinc-800 transition-colors cursor-pointer"
+                    title="Close audit drawer"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+
+                <p className="text-xs text-zinc-300 leading-relaxed">{auditReport.summary}</p>
+
+                {/* 4-Dimension Metric Cards */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs font-mono">
+                  <div className="bg-zinc-900/90 border border-zinc-800 p-2 rounded-lg space-y-0.5">
+                    <span className="text-[10px] text-zinc-400 block font-sans">Clarity & Directives</span>
+                    <span className="font-bold text-zinc-200">{auditReport.dimensions.clarity.score}%</span>
+                  </div>
+                  <div className="bg-zinc-900/90 border border-zinc-800 p-2 rounded-lg space-y-0.5">
+                    <span className="text-[10px] text-zinc-400 block font-sans">Token Density</span>
+                    <span className="font-bold text-zinc-200">~{auditReport.tokenCount} tok ({auditReport.dimensions.tokenDensity.score}%)</span>
+                  </div>
+                  <div className="bg-zinc-900/90 border border-zinc-800 p-2 rounded-lg space-y-0.5">
+                    <span className="text-[10px] text-zinc-400 block font-sans">Guardrails</span>
+                    <span className="font-bold text-zinc-200">{auditReport.dimensions.guardrails.score}%</span>
+                  </div>
+                  <div className="bg-zinc-900/90 border border-zinc-800 p-2 rounded-lg space-y-0.5">
+                    <span className="text-[10px] text-zinc-400 block font-sans">Trigger Precision</span>
+                    <span className="font-bold text-zinc-200">{auditReport.dimensions.triggers.score}%</span>
+                  </div>
+                </div>
+
+                {/* Diagnostic Issues & Suggestions List */}
+                <div className="space-y-2 pt-1">
+                  <span className="text-[11px] font-bold text-zinc-400 uppercase tracking-wider font-mono block">
+                    Diagnostic Findings ({auditReport.allIssues.length})
+                  </span>
+                  {auditReport.allIssues.length === 0 ? (
+                    <div className="flex items-center gap-2 p-2.5 rounded-lg bg-emerald-950/40 border border-emerald-900/60 text-emerald-300 text-xs">
+                      <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-400" />
+                      <span>Zero deficiencies detected. This rule adheres to high token economy and negative boundary constraints.</span>
+                    </div>
+                  ) : (
+                    <div className="space-y-1.5">
+                      {auditReport.allIssues.map((issue) => (
+                        <div
+                          key={issue.id}
+                          className={cn(
+                            "p-2.5 rounded-lg border text-xs space-y-1",
+                            issue.severity === "error"
+                              ? "bg-rose-950/40 border-rose-900/70 text-rose-200"
+                              : issue.severity === "warning"
+                              ? "bg-amber-950/40 border-amber-900/70 text-amber-200"
+                              : "bg-blue-950/40 border-blue-900/70 text-blue-200"
+                          )}
+                        >
+                          <div className="flex items-center justify-between font-semibold">
+                            <span>{issue.title}</span>
+                            <span className="text-[10px] uppercase font-mono px-1.5 py-0.5 rounded bg-black/40">
+                              {issue.severity}
+                            </span>
+                          </div>
+                          <p className="text-zinc-300 text-[11px] leading-relaxed">{issue.message}</p>
+                          <p className="text-[11px] text-zinc-400">
+                            <span className="font-bold text-zinc-200 font-mono">Tip: </span>
+                            {issue.suggestion}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
 
             {/* Editor Container with Explicit Height, Editable Mode, and Instant Fallback */}
             <div className="h-[460px] sm:h-[550px] lg:h-[calc(100vh-14rem)] min-h-[400px] relative overflow-hidden bg-zinc-950">
