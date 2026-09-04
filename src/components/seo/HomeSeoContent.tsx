@@ -57,12 +57,20 @@ export function HomeSeoContent() {
 "@type":"ItemList",
 "@id":"https://www.devscratchpad.tech/#tools",
 "name":"DevScratchpad Tools",
-"itemListElement": allTools.map((tool, idx) => ({
+"itemListElement": [
+ {
 "@type":"ListItem",
-"position": idx + 1,
+"position": 1,
+"url":"https://www.devscratchpad.tech/ai-skill-studio",
+"name":"AI Skill Studio"
+ },
+ ...allTools.map((tool, idx) => ({
+"@type":"ListItem",
+"position": idx + 2,
 "url": `https://www.devscratchpad.tech/tools/${tool.slug}`,
 "name": tool.name
  }))
+ ]
  },
  {
 "@type":"FAQPage",
@@ -117,6 +125,35 @@ export function HomeSeoContent() {
   <p className="text-zinc-600 text-base leading-relaxed mb-6 font-medium">
   DevScratchpad is a suite of 20+ privacy-first developer utilities. Every tool runs entirely within your browser using client-side processing. <strong className="text-zinc-900">Zero server transmission.</strong> Once loaded, it works entirely offline. Your data, payloads, and tokens never leave your machine.
   </p>
+
+  {/* Dedicated Homepage Feature Card: AI Skill Studio */}
+  <Link
+    href="/ai-skill-studio"
+    className="mb-8 p-5 bg-gradient-to-r from-orange-50/80 via-white to-amber-50/50 border border-orange-200 hover:border-orange-300 rounded-xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 transition-all shadow-2xs hover:shadow-xs group"
+  >
+    <div className="flex items-start gap-3.5">
+      <div className="w-10 h-10 rounded-lg bg-orange-600 text-white flex items-center justify-center shrink-0 shadow-xs group-hover:scale-105 transition-transform">
+        <Sparkles className="w-5 h-5 text-white" />
+      </div>
+      <div>
+        <div className="flex items-center gap-2">
+          <h3 className="text-base font-bold text-zinc-900 group-hover:text-orange-600 transition-colors">
+            AI Skill Studio
+          </h3>
+          <span className="text-[10px] font-mono font-bold tracking-wide px-2 py-0.5 bg-orange-100 text-orange-800 border border-orange-200 rounded-full">
+            Flagship • 100% Client-Side
+          </span>
+        </div>
+        <p className="text-xs text-zinc-600 mt-1.5 leading-relaxed max-w-xl">
+          Generate private, production-grade <strong>SKILL.md</strong> (Claude Code), <strong>.cursor/rules/*.mdc</strong> (Cursor IDE), and <strong>CLAUDE.md</strong> rules with zero server transmission.
+        </p>
+      </div>
+    </div>
+    <div className="inline-flex items-center gap-1.5 text-xs font-semibold text-orange-600 group-hover:text-orange-700 whitespace-nowrap self-end sm:self-center">
+      <span>Launch AI Skill Studio</span>
+      <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+    </div>
+  </Link>
 
   {/* Smart Paste (Auto-Detection) Professional Monochromatic Card */}
   <div className="mb-10 p-4 sm:p-5 bg-zinc-50 border border-zinc-200/90 rounded-xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 transition-all">
