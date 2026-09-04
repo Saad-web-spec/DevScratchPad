@@ -559,11 +559,19 @@ const CONVENTION_OPTIONS = [
   },
 ];
 
-export function ClaudeSkillsClient() {
+import { encodeStudioState, decodeStudioState, createShareableUrl } from "./lib/stateSharing";
+
+interface ClaudeSkillsClientProps {
+  initialFormat?: OutputFormat;
+  initialPresetId?: string;
+}
+
+export function ClaudeSkillsClient({ initialFormat, initialPresetId }: ClaudeSkillsClientProps = {}) {
   const [isMounted, setIsMounted] = useState(false);
   const [selectedPresetId, setSelectedPresetId] = useState<string>("claude-auditor");
   const [format, setFormat] = useState<OutputFormat>("skill_md");
   const [copied, setCopied] = useState(false);
+  const [shareCopied, setShareCopied] = useState(false);
 
   // Form State
   const [skillName, setSkillName] = useState("codebase-auditor");
@@ -609,6 +617,7 @@ export function ClaudeSkillsClient() {
   const [editorContent, setEditorContent] = useState<string>("");
   const [isManuallyEdited, setIsManuallyEdited] = useState(false);
   const [lastAutoSaved, setLastAutoSaved] = useState<string | null>(null);
+  const [quotaError, setQuotaError] = useState<string | null>(null);
   const [isManifestModalOpen, setIsManifestModalOpen] = useState(false);
   const [isExportingZip, setIsExportingZip] = useState(false);
   const [mobileTab, setMobileTab] = useState<"form" | "editor">("form");
@@ -792,9 +801,78 @@ export function ClaudeSkillsClient() {
 
   // Storage envelope state restore on mount (with automatic v1 legacy migration)
   useEffect(() => {
+    let hashState = null;
     try {
-      const s = loadFromStorageEnvelope<any>();
+      const hash = window.location.hash;
+      if (hash && hash.length > 1) {
+        hashState = decodeStudioState(hash);
+        if (hashState) {
+          console.log("[AI Skill Studio] Restored shared configuration from URL hash");
+        }
+      }
+    } catch (err) {
+      console.error("Failed to parse share hash:", err);
+    }
+
+    try {
+      let s: any = null;
+
+      if (hashState) {
+        s = hashState;
+        if (s.selectedPresetId) {
+          const preset = PRESETS.find(p => p.id === s.selectedPresetId);
+          if (preset) {
+            if (s.skillName === undefined) s.skillName = preset.slug;
+            if (s.skillTitle === undefined) s.skillTitle = preset.title;
+            if (s.description === undefined) s.description = preset.description;
+            if (s.role === undefined) s.role = preset.role;
+            if (s.framework === undefined) s.framework = preset.framework;
+            if (s.language === undefined) s.language = preset.language;
+            if (s.styling === undefined) s.styling = preset.styling;
+            if (s.database === undefined) s.database = preset.database;
+            if (s.philosophy === undefined) s.philosophy = preset.philosophy;
+            if (s.behaviors === undefined) s.behaviors = preset.behaviors;
+            if (s.conventions === undefined) s.conventions = preset.conventions;
+            if (s.procedures === undefined) s.procedures = preset.procedures;
+            if (s.customDirectives === undefined) s.customDirectives = preset.customDirectives;
+            if (s.exampleGood === undefined) s.exampleGood = preset.exampleGood;
+            if (s.exampleBad === undefined) s.exampleBad = preset.exampleBad;
+          }
+        }
+      } else if (initialFormat && initialPresetId) {
+        // Hydrate from programmatic route props
+        const preset = PRESETS.find(p => p.id === initialPresetId) || PRESETS[0];
+        s = {
+          format: initialFormat,
+          skillName: preset.slug,
+          skillTitle: preset.title,
+          description: preset.description,
+          role: preset.role,
+          framework: preset.framework,
+          language: preset.language,
+          styling: preset.styling,
+          database: preset.database,
+          philosophy: preset.philosophy,
+          behaviors: preset.behaviors,
+          conventions: preset.conventions,
+          procedures: preset.procedures,
+          customDirectives: preset.customDirectives,
+          exampleGood: preset.exampleGood,
+          exampleBad: preset.exampleBad,
+        };
+        // Remove hash so it doesn't stay in URL if it was invalid? No need.
+      } else {
+        // Fallback to local storage envelope
+        s = loadFromStorageEnvelope<any>();
+      }
+
       if (s) {
+        if (s.selectedPresetId) {
+          setSelectedPresetId(s.selectedPresetId);
+        } else if (s.skillName) {
+          const matched = PRESETS.find((p) => p.slug === s.skillName);
+          if (matched) setSelectedPresetId(matched.id);
+        }
         if (s.skillName) setSkillName(s.skillName);
         if (s.skillTitle) setSkillTitle(s.skillTitle);
         if (typeof s.isSlugLocked === "boolean") setIsSlugLocked(s.isSlugLocked);
@@ -825,15 +903,18 @@ export function ClaudeSkillsClient() {
           setIsManuallyEdited(true);
         }
       }
-    } catch {}
+    } catch (e) {
+      console.error(e);
+    }
     setIsMounted(true);
-  }, []);
+  }, [initialFormat, initialPresetId]);
 
   // Debounced Versioned Envelope Auto-Save
   useEffect(() => {
     if (!isMounted) return;
     const timer = setTimeout(() => {
       const res = saveToStorageEnvelope(STORAGE_KEY_V2, {
+        selectedPresetId,
         skillName,
         skillTitle,
         isSlugLocked,
@@ -867,6 +948,9 @@ export function ClaudeSkillsClient() {
         setLastAutoSaved(
           now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" })
         );
+        setQuotaError(null);
+      } else if (res.error) {
+        setQuotaError(res.error);
       }
     }, 500);
     return () => clearTimeout(timer);
@@ -1565,6 +1649,82 @@ ${exampleBad.trim()}
     }
   };
 
+  // Share Link handler
+  const handleShareLink = async () => {
+    try {
+      // Intelligently find the closest base preset by content score
+      const bestPreset = PRESETS.reduce((best, candidate) => {
+        let score = 0;
+        if (candidate.slug === skillName) score += 8;
+        if (candidate.id === selectedPresetId) score += 4;
+        if (candidate.title === skillTitle) score += 4;
+        if (candidate.procedures === procedures) score += 12;
+        if (candidate.description === description) score += 6;
+        if (candidate.exampleGood === exampleGood) score += 6;
+        if (candidate.exampleBad === exampleBad) score += 6;
+        if (candidate.framework === framework) score += 2;
+        if (candidate.role === role) score += 2;
+        return score > best.score ? { preset: candidate, score } : best;
+      }, { preset: PRESETS[0], score: -1 }).preset;
+
+      const stateToShare: any = {
+        selectedPresetId: bestPreset.id,
+      };
+
+      if (isSlugLocked) stateToShare.isSlugLocked = true;
+      if (format !== "skill_md") stateToShare.format = format;
+      if (globPattern && globPattern !== "**/*") stateToShare.globPattern = globPattern;
+      if (alwaysApply) stateToShare.alwaysApply = true;
+
+      // MCP: Only serialize if user actually modified away from defaults
+      const isDefaultMcp =
+        mcpPresetId === "filesystem" &&
+        mcpServerName === "filesystem" &&
+        mcpCommand === "npx" &&
+        mcpArgs === "-y\n@modelcontextprotocol/server-filesystem\n./" &&
+        !mcpEnvKey &&
+        !mcpEnvValue;
+
+      if (!isDefaultMcp) {
+        if (mcpPresetId) stateToShare.mcpPresetId = mcpPresetId;
+        if (mcpServerName) stateToShare.mcpServerName = mcpServerName;
+        if (mcpCommand) stateToShare.mcpCommand = mcpCommand;
+        if (mcpArgs) stateToShare.mcpArgs = mcpArgs;
+        if (mcpEnvKey) stateToShare.mcpEnvKey = mcpEnvKey;
+        if (mcpEnvValue) stateToShare.mcpEnvValue = mcpEnvValue;
+      }
+
+      // Diff against bestPreset to only store actual modifications
+      if (skillName !== bestPreset.slug) stateToShare.skillName = skillName;
+      if (skillTitle !== bestPreset.title) stateToShare.skillTitle = skillTitle;
+      if (description !== bestPreset.description) stateToShare.description = description;
+      if (role !== bestPreset.role) stateToShare.role = role;
+      if (framework !== bestPreset.framework) stateToShare.framework = framework;
+      if (language !== bestPreset.language) stateToShare.language = language;
+      if (styling !== bestPreset.styling) stateToShare.styling = styling;
+      if (database !== bestPreset.database) stateToShare.database = database;
+      if (philosophy !== bestPreset.philosophy) stateToShare.philosophy = philosophy;
+      if (JSON.stringify(behaviors) !== JSON.stringify(bestPreset.behaviors)) stateToShare.behaviors = behaviors;
+      if (JSON.stringify(conventions) !== JSON.stringify(bestPreset.conventions)) stateToShare.conventions = conventions;
+      if (procedures !== bestPreset.procedures) stateToShare.procedures = procedures;
+      if (customDirectives !== bestPreset.customDirectives) stateToShare.customDirectives = customDirectives;
+      if (exampleGood !== bestPreset.exampleGood) stateToShare.exampleGood = exampleGood;
+      if (exampleBad !== bestPreset.exampleBad) stateToShare.exampleBad = exampleBad;
+
+      if (isManuallyEdited) {
+        stateToShare.isManuallyEdited = true;
+        stateToShare.editorContent = editorContent;
+      }
+
+      const url = createShareableUrl(stateToShare);
+      await navigator.clipboard.writeText(url);
+      setShareCopied(true);
+      setTimeout(() => setShareCopied(false), 2000);
+    } catch (err) {
+      console.error("Failed to generate share link", err);
+    }
+  };
+
   // Download handler
   const handleDownload = () => {
     let filename = "SKILL.md";
@@ -1728,6 +1888,17 @@ ${exampleBad.trim()}
           </button>
         </div>
       </div>
+      {quotaError && (
+        <div className="max-w-7xl mx-auto w-full px-3 sm:px-6 mt-4">
+          <div className="bg-red-50/80 border border-red-200 p-3 rounded-lg flex items-start gap-3 text-red-900 shadow-sm">
+            <AlertTriangle className="w-5 h-5 text-red-500 shrink-0 mt-0.5" />
+            <div className="flex-1">
+              <h3 className="text-sm font-bold">Storage Quota Exceeded</h3>
+              <p className="text-xs text-red-800 mt-1">{quotaError}</p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Main Workspace Area: Split Screen */}
       <main className="flex-1 max-w-7xl w-full mx-auto p-3 sm:p-6 grid grid-cols-1 lg:grid-cols-12 gap-6 items-start pb-24 lg:pb-6">
@@ -2459,6 +2630,17 @@ ${exampleBad.trim()}
                 >
                   {copied ? <Check className="w-3.5 h-3.5 text-orange-400" /> : <Copy className="w-3.5 h-3.5" />}
                   <span>{copied ? "Copied!" : "Copy"}</span>
+                </button>
+
+                <div className="w-px h-3.5 bg-zinc-700/80 mx-0.5" />
+
+                <button
+                  onClick={handleShareLink}
+                  className="flex items-center gap-1 sm:gap-1.5 px-2 sm:px-2.5 py-1 text-xs text-zinc-300 hover:text-white hover:bg-zinc-700/60 rounded-md transition-colors font-medium cursor-pointer"
+                  title="Copy shareable link to this exact configuration"
+                >
+                  {shareCopied ? <Check className="w-3.5 h-3.5 text-blue-400" /> : <ExternalLink className="w-3.5 h-3.5" />}
+                  <span>{shareCopied ? "Link Copied!" : "Share Link"}</span>
                 </button>
 
                 <div className="w-px h-3.5 bg-zinc-700/80 mx-0.5" />

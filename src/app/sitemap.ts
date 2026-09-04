@@ -2,6 +2,7 @@ import { MetadataRoute } from "next";
 import { TOOL_SLUGS } from "@/lib/tools/registry";
 import { BLOG_SLUGS } from "@/lib/blog/posts";
 import { ROUTES } from "@/lib/routes";
+import { PRESET_ROUTES } from "./claude-skills/lib/presetRegistry";
 
 const SITE_URL = "https://www.devscratchpad.tech";
 
@@ -27,6 +28,13 @@ export default function sitemap(): MetadataRoute.Sitemap {
     priority: 0.8,
   }));
 
+  const presetRoutes = PRESET_ROUTES.map((route) => ({
+    url: `${SITE_URL}/ai-skill-studio/${route.formatSlug}/${route.presetSlug}`,
+    lastModified: new Date(),
+    changeFrequency: "weekly" as const,
+    priority: 0.9,
+  }));
+
   return [
     {
       url: SITE_URL,
@@ -49,5 +57,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
     },
     ...routes,
     ...blogRoutes,
+    ...presetRoutes,
   ];
 }

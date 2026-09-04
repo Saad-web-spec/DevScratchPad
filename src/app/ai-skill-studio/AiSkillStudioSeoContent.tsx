@@ -6,6 +6,7 @@ import {
   HelpCircle,
   ArrowRight,
   CheckCircle2,
+  FileCode,
 } from "lucide-react";
 
 export function AiSkillStudioSeoContent() {
@@ -39,84 +40,139 @@ export function AiSkillStudioSeoContent() {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
-            <div className="border border-zinc-200 rounded-lg p-5 bg-zinc-50/50 space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="font-mono text-xs font-bold text-orange-600 bg-orange-50 border border-orange-200 px-2 py-0.5 rounded">
-                  SKILL.md
-                </span>
-                <span className="text-xs text-zinc-500 font-mono">Claude Code & Agentic CLI</span>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 items-stretch">
+            {/* 1. SKILL.md */}
+            <div className="flex flex-col justify-between border border-zinc-200/90 rounded-xl p-4.5 bg-white shadow-2xs hover:shadow-xs hover:border-zinc-300 transition-all">
+              <div className="space-y-3">
+                <div className="flex items-center justify-between gap-2 pb-2.5 border-b border-zinc-100">
+                  <span className="font-mono text-xs font-bold text-orange-600 bg-orange-50 border border-orange-200/80 px-2 py-0.5 rounded-md whitespace-nowrap shadow-2xs">
+                    SKILL.md
+                  </span>
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-600 whitespace-nowrap">
+                    Claude CLI
+                  </span>
+                </div>
+                <div className="space-y-1">
+                  <h3 className="font-semibold text-zinc-900 text-sm tracking-tight">Claude Code Agent Skills</h3>
+                  <p className="text-[11px] text-zinc-600 font-medium">Modular runtime capabilities</p>
+                </div>
+                <p className="text-xs text-zinc-600 leading-relaxed">
+                  Packaged modular instructions equipped with YAML frontmatter (<code className="font-mono text-[11px] bg-zinc-100 px-1 py-0.5 rounded text-zinc-800">name</code> and <code className="font-mono text-[11px] bg-zinc-100 px-1 py-0.5 rounded text-zinc-800">description</code>). Claude Code evaluates the description dynamically, loading the skill into context only when triggered by relevant developer tasks or explicit slash commands.
+                </p>
               </div>
-              <h3 className="font-semibold text-zinc-900 text-sm">Claude Code Agent Skills</h3>
-              <p className="text-xs text-zinc-600 leading-relaxed">
-                Packaged modular instructions equipped with YAML frontmatter (<code className="font-mono">name</code> and <code className="font-mono">description</code>). Claude Code evaluates the description dynamically, loading the skill into context only when triggered by relevant developer tasks or explicit slash commands.
-              </p>
-              <div className="text-[11px] font-mono text-zinc-500 bg-white border border-zinc-200 p-2 rounded">
-                Path: .claude/skills/&lt;skill-name&gt;/SKILL.md
-              </div>
-            </div>
-
-            <div className="border border-zinc-200 rounded-lg p-5 bg-zinc-50/50 space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="font-mono text-xs font-bold text-blue-600 bg-blue-50 border border-blue-200 px-2 py-0.5 rounded">
-                  .mdc Rules
-                </span>
-                <span className="text-xs text-zinc-500 font-mono">Cursor IDE (Modern Standard)</span>
-              </div>
-              <h3 className="font-semibold text-zinc-900 text-sm">Cursor Modular Project Rules</h3>
-              <p className="text-xs text-zinc-600 leading-relaxed">
-                Supersedes the legacy monolithic <code className="font-mono">.cursorrules</code> file. Modern Cursor rules live under <code className="font-mono">.cursor/rules/*.mdc</code> with structured frontmatter specifying glob patterns (<code className="font-mono">globs: [&quot;**/*.tsx&quot;]</code>) and an <code className="font-mono">alwaysApply</code> flag to minimize prompt token overhead.
-              </p>
-              <div className="text-[11px] font-mono text-zinc-500 bg-white border border-zinc-200 p-2 rounded">
-                Path: .cursor/rules/&lt;rule-name&gt;.mdc
+              <div className="mt-4 pt-3 border-t border-zinc-100">
+                <div className="flex items-center gap-1.5 text-[11px] font-mono text-zinc-600 bg-zinc-50 border border-zinc-200/80 px-2.5 py-1.5 rounded-md overflow-hidden" title=".claude/skills/<skill-name>/SKILL.md">
+                  <FileCode className="w-3.5 h-3.5 text-orange-500 shrink-0" />
+                  <span className="truncate">.claude/skills/&lt;name&gt;/SKILL.md</span>
+                </div>
               </div>
             </div>
 
-            <div className="border border-zinc-200 rounded-lg p-5 bg-zinc-50/50 space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="font-mono text-xs font-bold text-emerald-600 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded">
-                  CLAUDE.md
-                </span>
-                <span className="text-xs text-zinc-500 font-mono">Project Root Repository Context</span>
+            {/* 2. .mdc Rules */}
+            <div className="flex flex-col justify-between border border-zinc-200/90 rounded-xl p-4.5 bg-white shadow-2xs hover:shadow-xs hover:border-zinc-300 transition-all">
+              <div className="space-y-3">
+                <div className="flex items-center justify-between gap-2 pb-2.5 border-b border-zinc-100">
+                  <span className="font-mono text-xs font-bold text-blue-600 bg-blue-50 border border-blue-200/80 px-2 py-0.5 rounded-md whitespace-nowrap shadow-2xs">
+                    .mdc
+                  </span>
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-600 whitespace-nowrap">
+                    Cursor IDE
+                  </span>
+                </div>
+                <div className="space-y-1">
+                  <h3 className="font-semibold text-zinc-900 text-sm tracking-tight">Cursor Modular Rules</h3>
+                  <p className="text-[11px] text-zinc-600 font-medium">Glob-scoped context triggers</p>
+                </div>
+                <p className="text-xs text-zinc-600 leading-relaxed">
+                  Supersedes the legacy monolithic <code className="font-mono text-[11px] bg-zinc-100 px-1 py-0.5 rounded text-zinc-800">.cursorrules</code> file. Modern Cursor rules live under <code className="font-mono text-[11px] bg-zinc-100 px-1 py-0.5 rounded text-zinc-800">.cursor/rules/*.mdc</code> with structured frontmatter specifying glob patterns (<code className="font-mono text-[11px] bg-zinc-100 px-1 py-0.5 rounded text-zinc-800">globs: [&quot;**/*.tsx&quot;]</code>) and an <code className="font-mono text-[11px] bg-zinc-100 px-1 py-0.5 rounded text-zinc-800">alwaysApply</code> flag.
+                </p>
               </div>
-              <h3 className="font-semibold text-zinc-900 text-sm">Anthropic Root Instructions</h3>
-              <p className="text-xs text-zinc-600 leading-relaxed">
-                Located at the repository root, <code className="font-mono">CLAUDE.md</code> is ingested automatically by Claude Code and Claude.ai project instances. Uses semantic XML tags (<code className="font-mono">&lt;project_context&gt;</code>, <code className="font-mono">&lt;tech_stack&gt;</code>, <code className="font-mono">&lt;workflows_and_procedures&gt;</code>) to preserve high token density.
-              </p>
-              <div className="text-[11px] font-mono text-zinc-500 bg-white border border-zinc-200 p-2 rounded">
-                Path: /CLAUDE.md (Repository Root)
-              </div>
-            </div>
-
-            <div className="border border-zinc-200 rounded-lg p-5 bg-zinc-50/50 space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="font-mono text-xs font-bold text-purple-600 bg-purple-50 border border-purple-200 px-2 py-0.5 rounded">
-                  AGENTS.md
-                </span>
-                <span className="text-xs text-zinc-500 font-mono">Multi-Agent Systems & Antigravity</span>
-              </div>
-              <h3 className="font-semibold text-zinc-900 text-sm">Multi-Agent Protocol Specifications</h3>
-              <p className="text-xs text-zinc-600 leading-relaxed">
-                Standardized configuration for agentic frameworks (Antigravity, CrewAI, AutoGen). Contains demarcated rule blocks (<code className="font-mono">&lt;!-- BEGIN:agent-rules --&gt;</code>) that establish specialized roles, architectural boundaries, and operational guardrails for autonomous multi-agent loops.
-              </p>
-              <div className="text-[11px] font-mono text-zinc-500 bg-white border border-zinc-200 p-2 rounded">
-                Path: /AGENTS.md (Workspace Root)
+              <div className="mt-4 pt-3 border-t border-zinc-100">
+                <div className="flex items-center gap-1.5 text-[11px] font-mono text-zinc-600 bg-zinc-50 border border-zinc-200/80 px-2.5 py-1.5 rounded-md overflow-hidden" title=".cursor/rules/<rule-name>.mdc">
+                  <FileCode className="w-3.5 h-3.5 text-blue-500 shrink-0" />
+                  <span className="truncate">.cursor/rules/&lt;name&gt;.mdc</span>
+                </div>
               </div>
             </div>
 
-            <div className="border border-zinc-200 rounded-lg p-5 bg-zinc-50/50 space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="font-mono text-xs font-bold text-sky-600 bg-sky-50 border border-sky-200 px-2 py-0.5 rounded">
-                  claude.json
-                </span>
-                <span className="text-xs text-zinc-500 font-mono">Model Context Protocol (MCP)</span>
+            {/* 3. CLAUDE.md */}
+            <div className="flex flex-col justify-between border border-zinc-200/90 rounded-xl p-4.5 bg-white shadow-2xs hover:shadow-xs hover:border-zinc-300 transition-all">
+              <div className="space-y-3">
+                <div className="flex items-center justify-between gap-2 pb-2.5 border-b border-zinc-100">
+                  <span className="font-mono text-xs font-bold text-emerald-600 bg-emerald-50 border border-emerald-200/80 px-2 py-0.5 rounded-md whitespace-nowrap shadow-2xs">
+                    CLAUDE.md
+                  </span>
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-600 whitespace-nowrap">
+                    Project Root
+                  </span>
+                </div>
+                <div className="space-y-1">
+                  <h3 className="font-semibold text-zinc-900 text-sm tracking-tight">Anthropic Root Guidelines</h3>
+                  <p className="text-[11px] text-zinc-600 font-medium">Repository-wide system context</p>
+                </div>
+                <p className="text-xs text-zinc-600 leading-relaxed">
+                  Located at the repository root, <code className="font-mono text-[11px] bg-zinc-100 px-1 py-0.5 rounded text-zinc-800">CLAUDE.md</code> is ingested automatically by Claude Code and Claude.ai project instances. Uses semantic XML tags (<code className="font-mono text-[11px] bg-zinc-100 px-1 py-0.5 rounded text-zinc-800">&lt;project_context&gt;</code>, <code className="font-mono text-[11px] bg-zinc-100 px-1 py-0.5 rounded text-zinc-800">&lt;tech_stack&gt;</code>) to preserve high token density.
+                </p>
               </div>
-              <h3 className="font-semibold text-zinc-900 text-sm">MCP Server Configurations</h3>
-              <p className="text-xs text-zinc-600 leading-relaxed">
-                Standardized configuration block for local and remote Model Context Protocol (MCP) servers. Configures executable commands, environment credentials, and connection arguments for tools like filesystem inspection, GitHub API, PostgreSQL, and web fetchers.
-              </p>
-              <div className="text-[11px] font-mono text-zinc-500 bg-white border border-zinc-200 p-2 rounded">
-                Path: /claude.json or ~/.claude.json
+              <div className="mt-4 pt-3 border-t border-zinc-100">
+                <div className="flex items-center gap-1.5 text-[11px] font-mono text-zinc-600 bg-zinc-50 border border-zinc-200/80 px-2.5 py-1.5 rounded-md overflow-hidden" title="/CLAUDE.md">
+                  <FileCode className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+                  <span className="truncate">/CLAUDE.md (Root)</span>
+                </div>
+              </div>
+            </div>
+
+            {/* 4. AGENTS.md */}
+            <div className="flex flex-col justify-between border border-zinc-200/90 rounded-xl p-4.5 bg-white shadow-2xs hover:shadow-xs hover:border-zinc-300 transition-all">
+              <div className="space-y-3">
+                <div className="flex items-center justify-between gap-2 pb-2.5 border-b border-zinc-100">
+                  <span className="font-mono text-xs font-bold text-purple-600 bg-purple-50 border border-purple-200/80 px-2 py-0.5 rounded-md whitespace-nowrap shadow-2xs">
+                    AGENTS.md
+                  </span>
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-600 whitespace-nowrap">
+                    Multi-Agent
+                  </span>
+                </div>
+                <div className="space-y-1">
+                  <h3 className="font-semibold text-zinc-900 text-sm tracking-tight">Multi-Agent Protocols</h3>
+                  <p className="text-[11px] text-zinc-600 font-medium">Antigravity & autonomous teams</p>
+                </div>
+                <p className="text-xs text-zinc-600 leading-relaxed">
+                  Standardized configuration for agentic frameworks (Antigravity, CrewAI, AutoGen). Contains demarcated rule blocks (<code className="font-mono text-[11px] bg-zinc-100 px-1 py-0.5 rounded text-zinc-800">&lt;!-- BEGIN:agent-rules --&gt;</code>) establishing specialized roles, architectural boundaries, and guardrails for autonomous multi-agent loops.
+                </p>
+              </div>
+              <div className="mt-4 pt-3 border-t border-zinc-100">
+                <div className="flex items-center gap-1.5 text-[11px] font-mono text-zinc-600 bg-zinc-50 border border-zinc-200/80 px-2.5 py-1.5 rounded-md overflow-hidden" title="/AGENTS.md">
+                  <FileCode className="w-3.5 h-3.5 text-purple-500 shrink-0" />
+                  <span className="truncate">/AGENTS.md (Root)</span>
+                </div>
+              </div>
+            </div>
+
+            {/* 5. claude.json */}
+            <div className="flex flex-col justify-between border border-zinc-200/90 rounded-xl p-4.5 bg-white shadow-2xs hover:shadow-xs hover:border-zinc-300 transition-all">
+              <div className="space-y-3">
+                <div className="flex items-center justify-between gap-2 pb-2.5 border-b border-zinc-100">
+                  <span className="font-mono text-xs font-bold text-sky-600 bg-sky-50 border border-sky-200/80 px-2 py-0.5 rounded-md whitespace-nowrap shadow-2xs">
+                    claude.json
+                  </span>
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-600 whitespace-nowrap">
+                    MCP Runtime
+                  </span>
+                </div>
+                <div className="space-y-1">
+                  <h3 className="font-semibold text-zinc-900 text-sm tracking-tight">MCP Server Configs</h3>
+                  <p className="text-[11px] text-zinc-600 font-medium">Model Context Protocol bindings</p>
+                </div>
+                <p className="text-xs text-zinc-600 leading-relaxed">
+                  Standardized configuration block for local and remote Model Context Protocol (MCP) servers. Configures executable commands, environment credentials, and connection arguments for tools like filesystem inspection, GitHub API, PostgreSQL, and web fetchers.
+                </p>
+              </div>
+              <div className="mt-4 pt-3 border-t border-zinc-100">
+                <div className="flex items-center gap-1.5 text-[11px] font-mono text-zinc-600 bg-zinc-50 border border-zinc-200/80 px-2.5 py-1.5 rounded-md overflow-hidden" title="claude.json">
+                  <FileCode className="w-3.5 h-3.5 text-sky-500 shrink-0" />
+                  <span className="truncate">~/.claude.json</span>
+                </div>
               </div>
             </div>
           </div>
