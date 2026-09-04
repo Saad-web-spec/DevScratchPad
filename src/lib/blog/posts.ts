@@ -1944,6 +1944,10 @@ Explore more in our specific language guides: [cURL to Python Deep Dive](/blog/c
       {
         question: "Can I import an existing package.json or Cargo.toml to auto-fill rules?",
         answer: "Yes. Use the 'Import Manifest' button in AI Skill Studio to upload or paste your package.json, Cargo.toml, pyproject.toml, or go.mod. The engine instantly detects your framework, language, ORM, and styling libraries."
+      },
+      {
+        question: "How does the Rule Quality & Security Audit engine and ⚡ Auto-Fix work in AI Skill Studio?",
+        answer: "AI Skill Studio runs a local static analysis linter that evaluates your rules across four weighted dimensions: Clarity & Ambiguity (30%), Token Density (25%), Negative Guardrails (25%), and Trigger Precision (20%). If vulnerabilities, vague instructions (e.g. 'write clean code'), or unscoped globs are detected, the studio provides an interactive '⚡ Auto-Fix All' engine that deterministically replaces ambiguous terms with concrete technical contracts, injects negative constraints, and scopes file attachments with zero prompt drift."
       }
     ],
     content: `
@@ -2121,6 +2125,19 @@ Anthropic's open standard for connecting AI coding assistants to external data s
 ### Feature 9: 100% In-Browser Privacy Guarantee
 - **What it does**: Ensures that your proprietary repository structure, database schemas, internal package names, and prompt engineering instructions never leave your machine.
 - **How to verify**: Open your browser's Developer Tools (F12) -> Network tab. Perform an import, customize rules, and export a ZIP—zero outgoing HTTP requests are made.
+
+### Feature 10: Rule Quality & Security Audit with 1-Click ⚡ Auto-Fix Remediation
+- **What it does**: Embeds a real-time static analysis linter directly beneath the Monaco editor that continuously evaluates rule quality and security constraints (0–100 score) across 4 engineering dimensions:
+  - **Clarity & Ambiguity (30%)**: Detects non-testable directives (*"write clean code"*, *"be helpful"*, *"avoid bugs"*) that cause LLM instruction drift, and flags rules lacking concrete code implementation references.
+  - **Token Density & Economy (25%)**: Calculates token footprint (~4 characters per token) to prevent context window bloat and inference slowdowns. Recommends staying within 150 to 1,200 tokens.
+  - **Negative Guardrails & Security Boundaries (25%)**: Ensures explicit negative constraints (*"never"*, *"do not"*, *"prohibited"*) are defined to prevent agents from overwriting unrequested files, modifying \`.env\` secrets, or executing destructive shell commands (\`rm -rf\`, \`git push --force\`).
+  - **Trigger Precision & Scoping (20%)**: Evaluates Cursor \`.mdc\` file globs and Claude Code \`SKILL.md\` activation trigger descriptions to avoid accidental global rule attachment.
+- **How to use it**:
+  - **Status Bar Launcher**: Located in the editor's native bottom status bar alongside line count and language indicators. Displays your live score (e.g. \`99/100 · PRODUCTION GRADE\`) with an orange star icon.
+  - **Interactive Troubleshooting Filters**: Inside the panel, click any of the 4 metric cards (\`CLARITY\`, \`TOKENS\`, \`GUARDRAILS\`, \`PRECISION\`) to filter diagnostics and isolate specific engineering weaknesses.
+  - **⚡ Auto-Fix All Engine**: If issues are detected, click **"⚡ Auto-Fix All"** to execute a deterministic remediation pass. It automatically replaces vague phrases with concrete engineering requirements, injects negative boundary guardrails, confines unscoped globs to \`src/**/*.{ts,tsx,js,jsx}\`, and adds typed reference code blocks.
+  - **Rule Checklist**: Switch to the "Rule Checklist" tab for a live 4-pillar verification breakdown before committing or exporting your rules.
+  - **Copy Report for PRs**: Click **"Copy Report"** in the panel header to copy a formatted Markdown audit breakdown directly into pull request descriptions or CI logs.
 
 ---
 

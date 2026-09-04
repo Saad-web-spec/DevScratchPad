@@ -27,10 +27,7 @@ import {
   ExternalLink,
   Lock,
   Unlock,
-  Gauge,
   Sparkles,
-  ChevronDown,
-  ChevronUp,
   X,
   Info,
 } from "lucide-react";
@@ -40,7 +37,7 @@ import { ManifestImportModal } from "./components/ManifestImportModal";
 import { ParsedManifestResult } from "./lib/manifestParser";
 import { generateSafeSlug, validateTriggerPhrase } from "./lib/slugUtils";
 import { saveToStorageEnvelope, loadFromStorageEnvelope, STORAGE_KEY_V2 } from "./lib/storageEnvelope";
-import { auditRuleQuality, RuleAuditReport, AuditIssue } from "./lib/ruleAuditor";
+import { auditRuleQuality, RuleAuditReport, AuditIssue, AuditDimension } from "./lib/ruleAuditor";
 
 // Dynamically import Monaco Editor to prevent SSR issues
 const Editor = dynamic(() => import("@monaco-editor/react"), {
@@ -619,6 +616,9 @@ export function ClaudeSkillsClient() {
   // Slug lock & Static Analysis Audit Panel State
   const [isSlugLocked, setIsSlugLocked] = useState(false);
   const [showAuditPanel, setShowAuditPanel] = useState(false);
+  const [auditTab, setAuditTab] = useState<"findings" | "checklist">("findings");
+  const [auditCopied, setAuditCopied] = useState(false);
+  const [selectedDimension, setSelectedDimension] = useState<AuditDimension | "all">("all");
 
   // Title & Slug synchronization handlers
   const handleTitleChange = (newTitle: string) => {
@@ -1424,6 +1424,113 @@ ${exampleBad.trim()}
     exampleBad,
   ]);
 
+  // Copy audit report summary for PRs / documentation
+  const handleCopyAuditReport = () => {
+    const lines = [
+      `### Rule Quality & Security Audit: ${auditReport.overallScore}/100 · ${auditReport.gradeLabel}`,
+      `- **Clarity & Ambiguity**: ${auditReport.dimensions.clarity.score}%`,
+      `- **Token Footprint**: ~${auditReport.tokenCount} tokens (${auditReport.dimensions.tokenDensity.score}%)`,
+      `- **Guardrails & Boundaries**: ${auditReport.dimensions.guardrails.score}%`,
+      `- **Trigger Precision & Scoping**: ${auditReport.dimensions.triggers.score}%`,
+      "",
+      `**Summary**: ${auditReport.summary}`,
+    ];
+    if (auditReport.allIssues.length > 0) {
+      lines.push("", "**Diagnostic Findings:**");
+      auditReport.allIssues.forEach((issue) => {
+        lines.push(`- [${issue.severity.toUpperCase()}] **${issue.title}**: ${issue.message} (Tip: ${issue.suggestion})`);
+      });
+    } else {
+      lines.push("", "*Zero deficiencies detected. Ready for production deployment.*");
+    }
+    navigator.clipboard.writeText(lines.join("\n"));
+    setAuditCopied(true);
+    setTimeout(() => setAuditCopied(false), 2000);
+  };
+
+  // One-click quick fix: Inject negative boundary guardrails
+  const handleInjectNegativeGuardrails = () => {
+    const snippet = `\n\n## Strict Negative Guardrails\n- Never modify \`.env\` files, production credentials, or secrets without explicit permission.\n- Do not run destructive shell commands (e.g. \`rm -rf\`, \`git push --force\`, database drops).\n- Deliver surgical, focused diffs rather than re-outputting entire existing files.\n- Strictly avoid loose \`any\` or unverified type assertions.`;
+    setEditorContent((prev) => (prev || activeContent) + snippet);
+    setIsManuallyEdited(true);
+  };
+
+  // One-click quick fix: Inject code block example
+  const handleInjectCodeBlock = () => {
+    const snippet = `\n\n## Implementation Reference\n\`\`\`typescript\n// Good Pattern: Explicit typing and input validation\nexport function validateInput(value: string): boolean {\n  if (!value || value.trim().length === 0) return false;\n  return true;\n}\n\`\`\``;
+    setEditorContent((prev) => (prev || activeContent) + snippet);
+    setIsManuallyEdited(true);
+  };
+
+  // One-click quick fix: Replace detected vague directives with concrete requirements
+  const handleFixVaguePhrases = () => {
+    let updated = activeContent;
+    const replacements: [RegExp, string][] = [
+      [/\bwrite clean code\b/gi, "enforce single-responsibility functions and explicit TypeScript interfaces"],
+      [/\bfollow best practices\b/gi, "adhere strictly to ESLint rules, modular architecture, and zero-any type safety"],
+      [/\bensure high quality\b/gi, "verify with automated unit tests and runtime schema validation"],
+      [/\bmake it fast\b/gi, "minimize re-renders, optimize database queries, and avoid unnecessary allocations"],
+      [/\bbe helpful\b/gi, "provide concise, surgical code diffs with clear technical rationale"],
+      [/\bdo your best\b/gi, "follow established repository patterns and type contracts"],
+      [/\bavoid bugs\b/gi, "implement defensive null checks and exhaustive switch cases"],
+      [/\berror-free code\b/gi, "verify compiler passes with zero TypeScript warnings"],
+      [/\bwrite good code\b/gi, "enforce clean separation of concerns and deterministic typing"],
+      [/\bas simple as possible\b/gi, "follow YAGNI principles: avoid speculative abstraction"],
+    ];
+    for (const [regex, replacement] of replacements) {
+      updated = updated.replace(regex, replacement);
+    }
+    setEditorContent(updated);
+    setIsManuallyEdited(true);
+  };
+
+  // One-click quick fix: Scope Cursor globs
+  const handleScopeGlobs = () => {
+    setGlobPattern("src/**/*.{ts,tsx,js,jsx}");
+    setAlwaysApply(false);
+  };
+
+  // Comprehensive Auto-Fix: Resolves all detected deficiencies in one click
+  const handleAutoFixAll = () => {
+    let updated = activeContent;
+    const replacements: [RegExp, string][] = [
+      [/\bwrite clean code\b/gi, "enforce single-responsibility functions and explicit TypeScript interfaces"],
+      [/\bfollow best practices\b/gi, "adhere strictly to ESLint rules, modular architecture, and zero-any type safety"],
+      [/\bensure high quality\b/gi, "verify with automated unit tests and runtime schema validation"],
+      [/\bmake it fast\b/gi, "minimize re-renders, optimize database queries, and avoid unnecessary allocations"],
+      [/\bbe helpful\b/gi, "provide concise, surgical code diffs with clear technical rationale"],
+      [/\bdo your best\b/gi, "follow established repository patterns and type contracts"],
+      [/\bavoid bugs\b/gi, "implement defensive null checks and exhaustive switch cases"],
+      [/\berror-free code\b/gi, "verify compiler passes with zero TypeScript warnings"],
+      [/\bwrite good code\b/gi, "enforce clean separation of concerns and deterministic typing"],
+      [/\bas simple as possible\b/gi, "follow YAGNI principles: avoid speculative abstraction"],
+    ];
+    for (const [regex, replacement] of replacements) {
+      updated = updated.replace(regex, replacement);
+    }
+
+    if (auditReport.dimensions.guardrails.score < 70) {
+      updated += `\n\n## Strict Negative Guardrails\n- Never modify \`.env\` files, production credentials, or secrets without explicit permission.\n- Do not run destructive shell commands (e.g. \`rm -rf\`, \`git push --force\`, database drops).\n- Deliver surgical, focused diffs rather than re-outputting entire existing files.\n- Strictly avoid loose \`any\` or unverified type assertions.`;
+    }
+
+    if (!updated.includes("```") && updated.length > 300) {
+      updated += `\n\n## Implementation Reference\n\`\`\`typescript\n// Good Pattern: Explicit typing and input validation\nexport function validateScope(input: string): boolean {\n  if (!input || input.trim().length === 0) return false;\n  return true;\n}\n\`\`\``;
+    }
+
+    setEditorContent(updated);
+    setIsManuallyEdited(true);
+
+    if (format === "cursor_mdc" && (alwaysApply || globPattern === "**/*")) {
+      setGlobPattern("src/**/*.{ts,tsx,js,jsx}");
+      setAlwaysApply(false);
+    }
+  };
+
+  // Filtered issues based on selected dimension
+  const filteredIssues = useMemo(() => {
+    if (selectedDimension === "all") return auditReport.allIssues;
+    return auditReport.allIssues.filter((issue) => issue.dimension === selectedDimension);
+  }, [auditReport.allIssues, selectedDimension]);
 
   // Export Complete AI Workspace Suite as ZIP
   const handleExportZip = async () => {
@@ -1535,8 +1642,8 @@ ${exampleBad.trim()}
             <span className="hidden md:inline-flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-semibold bg-zinc-900 text-white rounded-full border border-zinc-800 shadow-xs">
               <span>Cursor .mdc + Claude Ready</span>
             </span>
-            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-bold bg-emerald-50 text-emerald-800 border border-emerald-300 rounded-full shadow-xs whitespace-nowrap">
-              <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0 shadow-[0_0_6px_rgba(16,185,129,0.8)]" />
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-bold bg-[#fff7ed] text-[#9a3412] border border-[#fed7aa] rounded-full shadow-xs whitespace-nowrap">
+              <span className="w-2 h-2 rounded-full bg-[#ea580c] shrink-0 shadow-[0_0_6px_rgba(234,88,12,0.8)]" />
               <span>Client-Side</span>
             </span>
           </div>
@@ -2323,35 +2430,9 @@ ${exampleBad.trim()}
                   {activeContent.split("\n").length} lines
                 </span>
 
-                {/* Rule Quality & Security Audit Badge Button */}
-                <button
-                  type="button"
-                  onClick={() => setShowAuditPanel((prev) => !prev)}
-                  className={cn(
-                    "inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[10px] font-mono border transition-all cursor-pointer shrink-0 shadow-xs",
-                    auditReport.overallScore >= 90
-                      ? "bg-emerald-950/90 text-emerald-300 border-emerald-700/80 hover:bg-emerald-900/90"
-                      : auditReport.overallScore >= 80
-                      ? "bg-green-950/90 text-green-300 border-green-700/80 hover:bg-green-900/90"
-                      : auditReport.overallScore >= 70
-                      ? "bg-amber-950/90 text-amber-300 border-amber-700/80 hover:bg-amber-900/90"
-                      : "bg-rose-950/90 text-rose-300 border-rose-700/80 hover:bg-rose-900/90"
-                  )}
-                  title="Click to view static rule quality score, token density, and security audit diagnostics"
-                >
-                  <Gauge className="w-2.5 h-2.5 shrink-0 text-orange-400" />
-                  <span className="font-semibold">{auditReport.overallScore}/100</span>
-                  <span className="font-bold uppercase tracking-wider">{auditReport.grade}</span>
-                  {showAuditPanel ? (
-                    <ChevronUp className="w-2.5 h-2.5 opacity-70" />
-                  ) : (
-                    <ChevronDown className="w-2.5 h-2.5 opacity-70" />
-                  )}
-                </button>
-
                 {lastAutoSaved && (
                   <span className="hidden xl:inline-flex items-center gap-1 text-[10px] text-zinc-400 font-mono shrink-0">
-                    <CheckCircle2 className="w-2.5 h-2.5 text-emerald-400" /> Auto-saved
+                    <CheckCircle2 className="w-2.5 h-2.5 text-zinc-400" /> Auto-saved
                   </span>
                 )}
                 {isManuallyEdited && (
@@ -2376,7 +2457,7 @@ ${exampleBad.trim()}
                   className="flex items-center gap-1 sm:gap-1.5 px-2 sm:px-2.5 py-1 text-xs text-zinc-300 hover:text-white hover:bg-zinc-700/60 rounded-md transition-colors font-medium cursor-pointer"
                   title="Copy code to clipboard"
                 >
-                  {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                  {copied ? <Check className="w-3.5 h-3.5 text-orange-400" /> : <Copy className="w-3.5 h-3.5" />}
                   <span>{copied ? "Copied!" : "Copy"}</span>
                 </button>
 
@@ -2410,107 +2491,8 @@ ${exampleBad.trim()}
               </div>
             </div>
 
-            {/* Rule Quality Audit Diagnostic Drawer */}
-            {showAuditPanel && (
-              <div className="bg-zinc-950 border-b border-zinc-800 p-3.5 sm:p-4 text-zinc-100 max-h-[320px] overflow-y-auto space-y-3 font-sans animate-in slide-in-from-top-2 duration-150 scrollbar-thin">
-                <div className="flex items-center justify-between border-b border-zinc-800 pb-2">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <div className="flex items-center gap-1.5 font-bold text-xs sm:text-sm">
-                      <Gauge className="w-4 h-4 text-orange-400" />
-                      <span>Rule Quality & Security Audit</span>
-                    </div>
-                    <span
-                      className={cn(
-                        "px-2 py-0.5 rounded text-[10px] font-mono font-bold uppercase",
-                        auditReport.overallScore >= 90
-                          ? "bg-emerald-900/60 text-emerald-300 border border-emerald-700"
-                          : auditReport.overallScore >= 80
-                          ? "bg-green-900/60 text-green-300 border border-green-700"
-                          : auditReport.overallScore >= 70
-                          ? "bg-amber-900/60 text-amber-300 border border-amber-700"
-                          : "bg-rose-900/60 text-rose-300 border border-rose-700"
-                      )}
-                    >
-                      {auditReport.overallScore}/100 · {auditReport.gradeLabel}
-                    </span>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => setShowAuditPanel(false)}
-                    className="text-zinc-400 hover:text-white p-1 rounded hover:bg-zinc-800 transition-colors cursor-pointer"
-                    title="Close audit drawer"
-                  >
-                    <X className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-
-                <p className="text-xs text-zinc-300 leading-relaxed">{auditReport.summary}</p>
-
-                {/* 4-Dimension Metric Cards */}
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs font-mono">
-                  <div className="bg-zinc-900/90 border border-zinc-800 p-2 rounded-lg space-y-0.5">
-                    <span className="text-[10px] text-zinc-400 block font-sans">Clarity & Directives</span>
-                    <span className="font-bold text-zinc-200">{auditReport.dimensions.clarity.score}%</span>
-                  </div>
-                  <div className="bg-zinc-900/90 border border-zinc-800 p-2 rounded-lg space-y-0.5">
-                    <span className="text-[10px] text-zinc-400 block font-sans">Token Density</span>
-                    <span className="font-bold text-zinc-200">~{auditReport.tokenCount} tok ({auditReport.dimensions.tokenDensity.score}%)</span>
-                  </div>
-                  <div className="bg-zinc-900/90 border border-zinc-800 p-2 rounded-lg space-y-0.5">
-                    <span className="text-[10px] text-zinc-400 block font-sans">Guardrails</span>
-                    <span className="font-bold text-zinc-200">{auditReport.dimensions.guardrails.score}%</span>
-                  </div>
-                  <div className="bg-zinc-900/90 border border-zinc-800 p-2 rounded-lg space-y-0.5">
-                    <span className="text-[10px] text-zinc-400 block font-sans">Trigger Precision</span>
-                    <span className="font-bold text-zinc-200">{auditReport.dimensions.triggers.score}%</span>
-                  </div>
-                </div>
-
-                {/* Diagnostic Issues & Suggestions List */}
-                <div className="space-y-2 pt-1">
-                  <span className="text-[11px] font-bold text-zinc-400 uppercase tracking-wider font-mono block">
-                    Diagnostic Findings ({auditReport.allIssues.length})
-                  </span>
-                  {auditReport.allIssues.length === 0 ? (
-                    <div className="flex items-center gap-2 p-2.5 rounded-lg bg-emerald-950/40 border border-emerald-900/60 text-emerald-300 text-xs">
-                      <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-400" />
-                      <span>Zero deficiencies detected. This rule adheres to high token economy and negative boundary constraints.</span>
-                    </div>
-                  ) : (
-                    <div className="space-y-1.5">
-                      {auditReport.allIssues.map((issue) => (
-                        <div
-                          key={issue.id}
-                          className={cn(
-                            "p-2.5 rounded-lg border text-xs space-y-1",
-                            issue.severity === "error"
-                              ? "bg-rose-950/40 border-rose-900/70 text-rose-200"
-                              : issue.severity === "warning"
-                              ? "bg-amber-950/40 border-amber-900/70 text-amber-200"
-                              : "bg-blue-950/40 border-blue-900/70 text-blue-200"
-                          )}
-                        >
-                          <div className="flex items-center justify-between font-semibold">
-                            <span>{issue.title}</span>
-                            <span className="text-[10px] uppercase font-mono px-1.5 py-0.5 rounded bg-black/40">
-                              {issue.severity}
-                            </span>
-                          </div>
-                          <p className="text-zinc-300 text-[11px] leading-relaxed">{issue.message}</p>
-                          <p className="text-[11px] text-zinc-400">
-                            <span className="font-bold text-zinc-200 font-mono">Tip: </span>
-                            {issue.suggestion}
-                          </p>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {/* Editor Container with Explicit Height, Editable Mode, and Instant Fallback */}
-            <div className="h-[460px] sm:h-[550px] lg:h-[calc(100vh-14rem)] min-h-[400px] relative overflow-hidden bg-zinc-950">
+            {/* Editor Container — Always full height */}
+            <div className="h-[430px] sm:h-[520px] lg:h-[calc(100vh-16rem)] min-h-[380px] relative overflow-hidden bg-zinc-950">
               <Editor
                 height="100%"
                 language={format === "mcp_json" ? "json" : "markdown"}
@@ -2539,6 +2521,365 @@ ${exampleBad.trim()}
                   automaticLayout: true,
                 }}
               />
+
+              {/* Rule Quality Audit — Professional Dark Floating Panel (Anchored above status bar) */}
+              {showAuditPanel && (
+                <div className="absolute bottom-2 right-3 left-3 sm:left-auto sm:w-[460px] z-30 rounded-xl border border-zinc-800 bg-[#121316]/98 backdrop-blur-xl shadow-2xl shadow-black/90 overflow-hidden animate-in fade-in slide-in-from-bottom-2 duration-150 flex flex-col max-h-[380px]">
+                  {/* Header Bar: Clean Dark Monochrome */}
+                  <div className="flex items-center justify-between gap-2 px-3.5 py-2.5 border-b border-zinc-800/80 bg-[#121316] shrink-0">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span className="font-mono text-xs font-bold text-zinc-200 tracking-wider flex items-center gap-1.5 shrink-0">
+                        <img src="/orange-star.png" className="w-4 h-4 object-contain shrink-0" alt="Star" />
+                        <span>RULE AUDIT</span>
+                      </span>
+
+                      {/* Clean Dark Badge (NO flashy gold) */}
+                      <span className="bg-zinc-800 text-zinc-300 border border-zinc-700 font-mono text-[10px] font-semibold px-2 py-0.5 rounded-full shrink-0">
+                        {auditReport.overallScore}/100 · {auditReport.gradeLabel.toUpperCase()}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center gap-1 shrink-0">
+                      {/* One-click Copy Audit Report for PRs / documentation */}
+                      <button
+                        type="button"
+                        onClick={handleCopyAuditReport}
+                        className="text-zinc-400 hover:text-zinc-200 text-[11px] font-mono flex items-center gap-1 px-2 py-1 rounded hover:bg-zinc-800/80 transition-colors cursor-pointer"
+                        title="Copy audit report summary to clipboard"
+                      >
+                        {auditCopied ? <Check className="w-3 h-3 text-zinc-200" /> : <Copy className="w-3 h-3" />}
+                        <span>{auditCopied ? "Copied" : "Copy Report"}</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setShowAuditPanel(false)}
+                        className="text-zinc-400 hover:text-zinc-100 p-1 rounded-md hover:bg-zinc-800/80 transition-colors cursor-pointer"
+                        title="Close audit panel"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Standardized 4-Column Metric Grid (Interactive Troubleshooting Filters) */}
+                  <div className="p-3 bg-[#121316]/90 border-b border-zinc-800/80 shrink-0">
+                    <div
+                      style={{
+                        display: "grid",
+                        gridTemplateColumns: "repeat(4, 1fr)",
+                        gap: "8px",
+                      }}
+                    >
+                      {/* Clarity */}
+                      <button
+                        type="button"
+                        onClick={() => setSelectedDimension((prev: AuditDimension | "all") => (prev === "clarity" ? "all" : "clarity"))}
+                        className={cn(
+                          "flex flex-col items-start min-w-0 p-2 rounded-lg text-left transition-colors cursor-pointer border",
+                          selectedDimension === "clarity"
+                            ? "bg-zinc-800/80 border-zinc-500"
+                            : "bg-white/[0.02] border-white/[0.06] hover:bg-white/[0.05]"
+                        )}
+                        title="Click to filter Clarity diagnostics"
+                      >
+                        <span className="text-[10px] font-mono uppercase tracking-wider text-zinc-500">CLARITY</span>
+                        <span className="text-[13px] font-mono font-semibold text-zinc-100">{auditReport.dimensions.clarity.score}%</span>
+                      </button>
+
+                      {/* Tokens */}
+                      <button
+                        type="button"
+                        onClick={() => setSelectedDimension((prev: AuditDimension | "all") => (prev === "tokenDensity" ? "all" : "tokenDensity"))}
+                        className={cn(
+                          "flex flex-col items-start min-w-0 p-2 rounded-lg text-left transition-colors cursor-pointer border",
+                          selectedDimension === "tokenDensity"
+                            ? "bg-zinc-800/80 border-zinc-500"
+                            : "bg-white/[0.02] border-white/[0.06] hover:bg-white/[0.05]"
+                        )}
+                        title="Click to filter Token Economy diagnostics"
+                      >
+                        <span className="text-[10px] font-mono uppercase tracking-wider text-zinc-500">TOKENS</span>
+                        <span className="text-[13px] font-mono font-semibold text-zinc-100">~{auditReport.tokenCount}</span>
+                      </button>
+
+                      {/* Guardrails */}
+                      <button
+                        type="button"
+                        onClick={() => setSelectedDimension((prev: AuditDimension | "all") => (prev === "guardrails" ? "all" : "guardrails"))}
+                        className={cn(
+                          "flex flex-col items-start min-w-0 p-2 rounded-lg text-left transition-colors cursor-pointer border",
+                          selectedDimension === "guardrails"
+                            ? "bg-zinc-800/80 border-zinc-500"
+                            : "bg-white/[0.02] border-white/[0.06] hover:bg-white/[0.05]"
+                        )}
+                        title="Click to filter Guardrails diagnostics"
+                      >
+                        <span className="text-[10px] font-mono uppercase tracking-wider text-zinc-500">GUARDRAILS</span>
+                        <span className="text-[13px] font-mono font-semibold text-zinc-100">{auditReport.dimensions.guardrails.score}%</span>
+                      </button>
+
+                      {/* Precision */}
+                      <button
+                        type="button"
+                        onClick={() => setSelectedDimension((prev: AuditDimension | "all") => (prev === "triggers" ? "all" : "triggers"))}
+                        className={cn(
+                          "flex flex-col items-start min-w-0 p-2 rounded-lg text-left transition-colors cursor-pointer border",
+                          selectedDimension === "triggers"
+                            ? "bg-zinc-800/80 border-zinc-500"
+                            : "bg-white/[0.02] border-white/[0.06] hover:bg-white/[0.05]"
+                        )}
+                        title="Click to filter Precision & Scoping diagnostics"
+                      >
+                        <span className="text-[10px] font-mono uppercase tracking-wider text-zinc-500">PRECISION</span>
+                        <span className="text-[13px] font-mono font-semibold text-zinc-100">{auditReport.dimensions.triggers.score}%</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Sub-Tabs: Findings vs Checklist (Actionable & Powerful) */}
+                  <div className="flex items-center justify-between px-3 bg-[#121316] border-b border-zinc-800/60 text-xs font-mono shrink-0">
+                    <div className="flex items-center gap-1">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setAuditTab("findings");
+                          setSelectedDimension("all");
+                        }}
+                        className={cn(
+                          "px-2.5 py-1.5 border-b-2 text-[11px] font-semibold transition-colors cursor-pointer",
+                          auditTab === "findings"
+                            ? "border-zinc-300 text-zinc-100 bg-zinc-800/40"
+                            : "border-transparent text-zinc-500 hover:text-zinc-300"
+                        )}
+                      >
+                        Findings ({auditReport.allIssues.length})
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setAuditTab("checklist")}
+                        className={cn(
+                          "px-2.5 py-1.5 border-b-2 text-[11px] font-semibold transition-colors cursor-pointer",
+                          auditTab === "checklist"
+                            ? "border-zinc-300 text-zinc-100 bg-zinc-800/40"
+                            : "border-transparent text-zinc-500 hover:text-zinc-300"
+                        )}
+                      >
+                        Rule Checklist
+                      </button>
+                    </div>
+
+                    {auditReport.allIssues.length > 0 && (
+                      <button
+                        type="button"
+                        onClick={handleAutoFixAll}
+                        className="text-[10px] font-mono font-semibold text-zinc-900 bg-white hover:bg-zinc-200 px-2 py-0.5 rounded transition-all cursor-pointer shadow-xs active:scale-95"
+                        title="Automatically remediate all detected issues"
+                      >
+                        ⚡ Auto-Fix All
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Tab Body (Scrollable) */}
+                  <div className="overflow-y-auto p-3 space-y-2.5 bg-[#121316]/50 scrollbar-thin text-xs">
+                    {auditTab === "findings" ? (
+                      <>
+                        {/* Dimension Filter Indicator */}
+                        {selectedDimension !== "all" && (
+                          <div className="flex items-center justify-between p-1.5 rounded bg-zinc-900/80 border border-zinc-800 text-[10px] font-mono">
+                            <span className="text-zinc-400">
+                              Filtered: <strong className="text-zinc-200 uppercase">{selectedDimension}</strong>
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => setSelectedDimension("all")}
+                              className="text-zinc-300 hover:text-white underline cursor-pointer"
+                            >
+                              Reset Filter
+                            </button>
+                          </div>
+                        )}
+
+                        <p className="text-[11px] text-zinc-400 leading-relaxed font-sans">{auditReport.summary}</p>
+
+                        {filteredIssues.length === 0 ? (
+                          <div className="flex items-center gap-2.5 p-2.5 rounded-lg bg-zinc-900/90 border border-zinc-800 text-zinc-300 text-[11px] font-sans">
+                            <img src="/orange-star.png" className="w-3.5 h-3.5 object-contain shrink-0" alt="Star" />
+                            <div className="space-y-0.5">
+                              <div className="font-semibold text-zinc-200">Zero Deficiencies Detected</div>
+                              <div className="text-[10px] text-zinc-400">
+                                Token economy ~{auditReport.tokenCount} tok • Explicit negative guard clauses verified • High trigger accuracy.
+                              </div>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="space-y-1.5">
+                            {filteredIssues.map((issue) => (
+                              <div
+                                key={issue.id}
+                                className={cn(
+                                  "p-2.5 rounded-lg border text-[11px] space-y-1 font-sans",
+                                  issue.severity === "error"
+                                    ? "bg-rose-950/30 border-rose-900/60 text-rose-200"
+                                    : issue.severity === "warning"
+                                    ? "bg-amber-950/20 border-amber-900/50 text-amber-200"
+                                    : "bg-zinc-900/60 border-zinc-800 text-zinc-200"
+                                )}
+                              >
+                                <div className="flex items-center justify-between font-semibold">
+                                  <span>{issue.title}</span>
+                                  <span className="text-[8px] uppercase font-mono px-1.5 py-0.5 rounded bg-black/50 text-zinc-300">
+                                    {issue.severity}
+                                  </span>
+                                </div>
+                                <p className="text-zinc-400 text-[10px] leading-relaxed">{issue.message}</p>
+                                <p className="text-[10px] text-zinc-400">
+                                  <span className="font-bold text-zinc-300 font-mono">Tip: </span>
+                                  {issue.suggestion}
+                                </p>
+
+                                {/* Direct Action Buttons for Immediate Fix */}
+                                <div className="pt-1 flex flex-wrap items-center gap-1.5">
+                                  {issue.id === "guardrails-no-negative-constraints" && (
+                                    <button
+                                      type="button"
+                                      onClick={handleInjectNegativeGuardrails}
+                                      className="inline-flex items-center gap-1 text-[10px] font-mono font-medium px-2 py-0.5 rounded bg-zinc-800 hover:bg-zinc-700 text-zinc-200 border border-zinc-700 transition-colors cursor-pointer"
+                                    >
+                                      <span>+ Inject Standard Guardrails</span>
+                                    </button>
+                                  )}
+                                  {issue.id.startsWith("vague-") && (
+                                    <button
+                                      type="button"
+                                      onClick={handleFixVaguePhrases}
+                                      className="inline-flex items-center gap-1 text-[10px] font-mono font-medium px-2 py-0.5 rounded bg-zinc-800 hover:bg-zinc-700 text-zinc-200 border border-zinc-700 transition-colors cursor-pointer"
+                                    >
+                                      <span>+ Replace with Concrete Rules</span>
+                                    </button>
+                                  )}
+                                  {issue.id === "trigger-cursor-global-unscoped" && (
+                                    <button
+                                      type="button"
+                                      onClick={handleScopeGlobs}
+                                      className="inline-flex items-center gap-1 text-[10px] font-mono font-medium px-2 py-0.5 rounded bg-zinc-800 hover:bg-zinc-700 text-zinc-200 border border-zinc-700 transition-colors cursor-pointer"
+                                    >
+                                      <span>{"+ Scope Globs (src/**/*.{ts,tsx})"}</span>
+                                    </button>
+                                  )}
+                                  {issue.id === "clarity-no-code-blocks" && (
+                                    <button
+                                      type="button"
+                                      onClick={handleInjectCodeBlock}
+                                      className="inline-flex items-center gap-1 text-[10px] font-mono font-medium px-2 py-0.5 rounded bg-zinc-800 hover:bg-zinc-700 text-zinc-200 border border-zinc-700 transition-colors cursor-pointer"
+                                    >
+                                      <span>+ Add Code Reference</span>
+                                    </button>
+                                  )}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </>
+                    ) : (
+                      /* Checklist Tab: Powerful 4-Pillar Quality Audit Verification */
+                      <div className="space-y-2 font-sans">
+                        <div className="p-2 rounded-lg bg-zinc-900/80 border border-zinc-800 text-[11px] space-y-0.5">
+                          <div className="flex items-center justify-between">
+                            <span className="font-semibold text-zinc-200 font-mono">1. Boundary Guardrails</span>
+                            <span className={cn("text-[9px] font-mono font-bold uppercase px-1.5 py-0.5 rounded", auditReport.dimensions.guardrails.score >= 70 ? "bg-zinc-800 text-zinc-200" : "bg-zinc-800 text-amber-300")}>
+                              {auditReport.dimensions.guardrails.score >= 70 ? "Passed" : "Needs Review"}
+                            </span>
+                          </div>
+                          <p className="text-zinc-400 text-[10px]">
+                            {auditReport.dimensions.guardrails.score >= 70
+                              ? "Explicit negative constraints ('never', 'do not') detected to prevent AI overreach."
+                              : "Missing negative boundaries. Use '+ Inject Guardrails' to protect files."}
+                          </p>
+                        </div>
+
+                        <div className="p-2 rounded-lg bg-zinc-900/80 border border-zinc-800 text-[11px] space-y-0.5">
+                          <div className="flex items-center justify-between">
+                            <span className="font-semibold text-zinc-200 font-mono">2. Token Economy</span>
+                            <span className={cn("text-[9px] font-mono font-bold uppercase px-1.5 py-0.5 rounded", auditReport.tokenCount <= 1200 && auditReport.tokenCount >= 70 ? "bg-zinc-800 text-zinc-200" : "bg-zinc-800 text-amber-300")}>
+                              {auditReport.tokenCount <= 1200 && auditReport.tokenCount >= 70 ? "Optimal" : "Attention"}
+                            </span>
+                          </div>
+                          <p className="text-zinc-400 text-[10px]">
+                            ~{auditReport.tokenCount} tokens footprint. Keeps conversation windows lean without degrading prompt context.
+                          </p>
+                        </div>
+
+                        <div className="p-2 rounded-lg bg-zinc-900/80 border border-zinc-800 text-[11px] space-y-0.5">
+                          <div className="flex items-center justify-between">
+                            <span className="font-semibold text-zinc-200 font-mono">3. Directive Clarity</span>
+                            <span className={cn("text-[9px] font-mono font-bold uppercase px-1.5 py-0.5 rounded", auditReport.dimensions.clarity.score >= 85 ? "bg-zinc-800 text-zinc-200" : "bg-zinc-800 text-amber-300")}>
+                              {auditReport.dimensions.clarity.score >= 85 ? "Passed" : "Vague Terms"}
+                            </span>
+                          </div>
+                          <p className="text-zinc-400 text-[10px]">
+                            {auditReport.dimensions.clarity.score >= 85
+                              ? "Actionable instructions without subjective preambles ('write clean code')."
+                              : "Found vague directives. Replace with concrete technical standards."}
+                          </p>
+                        </div>
+
+                        <div className="p-2 rounded-lg bg-zinc-900/80 border border-zinc-800 text-[11px] space-y-0.5">
+                          <div className="flex items-center justify-between">
+                            <span className="font-semibold text-zinc-200 font-mono">4. Scope & Triggers</span>
+                            <span className={cn("text-[9px] font-mono font-bold uppercase px-1.5 py-0.5 rounded", auditReport.dimensions.triggers.score >= 80 ? "bg-zinc-800 text-zinc-200" : "bg-zinc-800 text-amber-300")}>
+                              {auditReport.dimensions.triggers.score >= 80 ? "Passed" : "Review Scope"}
+                            </span>
+                          </div>
+                          <p className="text-zinc-400 text-[10px]">
+                            Evaluates target globs or activation description so rules only fire on relevant file contexts.
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Native IDE Bottom Status Bar with Anchored Audit Launcher (Pure Dark / Black + Orange Star) */}
+            <div className="px-3 py-1.5 bg-[#121316] border-t border-zinc-800/80 flex items-center justify-between text-[11px] font-mono select-none shrink-0 gap-2">
+              {/* Left: File and Editor Metrics */}
+              <div className="flex items-center gap-2.5 min-w-0">
+                <span className="flex items-center gap-1 text-zinc-400">
+                  <span className="w-1.5 h-1.5 rounded-full bg-zinc-400" />
+                  <span className="text-[10px] uppercase font-semibold text-zinc-300">
+                    {format === "mcp_json" ? "JSON" : format === "cursor_mdc" ? "MDC" : "Markdown"}
+                  </span>
+                </span>
+                <span className="hidden sm:inline text-zinc-700">•</span>
+                <span className="hidden sm:inline text-zinc-500 text-[10px]">UTF-8</span>
+                <span className="hidden sm:inline text-zinc-700">•</span>
+                <span className="text-zinc-400 text-[10px]">{activeContent.split("\n").length} Lines</span>
+                <span className="hidden md:inline text-zinc-700">•</span>
+                <span className="hidden md:inline text-zinc-500 text-[10px]">Spaces: 2</span>
+              </div>
+
+              {/* Right: Anchored Audit Launcher Button (Black/Zinc + Orange Star, NO flashy gold) */}
+              <button
+                type="button"
+                onClick={() => setShowAuditPanel((prev) => !prev)}
+                className={cn(
+                  "inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-mono font-medium border transition-colors cursor-pointer shrink-0",
+                  showAuditPanel
+                    ? "bg-zinc-800 text-white border-zinc-600"
+                    : "bg-zinc-900 hover:bg-zinc-800 text-zinc-300 hover:text-white border-zinc-700/80"
+                )}
+                title="Toggle Rule Quality & Security Audit"
+              >
+                <img src="/orange-star.png" className="w-3.5 h-3.5 object-contain shrink-0" alt="Star" />
+                <span className="font-semibold text-zinc-100">{auditReport.overallScore}/100</span>
+                <span className="text-zinc-600">·</span>
+                <span className="text-[10px] text-zinc-400 uppercase tracking-wider">{auditReport.gradeLabel}</span>
+                <span className="text-[9px] text-zinc-500 ml-0.5">{showAuditPanel ? "▼" : "▲"}</span>
+              </button>
             </div>
           </div>
 
@@ -2597,7 +2938,7 @@ ${exampleBad.trim()}
             className="w-full bg-zinc-900/95 hover:bg-black text-white px-4 py-3 rounded-xl shadow-2xl border border-zinc-700/90 flex items-center justify-between backdrop-blur-md transition-all active:scale-[0.98]"
           >
             <div className="flex items-center gap-2 min-w-0">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shrink-0" />
+              <span className="w-2 h-2 rounded-full bg-orange-400 animate-pulse shrink-0" />
               <span className="text-xs font-semibold truncate">{currentFileName} Ready</span>
               <span className="text-[10px] font-mono bg-zinc-800 px-1.5 py-0.5 rounded text-zinc-300 shrink-0">
                 {activeContent.split("\n").length}L
