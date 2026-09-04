@@ -288,8 +288,36 @@ export default async function BlogPostPage({
             <div dangerouslySetInnerHTML={{ __html: htmlContent }} />
           </div>
 
-          {/* Integrated Interactive Tool Card (Monochromatic IDE Style) */}
-          {toolMeta && (
+          {/* Integrated Interactive Tool Card (Monochromatic IDE Style or AI Studio Spotlight) */}
+          {post.relatedToolSlug === "ai-skill-studio" ? (
+            <div className="mt-12 p-6 bg-gradient-to-r from-orange-50/80 via-amber-50/40 to-white border border-orange-200 rounded-xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-5 shadow-xs">
+              <div className="space-y-1.5">
+                <div className="flex items-center gap-2">
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-orange-100 text-orange-800 border border-orange-200">
+                    <Sparkles className="w-3 h-3 text-orange-600 animate-pulse" />
+                    <span>Live Interactive Studio</span>
+                  </span>
+                  <span className="text-[10px] font-mono text-zinc-500 bg-white border border-zinc-200 px-1.5 py-0.5 rounded">
+                    100% Client-Side Privacy
+                  </span>
+                </div>
+                <h3 className="text-base font-bold text-zinc-900">
+                  Live Tool: AI Skill Studio — SKILL.md, CLAUDE.md & Cursor Rules
+                </h3>
+                <p className="text-xs text-zinc-600 leading-relaxed max-w-xl">
+                  Visually configure, preview in Monaco, and export production-ready Claude Code skills, Cursor <code className="font-mono text-xs bg-orange-100/60 px-1 py-0.5 rounded text-orange-900">.mdc</code> rules, and multi-agent directives in a single ZIP kit.
+                </p>
+              </div>
+
+              <Link
+                href="/ai-skill-studio"
+                className="px-4 py-2.5 bg-orange-600 hover:bg-orange-500 text-white font-semibold rounded-lg text-xs transition-all whitespace-nowrap shrink-0 flex items-center gap-2 shadow-sm"
+              >
+                <span>Launch AI Skill Studio</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </Link>
+            </div>
+          ) : toolMeta ? (
             <div className="mt-12 p-5 sm:p-6 bg-zinc-50 border border-zinc-200 rounded-xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
               <div className="space-y-1">
                 <div className="flex items-center gap-2">
@@ -314,7 +342,7 @@ export default async function BlogPostPage({
                 <ArrowRight className="w-3.5 h-3.5" />
               </Link>
             </div>
-          )}
+          ) : null}
 
           {/* Interactive FAQ Accordion */}
           {post.faqs && post.faqs.length > 0 && (

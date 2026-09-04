@@ -1918,7 +1918,7 @@ Explore more in our specific language guides: [cURL to Python Deep Dive](/blog/c
     difficulty: "Intermediate",
     readTime: "8 min read",
     tags: ["Claude Code", "Cursor", "AI Agent Skills", "SKILL.md", "CLAUDE.md", "Cursor Rules", "MDC", "AGENTS.md"],
-    relatedToolSlug: "json-formatter",
+    relatedToolSlug: "ai-skill-studio",
     relatedGuideSlugs: ["cron-expression-cheat-sheet", "jwt-token-decode-guide"],
     faqs: [
       {
@@ -1930,125 +1930,190 @@ Explore more in our specific language guides: [cURL to Python Deep Dive](/blog/c
         answer: "A single monolithic .cursorrules file was loaded on every single prompt, consuming massive context token counts. Modern .mdc rules use YAML frontmatter with file glob arrays (e.g. globs: ['**/*.tsx']) and alwaysApply: false, loading only when matching files are edited."
       },
       {
-        question: "Can I generate Claude skills and Cursor rules offline?",
-        answer: "Yes. DevScratchpad's AI Skill Studio executes 100% in browser memory with zero server data transmission, zero telemetry, and zero API key requirements."
+        question: "How does AI Skill Studio protect my proprietary code?",
+        answer: "DevScratchpad's AI Skill Studio executes 100% client-side in your local browser memory. Zero prompt data, codebase paths, manifests, or generated rules are ever transmitted to any remote server or stored in any database."
+      },
+      {
+        question: "Can I import an existing package.json or Cargo.toml to auto-fill rules?",
+        answer: "Yes. Use the 'Import Manifest' button in AI Skill Studio to upload or paste your package.json, Cargo.toml, pyproject.toml, or go.mod. The engine instantly detects your framework, language, ORM, and styling libraries."
       }
     ],
     content: `
-AI coding companions have evolved from simple auto-complete widgets into autonomous reasoning agents capable of planning complex refactors, navigating monorepos, and running terminal commands. However, without strict behavioral guardrails and project context, agents frequently introduce architectural drift, loose typings, and unnecessary diffs.
+AI coding companions have evolved from simple inline auto-complete widgets into autonomous reasoning agents capable of planning multi-step refactors, navigating entire repositories, and executing shell commands. However, without strict behavioral guardrails and explicit architectural guidelines, coding agents frequently introduce hallucinated APIs, break established naming idioms, write untyped \`any\` code, and introduce bloated git diffs.
 
-This definitive guide covers how to standardize and author the four primary AI steering formats in 2026:
-1. **Claude Code Skills (\`SKILL.md\`)**
-2. **Cursor Modular Rules (\`.cursor/rules/*.mdc\`)**
-3. **Project-Root Guidelines (\`CLAUDE.md\`)**
-4. **Multi-Agent Protocol Directives (\`AGENTS.md\`)**
-
-> **Quick Tool**: Need to scaffold these configurations for your stack in seconds? Launch our 100% client-side [AI Skill Studio](/ai-skill-studio) to visually build and export a complete AI configuration kit.
+This comprehensive guide breaks down modern AI agent steering architecture in 2026—and provides an in-depth walkthrough of every feature available in our **AI Skill Studio** to help you configure, test, and export production-ready rules in seconds.
 
 ---
 
-## 1. Claude Code Skills (\`SKILL.md\`)
+<div class="my-8 p-6 rounded-2xl border border-orange-300 bg-gradient-to-r from-orange-50/90 via-amber-50/50 to-white shadow-xs">
+  <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-5">
+    <div class="space-y-2">
+      <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-orange-600 text-white shadow-xs">
+        <span class="animate-pulse">✨</span>
+        <span>INTERACTIVE WORKSPACE</span>
+        <span class="text-orange-200">|</span>
+        <span>How to Use on Our AI Skill Studio Site</span>
+      </div>
+      <h3 class="text-lg sm:text-xl font-bold text-zinc-900 m-0 tracking-tight">
+        Build Your Production AI Agent Configuration in 60 Seconds
+      </h3>
+      <p class="text-xs sm:text-sm text-zinc-600 m-0 leading-relaxed max-w-xl">
+        Generate production-grade <code>SKILL.md</code>, <code>CLAUDE.md</code>, Cursor <code>.mdc</code>, and <code>AGENTS.md</code> files with 100% client-side privacy. Zero server transmission. Zero API keys required.
+      </p>
+    </div>
+    <a href="/ai-skill-studio" class="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-orange-600 hover:bg-orange-500 text-white text-xs font-bold tracking-wide transition-all shrink-0 no-underline shadow-sm hover:shadow-md">
+      <span>Launch AI Skill Studio →</span>
+    </a>
+  </div>
+</div>
 
-Claude Code (Anthropic's terminal agent) introduces **Skills**—reusable, modular instruction packages that provide procedural expertise on demand.
+---
 
-### Anatomy of a \`SKILL.md\`
-A valid \`SKILL.md\` must begin with strict YAML frontmatter:
+## 1. Comparing Modern AI Agent Steering Formats
+
+Modern AI developer environments consume instructions through distinct specifications. Understanding the differences is critical for engineering teams:
+
+### A. Claude Code Skills (\`SKILL.md\`)
+Claude Code introduces modular **Skills**—procedural capability packages that give agents domain-specific workflows on demand.
+- **Location**: \`.claude/skills/<skill-name>/SKILL.md\` (Project scope) or \`~/.claude/skills/<skill-name>/SKILL.md\` (Global scope).
+- **Execution**: Claude Code indexes the YAML frontmatter at startup. When your query matches the skill's description or when you run its slash command (e.g., \`/security-auditor\`), Claude injects the full instructions into the active context.
 
 \`\`\`yaml
 ---
-name: security-auditor
-description: Audit TypeScript & Python codebases for CVEs, exposed secrets, and unhandled promise rejections.
+name: nextjs-fullstack-pro
+description: Production standards for Next.js App Router, Server Components, and Zod mutations.
 ---
+
+# Next.js Fullstack Guidelines
+## 1. Core Procedures
+1. Fetch data directly in Server Components; never introduce 'use client' for read-only views.
+2. Validate data mutations inside Server Actions with Zod schemas.
 \`\`\`
 
-### Directory Placement
-- **Project Scope**: \`.claude/skills/<skill-name>/SKILL.md\` (committed to Git, shared with team).
-- **Global Scope**: \`~/.claude/skills/<skill-name>/SKILL.md\` (available across all local repositories).
+### B. Cursor Modular Project Rules (\`.cursor/rules/*.mdc\`)
+Cursor IDE has deprecated the legacy monolithic \`.cursorrules\` file. Modern rules live in modular \`.mdc\` files.
+- **Location**: \`.cursor/rules/<rule-name>.mdc\`.
+- **Targeting with Globs**: Each rule defines an array of globs (e.g. \`globs: ["src/components/**/*.tsx"]\`) and an \`alwaysApply\` boolean. Cursor automatically attaches the rule only when you work on relevant files, preventing context token waste.
 
-### How Claude Code Executes Skills
-Claude Code indexes the frontmatter during session startup. When a developer's prompt matches the skill's description—or when called via a slash command like \`/security-auditor\`—the agent injects the full markdown instructions into the active context window.
-
----
-
-## 2. Cursor Modular Rules (\`.cursor/rules/*.mdc\`)
-
-Cursor has officially deprecated the monolithic \`.cursorrules\` file in favor of modular \`.mdc\` rulebooks located in \`.cursor/rules/\`.
-
-### Why the Shift to Modular \`.mdc\`?
-In large codebases, feeding a 500-line general rulebook into every prompt wastes valuable context window tokens and dilutes model attention. With \`.mdc\`, rules attach conditionally based on file globs.
-
-### Structure of an \`.mdc\` Rule
 \`\`\`markdown
 ---
-description: Next.js 15 App Router & Server Actions standards
-globs: ["src/app/**/*.tsx", "src/actions/**/*.ts"]
+description: "React 19 component standards and Tailwind styling"
+globs: ["src/components/**/*.tsx", "src/hooks/**/*.ts"]
 alwaysApply: false
 ---
 
-# Next.js 15 Standards
-- Enforce React Server Components (RSC) by default.
-- Only introduce 'use client' at leaf interactive components.
-- Validate all Server Action inputs with Zod schemas.
+# Frontend Directives
+- Colocate component styles and custom hooks.
+- Avoid redundant useEffect hooks; compute derived state during render.
 \`\`\`
+
+### C. Project Root Guidelines (\`CLAUDE.md\`)
+Anthropic's recommended root instructions file for Claude Code and Claude.ai project instances.
+- **Location**: \`/CLAUDE.md\` at the repository root.
+- **XML Tag Hierarchy**: Structured with dense XML tags (\`<project_context>\`, \`<tech_stack>\`, \`<workflows_and_procedures>\`, \`<conventions>\`, \`<agent_guardrails>\`) to maximize LLM instruction adherence while maintaining high token density.
+
+### D. Multi-Agent Systems (\`AGENTS.md\`)
+Standardized coordination file for multi-agent runners (Antigravity, CrewAI, AutoGen).
+- **Location**: \`/AGENTS.md\` in the project root.
+- **Demarcation**: Encapsulated within \`<!-- BEGIN:agent-rules -->\` and \`<!-- END:agent-rules -->\` tags to establish role boundaries, prohibited operations, and inter-agent handoff contracts.
 
 ---
 
-## 3. Anthropic Project Root Guidelines (\`CLAUDE.md\`)
+## 2. In-Depth Walkthrough: How to Use Every Feature in AI Skill Studio
 
-Located at the repository root, \`CLAUDE.md\` acts as the foundational constitution for Claude sessions. Anthropic recommends using structured XML tags to maximize parsing efficiency:
+[AI Skill Studio](/ai-skill-studio) was built to eliminate manual prompt engineering ceremony. Here is an exhaustive, feature-by-feature breakdown of everything our studio offers:
 
-\`\`\`markdown
-# Project Guidelines
+### Feature 1: Multi-Format Architecture Switching
+- **What it does**: Allows you to author a single unified set of engineering requirements and seamlessly transpile it across all 4 specifications (\`SKILL.md\`, \`cursor_mdc\`, \`claude_md\`, and \`agents_md\`).
+- **How to use it**: At the top of the studio's editor panel, click between the format pill buttons:
+  - **Claude SKILL.md**: Generates strict YAML frontmatter and Claude Code numbered procedure blocks.
+  - **Cursor .mdc**: Adds glob pattern inputs, \`alwaysApply\` toggles, and Cursor IDE formatting.
+  - **CLAUDE.md**: Structures requirements into Anthropic's XML tag architecture.
+  - **AGENTS.md**: Wraps directives in multi-agent demarcation tags for autonomous runners.
 
-<project_context>
-High-throughput event streaming backend built with Node.js 22, TypeScript 5.8, and Apache Kafka.
-</project_context>
+### Feature 2: Smart Manifest Ingestion Engine
+- **What it does**: Eliminates manual configuration by parsing your codebase's manifest file in local browser memory.
+- **Supported Manifests**:
+  - \`package.json\`: Detects Next.js 15, React 19, Vite, Vue 3, SvelteKit, Astro, Tailwind CSS, Prisma, Drizzle, and Supabase.
+  - \`pyproject.toml\` & \`requirements.txt\`: Detects Python 3.12, FastAPI, Django, Flask, SQLAlchemy, and Pydantic.
+  - \`Cargo.toml\`: Detects Rust edition, Tokio, Axum, and Serde.
+  - \`go.mod\`: Detects Go module paths, Gin, Fiber, and standard library conventions.
+- **How to use it**:
+  1. Click **"Import Manifest"** in the top action bar.
+  2. Drag and drop your manifest file or paste its raw contents into the modal.
+  3. The parser instantly extracts your stack and suggests a specialized role (e.g. *Senior Next.js 15 & TypeScript Engineer*). Click **"Apply to Studio"** to auto-populate all generator fields.
 
-<tech_stack>
-- Language: TypeScript (strict mode enabled)
-- Framework: Fastify
-- ORM: Prisma with PostgreSQL
-</tech_stack>
+### Feature 3: Production Presets Library
+- **What it does**: Provides battle-tested, curated rulebooks created by principal engineers.
+- **Available Presets**:
+  - **Cursor .mdc Pro**: Emphasizes minimal surgical diffs, guard clauses, and strict zero-any TypeScript typing.
+  - **Next.js 15 Fullstack**: Enforces React Server Components (RSC) first, Server Actions with Zod validation, and dynamic error boundaries.
+  - **Codebase Health & Security Auditor**: Automated scanning protocol for CVEs, unhandled promise rejections, and exposed secrets with risk levels (\`[CRITICAL]\`, \`[HIGH]\`, \`[MEDIUM]\`, \`[LOW]\`).
+  - **React 19 Modern SPA**: Custom hook encapsulation, TanStack Query server caching, and elimination of cascading \`useEffect\` triggers.
+  - **Python FastAPI & AI Backend**: Pydantic v2 schemas, async route handlers, streaming completions, and dependency injection.
+  - **Pragmatic Vibe Coder**: High-velocity builder mode prioritizing readable flat architectures and immediate delivery over abstract boilerplate.
+- **How to use it**: In the **Quick Presets** bar, click any badge to load its complete directives, procedures, and code examples.
 
-<workflows_and_procedures>
-1. Run 'npm test' before reporting completion.
-2. Deliver surgical, focused git diffs.
-3. Never introduce 'any' types or ignore TypeScript warnings.
-</workflows_and_procedures>
-\`\`\`
+### Feature 4: Engineering Philosophy & Behavioral Guardrails Engine
+- **What it does**: Translates high-level development philosophies into unambiguous boundary conditions that coding models can reliably enforce.
+- **Philosophies Available**:
+  - **Pragmatic**: Balances speed and stability, prioritizing standard library solutions.
+  - **Modern**: Enforces latest language idioms (e.g. TypeScript 5.8 satisfies, React 19 actions).
+  - **Strict**: Maximum type-safety, zero unchecked exceptions, explicit error returns.
+  - **Vibe**: Fast prototyping, minimal ceremony, rapid visual feedback.
+  - **Architect**: Clean architecture, domain-driven design, and strict separation of concerns.
+- **Behavioral Toggles**: Check or uncheck directives such as *Inspect Active Context First*, *Minimal Surgical Diffs*, *Concise Direct Output*, *Verification-Driven*, *Dependency Caution*, or *Preserve Code Style*.
+
+### Feature 5: Implementation Grounding (Few-Shot Code Pairs)
+- **What it does**: Few-shot demonstration is the single most reliable technique to prevent LLM hallucinations. AI Skill Studio injects language-tagged code blocks comparing canonical implementations against anti-patterns.
+- **How to use it**:
+  - In the **Preferred Pattern** field, paste clean, idiomatic code demonstrating early returns and explicit error handling.
+  - In the **Discouraged Anti-Pattern** field, paste common mistakes (e.g. loose \`any\`, swallowed try/catch, nested if-else).
+  - The studio automatically wraps these in Markdown code fences inside the generated steering file.
+
+### Feature 6: In-Browser Monaco IDE with Manual Override Guard
+- **What it does**: Embeds Microsoft's Monaco Editor (the code editor powering VS Code) with syntax highlighting, line numbers, and dark mode.
+- **Safety Guard (\`isManuallyEdited\`)**: Once you manually edit the output in the Monaco editor, the studio preserves your customized text and prevents form changes from accidentally overwriting your work. A **"Reset to Template"** button lets you re-enable automatic synchronization whenever you wish.
+
+### Feature 7: 1-Click Complete AI Workspace Suite ZIP Bundler
+- **What it does**: Compiles all four configuration files into a single, clean directory hierarchy ready to drop into your Git repository.
+- **Generated Directory Layout**:
+  \`\`\`text
+  your-project/
+  ├── .cursor/
+  │   └── rules/
+  │       └── <skill-slug>.mdc
+  ├── .claude/
+  │   └── skills/
+  │       └── <skill-slug>/
+  │           └── SKILL.md
+  ├── CLAUDE.md
+  ├── AGENTS.md
+  └── README.md (Contains copy-paste installation instructions)
+  \`\`\`
+- **How to use it**: Click **"Export AI Kit (.zip)"** in the top-right toolbar. The archive is generated locally via JSZip and downloaded directly to your machine.
+
+### Feature 8: 100% In-Browser Privacy Guarantee
+- **What it does**: Ensures that your proprietary repository structure, database schemas, internal package names, and prompt engineering instructions never leave your machine.
+- **How to verify**: Open your browser's Developer Tools (F12) -> Network tab. Perform an import, customize rules, and export a ZIP—zero outgoing HTTP requests are made.
 
 ---
 
-## 4. Multi-Agent Systems (\`AGENTS.md\`)
+## 3. Best Practices for Authoring AI Rules
 
-For teams utilizing multi-agent orchestration frameworks (such as Google Antigravity, CrewAI, or AutoGen), \`AGENTS.md\` establishes role boundaries and handover protocols:
+When building custom skills in [AI Skill Studio](/ai-skill-studio), adhere to these battle-tested principles:
 
-\`\`\`markdown
-<!-- BEGIN:agent-rules -->
-# AI Agent Directives
-
-## Architect Agent
-- Responsible for technical specifications and database schema design.
-- Prohibits writing application code directly.
-
-## Implementation Agent
-- Translates Architect specifications into typed modules.
-- Enforces unit test coverage exceeding 90%.
-<!-- END:agent-rules -->
-\`\`\`
+1. **Be Specific, Not Philosophical**: Instead of writing *"Write clean code"*, specify *"Enforce early exit guard clauses. Keep functions under 40 lines. Never swallow exceptions in empty catch blocks."*
+2. **Constrain the Blast Radius**: Direct agents to only modify requested files and preserve existing docstrings, comments, and licensing headers.
+3. **Always Include a Verification Protocol**: Instruct the agent to run your project's linting or test command (e.g., \`npm test\` or \`pytest\`) before reporting task completion.
 
 ---
 
-## 5. Automated Generation with AI Skill Studio
+## Ready to Elevate Your AI Coding Workflow?
 
-Rather than manually handcrafting these four configuration files for each repository, you can use [AI Skill Studio](/ai-skill-studio):
+Stop copy-pasting unformatted prompts between chat windows. Standardize your team's coding companions with production-grade steering files today:
 
-1. **Manifest Ingestion**: Drag & drop your \`package.json\`, \`Cargo.toml\`, \`pyproject.toml\`, or \`go.mod\`. The engine automatically detects your framework, ORM, and conventions.
-2. **Behavioral Guardrails**: Toggle surgical diffs, guard clauses, strict accessibility, and type-safety rules.
-3. **One-Click Export**: Download a unified \`.zip\` suite containing \`.cursor/rules/\`, \`.claude/skills/\`, \`CLAUDE.md\`, and \`AGENTS.md\` ready to commit to your repository.
-4. **100% Client-Side Privacy**: Runs completely in browser memory with zero server uploads and zero API keys.
-
-Launch the studio now: [https://www.devscratchpad.tech/ai-skill-studio](/ai-skill-studio).
+👉 **[Launch AI Skill Studio on DevScratchpad](/ai-skill-studio)** — 100% Free, Private, and Client-Side.
 `,
   },
 ];
