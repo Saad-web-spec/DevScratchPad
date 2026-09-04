@@ -1703,7 +1703,7 @@ ${exampleBad.trim()}
             <div className="bg-white rounded-xl border border-zinc-200 p-3.5 sm:p-4 shadow-xs space-y-4">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-zinc-100 pb-2.5 gap-2">
                 <div className="flex items-center gap-2">
-                  <Server className="w-4 h-4 text-blue-600 shrink-0" />
+                  <Server className="w-4 h-4 text-orange-600 shrink-0" />
                   <h3 className="text-sm font-bold text-zinc-900">Claude MCP Server Configuration</h3>
                 </div>
                 <div className="flex items-center gap-2">
@@ -1718,8 +1718,8 @@ ${exampleBad.trim()}
                       {mcpValidation.warnings.length} {mcpValidation.warnings.length === 1 ? "warning" : "warnings"}
                     </span>
                   ) : (
-                    <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
-                      <CheckCircle2 className="w-3 h-3 text-emerald-500 shrink-0" />
+                    <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-orange-800 bg-orange-50/70 border border-orange-200/70 px-2 py-0.5 rounded-full">
+                      <CheckCircle2 className="w-3 h-3 text-orange-600 shrink-0" />
                       Ready for Claude
                     </span>
                   )}
@@ -1853,7 +1853,7 @@ ${exampleBad.trim()}
               <div className="rounded-lg border border-zinc-200 bg-zinc-50/70 p-3 space-y-2">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-bold text-zinc-800 flex items-center gap-1.5">
-                    <ShieldCheck className="w-3.5 h-3.5 text-blue-600 shrink-0" />
+                    <ShieldCheck className="w-3.5 h-3.5 text-orange-600 shrink-0" />
                     MCP Protocol Diagnostics
                   </span>
                   <span className="text-[10px] text-zinc-500">
@@ -1874,7 +1874,7 @@ ${exampleBad.trim()}
                             ? "bg-rose-50/80 border-rose-200 text-rose-900"
                             : issue.type === "warning"
                             ? "bg-amber-50/80 border-amber-200 text-amber-900"
-                            : "bg-blue-50/80 border-blue-200 text-blue-900"
+                            : "bg-orange-50/60 border-orange-200/70 text-orange-900"
                         )}
                       >
                         {issue.type === "error" ? (
@@ -1882,17 +1882,17 @@ ${exampleBad.trim()}
                         ) : issue.type === "warning" ? (
                           <AlertTriangle className="w-3.5 h-3.5 text-amber-600 shrink-0 mt-0.5" />
                         ) : (
-                          <Zap className="w-3.5 h-3.5 text-blue-600 shrink-0 mt-0.5" />
+                          <Zap className="w-3.5 h-3.5 text-orange-600 shrink-0 mt-0.5" />
                         )}
                         <span className="text-[11px] flex-1">{issue.message}</span>
                       </div>
                     ))}
                   </div>
                 ) : (
-                  <div className="flex items-center gap-2 text-xs text-emerald-800 bg-emerald-50/80 border border-emerald-200 rounded-md p-2">
-                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                  <div className="flex items-center gap-2 text-xs text-orange-800 bg-orange-50/50 border border-orange-200/50 rounded-md p-2">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-orange-600 shrink-0" />
                     <span className="text-[11px]">
-                      MCP configuration verified. Compatible with Claude Code (<code className="bg-emerald-100/80 px-1 py-0.2 rounded font-mono text-[10px]">claude.json</code>) and Claude Desktop (<code className="bg-emerald-100/80 px-1 py-0.2 rounded font-mono text-[10px]">claude_desktop_config.json</code>).
+                      MCP configuration verified. Compatible with Claude Code (<code className="bg-orange-100/60 text-orange-800 px-1 py-0.2 rounded font-mono text-[10px]">claude.json</code>) and Claude Desktop (<code className="bg-orange-100/60 text-orange-800 px-1 py-0.2 rounded font-mono text-[10px]">claude_desktop_config.json</code>).
                     </span>
                   </div>
                 )}
@@ -2304,7 +2304,7 @@ ${exampleBad.trim()}
               ) : format === "claude_md" ? (
                 <img src="/claude-icon.png" alt="Claude" className="w-3.5 h-3.5 object-contain" />
               ) : format === "mcp_json" ? (
-                <Server className="w-3.5 h-3.5 text-blue-600" />
+                <Server className="w-3.5 h-3.5 text-orange-600" />
               ) : (
                 <FolderGit2 className={cn("w-3.5 h-3.5", format === "skill_md" ? "text-orange-500" : "text-zinc-800")} />
               )}
