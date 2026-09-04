@@ -33,8 +33,12 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { downloadAiKitZip } from "./lib/zipExporter";
-import { ManifestImportModal } from "./components/ManifestImportModal";
 import { ParsedManifestResult } from "./lib/manifestParser";
+
+const ManifestImportModal = dynamic(
+  () => import("./components/ManifestImportModal").then((m) => m.ManifestImportModal),
+  { ssr: false }
+);
 import { generateSafeSlug, validateTriggerPhrase } from "./lib/slugUtils";
 import { saveToStorageEnvelope, loadFromStorageEnvelope, STORAGE_KEY_V2 } from "./lib/storageEnvelope";
 import { auditRuleQuality, RuleAuditReport, AuditIssue, AuditDimension } from "./lib/ruleAuditor";
@@ -1756,19 +1760,6 @@ ${exampleBad.trim()}
     if (format === "mcp_json") return "claude.json (mcpServers)";
     return "AGENTS.md";
   }, [format, skillName]);
-
-  if (!isMounted) {
-    return (
-      <div className="min-h-screen bg-zinc-50 flex items-center justify-center font-sans">
-        <div className="flex flex-col items-center gap-3 text-zinc-400">
-          <div className="w-9 h-8 flex items-center justify-center animate-pulse">
-            <img src="/ai-skill-icon.png" alt="Loading" className="w-8 h-6 object-contain" />
-          </div>
-          <span className="text-xs font-medium text-zinc-500">Loading AI Skill Studio...</span>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div suppressHydrationWarning className="min-h-screen bg-zinc-50 flex flex-col font-sans selection:bg-orange-500 selection:text-white">

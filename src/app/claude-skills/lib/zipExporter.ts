@@ -1,5 +1,3 @@
-import JSZip from "jszip";
-
 export interface ZipExportOptions {
   skillName: string;
   skillTitle: string;
@@ -16,6 +14,7 @@ export interface ZipExportOptions {
  * Builds and triggers download of a complete AI configuration kit in a single .zip archive.
  */
 export async function downloadAiKitZip(options: ZipExportOptions): Promise<void> {
+  const JSZip = (await import("jszip")).default;
   const zip = new JSZip();
   const slug = (options.skillName || "ai-rule").trim().toLowerCase().replace(/[^a-z0-9_-]/g, "-");
 
