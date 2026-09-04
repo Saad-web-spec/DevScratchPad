@@ -9,6 +9,15 @@
  * - go.mod (Go)
  */
 
+export interface JsonParseDiagnostic {
+  line: number;
+  column: number;
+  message: string;
+  snippet: string;
+  errorLineText: string;
+  suggestion?: string;
+}
+
 export interface ParsedManifestResult {
   detected: boolean;
   filename?: string;
@@ -22,6 +31,81 @@ export interface ParsedManifestResult {
   suggestedRole?: string;
   suggestedSkillName?: string;
   summary: string[];
+  parseError?: JsonParseDiagnostic;
+}
+
+/**
+ * Pinpoints syntax errors in malformed JSON manifests with exact line, column,
+ * contextual snippet with pointer, and actionable fix suggestions.
+ */
+export function extractJsonError(content: string, err: unknown): JsonParseDiagnostic {
+  let line = 1;
+  let column = 1;
+  const rawMsg = err && typeof err === "object" && "message" in err ? String((err as Error).message) : "Invalid JSON syntax";
+
+  // Match line and column or position from V8 / SpiderMonkey / JavaScriptCore
+  const lineColMatch = rawMsg.match(/line\s+(\d+)\s+column\s+(\d+)/i);
+  const posMatch = rawMsg.match(/position\s+(\d+)/i);
+
+  if (posMatch) {
+    const pos = parseInt(posMatch[1], 10);
+    const before = content.slice(0, pos);
+    const splitLines = before.split("\n");
+    line = splitLines.length;
+    column = splitLines[splitLines.length - 1].length + 1;
+  } else if (lineColMatch) {
+    line = parseInt(lineColMatch[1], 10);
+    column = parseInt(lineColMatch[2], 10);
+  }
+
+  const allLines = content.split("\n");
+  const errorLine = allLines[line - 1] || "";
+  const prevLine = line > 1 ? allLines[line - 2] : null;
+  const nextLine = line < allLines.length ? allLines[line] : null;
+
+  // Build a clean, formatted code snippet with line numbers
+  let snippet = "";
+  if (prevLine !== null) {
+    snippet += `${String(line - 1).padStart(3, " ")} | ${prevLine}\n`;
+  }
+  snippet += `${String(line).padStart(3, " ")} | ${errorLine}\n`;
+  const pointerIndent = " ".repeat(Math.max(0, column - 1) + 6);
+  snippet += `${pointerIndent}^\n`;
+  if (nextLine !== null) {
+    snippet += `${String(line + 1).padStart(3, " ")} | ${nextLine}`;
+  }
+
+  // Actionable diagnostic heuristic suggestions
+  let suggestion = "Ensure all property keys and string values are enclosed in double quotes (\") and syntax is valid.";
+
+  if (/\/\/|\/\*/.test(content)) {
+    suggestion = "Standard JSON does not support comments (// or /* */). Remove comments before parsing.";
+  } else if (
+    (errorLine.trim().startsWith("}") || errorLine.trim().startsWith("]")) &&
+    prevLine && prevLine.trim().endsWith(",")
+  ) {
+    suggestion = `Remove trailing comma on line ${line - 1} before closing brace/bracket.`;
+  } else if (/,\s*[}\]]/.test(content)) {
+    suggestion = "Remove the trailing comma before the closing brace '}' or bracket ']'.";
+  } else if (/'/.test(errorLine) || /'/.test(prevLine || "")) {
+    suggestion = "Replace single quotes (') with standard JSON double quotes (\") on keys and strings.";
+  } else if (/Expected ','/i.test(rawMsg) || /after property value/i.test(rawMsg)) {
+    suggestion = `Missing comma (,) separating properties on or before line ${line}.`;
+  } else if (/Expected double-quoted property name/i.test(rawMsg)) {
+    suggestion = "Wrap all object property names in double quotes, e.g. \"dependencies\": { ... }.";
+  }
+
+  // Clean the message to remove internal V8 position references
+  const cleanMsg = rawMsg.replace(/\s+in JSON at position\s+\d+.*$/i, "").trim();
+
+  return {
+    line,
+    column,
+    message: cleanMsg || "Syntax error while parsing JSON",
+    snippet,
+    errorLineText: errorLine,
+    suggestion,
+  };
 }
 
 /**
@@ -50,15 +134,28 @@ function safeExtractKeys(obj: unknown): string[] {
 export function parseProjectManifest(filename: string, content: string): ParsedManifestResult {
   const lowerName = (filename || "").toLowerCase();
   const summary: string[] = [];
+  const trimmed = (content || "").trim();
+
+  if (!trimmed) {
+    return {
+      detected: false,
+      summary: ["Please upload a file or paste valid manifest text."],
+    };
+  }
 
   // =========================================================================
   // 1. Node / JavaScript / TypeScript package.json
   // =========================================================================
-  if (
+  const isLikelyJson =
     lowerName.includes("package.json") ||
+    lowerName.endsWith(".json") ||
+    trimmed.startsWith("{") ||
+    trimmed.startsWith("[") ||
     content.includes('"dependencies"') ||
-    content.includes('"devDependencies"')
-  ) {
+    content.includes('"devDependencies"') ||
+    content.includes("'dependencies'");
+
+  if (isLikelyJson) {
     try {
       // Parse JSON safely
       const parsedRaw = JSON.parse(content);
@@ -201,8 +298,17 @@ export function parseProjectManifest(filename: string, content: string): ParsedM
           summary,
         };
       }
-    } catch {
-      // Fall through to regex if JSON was slightly invalid
+    } catch (err: unknown) {
+      // Pinpoint syntax error with line/column, snippet, and suggestion
+      const diag = extractJsonError(content, err);
+      return {
+        detected: false,
+        filename: lowerName.includes("package.json") ? "package.json" : "manifest.json",
+        summary: [
+          `JSON Syntax Error: ${diag.message} at line ${diag.line}, col ${diag.column}`,
+        ],
+        parseError: diag,
+      };
     }
   }
 

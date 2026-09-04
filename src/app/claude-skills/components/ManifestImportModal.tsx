@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useRef } from "react";
-import { UploadCloud, X, Check, FileCode, ArrowRight, AlertCircle } from "lucide-react";
+import { UploadCloud, X, Check, FileCode, ArrowRight, AlertCircle, AlertTriangle } from "lucide-react";
 import { parseProjectManifest, ParsedManifestResult } from "../lib/manifestParser";
 
 interface ManifestImportModalProps {
@@ -14,11 +14,20 @@ export function ManifestImportModal({ isOpen, onClose, onApply }: ManifestImport
   const [dragActive, setDragActive] = useState(false);
   const [pasteContent, setPasteContent] = useState("");
   const [parsedResult, setParsedResult] = useState<ParsedManifestResult | null>(null);
+  const [emptyWarning, setEmptyWarning] = useState<string | null>(null);
+  const [isShaking, setIsShaking] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   if (!isOpen) return null;
 
+  const triggerWarning = (msg: string) => {
+    setEmptyWarning(msg);
+    setIsShaking(true);
+    setTimeout(() => setIsShaking(false), 500);
+  };
+
   const handleFile = (file: File) => {
+    setEmptyWarning(null);
     const reader = new FileReader();
     reader.onload = (e) => {
       const text = e.target?.result as string;
@@ -42,7 +51,8 @@ export function ManifestImportModal({ isOpen, onClose, onApply }: ManifestImport
 
   const handleTextChange = (text: string) => {
     setPasteContent(text);
-    if (text.trim().length > 10) {
+    setEmptyWarning(null);
+    if (text.trim().length > 0) {
       const result = parseProjectManifest("pasted-manifest.json", text);
       setParsedResult(result);
     } else {
@@ -51,16 +61,31 @@ export function ManifestImportModal({ isOpen, onClose, onApply }: ManifestImport
   };
 
   const handleConfirm = () => {
-    if (parsedResult && parsedResult.detected) {
-      onApply(parsedResult);
-      onClose();
+    if (!pasteContent.trim()) {
+      triggerWarning("Please upload a file or paste valid manifest text (package.json, Cargo.toml, pyproject.toml, or go.mod).");
+      return;
     }
+
+    if (!parsedResult || !parsedResult.detected) {
+      if (parsedResult?.parseError) {
+        triggerWarning(`Syntax Error at Line ${parsedResult.parseError.line}, Col ${parsedResult.parseError.column}: ${parsedResult.parseError.suggestion || parsedResult.parseError.message}`);
+      } else {
+        triggerWarning("Unrecognized manifest format. Please provide valid package.json, Cargo.toml, pyproject.toml, or go.mod content.");
+      }
+      return;
+    }
+
+    setEmptyWarning(null);
+    onApply(parsedResult);
+    onClose();
   };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-150">
       <div
-        className="bg-white rounded-2xl border border-zinc-200 shadow-2xl max-w-lg w-full overflow-hidden space-y-4 p-5 text-zinc-900 animate-in zoom-in-95 duration-150"
+        className={`bg-white rounded-2xl border border-zinc-200 shadow-2xl max-w-lg w-full overflow-hidden space-y-4 p-5 text-zinc-900 animate-in zoom-in-95 duration-150 transition-transform ${
+          isShaking ? "translate-x-1 duration-75" : ""
+        }`}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
@@ -93,8 +118,10 @@ export function ManifestImportModal({ isOpen, onClose, onApply }: ManifestImport
           onDragLeave={() => setDragActive(false)}
           onDrop={handleDrop}
           onClick={() => fileInputRef.current?.click()}
-          className={`border-2 border-dashed rounded-xl p-5 text-center cursor-pointer transition-all ${
-            dragActive
+          className={`border-2 border-dashed rounded-xl p-4 text-center cursor-pointer transition-all ${
+            emptyWarning && !pasteContent.trim()
+              ? "border-amber-400 bg-amber-50/40"
+              : dragActive
               ? "border-orange-500 bg-orange-50/50 scale-[1.01]"
               : "border-zinc-200 hover:border-orange-400 bg-zinc-50/60 hover:bg-orange-50/20"
           }`}
@@ -108,7 +135,7 @@ export function ManifestImportModal({ isOpen, onClose, onApply }: ManifestImport
               if (e.target.files?.[0]) handleFile(e.target.files[0]);
             }}
           />
-          <FileCode className="w-6 h-6 text-zinc-400 mx-auto mb-1.5" />
+          <FileCode className="w-5 h-5 text-zinc-400 mx-auto mb-1" />
           <p className="text-xs font-semibold text-zinc-700">Click to choose file or drag & drop</p>
           <p className="text-[10px] text-zinc-400 mt-0.5">100% processed locally in your browser. Never uploaded to servers.</p>
         </div>
@@ -121,77 +148,128 @@ export function ManifestImportModal({ isOpen, onClose, onApply }: ManifestImport
             onChange={(e) => handleTextChange(e.target.value)}
             rows={3}
             placeholder={`{\n  "dependencies": {\n    "next": "15.1.0",\n    "@prisma/client": "^5.0.0"\n  }\n}`}
-            className="w-full p-2.5 border border-zinc-200 rounded-lg text-xs font-mono focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 leading-relaxed"
+            className={`w-full p-2.5 border rounded-lg text-xs font-mono focus:outline-none focus:ring-2 leading-relaxed transition-colors ${
+              emptyWarning && !pasteContent.trim()
+                ? "border-amber-400 ring-2 ring-amber-400/20 bg-amber-50/20"
+                : parsedResult?.parseError
+                ? "border-red-300 ring-1 ring-red-300/30"
+                : "border-zinc-200 focus:ring-orange-500/20 focus:border-orange-500"
+            }`}
           />
         </div>
 
-        {/* Detection Result Card */}
+        {/* Inline Warning Banner for Empty / Invalid Submission */}
+        {emptyWarning && (
+          <div className="flex items-start gap-2 p-2.5 rounded-lg bg-amber-50/95 border border-amber-300 text-amber-950 text-xs animate-in fade-in slide-in-from-top-1 duration-150">
+            <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+            <div className="space-y-0.5 min-w-0 flex-1">
+              <span className="font-bold text-amber-900 block text-[11px] uppercase tracking-wider">
+                Action Required
+              </span>
+              <span className="text-xs text-amber-800 leading-snug block">
+                {emptyWarning}
+              </span>
+            </div>
+          </div>
+        )}
+
+        {/* Detection Result / Pinpoint JSON Error Card */}
         {parsedResult && (
-          <div
-            className={`p-3.5 rounded-xl border text-xs space-y-2 ${
-              parsedResult.detected
-                ? "bg-emerald-50/60 border-emerald-200 text-emerald-950"
-                : "bg-amber-50/60 border-amber-200 text-amber-950"
-            }`}
-          >
-            <div className="flex items-center gap-1.5 font-bold">
-              {parsedResult.detected ? (
-                <>
+          <div>
+            {parsedResult.detected ? (
+              <div className="p-3.5 rounded-xl border text-xs space-y-2 bg-emerald-50/60 border-emerald-200 text-emerald-950 animate-in fade-in duration-150">
+                <div className="flex items-center gap-1.5 font-bold">
                   <Check className="w-4 h-4 text-emerald-600" />
                   <span>Detected Stack Profile ({parsedResult.filename})</span>
-                </>
-              ) : (
-                <>
-                  <AlertCircle className="w-4 h-4 text-amber-600" />
-                  <span>Unable to Parse Manifest</span>
-                </>
-              )}
-            </div>
+                </div>
 
-            {parsedResult.detected && (
-              <div className="space-y-2 pt-1">
-                <div className="grid grid-cols-2 gap-2 font-mono text-[11px]">
-                  <div className="bg-white/80 p-1.5 rounded border border-emerald-100">
-                    <span className="text-zinc-500 block text-[9px] uppercase font-sans font-bold">Framework</span>
-                    <span className="font-semibold text-zinc-900">{parsedResult.framework}</span>
-                  </div>
-                  <div className="bg-white/80 p-1.5 rounded border border-emerald-100">
-                    <span className="text-zinc-500 block text-[9px] uppercase font-sans font-bold">Language</span>
-                    <span className="font-semibold text-zinc-900">{parsedResult.language}</span>
-                  </div>
-                  <div className="bg-white/80 p-1.5 rounded border border-emerald-100">
-                    <span className="text-zinc-500 block text-[9px] uppercase font-sans font-bold">Styling</span>
-                    <span className="font-semibold text-zinc-900">{parsedResult.styling}</span>
-                  </div>
-                  <div className="bg-white/80 p-1.5 rounded border border-emerald-100">
-                    <span className="text-zinc-500 block text-[9px] uppercase font-sans font-bold">Database</span>
-                    <span className="font-semibold text-zinc-900">{parsedResult.database}</span>
-                  </div>
-                  {parsedResult.testing && (
+                <div className="space-y-2 pt-1">
+                  <div className="grid grid-cols-2 gap-2 font-mono text-[11px]">
                     <div className="bg-white/80 p-1.5 rounded border border-emerald-100">
-                      <span className="text-zinc-500 block text-[9px] uppercase font-sans font-bold">Testing</span>
-                      <span className="font-semibold text-zinc-900">{parsedResult.testing}</span>
+                      <span className="text-zinc-500 block text-[9px] uppercase font-sans font-bold">Framework</span>
+                      <span className="font-semibold text-zinc-900">{parsedResult.framework}</span>
                     </div>
-                  )}
-                  {parsedResult.validation && (
                     <div className="bg-white/80 p-1.5 rounded border border-emerald-100">
-                      <span className="text-zinc-500 block text-[9px] uppercase font-sans font-bold">Validation</span>
-                      <span className="font-semibold text-zinc-900">{parsedResult.validation}</span>
+                      <span className="text-zinc-500 block text-[9px] uppercase font-sans font-bold">Language</span>
+                      <span className="font-semibold text-zinc-900">{parsedResult.language}</span>
+                    </div>
+                    <div className="bg-white/80 p-1.5 rounded border border-emerald-100">
+                      <span className="text-zinc-500 block text-[9px] uppercase font-sans font-bold">Styling</span>
+                      <span className="font-semibold text-zinc-900">{parsedResult.styling}</span>
+                    </div>
+                    <div className="bg-white/80 p-1.5 rounded border border-emerald-100">
+                      <span className="text-zinc-500 block text-[9px] uppercase font-sans font-bold">Database</span>
+                      <span className="font-semibold text-zinc-900">{parsedResult.database}</span>
+                    </div>
+                    {parsedResult.testing && (
+                      <div className="bg-white/80 p-1.5 rounded border border-emerald-100">
+                        <span className="text-zinc-500 block text-[9px] uppercase font-sans font-bold">Testing</span>
+                        <span className="font-semibold text-zinc-900">{parsedResult.testing}</span>
+                      </div>
+                    )}
+                    {parsedResult.validation && (
+                      <div className="bg-white/80 p-1.5 rounded border border-emerald-100">
+                        <span className="text-zinc-500 block text-[9px] uppercase font-sans font-bold">Validation</span>
+                        <span className="font-semibold text-zinc-900">{parsedResult.validation}</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {parsedResult.summary && parsedResult.summary.length > 0 && (
+                    <div className="flex flex-wrap gap-1 pt-1">
+                      {parsedResult.summary.map((item, idx) => (
+                        <span
+                          key={idx}
+                          className="px-1.5 py-0.5 rounded bg-emerald-100/70 text-emerald-800 text-[10px] font-mono"
+                        >
+                          ✓ {item}
+                        </span>
+                      ))}
                     </div>
                   )}
                 </div>
-
-                {parsedResult.summary && parsedResult.summary.length > 0 && (
-                  <div className="flex flex-wrap gap-1 pt-1">
-                    {parsedResult.summary.map((item, idx) => (
-                      <span
-                        key={idx}
-                        className="px-1.5 py-0.5 rounded bg-emerald-100/70 text-emerald-800 text-[10px] font-mono"
-                      >
-                        ✓ {item}
-                      </span>
-                    ))}
+              </div>
+            ) : parsedResult.parseError ? (
+              /* Pinpoint Invalid JSON Syntax Error Card */
+              <div className="p-3.5 rounded-xl border border-red-200 bg-red-50/50 text-xs space-y-2.5 text-red-950 animate-in fade-in duration-150">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-1.5 font-bold text-red-700">
+                    <AlertTriangle className="w-4 h-4 text-red-600 shrink-0" />
+                    <span>JSON Syntax Error</span>
                   </div>
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-red-100 text-red-800 border border-red-200">
+                    Line {parsedResult.parseError.line}, Col {parsedResult.parseError.column}
+                  </span>
+                </div>
+
+                <p className="text-xs text-red-900 font-medium">
+                  {parsedResult.parseError.message}
+                </p>
+
+                {/* Contextual Code Snippet with Arrow Pointer */}
+                <div className="bg-zinc-950 text-zinc-200 p-2.5 rounded-lg font-mono text-[11px] overflow-x-auto border border-zinc-800 shadow-inner">
+                  <pre className="text-zinc-300 whitespace-pre leading-relaxed font-mono">
+                    {parsedResult.parseError.snippet}
+                  </pre>
+                </div>
+
+                {/* Actionable Suggestion */}
+                {parsedResult.parseError.suggestion && (
+                  <div className="flex items-start gap-1.5 p-2 rounded-lg bg-amber-50 border border-amber-200 text-amber-900 text-[11px]">
+                    <span className="shrink-0 font-bold">💡 Fix:</span>
+                    <span className="leading-snug">{parsedResult.parseError.suggestion}</span>
+                  </div>
+                )}
+              </div>
+            ) : (
+              /* Generic Unrecognized Fallback */
+              <div className="p-3.5 rounded-xl border border-amber-200 bg-amber-50/60 text-xs space-y-2 text-amber-950 animate-in fade-in duration-150">
+                <div className="flex items-center gap-1.5 font-bold">
+                  <AlertCircle className="w-4 h-4 text-amber-600" />
+                  <span>Unable to Parse Manifest</span>
+                </div>
+                {parsedResult.summary && parsedResult.summary.length > 0 && (
+                  <p className="text-xs text-amber-800">{parsedResult.summary[0]}</p>
                 )}
               </div>
             )}
@@ -209,13 +287,17 @@ export function ManifestImportModal({ isOpen, onClose, onApply }: ManifestImport
           </button>
           <button
             type="button"
-            disabled={!parsedResult || !parsedResult.detected}
             onClick={handleConfirm}
-            className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-semibold shadow-xs transition-all ${
+            className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-semibold shadow-xs transition-all cursor-pointer ${
               parsedResult && parsedResult.detected
-                ? "bg-orange-600 hover:bg-orange-500 text-white cursor-pointer active:scale-95"
-                : "bg-zinc-100 text-zinc-400 cursor-not-allowed border border-zinc-200"
+                ? "bg-orange-600 hover:bg-orange-500 text-white active:scale-95"
+                : "bg-zinc-100 hover:bg-zinc-200 text-zinc-600 border border-zinc-200 active:scale-95"
             }`}
+            title={
+              parsedResult && parsedResult.detected
+                ? "Apply detected stack configuration"
+                : "Click to validate manifest input"
+            }
           >
             <span>Apply to Studio</span>
             <ArrowRight className="w-3.5 h-3.5" />

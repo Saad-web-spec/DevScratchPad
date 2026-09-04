@@ -10,8 +10,8 @@ import {
 
 export function AiSkillStudioSeoContent() {
   return (
-    <article className="w-full bg-white border-t border-zinc-200 mt-12 py-16 px-4 sm:px-6 lg:px-8 text-zinc-800 font-sans selection:bg-zinc-900 selection:text-white">
-      <div className="max-w-5xl mx-auto space-y-16">
+    <article className="w-full bg-white border-t border-zinc-200 mt-8 py-16 px-4 sm:px-6 lg:px-8 text-zinc-800 font-sans selection:bg-zinc-900 selection:text-white">
+      <div className="max-w-7xl mx-auto space-y-16">
         
         {/* 1. Header & Context */}
         <section className="space-y-4 border-b border-zinc-200 pb-10">
@@ -22,7 +22,7 @@ export function AiSkillStudioSeoContent() {
           <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-zinc-900">
             The Complete Specification Guide to AI Coding Agent Rules & Skills
           </h2>
-          <p className="text-sm sm:text-base text-zinc-600 max-w-3xl leading-relaxed">
+          <p className="text-sm sm:text-base text-zinc-600 max-w-4xl leading-relaxed">
             AI Skill Studio enables software engineering teams to configure, standardize, and generate production-grade agent steering files—including Claude Code skills (<code className="text-xs font-mono bg-zinc-100 px-1 py-0.5 rounded text-zinc-800">SKILL.md</code>), Cursor Project Rules (<code className="text-xs font-mono bg-zinc-100 px-1 py-0.5 rounded text-zinc-800">.cursor/rules/*.mdc</code>), Anthropic project guidelines (<code className="text-xs font-mono bg-zinc-100 px-1 py-0.5 rounded text-zinc-800">CLAUDE.md</code>), and cross-agent orchestrations (<code className="text-xs font-mono bg-zinc-100 px-1 py-0.5 rounded text-zinc-800">AGENTS.md</code>)—with 100% client-side privacy.
           </p>
         </section>
@@ -39,7 +39,7 @@ export function AiSkillStudioSeoContent() {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
             <div className="border border-zinc-200 rounded-lg p-5 bg-zinc-50/50 space-y-3">
               <div className="flex items-center justify-between">
                 <span className="font-mono text-xs font-bold text-orange-600 bg-orange-50 border border-orange-200 px-2 py-0.5 rounded">
