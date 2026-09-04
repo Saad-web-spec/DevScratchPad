@@ -119,22 +119,6 @@ export function AiSkillStudioSeoContent() {
                 Path: /claude.json or ~/.claude.json
               </div>
             </div>
-
-            <div className="border border-zinc-200 rounded-lg p-5 bg-zinc-50/50 space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="font-mono text-xs font-bold text-indigo-600 bg-indigo-50 border border-indigo-200 px-2 py-0.5 rounded">
-                  agents/*.json
-                </span>
-                <span className="text-xs text-zinc-500 font-mono">Claude Code Subagents</span>
-              </div>
-              <h4 className="font-semibold text-zinc-900 text-sm">Subagent Role & Tool Specifications</h4>
-              <p className="text-xs text-zinc-600 leading-relaxed">
-                Defines dedicated subagents equipped with specific execution models (Claude 3.7 Sonnet, Claude 3.5 Sonnet, Haiku), strict tool capability boundaries (<code className="font-mono">Read</code>, <code className="font-mono">Write</code>, <code className="font-mono">Edit</code>, <code className="font-mono">Bash</code>, <code className="font-mono">MCP</code>), and customizable turn budgets for deep workflows.
-              </p>
-              <div className="text-[11px] font-mono text-zinc-500 bg-white border border-zinc-200 p-2 rounded">
-                Path: .claude/agents/&lt;agent-name&gt;.json
-              </div>
-            </div>
           </div>
         </section>
 
