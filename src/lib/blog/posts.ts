@@ -1949,7 +1949,7 @@ This comprehensive guide breaks down modern AI agent steering architecture in 20
   <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-5">
     <div class="space-y-2">
       <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-orange-600 text-white shadow-xs">
-        <span class="animate-pulse">✨</span>
+        <img src="/ai-skill-icon.png" class="w-4 h-4 inline-block object-contain" alt="AI Skill Studio Star" />
         <span>INTERACTIVE WORKSPACE</span>
         <span class="text-orange-200">|</span>
         <span>How to Use on Our AI Skill Studio Site</span>
