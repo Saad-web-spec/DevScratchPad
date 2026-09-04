@@ -1,7 +1,7 @@
 import { Metadata } from "next";
 import Link from "next/link";
 import { TOOLS_REGISTRY } from "@/lib/tools/registry";
-import { ArrowUpRight } from "lucide-react";
+import { ArrowUpRight, Sparkles } from "lucide-react";
 import { SiteHeader } from "@/components/layout/SiteHeader";
 import { SiteFooter } from "@/components/layout/SiteFooter";
 
@@ -52,6 +52,33 @@ export default function DeveloperToolsPage() {
           <p className="mt-2 text-sm sm:text-base text-zinc-600 max-w-2xl leading-relaxed">
             All tools execute strictly client-side in browser memory with zero network latency and zero server data transmission.
           </p>
+        </div>
+
+        {/* Featured AI Agent Architecture Spotlight */}
+        <div className="mb-12">
+          <div className="border border-orange-200 bg-gradient-to-r from-orange-50/70 via-amber-50/40 to-white p-5 sm:p-6 rounded-xl relative overflow-hidden shadow-xs">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="space-y-1.5 max-w-xl">
+                <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-medium bg-orange-100 text-orange-800 border border-orange-200">
+                  <Sparkles className="w-3 h-3 text-orange-600" />
+                  <span>Featured AI Agent Studio</span>
+                </div>
+                <h2 className="text-lg sm:text-xl font-bold text-zinc-900 tracking-tight">
+                  AI Skill Studio — SKILL.md, CLAUDE.md & Cursor Rules
+                </h2>
+                <p className="text-xs sm:text-sm text-zinc-600 leading-relaxed">
+                  Generate production-grade Claude Code skills, Cursor <code className="font-mono text-xs bg-orange-100/60 px-1 py-0.5 rounded">.mdc</code> rules, and multi-agent system directives. 100% client-side privacy with zero API keys required.
+                </p>
+              </div>
+              <Link
+                href="/ai-skill-studio"
+                className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-white text-xs font-semibold tracking-wide transition-all shrink-0 shadow-sm"
+              >
+                <span>Launch AI Studio</span>
+                <ArrowUpRight className="w-4 h-4" />
+              </Link>
+            </div>
+          </div>
         </div>
 
         <div className="space-y-12 mb-16">

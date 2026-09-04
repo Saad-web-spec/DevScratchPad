@@ -1905,6 +1905,152 @@ Need to translate a command right now? Use our offline code generators:
 Explore more in our specific language guides: [cURL to Python Deep Dive](/blog/convert-curl-to-python) and [cURL to Fetch/Axios](/blog/convert-curl-to-fetch-axios).
 `,
   },
+  {
+    slug: "claude-code-skills-cursor-rules-guide",
+    title: "The Complete Guide to Claude Code Skills (SKILL.md), Cursor Rules (.mdc), and CLAUDE.md (2026)",
+    seoTitle: "Claude Code Skills (SKILL.md) & Cursor Rules Guide 2026",
+    description: "An exhaustive technical guide to modern AI agent steering: Claude Code skills (SKILL.md), Cursor modular rules (.mdc), project-root CLAUDE.md, and multi-agent AGENTS.md.",
+    seoDescription: "Master Claude Code skills (SKILL.md), Cursor .mdc rules, and CLAUDE.md architecture. Learn YAML frontmatter specs, glob scoping, and 100% private skill generation.",
+    publishedAt: "2026-09-04T00:00:00Z",
+    updatedAt: "2026-09-04T00:00:00Z",
+    category: "API & Automation",
+    type: "guide",
+    difficulty: "Intermediate",
+    readTime: "8 min read",
+    tags: ["Claude Code", "Cursor", "AI Agent Skills", "SKILL.md", "CLAUDE.md", "Cursor Rules", "MDC", "AGENTS.md"],
+    relatedToolSlug: "json-formatter",
+    relatedGuideSlugs: ["cron-expression-cheat-sheet", "jwt-token-decode-guide"],
+    faqs: [
+      {
+        question: "Where should SKILL.md files be stored in a project?",
+        answer: "In Claude Code, project-specific skills reside in `.claude/skills/<skill-name>/SKILL.md`. For skills shared globally across all terminal sessions on your machine, place them in `~/.claude/skills/<skill-name>/SKILL.md`."
+      },
+      {
+        question: "Why did Cursor migrate from .cursorrules to .cursor/rules/*.mdc?",
+        answer: "A single monolithic .cursorrules file was loaded on every single prompt, consuming massive context token counts. Modern .mdc rules use YAML frontmatter with file glob arrays (e.g. globs: ['**/*.tsx']) and alwaysApply: false, loading only when matching files are edited."
+      },
+      {
+        question: "Can I generate Claude skills and Cursor rules offline?",
+        answer: "Yes. DevScratchpad's AI Skill Studio executes 100% in browser memory with zero server data transmission, zero telemetry, and zero API key requirements."
+      }
+    ],
+    content: `
+AI coding companions have evolved from simple auto-complete widgets into autonomous reasoning agents capable of planning complex refactors, navigating monorepos, and running terminal commands. However, without strict behavioral guardrails and project context, agents frequently introduce architectural drift, loose typings, and unnecessary diffs.
+
+This definitive guide covers how to standardize and author the four primary AI steering formats in 2026:
+1. **Claude Code Skills (\`SKILL.md\`)**
+2. **Cursor Modular Rules (\`.cursor/rules/*.mdc\`)**
+3. **Project-Root Guidelines (\`CLAUDE.md\`)**
+4. **Multi-Agent Protocol Directives (\`AGENTS.md\`)**
+
+> **Quick Tool**: Need to scaffold these configurations for your stack in seconds? Launch our 100% client-side [AI Skill Studio](/ai-skill-studio) to visually build and export a complete AI configuration kit.
+
+---
+
+## 1. Claude Code Skills (\`SKILL.md\`)
+
+Claude Code (Anthropic's terminal agent) introduces **Skills**—reusable, modular instruction packages that provide procedural expertise on demand.
+
+### Anatomy of a \`SKILL.md\`
+A valid \`SKILL.md\` must begin with strict YAML frontmatter:
+
+\`\`\`yaml
+---
+name: security-auditor
+description: Audit TypeScript & Python codebases for CVEs, exposed secrets, and unhandled promise rejections.
+---
+\`\`\`
+
+### Directory Placement
+- **Project Scope**: \`.claude/skills/<skill-name>/SKILL.md\` (committed to Git, shared with team).
+- **Global Scope**: \`~/.claude/skills/<skill-name>/SKILL.md\` (available across all local repositories).
+
+### How Claude Code Executes Skills
+Claude Code indexes the frontmatter during session startup. When a developer's prompt matches the skill's description—or when called via a slash command like \`/security-auditor\`—the agent injects the full markdown instructions into the active context window.
+
+---
+
+## 2. Cursor Modular Rules (\`.cursor/rules/*.mdc\`)
+
+Cursor has officially deprecated the monolithic \`.cursorrules\` file in favor of modular \`.mdc\` rulebooks located in \`.cursor/rules/\`.
+
+### Why the Shift to Modular \`.mdc\`?
+In large codebases, feeding a 500-line general rulebook into every prompt wastes valuable context window tokens and dilutes model attention. With \`.mdc\`, rules attach conditionally based on file globs.
+
+### Structure of an \`.mdc\` Rule
+\`\`\`markdown
+---
+description: Next.js 15 App Router & Server Actions standards
+globs: ["src/app/**/*.tsx", "src/actions/**/*.ts"]
+alwaysApply: false
+---
+
+# Next.js 15 Standards
+- Enforce React Server Components (RSC) by default.
+- Only introduce 'use client' at leaf interactive components.
+- Validate all Server Action inputs with Zod schemas.
+\`\`\`
+
+---
+
+## 3. Anthropic Project Root Guidelines (\`CLAUDE.md\`)
+
+Located at the repository root, \`CLAUDE.md\` acts as the foundational constitution for Claude sessions. Anthropic recommends using structured XML tags to maximize parsing efficiency:
+
+\`\`\`markdown
+# Project Guidelines
+
+<project_context>
+High-throughput event streaming backend built with Node.js 22, TypeScript 5.8, and Apache Kafka.
+</project_context>
+
+<tech_stack>
+- Language: TypeScript (strict mode enabled)
+- Framework: Fastify
+- ORM: Prisma with PostgreSQL
+</tech_stack>
+
+<workflows_and_procedures>
+1. Run 'npm test' before reporting completion.
+2. Deliver surgical, focused git diffs.
+3. Never introduce 'any' types or ignore TypeScript warnings.
+</workflows_and_procedures>
+\`\`\`
+
+---
+
+## 4. Multi-Agent Systems (\`AGENTS.md\`)
+
+For teams utilizing multi-agent orchestration frameworks (such as Google Antigravity, CrewAI, or AutoGen), \`AGENTS.md\` establishes role boundaries and handover protocols:
+
+\`\`\`markdown
+<!-- BEGIN:agent-rules -->
+# AI Agent Directives
+
+## Architect Agent
+- Responsible for technical specifications and database schema design.
+- Prohibits writing application code directly.
+
+## Implementation Agent
+- Translates Architect specifications into typed modules.
+- Enforces unit test coverage exceeding 90%.
+<!-- END:agent-rules -->
+\`\`\`
+
+---
+
+## 5. Automated Generation with AI Skill Studio
+
+Rather than manually handcrafting these four configuration files for each repository, you can use [AI Skill Studio](/ai-skill-studio):
+
+1. **Manifest Ingestion**: Drag & drop your \`package.json\`, \`Cargo.toml\`, \`pyproject.toml\`, or \`go.mod\`. The engine automatically detects your framework, ORM, and conventions.
+2. **Behavioral Guardrails**: Toggle surgical diffs, guard clauses, strict accessibility, and type-safety rules.
+3. **One-Click Export**: Download a unified \`.zip\` suite containing \`.cursor/rules/\`, \`.claude/skills/\`, \`CLAUDE.md\`, and \`AGENTS.md\` ready to commit to your repository.
+4. **100% Client-Side Privacy**: Runs completely in browser memory with zero server uploads and zero API keys.
+
+Launch the studio now: [https://www.devscratchpad.tech/ai-skill-studio](/ai-skill-studio).
+`,
+  },
 ];
 
 export function getBlogPost(slug: string): BlogPost | undefined {

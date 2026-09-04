@@ -36,6 +36,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
     },
     blogIndex,
     {
+      url: `${SITE_URL}/ai-skill-studio`,
+      lastModified: new Date(),
+      changeFrequency: "daily" as const,
+      priority: 1.0,
+    },
+    {
       url: `${SITE_URL}/developer-tools`,
       lastModified: new Date(),
       changeFrequency: "weekly" as const,
