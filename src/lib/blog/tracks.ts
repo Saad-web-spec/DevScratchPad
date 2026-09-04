@@ -46,6 +46,7 @@ export const LEARNING_TRACKS: LearningTrack[] = [
     estimatedTime: "40 mins",
     level: "Beginner",
     guideSlugs: [
+      "claude-code-skills-cursor-rules-guide",
       "convert-curl-to-python",
       "convert-curl-to-fetch-axios",
       "curl-to-go-javascript-python-code-generators",
@@ -56,6 +57,14 @@ export const LEARNING_TRACKS: LearningTrack[] = [
 ];
 
 export const QUICK_CHEATS: QuickCheatItem[] = [
+  {
+    id: "claude-mcp-github",
+    title: "Claude MCP GitHub Server Spec",
+    syntax: '{"mcpServers":{"github":{"command":"npx","args":["-y","@modelcontextprotocol/server-github"],"env":{"GITHUB_PERSONAL_ACCESS_TOKEN":"ghp_your_token"}}}}',
+    description: "Model Context Protocol JSON configuration for GitHub repo tools in Claude.",
+    category: "AI & MCP",
+    toolSlug: "ai-skill-studio",
+  },
   {
     id: "cron-15",
     title: "Cron Every 15 Minutes",

@@ -1907,17 +1907,17 @@ Explore more in our specific language guides: [cURL to Python Deep Dive](/blog/c
   },
   {
     slug: "claude-code-skills-cursor-rules-guide",
-    title: "The Complete Guide to Claude Code Skills (SKILL.md), Cursor Rules (.mdc), and CLAUDE.md (2026)",
-    seoTitle: "Claude Code Skills (SKILL.md) & Cursor Rules Guide 2026",
-    description: "An exhaustive technical guide to modern AI agent steering: Claude Code skills (SKILL.md), Cursor modular rules (.mdc), project-root CLAUDE.md, and multi-agent AGENTS.md.",
-    seoDescription: "Master Claude Code skills (SKILL.md), Cursor .mdc rules, and CLAUDE.md architecture. Learn YAML frontmatter specs, glob scoping, and 100% private skill generation.",
+    title: "The Complete Guide to Claude Code Skills (SKILL.md), Cursor Rules (.mdc), CLAUDE.md, and MCP (2026)",
+    seoTitle: "Claude Code Skills (SKILL.md), Cursor Rules (.mdc) & MCP Guide 2026",
+    description: "An exhaustive technical guide to modern AI agent steering: Claude Code skills (SKILL.md), Cursor modular rules (.mdc), project-root CLAUDE.md, multi-agent AGENTS.md, and Model Context Protocol (claude.json) with real-time GitHub token validation.",
+    seoDescription: "Master Claude Code skills (SKILL.md), Cursor .mdc rules, CLAUDE.md, and Claude MCP server configs. Learn YAML frontmatter specs, glob scoping, GitHub PAT validation, and 100% private rule generation.",
     publishedAt: "2026-09-04T00:00:00Z",
     updatedAt: "2026-09-04T00:00:00Z",
     category: "API & Automation",
     type: "guide",
     difficulty: "Intermediate",
-    readTime: "8 min read",
-    tags: ["Claude Code", "Cursor", "AI Agent Skills", "SKILL.md", "CLAUDE.md", "Cursor Rules", "MDC", "AGENTS.md"],
+    readTime: "9 min read",
+    tags: ["Claude Code", "Cursor", "AI Agent Skills", "SKILL.md", "CLAUDE.md", "Cursor Rules", "MDC", "AGENTS.md", "MCP", "claude.json"],
     relatedToolSlug: "ai-skill-studio",
     relatedGuideSlugs: ["cron-expression-cheat-sheet", "jwt-token-decode-guide"],
     faqs: [
@@ -1928,6 +1928,14 @@ Explore more in our specific language guides: [cURL to Python Deep Dive](/blog/c
       {
         question: "Why did Cursor migrate from .cursorrules to .cursor/rules/*.mdc?",
         answer: "A single monolithic .cursorrules file was loaded on every single prompt, consuming massive context token counts. Modern .mdc rules use YAML frontmatter with file glob arrays (e.g. globs: ['**/*.tsx']) and alwaysApply: false, loading only when matching files are edited."
+      },
+      {
+        question: "What is the difference between CLAUDE.md and claude.json (MCP)?",
+        answer: "CLAUDE.md provides behavioral steering instructions and architectural directives loaded into Claude's prompt context at startup. In contrast, claude.json configures external Model Context Protocol (MCP) servers (e.g., GitHub, PostgreSQL, filesystem) enabling Claude to run commands, inspect repositories, and execute database queries."
+      },
+      {
+        question: "How does AI Skill Studio validate Claude MCP configurations and GitHub access tokens?",
+        answer: "The studio features a real-time MCP validation engine that verifies executable commands, server keys, and environment variables. For GitHub MCP servers, it detects placeholder tokens, verifies authentic classic (`ghp_`) and fine-grained (`github_pat_`) prefixes, and provides a direct 1-click shortcut to generate a PAT on GitHub with `repo` and `read:org` scopes."
       },
       {
         question: "How does AI Skill Studio protect my proprietary code?",
@@ -2017,6 +2025,12 @@ Standardized coordination file for multi-agent runners (Antigravity, CrewAI, Aut
 - **Location**: \`/AGENTS.md\` in the project root.
 - **Demarcation**: Encapsulated within \`<!-- BEGIN:agent-rules -->\` and \`<!-- END:agent-rules -->\` tags to establish role boundaries, prohibited operations, and inter-agent handoff contracts.
 
+### E. Claude Model Context Protocol (\`claude.json\`)
+Anthropic's open standard for connecting AI coding assistants to external data sources, local systems, and developer tools.
+- **Location**: Project-root \`claude.json\` (for Claude Code CLI) or merged into \`claude_desktop_config.json\` (for Claude Desktop).
+- **Tool Pipelines**: Configures stdio MCP servers such as local filesystem inspection, GitHub API integration, PostgreSQL schemas, and Brave web search.
+- **Security & Tokens**: Requires authentic Personal Access Tokens (such as GitHub PATs with \`repo\` scope) passed safely through local environment variable blocks.
+
 ---
 
 ## 2. In-Depth Walkthrough: How to Use Every Feature in AI Skill Studio
@@ -2024,12 +2038,13 @@ Standardized coordination file for multi-agent runners (Antigravity, CrewAI, Aut
 [AI Skill Studio](/ai-skill-studio) was built to eliminate manual prompt engineering ceremony. Here is an exhaustive, feature-by-feature breakdown of everything our studio offers:
 
 ### Feature 1: Multi-Format Architecture Switching
-- **What it does**: Allows you to author a single unified set of engineering requirements and seamlessly transpile it across all 4 specifications (\`SKILL.md\`, \`cursor_mdc\`, \`claude_md\`, and \`agents_md\`).
+- **What it does**: Allows you to author a single unified set of engineering requirements and seamlessly transpile it across all 5 specifications (\`SKILL.md\`, \`cursor_mdc\`, \`claude_md\`, \`agents_md\`, and \`claude.json\`).
 - **How to use it**: At the top of the studio's editor panel, click between the format pill buttons:
+  - **Cursor .mdc (.cursorrules)**: Adds glob pattern inputs, \`alwaysApply\` toggles, and Cursor IDE formatting.
   - **Claude SKILL.md**: Generates strict YAML frontmatter and Claude Code numbered procedure blocks.
-  - **Cursor .mdc**: Adds glob pattern inputs, \`alwaysApply\` toggles, and Cursor IDE formatting.
   - **CLAUDE.md**: Structures requirements into Anthropic's XML tag architecture.
   - **AGENTS.md**: Wraps directives in multi-agent demarcation tags for autonomous runners.
+  - **claude.json (MCP Servers)**: Configures external context servers with executable commands, path arguments, and secure environment variables.
 
 ### Feature 2: Smart Manifest Ingestion Engine
 - **What it does**: Eliminates manual configuration by parsing your codebase's manifest file in local browser memory.
@@ -2076,7 +2091,7 @@ Standardized coordination file for multi-agent runners (Antigravity, CrewAI, Aut
 - **Safety Guard (\`isManuallyEdited\`)**: Once you manually edit the output in the Monaco editor, the studio preserves your customized text and prevents form changes from accidentally overwriting your work. A **"Reset to Template"** button lets you re-enable automatic synchronization whenever you wish.
 
 ### Feature 7: 1-Click Complete AI Workspace Suite ZIP Bundler
-- **What it does**: Compiles all four configuration files into a single, clean directory hierarchy ready to drop into your Git repository.
+- **What it does**: Compiles all configurations into a single, clean directory hierarchy ready to drop into your Git repository.
 - **Generated Directory Layout**:
   \`\`\`text
   your-project/
@@ -2089,11 +2104,21 @@ Standardized coordination file for multi-agent runners (Antigravity, CrewAI, Aut
   │           └── SKILL.md
   ├── CLAUDE.md
   ├── AGENTS.md
+  ├── claude.json (MCP servers for Claude Code & Claude Desktop)
   └── README.md (Contains copy-paste installation instructions)
   \`\`\`
 - **How to use it**: Click **"Export AI Kit (.zip)"** in the top-right toolbar. The archive is generated locally via JSZip and downloaded directly to your machine.
 
-### Feature 8: 100% In-Browser Privacy Guarantee
+### Feature 8: Real-Time MCP & GitHub PAT Security Validation Engine
+- **What it does**: Dynamically audits your MCP configuration to ensure seamless execution in Claude Desktop and Claude Code CLI without silent runtime crashes.
+- **Verification Checks**:
+  - **GitHub Personal Access Token**: Verifies presence, flags dummy placeholder tokens (e.g. \`ghp_your_token_here\`), and checks authentic prefixes (\`ghp_\` classic, \`github_pat_\` fine-grained).
+  - **1-Click Token Generator**: Provides an instant link pre-configured with required \`repo\`, \`read:org\`, and \`read:user\` scopes on GitHub.
+  - **PostgreSQL URIs**: Validates \`postgresql://\` connection strings and alerts against unconfigured localhost defaults.
+  - **Filesystem Paths**: Validates that target directory paths (e.g. \`./\` or absolute roots) are explicitly passed.
+  - **Live Diagnostics Panel**: Displays instant badges (\`Ready for Claude\`, \`Errors\`, or \`Warnings\`) with actionable remediation guidance.
+
+### Feature 9: 100% In-Browser Privacy Guarantee
 - **What it does**: Ensures that your proprietary repository structure, database schemas, internal package names, and prompt engineering instructions never leave your machine.
 - **How to verify**: Open your browser's Developer Tools (F12) -> Network tab. Perform an import, customize rules, and export a ZIP—zero outgoing HTTP requests are made.
 
