@@ -1827,24 +1827,24 @@ ${exampleBad.trim()}
 
               {/* GitHub PAT Helper Banner */}
               {mcpValidation.isGitHub && (
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-2.5 bg-blue-50/60 border border-blue-200/80 rounded-lg text-xs">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-2.5 bg-orange-50/50 border border-orange-200/50 rounded-lg text-xs">
                   <div className="space-y-0.5">
-                    <div className="font-semibold text-blue-950 flex items-center gap-1.5">
-                      <ExternalLink className="w-3.5 h-3.5 text-blue-600 shrink-0" />
+                    <div className="font-semibold text-orange-800 flex items-center gap-1.5">
+                      <ExternalLink className="w-3.5 h-3.5 text-orange-800 shrink-0" />
                       <span>GitHub Personal Access Token (PAT) Required</span>
                     </div>
-                    <p className="text-[11px] text-blue-800 leading-relaxed">
-                      Classic token (<code className="bg-blue-100/80 px-1 py-0.2 rounded font-mono text-[10px]">ghp_...</code>) or Fine-grained (<code className="bg-blue-100/80 px-1 py-0.2 rounded font-mono text-[10px]">github_pat_...</code>) with <code className="bg-blue-100/80 px-1 py-0.2 rounded font-mono text-[10px]">repo</code> and <code className="bg-blue-100/80 px-1 py-0.2 rounded font-mono text-[10px]">read:org</code> scopes.
+                    <p className="text-[11px] text-orange-800 leading-relaxed">
+                      Classic token (<code className="bg-orange-100/60 text-orange-800 px-1 py-0.2 rounded font-mono text-[10px]">ghp_...</code>) or Fine-grained (<code className="bg-orange-100/60 text-orange-800 px-1 py-0.2 rounded font-mono text-[10px]">github_pat_...</code>) with <code className="bg-orange-100/60 text-orange-800 px-1 py-0.2 rounded font-mono text-[10px]">repo</code> and <code className="bg-orange-100/60 text-orange-800 px-1 py-0.2 rounded font-mono text-[10px]">read:org</code> scopes.
                     </p>
                   </div>
                   <a
                     href="https://github.com/settings/tokens/new?description=Claude+Code+MCP&scopes=repo,read:org,read:user"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center justify-center gap-1 px-3 py-1.5 bg-white hover:bg-blue-50 text-blue-700 hover:text-blue-800 border border-blue-300 rounded-md text-xs font-semibold transition-all shadow-2xs shrink-0 cursor-pointer"
+                    className="inline-flex items-center justify-center gap-1 px-3 py-1.5 bg-white hover:bg-orange-50/80 text-orange-700 hover:text-orange-800 border border-orange-200 rounded-md text-xs font-semibold transition-all shadow-2xs shrink-0 cursor-pointer"
                   >
                     <span>Generate Token</span>
-                    <ExternalLink className="w-3 h-3" />
+                    <ExternalLink className="w-3 h-3 text-orange-700" />
                   </a>
                 </div>
               )}
