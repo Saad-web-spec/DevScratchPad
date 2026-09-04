@@ -12,9 +12,38 @@
 
 <br/>
 
-[**Explore 23+ Tools**](https://devscratchpad.tech) • [**Report a Bug**](https://github.com/Saad-web-spec/DevScratchPad/issues/new) • [**Request a Feature**](https://github.com/Saad-web-spec/DevScratchPad/issues/new) • [**Submit a PR**](./CONTRIBUTING.md)
+[**AI Skill Studio**](https://devscratchpad.tech/ai-skill-studio) • [**Explore 23+ Tools**](https://devscratchpad.tech) • [**Engineering Blog**](https://devscratchpad.tech/blog) • [**Report a Bug**](https://github.com/Saad-web-spec/DevScratchPad/issues/new) • [**Submit a PR**](./CONTRIBUTING.md)
 
 </div>
+
+---
+
+## 🤖 Flagship: AI Skill Studio & Rule Architect
+
+> **[Open AI Skill Studio in Browser →](https://devscratchpad.tech/ai-skill-studio)**  
+> The premier 100% offline builder to configure, audit, and export production-grade steering instructions for Claude Code (`SKILL.md`), Cursor IDE (`.cursor/rules/*.mdc`), Anthropic (`CLAUDE.md`), and Multi-Agent frameworks (`AGENTS.md`).
+
+### Target Format Specifications
+| Format | Target Platform | Output Directory | Description |
+| :--- | :--- | :--- | :--- |
+| **`SKILL.md`** | Claude Code & Agentic CLI | `.claude/skills/<name>/SKILL.md` | Packaged modular skills with YAML frontmatter and dynamic context loading. |
+| **`.mdc`** | Cursor IDE (Modern Standard) | `.cursor/rules/<name>.mdc` | Modular Cursor rulebooks scoped with globs and `alwaysApply` flags. |
+| **`CLAUDE.md`** | Anthropic Root Guidelines | `/CLAUDE.md` | Repository-wide instructions using token-dense semantic XML tags. |
+| **`AGENTS.md`** | Multi-Agent Frameworks | `/AGENTS.md` | Demarcated rule blocks for Antigravity, CrewAI, and AutoGen systems. |
+| **`claude.json`** | MCP Runtime | `~/.claude.json` | Executable commands and environment bindings for Model Context Protocol servers. |
+
+### Key Studio Capabilities
+- 📦 **Manifest Auto-Detection:** Drop your `package.json`, `Cargo.toml`, `pyproject.toml`, or `go.mod` to auto-detect your stack and generate tailored rules in seconds.
+- 🩺 **Static Analysis Audit Panel:** Real-time scoring across 5 critical dimensions (Trigger Specificity, Rule Density, Boundary Enforcements, Format Precision, Security Hardening) with one-click Auto-Fix.
+- ⚡ **Curated Production Presets:** Statically pre-rendered presets ready for immediate use:
+  - [Next.js 15 App Router Cursor Rules](https://devscratchpad.tech/ai-skill-studio/cursor-rules/nextjs-15)
+  - [Cursor Rules Pro (.mdc)](https://devscratchpad.tech/ai-skill-studio/cursor-rules/cursor-rules-pro)
+  - [React 19 SPA Cursor Rules](https://devscratchpad.tech/ai-skill-studio/cursor-rules/react-19)
+  - [FastAPI Python Cursor Rules](https://devscratchpad.tech/ai-skill-studio/cursor-rules/fastapi)
+  - [Codebase Auditor Claude Skill](https://devscratchpad.tech/ai-skill-studio/claude-skills/codebase-auditor)
+  - [Security Vulnerability Guard](https://devscratchpad.tech/ai-skill-studio/claude-skills/security-guard)
+- 🔗 **Zero-Backend State Sharing:** Ultra-compact permalink generation with LZ compression or canonical SEO URLs with zero server storage.
+- 🗜️ **Export Unified AI Kit (.zip):** Download an all-in-one ZIP archive pre-structured for immediate placement into your project's repository.
 
 ---
 
@@ -45,6 +74,7 @@
 
 | Category | Tool Name | Route | What It Does |
 | :--- | :--- | :--- | :--- |
+| **AI & Agentic Tools** | [AI Skill Studio](https://devscratchpad.tech/ai-skill-studio) | `/ai-skill-studio` | Configure, audit, and export production skills (`SKILL.md`, `.mdc`, `CLAUDE.md`, `AGENTS.md`, MCP). |
 | **Code Formatting** | [JSON Formatter](https://devscratchpad.tech/tools/json-formatter) | `/tools/json-formatter` | Multi-indent formatting, minification, and real-time syntax error line tracking. |
 | | [JSON Validator](https://devscratchpad.tech/tools/json-validator) | `/tools/json-validator` | Secure, strict JSON syntax validator to catch missing commas and string issues. |
 | | [XML Formatter](https://devscratchpad.tech/tools/xml-formatter) | `/tools/xml-formatter` | Format, beautify, and minify XML data structures with indentation controls. |
