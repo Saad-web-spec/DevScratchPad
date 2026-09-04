@@ -59,8 +59,8 @@ export default function DeveloperToolsPage() {
           <div className="border border-orange-200 bg-gradient-to-r from-orange-50/70 via-amber-50/40 to-white p-5 sm:p-6 rounded-xl relative overflow-hidden shadow-xs">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div className="space-y-1.5 max-w-xl">
-                <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-orange-100 text-orange-800 border border-orange-200">
-                  <img src="/ai-skill-icon.png" className="w-4 h-4 object-contain" alt="Star" />
+                <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-medium bg-orange-100 text-orange-800 border border-orange-200">
+                  <Sparkles className="w-3 h-3 text-orange-600" />
                   <span>Featured AI Agent Studio</span>
                 </div>
                 <h2 className="text-lg sm:text-xl font-bold text-zinc-900 tracking-tight">

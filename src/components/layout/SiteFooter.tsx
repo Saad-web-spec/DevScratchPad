@@ -50,7 +50,7 @@ export function SiteFooter() {
               <li><Link href="/tools/jwt" className="hover:text-zinc-900 transition-colors">JWT Token Decoder</Link></li>
               <li><Link href="/tools/uuid-generator" className="hover:text-zinc-900 transition-colors">UUID v4 Generator</Link></li>
               <li><Link href="/tools/cron" className="hover:text-zinc-900 transition-colors">Cron Schedule Visualizer</Link></li>
-              <li><Link href="/ai-skill-studio" className="font-medium text-zinc-900 hover:text-zinc-600 transition-colors flex items-center gap-1.5"><img src="/ai-skill-icon.png" className="w-3.5 h-3.5 object-contain" alt="Star" />AI Skill Studio (SKILL.md & Cursor)</Link></li>
+              <li><Link href="/ai-skill-studio" className="font-medium text-zinc-900 hover:text-zinc-600 transition-colors flex items-center gap-1.5"><span className="w-1.5 h-1.5 rounded-full bg-orange-500 animate-pulse"></span>AI Skill Studio (SKILL.md & Cursor)</Link></li>
               <li><Link href="/developer-tools" className="font-medium text-zinc-900 hover:text-zinc-600 transition-colors">All 20+ Utilities →</Link></li>
             </ul>
           </div>

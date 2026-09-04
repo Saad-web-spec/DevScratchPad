@@ -17,7 +17,7 @@ export function AiSkillStudioSeoContent() {
         {/* 1. Header & Context */}
         <section className="space-y-4 border-b border-zinc-200 pb-10">
           <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full text-xs font-mono font-medium bg-orange-50 text-orange-800 border border-orange-200">
-            <img src="/ai-skill-icon.png" className="w-4 h-4 object-contain" alt="Star" />
+            <Sparkles className="w-3.5 h-3.5 text-orange-600" />
             <span>Developer Reference & Technical Architecture</span>
           </div>
           <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-zinc-900">
