@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, ChevronRight, Terminal, ArrowRight, ArrowUpRight, Clock, ShieldCheck, Tag, Sparkles } from "lucide-react";
+import { ArrowLeft, ChevronRight, Terminal, ArrowRight, ArrowUpRight, Clock, ShieldCheck, Tag } from "lucide-react";
 import { Marked } from "marked";
 import { markedHighlight } from "marked-highlight";
 import hljs from "highlight.js";
@@ -294,7 +294,7 @@ export default async function BlogPostPage({
               <div className="space-y-1.5">
                 <div className="flex items-center gap-2">
                   <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-orange-100 text-orange-800 border border-orange-200">
-                    <Sparkles className="w-3 h-3 text-orange-600 animate-pulse" />
+                    <img src="/orange-star.png" className="w-3.5 h-3.5 object-contain shrink-0" alt="Star" />
                     <span>Live Interactive Studio</span>
                   </span>
                   <span className="text-[10px] font-mono text-zinc-500 bg-white border border-zinc-200 px-1.5 py-0.5 rounded">

@@ -1,7 +1,6 @@
 import React from "react";
 import Link from "next/link";
 import {
-  Sparkles,
   ShieldCheck,
   Layers,
   HelpCircle,
@@ -17,7 +16,7 @@ export function AiSkillStudioSeoContent() {
         {/* 1. Header & Context */}
         <section className="space-y-4 border-b border-zinc-200 pb-10">
           <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full text-xs font-mono font-medium bg-orange-50 text-orange-800 border border-orange-200">
-            <Sparkles className="w-3.5 h-3.5 text-orange-600" />
+            <img src="/orange-star.png" className="w-3.5 h-3.5 object-contain shrink-0" alt="Star" />
             <span>Developer Reference & Technical Architecture</span>
           </div>
           <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-zinc-900">

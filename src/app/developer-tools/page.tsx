@@ -1,7 +1,7 @@
 import { Metadata } from "next";
 import Link from "next/link";
 import { TOOLS_REGISTRY } from "@/lib/tools/registry";
-import { ArrowUpRight, Sparkles } from "lucide-react";
+import { ArrowUpRight } from "lucide-react";
 import { SiteHeader } from "@/components/layout/SiteHeader";
 import { SiteFooter } from "@/components/layout/SiteFooter";
 
@@ -59,8 +59,8 @@ export default function DeveloperToolsPage() {
           <div className="border border-orange-200 bg-gradient-to-r from-orange-50/70 via-amber-50/40 to-white p-5 sm:p-6 rounded-xl relative overflow-hidden shadow-xs">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div className="space-y-1.5 max-w-xl">
-                <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-medium bg-orange-100 text-orange-800 border border-orange-200">
-                  <Sparkles className="w-3 h-3 text-orange-600" />
+                <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-orange-100 text-orange-800 border border-orange-200">
+                  <img src="/orange-star.png" className="w-3.5 h-3.5 object-contain shrink-0" alt="Star" />
                   <span>Featured AI Agent Studio</span>
                 </div>
                 <h2 className="text-lg sm:text-xl font-bold text-zinc-900 tracking-tight">
