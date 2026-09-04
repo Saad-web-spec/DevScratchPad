@@ -21,6 +21,8 @@ import {
   FolderGit2,
   UploadCloud,
   Archive,
+  Server,
+  Bot,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { downloadAiKitZip } from "./lib/zipExporter";
@@ -39,7 +41,101 @@ const Editor = dynamic(() => import("@monaco-editor/react"), {
 });
 
 // Format Types
-type OutputFormat = "skill_md" | "claude_md" | "cursor_mdc" | "agents_md";
+type OutputFormat = "skill_md" | "claude_md" | "cursor_mdc" | "agents_md" | "mcp_json" | "subagent_json";
+
+// MCP Server Preset Definition
+interface McpServerPreset {
+  id: string;
+  name: string;
+  label: string;
+  description: string;
+  command: string;
+  args: string[];
+  env: Record<string, string>;
+}
+
+const MCP_PRESETS: McpServerPreset[] = [
+  {
+    id: "filesystem",
+    name: "filesystem",
+    label: "Local Filesystem",
+    description: "Secure local file access with directory scoping for repository inspection.",
+    command: "npx",
+    args: ["-y", "@modelcontextprotocol/server-filesystem", "./"],
+    env: {},
+  },
+  {
+    id: "github",
+    name: "github",
+    label: "GitHub Operations",
+    description: "Search repos, inspect pull requests, read branches, and create issues.",
+    command: "npx",
+    args: ["-y", "@modelcontextprotocol/server-github"],
+    env: { GITHUB_PERSONAL_ACCESS_TOKEN: "ghp_your_token_here" },
+  },
+  {
+    id: "postgres",
+    name: "postgres",
+    label: "PostgreSQL Database",
+    description: "Read-only schema inspection and SQL query execution against Postgres.",
+    command: "npx",
+    args: ["-y", "@modelcontextprotocol/server-postgres", "postgresql://user:password@localhost:5432/mydb"],
+    env: {},
+  },
+  {
+    id: "brave-search",
+    name: "brave-search",
+    label: "Brave Web Search",
+    description: "Real-time web search and documentation discovery via Brave Search API.",
+    command: "npx",
+    args: ["-y", "@modelcontextprotocol/server-brave-search"],
+    env: { BRAVE_API_KEY: "your_brave_search_api_key" },
+  },
+  {
+    id: "fetch",
+    name: "fetch",
+    label: "Web Fetch & HTML",
+    description: "Converts remote web pages and API responses into clean markdown for context.",
+    command: "uvx",
+    args: ["mcp-server-fetch"],
+    env: {},
+  },
+  {
+    id: "memory",
+    name: "memory",
+    label: "Knowledge Graph",
+    description: "Persistent graph-based entity memory across agent coding sessions.",
+    command: "npx",
+    args: ["-y", "@modelcontextprotocol/server-memory"],
+    env: {},
+  },
+  {
+    id: "custom",
+    name: "custom-server",
+    label: "Custom MCP Server",
+    description: "Configure any bespoke Node, Python, Docker, or CLI MCP server executable.",
+    command: "node",
+    args: ["./dist/index.js"],
+    env: {},
+  },
+];
+
+const SUBAGENT_TOOLS = [
+  { id: "Read", label: "Read", desc: "Inspect files & directories" },
+  { id: "Write", label: "Write", desc: "Create new files" },
+  { id: "Edit", label: "Edit", desc: "Surgically modify existing files" },
+  { id: "Bash", label: "Bash", desc: "Execute terminal commands" },
+  { id: "Grep", label: "Grep", desc: "Search pattern matches across codebase" },
+  { id: "Glob", label: "Glob", desc: "Pattern match and find filenames" },
+  { id: "MCP", label: "MCP", desc: "Call external MCP tool endpoints" },
+];
+
+const SUBAGENT_MODELS = [
+  { id: "claude-3-7-sonnet-20250219", label: "Claude 3.7 Sonnet (Hybrid)", desc: "Latest flagship with deep reasoning capabilities" },
+  { id: "claude-3-5-sonnet-20241022", label: "Claude 3.5 Sonnet (Coding)", desc: "Industry benchmark for high-velocity software engineering" },
+  { id: "claude-3-5-haiku-20241022", label: "Claude 3.5 Haiku (Fast)", desc: "Low latency, cost-effective for targeted tasks" },
+  { id: "inherit", label: "Inherit Parent Model", desc: "Dynamically match whatever model the primary agent executes" },
+];
 
 // Preset Definition
 interface SkillPreset {
@@ -524,6 +620,46 @@ export function ClaudeSkillsClient() {
   const [isExportingZip, setIsExportingZip] = useState(false);
   const [mobileTab, setMobileTab] = useState<"form" | "editor">("form");
 
+  // MCP Server state
+  const [mcpPresetId, setMcpPresetId] = useState<string>("filesystem");
+  const [mcpServerName, setMcpServerName] = useState<string>("filesystem");
+  const [mcpCommand, setMcpCommand] = useState<string>("npx");
+  const [mcpArgs, setMcpArgs] = useState<string>("-y\n@modelcontextprotocol/server-filesystem\n./");
+  const [mcpEnvKey, setMcpEnvKey] = useState<string>("");
+  const [mcpEnvValue, setMcpEnvValue] = useState<string>("");
+
+  // Subagent state
+  const [subagentModel, setSubagentModel] = useState<string>("claude-3-7-sonnet-20250219");
+  const [subagentTools, setSubagentTools] = useState<string[]>([
+    "Read",
+    "Write",
+    "Edit",
+    "Bash",
+    "Grep",
+    "Glob",
+    "MCP",
+  ]);
+  const [subagentMaxTurns, setSubagentMaxTurns] = useState<number>(25);
+  const [subagentPermissionMode, setSubagentPermissionMode] = useState<string>("acceptEdits");
+
+  const handleSelectMcpPreset = (presetId: string) => {
+    setMcpPresetId(presetId);
+    const p = MCP_PRESETS.find((item) => item.id === presetId);
+    if (p) {
+      setMcpServerName(p.name);
+      setMcpCommand(p.command);
+      setMcpArgs(p.args.join("\n"));
+      const envKeys = Object.keys(p.env);
+      if (envKeys.length > 0) {
+        setMcpEnvKey(envKeys[0]);
+        setMcpEnvValue(p.env[envKeys[0]]);
+      } else {
+        setMcpEnvKey("");
+        setMcpEnvValue("");
+      }
+    }
+  };
+
   // LocalStorage state restore on mount
   useEffect(() => {
     try {
@@ -548,6 +684,16 @@ export function ClaudeSkillsClient() {
         if (s.format) setFormat(s.format);
         if (s.globPattern) setGlobPattern(s.globPattern);
         if (typeof s.alwaysApply === "boolean") setAlwaysApply(s.alwaysApply);
+        if (s.mcpPresetId) setMcpPresetId(s.mcpPresetId);
+        if (s.mcpServerName) setMcpServerName(s.mcpServerName);
+        if (s.mcpCommand) setMcpCommand(s.mcpCommand);
+        if (s.mcpArgs) setMcpArgs(s.mcpArgs);
+        if (s.mcpEnvKey !== undefined) setMcpEnvKey(s.mcpEnvKey);
+        if (s.mcpEnvValue !== undefined) setMcpEnvValue(s.mcpEnvValue);
+        if (s.subagentModel) setSubagentModel(s.subagentModel);
+        if (Array.isArray(s.subagentTools)) setSubagentTools(s.subagentTools);
+        if (typeof s.subagentMaxTurns === "number") setSubagentMaxTurns(s.subagentMaxTurns);
+        if (s.subagentPermissionMode) setSubagentPermissionMode(s.subagentPermissionMode);
         if (s.editorContent && s.isManuallyEdited) {
           setEditorContent(s.editorContent);
           setIsManuallyEdited(true);
@@ -583,6 +729,16 @@ export function ClaudeSkillsClient() {
             format,
             globPattern,
             alwaysApply,
+            mcpPresetId,
+            mcpServerName,
+            mcpCommand,
+            mcpArgs,
+            mcpEnvKey,
+            mcpEnvValue,
+            subagentModel,
+            subagentTools,
+            subagentMaxTurns,
+            subagentPermissionMode,
             editorContent,
             isManuallyEdited,
           })
@@ -614,6 +770,16 @@ export function ClaudeSkillsClient() {
     format,
     globPattern,
     alwaysApply,
+    mcpPresetId,
+    mcpServerName,
+    mcpCommand,
+    mcpArgs,
+    mcpEnvKey,
+    mcpEnvValue,
+    subagentModel,
+    subagentTools,
+    subagentMaxTurns,
+    subagentPermissionMode,
     editorContent,
     isManuallyEdited,
   ]);
@@ -697,6 +863,10 @@ export function ClaudeSkillsClient() {
       triggerClause = `Activated automatically when tasks involve ${framework || "system"} development, auditing, or refactoring.`;
     } else if (format === "claude_md") {
       triggerClause = "Loaded at session initialization to govern all repository workflows.";
+    } else if (format === "mcp_json") {
+      triggerClause = `Configures external MCP context servers and tooling pipelines for ${stackLabel}.`;
+    } else if (format === "subagent_json") {
+      triggerClause = `Orchestrates a dedicated subagent definition with custom tool access for ${stackLabel}.`;
     } else {
       triggerClause = `Orchestrates autonomous agents executing within ${stackLabel}.`;
     }
@@ -998,6 +1168,79 @@ ${exampleBad.trim()}
 }`;
       }
 
+      if (targetFormat === "mcp_json") {
+        const argsArray = mcpArgs
+          .split("\n")
+          .map((a) => a.trim())
+          .filter(Boolean);
+
+        const envObj: Record<string, string> = {};
+        if (mcpEnvKey.trim() && mcpEnvValue.trim()) {
+          envObj[mcpEnvKey.trim()] = mcpEnvValue.trim();
+        }
+
+        const serverConfig: Record<string, any> = {
+          command: mcpCommand.trim() || "npx",
+          args: argsArray,
+        };
+
+        if (Object.keys(envObj).length > 0) {
+          serverConfig.env = envObj;
+        }
+
+        const mcpJson = {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "mcpServers": {
+            [mcpServerName.trim() || "project-tools"]: serverConfig,
+          },
+        };
+
+        return JSON.stringify(mcpJson, null, 2);
+      }
+
+      if (targetFormat === "subagent_json") {
+        const subagentSlug = (skillName || "subagent")
+          .trim()
+          .toLowerCase()
+          .replace(/[^a-z0-9_-]/g, "-");
+
+        const subagentSystemPrompt = `You are acting as: ${role || "Specialist Agent"}.
+Engineering Philosophy: ${philObj?.title || "Modern & Pragmatic"} (${philObj?.desc || ""})
+
+Target Architecture Context:
+- Framework: ${framework}
+- Language: ${language}
+- Styling: ${styling}
+- Database: ${database}
+
+Standard Operating Procedures:
+${procedures.trim()}
+
+Architectural Directives & Conventions:
+${selectedConventionTexts.length > 0 ? selectedConventionTexts.join("\n") : "- Follow idiomatic codebase standards."}
+
+Operational Guardrails:
+${selectedBehaviorTexts.length > 0 ? selectedBehaviorTexts.join("\n") : "- Exercise precision and minimal surgical diffs."}${
+          customDirectives.trim()
+            ? `\n\nSpecific Project Constraints:\n${customDirectives.trim()}`
+            : ""
+        }`;
+
+        const subagentConfig: Record<string, any> = {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "name": subagentSlug,
+          "role": role.trim() || "Autonomous Specialist",
+          "description": description.trim() || `Specialized subagent for ${skillTitle}`,
+          "systemPrompt": subagentSystemPrompt,
+          "tools": subagentTools,
+          "model": subagentModel,
+          "maxTurns": subagentMaxTurns,
+          "permissionMode": subagentPermissionMode,
+        };
+
+        return JSON.stringify(subagentConfig, null, 2);
+      }
+
       // AGENTS.md format
       return `<!-- BEGIN:agent-rules -->
 # AI Agent Specification: ${skillTitle.trim() || "Core Rules"}
@@ -1063,6 +1306,15 @@ ${exampleBad.trim()}
       globPattern,
       alwaysApply,
       langTag,
+      mcpServerName,
+      mcpCommand,
+      mcpArgs,
+      mcpEnvKey,
+      mcpEnvValue,
+      subagentModel,
+      subagentTools,
+      subagentMaxTurns,
+      subagentPermissionMode,
     ]
   );
 
@@ -1091,6 +1343,8 @@ ${exampleBad.trim()}
         skillMdContent: format === "skill_md" && isManuallyEdited ? editorContent : buildContent("skill_md"),
         claudeMdContent: format === "claude_md" && isManuallyEdited ? editorContent : buildContent("claude_md"),
         agentsMdContent: format === "agents_md" && isManuallyEdited ? editorContent : buildContent("agents_md"),
+        mcpJsonContent: format === "mcp_json" && isManuallyEdited ? editorContent : buildContent("mcp_json"),
+        subagentJsonContent: format === "subagent_json" && isManuallyEdited ? editorContent : buildContent("subagent_json"),
         framework,
         language,
       });
@@ -1115,11 +1369,21 @@ ${exampleBad.trim()}
   // Download handler
   const handleDownload = () => {
     let filename = "SKILL.md";
+    let mimeType = "text/markdown;charset=utf-8;";
     if (format === "claude_md") filename = "CLAUDE.md";
     if (format === "cursor_mdc") filename = `${skillName || "rule"}.mdc`;
     if (format === "agents_md") filename = "AGENTS.md";
+    if (format === "mcp_json") {
+      filename = "claude.json";
+      mimeType = "application/json;charset=utf-8;";
+    }
+    if (format === "subagent_json") {
+      const slug = (skillName || "subagent").trim().toLowerCase().replace(/[^a-z0-9_-]/g, "-");
+      filename = `${slug}.agent.json`;
+      mimeType = "application/json;charset=utf-8;";
+    }
 
-    const blob = new Blob([activeContent], { type: "text/markdown;charset=utf-8;" });
+    const blob = new Blob([activeContent], { type: mimeType });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
@@ -1135,6 +1399,8 @@ ${exampleBad.trim()}
     if (format === "skill_md") return "SKILL.md";
     if (format === "claude_md") return "CLAUDE.md";
     if (format === "cursor_mdc") return `.cursor/rules/${skillName || "rule"}.mdc`;
+    if (format === "mcp_json") return "claude.json (mcpServers)";
+    if (format === "subagent_json") return `.claude/agents/${skillName || "subagent"}.json`;
     return "AGENTS.md";
   }, [format, skillName]);
 
@@ -1283,7 +1549,7 @@ ${exampleBad.trim()}
               <span>Target Standard & File Format</span>
               <span className="text-[10px] text-zinc-400 font-normal">Select AI runtime</span>
             </label>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
               <button
                 onClick={() => setFormat("cursor_mdc")}
                 className={cn(
@@ -1349,6 +1615,38 @@ ${exampleBad.trim()}
                 </div>
                 <span className="text-[10px] text-zinc-500 leading-tight truncate">Multi-Agent</span>
               </button>
+
+              <button
+                onClick={() => setFormat("mcp_json")}
+                className={cn(
+                  "p-2 sm:p-2.5 rounded-lg border text-left transition-all flex flex-col gap-1 overflow-hidden",
+                  format === "mcp_json"
+                    ? "border-blue-500 bg-blue-50/60 text-blue-950 shadow-xs ring-1 ring-blue-500/20"
+                    : "border-zinc-200 bg-white hover:bg-zinc-50 text-zinc-700"
+                )}
+              >
+                <div className="flex items-center gap-1.5 font-semibold text-xs truncate">
+                  <Server className="w-3.5 h-3.5 text-blue-600 shrink-0" />
+                  <span className="truncate">claude.json</span>
+                </div>
+                <span className="text-[10px] text-zinc-500 leading-tight truncate">MCP Servers</span>
+              </button>
+
+              <button
+                onClick={() => setFormat("subagent_json")}
+                className={cn(
+                  "p-2 sm:p-2.5 rounded-lg border text-left transition-all flex flex-col gap-1 overflow-hidden",
+                  format === "subagent_json"
+                    ? "border-purple-500 bg-purple-50/60 text-purple-950 shadow-xs ring-1 ring-purple-500/20"
+                    : "border-zinc-200 bg-white hover:bg-zinc-50 text-zinc-700"
+                )}
+              >
+                <div className="flex items-center gap-1.5 font-semibold text-xs truncate">
+                  <Bot className="w-3.5 h-3.5 text-purple-600 shrink-0" />
+                  <span className="truncate">Subagent</span>
+                </div>
+                <span className="text-[10px] text-zinc-500 leading-tight truncate">.claude/agents/*.json</span>
+              </button>
             </div>
           </div>
 
@@ -1392,6 +1690,195 @@ ${exampleBad.trim()}
                     </span>
                   </button>
                   <p className="text-[10px] text-zinc-400">When ON, Cursor injects this rule in every generation context.</p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* MCP Server Configuration Card (Visible only when format is mcp_json) */}
+          {format === "mcp_json" && (
+            <div className="bg-white rounded-xl border border-zinc-200 p-3.5 sm:p-4 shadow-xs space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-zinc-100 pb-2.5 gap-1">
+                <div className="flex items-center gap-2">
+                  <Server className="w-4 h-4 text-blue-600 shrink-0" />
+                  <h3 className="text-sm font-bold text-zinc-900">MCP Server Generator</h3>
+                </div>
+                <span className="text-[10px] text-zinc-400 font-mono">claude.json / mcpServers</span>
+              </div>
+
+              {/* Quick Presets */}
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-zinc-700">Select MCP Preset Template</label>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
+                  {MCP_PRESETS.map((preset) => (
+                    <button
+                      key={preset.id}
+                      type="button"
+                      onClick={() => handleSelectMcpPreset(preset.id)}
+                      className={cn(
+                        "px-2.5 py-2 text-left rounded-lg border text-xs font-medium transition-all flex flex-col gap-0.5",
+                        mcpPresetId === preset.id
+                          ? "border-blue-500 bg-blue-50/60 text-blue-900 font-semibold ring-1 ring-blue-400"
+                          : "border-zinc-200 bg-zinc-50/50 hover:bg-zinc-100 text-zinc-700"
+                      )}
+                    >
+                      <span className="truncate">{preset.label}</span>
+                      <span className="text-[10px] text-zinc-400 font-mono font-normal truncate">{preset.command}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <label className="text-xs font-semibold text-zinc-700">Server Identifier Key</label>
+                  <input
+                    type="text"
+                    value={mcpServerName}
+                    onChange={(e) => setMcpServerName(e.target.value)}
+                    placeholder="e.g. filesystem or github"
+                    className="w-full px-2.5 py-1.5 border border-zinc-200 rounded-lg text-xs font-mono focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-xs font-semibold text-zinc-700">Executable Command</label>
+                  <input
+                    type="text"
+                    value={mcpCommand}
+                    onChange={(e) => setMcpCommand(e.target.value)}
+                    placeholder="npx, uvx, node, python"
+                    className="w-full px-2.5 py-1.5 border border-zinc-200 rounded-lg text-xs font-mono focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-xs font-semibold text-zinc-700">Command Arguments (One per line)</label>
+                <textarea
+                  rows={3}
+                  value={mcpArgs}
+                  onChange={(e) => setMcpArgs(e.target.value)}
+                  placeholder="-y&#10;@modelcontextprotocol/server-filesystem&#10;./"
+                  className="w-full p-2.5 border border-zinc-200 rounded-lg text-xs font-mono leading-relaxed focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 resize-y"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <label className="text-xs font-semibold text-zinc-700">Environment Variable Key (Optional)</label>
+                  <input
+                    type="text"
+                    value={mcpEnvKey}
+                    onChange={(e) => setMcpEnvKey(e.target.value)}
+                    placeholder="e.g. GITHUB_PERSONAL_ACCESS_TOKEN"
+                    className="w-full px-2.5 py-1.5 border border-zinc-200 rounded-lg text-xs font-mono focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-xs font-semibold text-zinc-700">Environment Variable Value</label>
+                  <input
+                    type="text"
+                    value={mcpEnvValue}
+                    onChange={(e) => setMcpEnvValue(e.target.value)}
+                    placeholder="e.g. ghp_your_token_here"
+                    className="w-full px-2.5 py-1.5 border border-zinc-200 rounded-lg text-xs font-mono focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Subagent Configuration Card (Visible only when format is subagent_json) */}
+          {format === "subagent_json" && (
+            <div className="bg-white rounded-xl border border-zinc-200 p-3.5 sm:p-4 shadow-xs space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-zinc-100 pb-2.5 gap-1">
+                <div className="flex items-center gap-2">
+                  <Bot className="w-4 h-4 text-purple-600 shrink-0" />
+                  <h3 className="text-sm font-bold text-zinc-900">Claude Subagent Generator</h3>
+                </div>
+                <span className="text-[10px] text-zinc-400 font-mono">.claude/agents/*.json</span>
+              </div>
+
+              {/* Target Model Selection */}
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-zinc-700">Subagent Execution Model</label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {SUBAGENT_MODELS.map((m) => (
+                    <button
+                      key={m.id}
+                      type="button"
+                      onClick={() => setSubagentModel(m.id)}
+                      className={cn(
+                        "px-2.5 py-2 text-left rounded-lg border text-xs transition-all flex flex-col gap-0.5",
+                        subagentModel === m.id
+                          ? "border-purple-500 bg-purple-50/60 text-purple-900 font-semibold ring-1 ring-purple-400"
+                          : "border-zinc-200 bg-zinc-50/50 hover:bg-zinc-100 text-zinc-700"
+                      )}
+                    >
+                      <span>{m.label}</span>
+                      <span className="text-[10px] text-zinc-400 font-normal truncate">{m.desc}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Allowed Tools */}
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-semibold text-zinc-700">Subagent Tool Permissions</label>
+                  <span className="text-[10px] text-zinc-400">{subagentTools.length} tools enabled</span>
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
+                  {SUBAGENT_TOOLS.map((t) => {
+                    const isChecked = subagentTools.includes(t.id);
+                    return (
+                      <button
+                        key={t.id}
+                        type="button"
+                        onClick={() => toggleItem(subagentTools, setSubagentTools, t.id)}
+                        className={cn(
+                          "px-2.5 py-1.5 rounded-lg border text-xs flex items-center justify-between transition-all text-left",
+                          isChecked
+                            ? "border-purple-500 bg-purple-50/50 text-purple-950 font-semibold"
+                            : "border-zinc-200 bg-white text-zinc-600 hover:bg-zinc-50"
+                        )}
+                      >
+                        <span>{t.label}</span>
+                        {isChecked ? <Check className="w-3 h-3 text-purple-600" /> : <span className="w-3 h-3" />}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Max Turns and Permission Mode */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <label className="text-xs font-semibold text-zinc-700">Turn Budget (Max Execution Steps)</label>
+                  <select
+                    value={subagentMaxTurns}
+                    onChange={(e) => setSubagentMaxTurns(Number(e.target.value))}
+                    className="w-full px-2.5 py-1.5 border border-zinc-200 rounded-lg text-xs font-medium focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 bg-white"
+                  >
+                    <option value={15}>15 Turns (Fast / Targeted)</option>
+                    <option value={25}>25 Turns (Standard Recommended)</option>
+                    <option value={50}>50 Turns (Deep Investigation & Refactor)</option>
+                    <option value={100}>100 Turns (Autonomous Long-running)</option>
+                  </select>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-xs font-semibold text-zinc-700">Permission Mode</label>
+                  <select
+                    value={subagentPermissionMode}
+                    onChange={(e) => setSubagentPermissionMode(e.target.value)}
+                    className="w-full px-2.5 py-1.5 border border-zinc-200 rounded-lg text-xs font-medium focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 bg-white"
+                  >
+                    <option value="acceptEdits">acceptEdits (Review tool calls & diffs)</option>
+                    <option value="default">default (Standard user confirmations)</option>
+                    <option value="dontAsk">dontAsk (Unattended autonomous execution)</option>
+                  </select>
                 </div>
               </div>
             </div>
@@ -1687,7 +2174,13 @@ ${exampleBad.trim()}
                 <div
                   className={cn(
                     "w-2.5 h-2.5 rounded-full shrink-0",
-                    format === "cursor_mdc" ? "bg-white" : "bg-orange-500/90"
+                    format === "cursor_mdc"
+                      ? "bg-white"
+                      : format === "mcp_json"
+                      ? "bg-blue-400"
+                      : format === "subagent_json"
+                      ? "bg-purple-400"
+                      : "bg-orange-500/90"
                   )}
                 />
                 <span className="font-mono text-xs text-zinc-200 font-semibold truncate">{currentFileName}</span>
@@ -1760,7 +2253,7 @@ ${exampleBad.trim()}
             <div className="h-[460px] sm:h-[550px] lg:h-[calc(100vh-14rem)] min-h-[400px] relative overflow-hidden bg-zinc-950">
               <Editor
                 height="100%"
-                language="markdown"
+                language={format === "mcp_json" || format === "subagent_json" ? "json" : "markdown"}
                 value={activeContent}
                 theme="vs-dark"
                 onChange={(val) => {
@@ -1796,6 +2289,10 @@ ${exampleBad.trim()}
                 <img src="/cursor-icon.png" alt="Cursor" className="w-3.5 h-3.5 object-contain" />
               ) : format === "claude_md" ? (
                 <img src="/claude-icon.png" alt="Claude" className="w-3.5 h-3.5 object-contain" />
+              ) : format === "mcp_json" ? (
+                <Server className="w-3.5 h-3.5 text-blue-600" />
+              ) : format === "subagent_json" ? (
+                <Bot className="w-3.5 h-3.5 text-purple-600" />
               ) : (
                 <FolderGit2 className={cn("w-3.5 h-3.5", format === "skill_md" ? "text-orange-500" : "text-zinc-800")} />
               )}
@@ -1819,6 +2316,16 @@ ${exampleBad.trim()}
             {format === "agents_md" && (
               <p className="text-zinc-500 text-xs leading-relaxed">
                 Save as <code className="bg-zinc-100 px-1 py-0.5 rounded text-zinc-800 font-mono text-[11px]">AGENTS.md</code> in your root directory. Multi-agent workflows load this spec to coordinate tasks.
+              </p>
+            )}
+            {format === "mcp_json" && (
+              <p className="text-zinc-500 text-xs leading-relaxed">
+                Save as <code className="bg-zinc-100 px-1 py-0.5 rounded text-zinc-800 font-mono text-[11px]">claude.json</code> in project root or merge its <code className="bg-zinc-100 px-1 py-0.5 rounded text-zinc-800 font-mono text-[11px]">mcpServers</code> block into Claude Desktop <code className="bg-zinc-100 px-1 py-0.5 rounded text-zinc-800 font-mono text-[11px]">claude_desktop_config.json</code>.
+              </p>
+            )}
+            {format === "subagent_json" && (
+              <p className="text-zinc-500 text-xs leading-relaxed">
+                Save as <code className="bg-zinc-100 px-1 py-0.5 rounded text-zinc-800 font-mono text-[11px]">.claude/agents/{skillName || "subagent"}.json</code> in your project repository. Claude Code dynamically orchestrates this agent definition.
               </p>
             )}
           </div>
