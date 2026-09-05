@@ -85,6 +85,33 @@ const DESTRUCTIVE_COMMAND_PATTERNS = [
   /\b(secret|api_key|password|credential)\b/i,
 ];
 
+const PROMPT_INJECTION_PATTERNS = [
+  {
+    pattern: /\bignore\s+(all\s+)?(previous|prior|above)\s+(instructions|directives|prompts|rules)\b/i,
+    label: "Instruction Override Attempt",
+  },
+  {
+    pattern: /\bdisregard\s+(all\s+)?(previous|prior)\s+(instructions|guidelines|rules)\b/i,
+    label: "Directive Disregard Pattern",
+  },
+  {
+    pattern: /\b(system\s+prompt\s+override|bypass\s+safety\s+guidelines|jailbreak)\b/i,
+    label: "System Prompt Override Directive",
+  },
+  {
+    pattern: /\b(exfiltrate|send|upload)\b.*?\b(env|token|secret|password|api_key|credential)\b/i,
+    label: "Secret Exfiltration Pattern",
+  },
+  {
+    pattern: /\breveal\s+(the\s+)?(system|internal|developer)\s+prompt\b/i,
+    label: "Prompt Extraction Directive",
+  },
+  {
+    pattern: /<script\b|javascript:\s*|\bonerror\s*=/i,
+    label: "Embedded Script / Markup Injection",
+  },
+];
+
 export function auditRuleQuality(data: AuditInputData): RuleAuditReport {
   const content = data.content || "";
   const charCount = content.length;
@@ -223,7 +250,22 @@ export function auditRuleQuality(data: AuditInputData): RuleAuditReport {
     guardrailScore = Math.min(100, guardrailScore + 10);
   }
 
-  guardrailScore = Math.max(20, Math.min(100, guardrailScore));
+  // Check for adversarial prompt injection / override patterns
+  for (const { pattern, label } of PROMPT_INJECTION_PATTERNS) {
+    if (pattern.test(content)) {
+      guardrailScore = Math.max(10, guardrailScore - 30);
+      guardrailIssues.push({
+        id: `security-prompt-injection-${label.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`,
+        dimension: "guardrails",
+        severity: "error",
+        title: `Security Risk: ${label}`,
+        message: `Detected potential indirect prompt injection or instruction override pattern. Downstream AI coding models parsing this rule file may compromise repository boundaries.`,
+        suggestion: `Remove prompt-override phrases. Use explicit delimiters or labeled XML tags (<context>, <directives>) to isolate user data.`,
+      });
+    }
+  }
+
+  guardrailScore = Math.max(10, Math.min(100, guardrailScore));
 
   // ==========================================
   // Dimension 4: Trigger Precision & Scoping (20%)

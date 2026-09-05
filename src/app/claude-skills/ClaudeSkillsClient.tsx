@@ -619,6 +619,7 @@ export function ClaudeSkillsClient({ initialFormat, initialPresetId }: ClaudeSki
   const [globPattern, setGlobPattern] = useState("**/*");
   const [alwaysApply, setAlwaysApply] = useState(false);
   const [editorContent, setEditorContent] = useState<string>("");
+  const editorRef = React.useRef<any>(null);
   const [isManuallyEdited, setIsManuallyEdited] = useState(false);
   const [lastAutoSaved, setLastAutoSaved] = useState<string | null>(null);
   const [quotaError, setQuotaError] = useState<string | null>(null);
@@ -1511,6 +1512,9 @@ ${exampleBad.trim()}
   useEffect(() => {
     if (!isManuallyEdited) {
       setEditorContent(generatedContent);
+      if (editorRef.current) {
+        editorRef.current.setScrollTop(0);
+      }
     }
   }, [generatedContent, isManuallyEdited]);
 
@@ -2626,7 +2630,12 @@ ${exampleBad.trim()}
                       : "bg-orange-500/90"
                   )}
                 />
-                <span className="font-mono text-xs text-zinc-200 font-semibold truncate">{currentFileName}</span>
+                <span
+                  className="font-mono text-xs text-zinc-200 font-semibold truncate shrink-0 max-w-[160px] sm:max-w-[280px]"
+                  title={currentFileName}
+                >
+                  {currentFileName}
+                </span>
                 <span className="text-[10px] px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-400 font-mono shrink-0">
                   {activeContent.split("\n").length} lines
                 </span>
@@ -2710,6 +2719,10 @@ ${exampleBad.trim()}
                 language={format === "mcp_json" ? "json" : "markdown"}
                 value={activeContent}
                 theme="vs-dark"
+                onMount={(editor) => {
+                  editorRef.current = editor;
+                  editor.setScrollTop(0);
+                }}
                 onChange={(val) => {
                   if (val !== undefined) {
                     setEditorContent(val);
@@ -2725,12 +2738,22 @@ ${exampleBad.trim()}
                   readOnly: false,
                   minimap: { enabled: false },
                   fontSize: 12,
+                  lineHeight: 20,
                   fontFamily: "'JetBrains Mono', 'Fira Code', Menlo, Consolas, monospace",
                   wordWrap: "on",
                   lineNumbers: "on",
+                  lineNumbersMinChars: 3,
+                  glyphMargin: false,
                   scrollBeyondLastLine: false,
                   smoothScrolling: true,
                   automaticLayout: true,
+                  padding: { top: 10, bottom: 10 },
+                  scrollbar: {
+                    vertical: "visible",
+                    horizontal: "auto",
+                    verticalScrollbarSize: 8,
+                    horizontalScrollbarSize: 8,
+                  },
                 }}
               />
 

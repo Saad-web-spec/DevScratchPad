@@ -28,6 +28,20 @@ const nextConfig: NextConfig = {
     ];
   },
   async headers() {
+    const cspDirectives = [
+      "default-src 'self'",
+      "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://cdn.jsdelivr.net https://va.vercel-scripts.com",
+      "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net",
+      "img-src 'self' data: blob: https:",
+      "font-src 'self' data: https://cdn.jsdelivr.net",
+      "connect-src 'self' https://vitals.vercel-insights.com https://cdn.jsdelivr.net",
+      "worker-src 'self' blob: data:",
+      "object-src 'none'",
+      "base-uri 'self'",
+      "form-action 'self'",
+      "frame-ancestors *",
+    ].join("; ");
+
     return [
       {
         source: '/(.*)',
@@ -41,9 +55,13 @@ const nextConfig: NextConfig = {
             value: 'strict-origin-when-cross-origin',
           },
           {
+            key: 'Permissions-Policy',
+            value: 'camera=(), microphone=(), geolocation=(), interest-cohort=()',
+          },
+          {
             key: 'Content-Security-Policy',
-            value: "frame-ancestors *;",
-          }
+            value: cspDirectives,
+          },
         ],
       },
     ];

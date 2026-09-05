@@ -28,10 +28,40 @@ const CATCH_ALL_TRIGGERS = new Set([
 ]);
 
 /**
+ * Strict slug regex: lowercase alphanumeric segments separated by single hyphens.
+ * Prevents traversal sequences (../), slashes, dots, and invalid filesystem characters.
+ */
+export const SAFE_SLUG_REGEX = /^[a-z0-9]+(-[a-z0-9]+)*$/;
+
+/**
+ * Validates whether a skill identifier adheres to strict whitelist security standards.
+ */
+export function validateSkillIdentifier(identifier: string): { isValid: boolean; message?: string } {
+  if (!identifier || typeof identifier !== "string") {
+    return { isValid: false, message: "Skill identifier cannot be empty." };
+  }
+  const trimmed = identifier.trim();
+  if (trimmed.length > 48) {
+    return { isValid: false, message: "Identifier must not exceed 48 characters." };
+  }
+  if (/\.\.|\/|\\|\0/.test(trimmed)) {
+    return { isValid: false, message: "Identifier cannot contain path traversal characters (/, \\, ..) or null bytes." };
+  }
+  if (!SAFE_SLUG_REGEX.test(trimmed)) {
+    return {
+      isValid: false,
+      message: "Identifier must only contain lowercase letters, numbers, and single hyphens (e.g. 'nextjs-api-auditor').",
+    };
+  }
+  return { isValid: true };
+}
+
+/**
  * Generates a safe, POSIX-compliant slug suitable for filenames and skill identifiers.
  * - Normalizes unicode and strips diacritics
+ * - Strips null bytes and path traversal patterns
  * - Converts to lowercase
- * - Replaces whitespace, underscores, and delimiters with hyphens
+ * - Replaces whitespace, underscores, slashes, and dots with hyphens
  * - Strips non-alphanumeric characters except hyphens
  * - Collapses repeated hyphens and trims edges
  * - Truncates to max 48 characters
@@ -41,7 +71,10 @@ export function generateSafeSlug(input: string): string {
     return "custom-skill";
   }
 
-  const slug = input
+  // Remove null bytes and path traversal sequences
+  const sanitizedInput = input.replace(/\0/g, "").replace(/\.\.+/g, "-");
+
+  const slug = sanitizedInput
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "") // Strip diacritics / accents
     .toLowerCase()

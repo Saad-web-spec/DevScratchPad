@@ -131,6 +131,20 @@ function safeExtractKeys(obj: unknown): string[] {
   return keys;
 }
 
+const MAX_MANIFEST_SIZE = 512 * 1024; // 512 KB limit to prevent ReDoS / memory exhaustion
+
+/**
+ * Safely parses JSON with reviver blocking prototype pollution attempts.
+ */
+function safeJsonParse(text: string): unknown {
+  return JSON.parse(text, (key, value) => {
+    if (key === "__proto__" || key === "constructor" || key === "prototype") {
+      return undefined;
+    }
+    return value;
+  });
+}
+
 export function parseProjectManifest(filename: string, content: string): ParsedManifestResult {
   const lowerName = (filename || "").toLowerCase();
   const summary: string[] = [];
@@ -140,6 +154,13 @@ export function parseProjectManifest(filename: string, content: string): ParsedM
     return {
       detected: false,
       summary: ["Please upload a file or paste valid manifest text."],
+    };
+  }
+
+  if (trimmed.length > MAX_MANIFEST_SIZE) {
+    return {
+      detected: false,
+      summary: ["Manifest file exceeds the maximum 512KB security threshold to prevent client-side denial of service."],
     };
   }
 
@@ -157,8 +178,8 @@ export function parseProjectManifest(filename: string, content: string): ParsedM
 
   if (isLikelyJson) {
     try {
-      // Parse JSON safely
-      const parsedRaw = JSON.parse(content);
+      // Parse JSON safely with prototype poisoning reviver
+      const parsedRaw = safeJsonParse(trimmed) as Record<string, unknown>;
       if (parsedRaw && typeof parsedRaw === "object" && !Array.isArray(parsedRaw)) {
         const prodDeps = safeExtractKeys(parsedRaw.dependencies);
         const devDeps = safeExtractKeys(parsedRaw.devDependencies);
