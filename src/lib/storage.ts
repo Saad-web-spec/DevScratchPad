@@ -160,3 +160,19 @@ export function deleteSnapshot(id: string): void {
  const snapshots = getSnapshots().filter((s) => s.id !== id);
  saveSnapshots(snapshots);
 }
+
+/**
+ * Completely wipes all client-side history, snapshots, and studio state.
+ */
+export function clearAllLocalData(): void {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.removeItem(STORAGE_KEY);
+    localStorage.removeItem(SNAPSHOTS_KEY);
+    localStorage.removeItem("devscratchpad_workspace_tabs");
+    localStorage.removeItem("ai-skill-studio-state");
+    localStorage.removeItem("ai_skill_studio_state_v2");
+  } catch {
+    // Gracefully handle storage errors
+  }
+}

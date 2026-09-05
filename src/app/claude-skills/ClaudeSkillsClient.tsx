@@ -1737,7 +1737,7 @@ ${exampleBad.trim()}
           if (mcpCommand) stateToShare.mcpCommand = mcpCommand;
           if (mcpArgs) stateToShare.mcpArgs = mcpArgs;
           if (mcpEnvKey) stateToShare.mcpEnvKey = mcpEnvKey;
-          if (mcpEnvValue) stateToShare.mcpEnvValue = mcpEnvValue;
+          // SECURITY: Do not leak live API secret value in URL share
         }
       }
 
@@ -2618,8 +2618,8 @@ ${exampleBad.trim()}
           {/* Main Card containing Header + Monaco Editor */}
           <div className="bg-zinc-900 rounded-xl border border-zinc-800 shadow-md flex flex-col overflow-hidden">
             {/* File Tab Header with Unified Action Group */}
-            <div className="px-3 py-2 flex flex-wrap sm:flex-nowrap items-center justify-between border-b border-zinc-800 bg-zinc-900/95 shrink-0 gap-2">
-              <div className="flex items-center gap-2 min-w-0">
+            <div className="px-3 py-2 flex items-center justify-between border-b border-zinc-800 bg-zinc-900/95 shrink-0 gap-2 overflow-hidden">
+              <div className="flex items-center gap-2 min-w-0 flex-1 overflow-hidden">
                 <div
                   className={cn(
                     "w-2.5 h-2.5 rounded-full shrink-0",
@@ -2631,17 +2631,17 @@ ${exampleBad.trim()}
                   )}
                 />
                 <span
-                  className="font-mono text-xs text-zinc-200 font-semibold truncate shrink-0 max-w-[160px] sm:max-w-[280px]"
+                  className="font-mono text-xs text-zinc-200 font-semibold truncate"
                   title={currentFileName}
                 >
                   {currentFileName}
                 </span>
-                <span className="text-[10px] px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-400 font-mono shrink-0">
+                <span className="text-[10px] px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-400 font-mono shrink-0 hidden xl:inline-block">
                   {activeContent.split("\n").length} lines
                 </span>
 
                 {lastAutoSaved && (
-                  <span className="hidden xl:inline-flex items-center gap-1 text-[10px] text-zinc-400 font-mono shrink-0">
+                  <span className="hidden 2xl:inline-flex items-center gap-1 text-[10px] text-zinc-400 font-mono shrink-0">
                     <CheckCircle2 className="w-2.5 h-2.5 text-zinc-400" /> Auto-saved
                   </span>
                 )}
@@ -2661,36 +2661,36 @@ ${exampleBad.trim()}
               </div>
 
               {/* Action Button Group: Copy + Download + Export Kit */}
-              <div className="flex items-center bg-zinc-800/90 rounded-lg p-0.5 border border-zinc-700/60 shadow-xs shrink-0">
+              <div className="flex items-center bg-zinc-800/90 rounded-lg p-0.5 border border-zinc-700/60 shadow-xs shrink-0 ml-auto">
                 <button
                   onClick={handleCopy}
-                  className="flex items-center gap-1 sm:gap-1.5 px-2 sm:px-2.5 py-1 text-xs text-zinc-300 hover:text-white hover:bg-zinc-700/60 rounded-md transition-colors font-medium cursor-pointer"
+                  className="flex items-center gap-1 px-2 xl:px-2.5 py-1 text-xs text-zinc-300 hover:text-white hover:bg-zinc-700/60 rounded-md transition-colors font-medium cursor-pointer"
                   title="Copy code to clipboard"
                 >
                   {copied ? <Check className="w-3.5 h-3.5 text-orange-400" /> : <Copy className="w-3.5 h-3.5" />}
-                  <span>{copied ? "Copied!" : "Copy"}</span>
+                  <span className="hidden xl:inline">{copied ? "Copied!" : "Copy"}</span>
                 </button>
 
                 <div className="w-px h-3.5 bg-zinc-700/80 mx-0.5" />
 
                 <button
                   onClick={handleShareLink}
-                  className="flex items-center gap-1 sm:gap-1.5 px-2 sm:px-2.5 py-1 text-xs text-zinc-300 hover:text-white hover:bg-zinc-700/60 rounded-md transition-colors font-medium cursor-pointer"
+                  className="flex items-center gap-1 px-2 xl:px-2.5 py-1 text-xs text-zinc-300 hover:text-white hover:bg-zinc-700/60 rounded-md transition-colors font-medium cursor-pointer"
                   title="Copy shareable link to this exact configuration"
                 >
                   {shareCopied ? <Check className="w-3.5 h-3.5 text-blue-400" /> : <ExternalLink className="w-3.5 h-3.5" />}
-                  <span>{shareCopied ? "Link Copied!" : "Share Link"}</span>
+                  <span className="hidden xl:inline">{shareCopied ? "Copied!" : "Share"}</span>
                 </button>
 
                 <div className="w-px h-3.5 bg-zinc-700/80 mx-0.5" />
 
                 <button
                   onClick={handleDownload}
-                  className="flex items-center gap-1 sm:gap-1.5 px-2 sm:px-2.5 py-1 text-xs text-zinc-300 hover:text-white hover:bg-zinc-700/60 rounded-md transition-colors font-medium cursor-pointer"
+                  className="flex items-center gap-1 px-2 xl:px-2.5 py-1 text-xs text-zinc-300 hover:text-white hover:bg-zinc-700/60 rounded-md transition-colors font-medium cursor-pointer"
                   title={`Download ${currentFileName}`}
                 >
                   <Download className="w-3.5 h-3.5" />
-                  <span>Download</span>
+                  <span className="hidden xl:inline">Download</span>
                 </button>
 
                 <div className="w-px h-3.5 bg-zinc-700/80 mx-0.5" />
@@ -2699,7 +2699,7 @@ ${exampleBad.trim()}
                   onClick={handleExportZip}
                   disabled={isExportingZip}
                   className={cn(
-                    "flex items-center gap-1 sm:gap-1.5 px-2 sm:px-2.5 py-1 text-xs text-white rounded-md transition-colors font-semibold shadow-xs cursor-pointer disabled:opacity-50 shrink-0",
+                    "flex items-center gap-1 px-2 sm:px-2.5 py-1 text-xs text-white rounded-md transition-colors font-semibold shadow-xs cursor-pointer disabled:opacity-50 shrink-0",
                     format === "cursor_mdc"
                       ? "bg-zinc-800 hover:bg-black border border-zinc-600"
                       : "bg-orange-600 hover:bg-orange-500"

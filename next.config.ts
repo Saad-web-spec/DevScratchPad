@@ -28,7 +28,7 @@ const nextConfig: NextConfig = {
     ];
   },
   async headers() {
-    const cspDirectives = [
+    const commonCspDirectives = [
       "default-src 'self'",
       "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://cdn.jsdelivr.net https://va.vercel-scripts.com",
       "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net",
@@ -39,12 +39,15 @@ const nextConfig: NextConfig = {
       "object-src 'none'",
       "base-uri 'self'",
       "form-action 'self'",
-      "frame-ancestors *",
-    ].join("; ");
+    ];
+
+    const cspDirectivesStrict = [...commonCspDirectives, "frame-ancestors 'self'"].join("; ");
+    const cspDirectivesEmbed = [...commonCspDirectives, "frame-ancestors *"].join("; ");
 
     return [
+      // 1. Tool routes: allow iframe embedding for the interactive embed feature
       {
-        source: '/(.*)',
+        source: '/tools/:path*',
         headers: [
           {
             key: 'X-Content-Type-Options',
@@ -55,12 +58,46 @@ const nextConfig: NextConfig = {
             value: 'strict-origin-when-cross-origin',
           },
           {
+            key: 'Strict-Transport-Security',
+            value: 'max-age=63072000; includeSubDomains; preload',
+          },
+          {
             key: 'Permissions-Policy',
             value: 'camera=(), microphone=(), geolocation=(), interest-cohort=()',
           },
           {
             key: 'Content-Security-Policy',
-            value: cspDirectives,
+            value: cspDirectivesEmbed,
+          },
+        ],
+      },
+      // 2. All other routes: prevent clickjacking with strict frame-ancestors and X-Frame-Options
+      {
+        source: '/((?!tools/).*)',
+        headers: [
+          {
+            key: 'X-Frame-Options',
+            value: 'SAMEORIGIN',
+          },
+          {
+            key: 'X-Content-Type-Options',
+            value: 'nosniff',
+          },
+          {
+            key: 'Referrer-Policy',
+            value: 'strict-origin-when-cross-origin',
+          },
+          {
+            key: 'Strict-Transport-Security',
+            value: 'max-age=63072000; includeSubDomains; preload',
+          },
+          {
+            key: 'Permissions-Policy',
+            value: 'camera=(), microphone=(), geolocation=(), interest-cohort=()',
+          },
+          {
+            key: 'Content-Security-Policy',
+            value: cspDirectivesStrict,
           },
         ],
       },

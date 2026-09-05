@@ -68,6 +68,10 @@ const REVERSE_MAP = Object.fromEntries(Object.entries(KEY_MAP).map(([k, v]) => [
 export function encodeStudioState(state: Partial<StudioWorkspaceState>): string {
   const minified: any = {};
   for (const [key, value] of Object.entries(state)) {
+    // SECURITY: Never leak sensitive MCP environment values or API keys into shared URLs
+    if (key === "mcpEnvValue") {
+      continue;
+    }
     if (value !== undefined && value !== null && value !== "" && !(Array.isArray(value) && value.length === 0)) {
       const minKey = KEY_MAP[key as keyof StudioWorkspaceState] || key;
       minified[minKey] = value;
