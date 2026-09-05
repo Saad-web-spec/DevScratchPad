@@ -71,6 +71,7 @@ export function SiteFooter() {
         <div className="pt-6 border-t border-zinc-100 flex flex-col sm:flex-row items-center justify-between text-xs font-mono text-zinc-400 gap-3">
           <p>© {new Date().getFullYear()} DevScratchpad. MIT Licensed.</p>
           <div className="flex items-center gap-4">
+            <Link href="/about" className="hover:text-zinc-700 transition-colors">about</Link>
             <Link href="/ai-skill-studio" className="text-zinc-600 hover:text-zinc-900 font-medium transition-colors">ai-skill-studio</Link>
             <Link href="/developer-tools" className="hover:text-zinc-700 transition-colors">directory</Link>
             <Link href="/blog" className="hover:text-zinc-700 transition-colors">guides</Link>

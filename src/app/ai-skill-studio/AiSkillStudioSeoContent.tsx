@@ -20,11 +20,11 @@ export function AiSkillStudioSeoContent() {
             <img src="/orange-star.png" className="w-3.5 h-3.5 object-contain shrink-0" alt="Star" />
             <span>Developer Reference & Technical Architecture</span>
           </div>
-          <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-zinc-900">
-            The Complete Specification Guide to AI Coding Agent Rules & Skills
-          </h2>
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-zinc-900">
+            AI Skill Studio: Free Claude Code Skills (SKILL.md) & Cursor Rules Generator
+          </h1>
           <p className="text-sm sm:text-base text-zinc-600 max-w-4xl leading-relaxed">
-            AI Skill Studio enables software engineering teams to configure, standardize, and generate production-grade agent steering files—including Claude Code skills (<code className="text-xs font-mono bg-zinc-100 px-1 py-0.5 rounded text-zinc-800">SKILL.md</code>), Cursor Project Rules (<code className="text-xs font-mono bg-zinc-100 px-1 py-0.5 rounded text-zinc-800">.cursor/rules/*.mdc</code>), Anthropic project guidelines (<code className="text-xs font-mono bg-zinc-100 px-1 py-0.5 rounded text-zinc-800">CLAUDE.md</code>), and cross-agent orchestrations (<code className="text-xs font-mono bg-zinc-100 px-1 py-0.5 rounded text-zinc-800">AGENTS.md</code>)—with 100% client-side privacy.
+            <strong>AI Skill Studio</strong> is a free, 100% client-side generator for Claude Code agent skills (<code className="text-xs font-mono bg-zinc-100 px-1 py-0.5 rounded text-zinc-800">SKILL.md</code>), Claude project rules (<code className="text-xs font-mono bg-zinc-100 px-1 py-0.5 rounded text-zinc-800">CLAUDE.md</code>), Cursor Project Rules (<code className="text-xs font-mono bg-zinc-100 px-1 py-0.5 rounded text-zinc-800">.cursor/rules/*.mdc</code>), and multi-agent systems (<code className="text-xs font-mono bg-zinc-100 px-1 py-0.5 rounded text-zinc-800">AGENTS.md</code>). Built by DevScratchpad with zero server uploads and zero telemetry on sensitive codebases.
           </p>
         </section>
 

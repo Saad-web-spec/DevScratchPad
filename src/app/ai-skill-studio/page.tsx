@@ -4,22 +4,26 @@ import { ClaudeSkillsClient } from "../claude-skills/ClaudeSkillsClient";
 import { AiSkillStudioSeoContent } from "./AiSkillStudioSeoContent";
 
 export const metadata: Metadata = {
-  title: "Free SKILL.md & Cursor Rules Generator",
+  title: "AI Skill Studio — Claude Code Skills & Cursor Rules Generator",
   description:
-    "Generate production-grade Claude Code skills (SKILL.md), CLAUDE.md guidelines, and Cursor .mdc rules with 100% client-side privacy. Zero API keys required.",
+    "AI Skill Studio: Free online Claude Code skills (SKILL.md) and Cursor rules (.mdc) generator. Configure prompt steering, agent rulebooks, and CLAUDE.md with 100% offline privacy.",
   alternates: {
     canonical: "https://www.devscratchpad.tech/ai-skill-studio",
   },
   keywords: [
     "AI Skill Studio",
-    "SKILL.md generator",
+    "ai skill studio",
+    "Claude skills",
+    "claude skill",
+    "claude skill generator",
     "Claude Code skills",
+    "claude code skill generator",
+    "SKILL.md generator",
     "Cursor rules generator",
     "Cursor skills",
     ".cursorrules generator",
     "CLAUDE.md generator",
     "AGENTS.md builder",
-    "AI prompt architect",
     "cursor mdc rules",
     "claude code skill template",
     "claude code agent skills",
@@ -27,9 +31,9 @@ export const metadata: Metadata = {
     "offline cursor rules generator",
   ],
   openGraph: {
-    title: "AI Skill Studio - Free SKILL.md, CLAUDE.md & Cursor Rules Generator",
+    title: "AI Skill Studio — Claude Code Skills & Cursor Rules Generator",
     description:
-      "Generate production-grade Claude Code skills (SKILL.md), CLAUDE.md guidelines, and Cursor .mdc rules with 100% client-side privacy. Zero API keys required.",
+      "AI Skill Studio: Free online Claude Code skills (SKILL.md) and Cursor rules (.mdc) generator. Configure prompt steering, agent rulebooks, and CLAUDE.md with 100% offline privacy.",
     url: "https://www.devscratchpad.tech/ai-skill-studio",
     siteName: "DevScratchpad",
     locale: "en_US",
@@ -40,16 +44,16 @@ export const metadata: Metadata = {
         secureUrl: "https://www.devscratchpad.tech/og-ai-skill-studio.png",
         width: 1200,
         height: 630,
-        alt: "AI Skill Studio - Free SKILL.md, CLAUDE.md & Cursor Rules Generator",
+        alt: "AI Skill Studio — Claude Code Skills & Cursor Rules Generator",
         type: "image/png",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "AI Skill Studio - Free SKILL.md, CLAUDE.md & Cursor Rules Generator",
+    title: "AI Skill Studio — Claude Code Skills & Cursor Rules Generator",
     description:
-      "Generate production-grade Claude Code skills (SKILL.md), CLAUDE.md guidelines, and Cursor .mdc rules with 100% client-side privacy. Zero API keys required.",
+      "AI Skill Studio: Free online Claude Code skills (SKILL.md) and Cursor rules (.mdc) generator. Configure prompt steering, agent rulebooks, and CLAUDE.md with 100% offline privacy.",
     images: ["https://www.devscratchpad.tech/og-ai-skill-studio.png"],
   },
 };

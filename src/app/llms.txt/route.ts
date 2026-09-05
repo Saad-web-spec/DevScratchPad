@@ -36,6 +36,7 @@ ${toolsSection}
 ${presetsSection}
 
 ## Learning Hub & Guides
+- [About DevScratchpad](${SITE_URL}/about): Mission, open-source repository, zero-trust client architecture.
 - [Cron Expression Reference](${SITE_URL}/blog/cron-expression-cheat-sheet): Complete syntax breakdown, 5-field/6-field formats, and scheduling recipes.
 - [Learning Hub Directory](${SITE_URL}/blog): Guides and cheat-sheets for developer productivity.
 
