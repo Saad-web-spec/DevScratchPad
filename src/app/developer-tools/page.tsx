@@ -35,8 +35,41 @@ export default function DeveloperToolsPage() {
 
   const categories = Object.keys(groupedTools).sort();
 
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "CollectionPage",
+        "@id": "https://www.devscratchpad.tech/developer-tools#webpage",
+        "url": "https://www.devscratchpad.tech/developer-tools",
+        "name": "Developer Tools Directory (20+ Offline Utilities)",
+        "description": "Explore the complete directory of 100% offline, privacy-first developer utilities.",
+        "publisher": {
+          "@type": "Organization",
+          "@id": "https://www.devscratchpad.tech/#organization",
+          "name": "DevScratchpad",
+        },
+        "mainEntity": {
+          "@type": "ItemList",
+          "numberOfItems": allTools.length,
+          "itemListElement": allTools.map((t, idx) => ({
+            "@type": "ListItem",
+            "position": idx + 1,
+            "url": `https://www.devscratchpad.tech/tools/${t.slug}`,
+            "name": t.name,
+            "description": t.description,
+          })),
+        },
+      },
+    ],
+  };
+
   return (
     <div className="min-h-screen bg-zinc-50 flex flex-col font-sans selection:bg-zinc-900 selection:text-white">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       <SiteHeader />
       
       <main className="flex-1 w-full max-w-5xl mx-auto px-4 sm:px-6 py-12 md:py-16">

@@ -67,6 +67,70 @@ export const metadata: Metadata = {
   },
 };
 
+const siteJsonLd = {
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "WebSite",
+      "@id": `${SITE_URL}/#website`,
+      "url": SITE_URL,
+      "name": "DevScratchpad",
+      "description":
+        "Massive collection of free online developer tools that work 100% offline. Zero server transmission, 100% client-side privacy backed scratch pad for developers.",
+      "publisher": {
+        "@id": `${SITE_URL}/#organization`,
+      },
+      "potentialAction": {
+        "@type": "SearchAction",
+        "target": `${SITE_URL}/developer-tools?q={search_term_string}`,
+        "query-input": "required name=search_term_string",
+      },
+    },
+    {
+      "@type": "Organization",
+      "@id": `${SITE_URL}/#organization`,
+      "name": "DevScratchpad",
+      "url": SITE_URL,
+      "logo": {
+        "@type": "ImageObject",
+        "url": `${SITE_URL}/icon.png`,
+      },
+      "knowsAbout": [
+        "Developer Utilities",
+        "Client-Side Cryptography",
+        "JSON Formatting & Validation",
+        "JWT Decoding",
+        "AI Agent Skills",
+        "Claude Code Rules",
+        "Cursor IDE Rules",
+      ],
+    },
+    {
+      "@type": "SoftwareApplication",
+      "@id": `${SITE_URL}/#software`,
+      "name": "DevScratchpad Suite",
+      "url": SITE_URL,
+      "applicationCategory": "DeveloperApplication",
+      "applicationSubCategory": "Developer Utilities & Cryptography",
+      "operatingSystem": "All (Web Browser, Chrome, Firefox, Safari, Edge)",
+      "browserRequirements": "Requires JavaScript, HTML5, Web Crypto API",
+      "isAccessibleForFree": true,
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "USD",
+      },
+      "featureList": [
+        "100% Client-Side In-Browser Processing",
+        "Zero Server Transmission Privacy Guarantee",
+        "Progressive Web App (PWA) Offline Support",
+        "Smart Clipboard Format Auto-Detection (Magic Paste)",
+        "AI Skill Studio & Coding Agent Preset Generator",
+      ],
+    },
+  ],
+};
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -80,6 +144,10 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
         <link rel="preconnect" href="https://cdn.jsdelivr.net" crossOrigin="anonymous" />
         <link rel="dns-prefetch" href="https://cdn.jsdelivr.net" />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(siteJsonLd) }}
+        />
         {process.env.NODE_ENV === "development" && (
           <script
             dangerouslySetInnerHTML={{

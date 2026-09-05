@@ -1,5 +1,5 @@
-import Link from"next/link";
-import { ShieldCheck, ArrowRight, HelpCircle, CheckCircle2, Sparkles } from"lucide-react";
+import Link from "next/link";
+import { Sparkles } from "lucide-react";
 import { TOOLS_REGISTRY, type ToolMeta } from"@/lib/tools/registry";
 import { SeoArticle } from "./SeoArticle";
 
@@ -14,21 +14,35 @@ export function SeoContent({ tool }: { tool: ToolMeta }) {
  const jsonLdGraph = {
 "@context":"https://schema.org",
 "@graph": [
- {
-"@type":"WebApplication",
-"@id": `https://www.devscratchpad.tech/tools/${tool.slug}#webapp`,
-"name": `${tool.name} Online`,
-"url": `https://www.devscratchpad.tech/tools/${tool.slug}`,
-"applicationCategory":"DeveloperApplication",
-"operatingSystem":"All",
-"browserRequirements":"Requires JavaScript",
-"offers": {
-"@type":"Offer",
-"price":"0",
-"priceCurrency":"USD"
- },
-"description": tool.seoDescription || tool.description,
- },
+      {
+        "@type": "WebApplication",
+        "@id": `https://www.devscratchpad.tech/tools/${tool.slug}#webapp`,
+        "name": `${tool.name} Online`,
+        "url": `https://www.devscratchpad.tech/tools/${tool.slug}`,
+        "applicationCategory": "DeveloperApplication",
+        "applicationSubCategory": tool.category,
+        "operatingSystem": "All",
+        "browserRequirements": "Requires JavaScript, HTML5, Web Crypto API",
+        "isAccessibleForFree": true,
+        "softwareVersion": "1.0",
+        "publisher": {
+          "@type": "Organization",
+          "@id": "https://www.devscratchpad.tech/#organization",
+          "name": "DevScratchpad",
+        },
+        "featureList": [
+          "100% Client-Side In-Browser Execution",
+          "Zero Server Transmission Privacy Guarantee",
+          "Works Fully Offline",
+          ...(tool.shortcuts || []),
+        ],
+        "offers": {
+          "@type": "Offer",
+          "price": "0",
+          "priceCurrency": "USD",
+        },
+        "description": tool.seoDescription || tool.description,
+      },
  {
 "@type":"HowTo",
 "@id": `https://www.devscratchpad.tech/tools/${tool.slug}#howto`,
