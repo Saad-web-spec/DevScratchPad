@@ -1,5 +1,5 @@
 import { Metadata } from "next";
-import { notFound } from "next/navigation";
+import { notFound, permanentRedirect } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, ChevronRight } from "lucide-react";
 import {
@@ -43,6 +43,11 @@ export default async function ProgrammaticPresetPage({
     notFound();
   }
 
+  // Canonicalize any alias URL request to the primary spoke URL
+  if (presetSlug !== route.presetSlug) {
+    permanentRedirect(`/ai-skill-studio/${formatSlug}/${route.presetSlug}`);
+  }
+
   const hub = getFormatHub(formatSlug);
 
   const jsonLdGraph = {
@@ -50,10 +55,10 @@ export default async function ProgrammaticPresetPage({
     "@graph": [
       {
         "@type": "WebApplication",
-        "@id": `https://www.devscratchpad.tech/ai-skill-studio/${formatSlug}/${presetSlug}#webapp`,
+        "@id": `https://www.devscratchpad.tech/ai-skill-studio/${formatSlug}/${route.presetSlug}#webapp`,
         name: route.title,
         description: route.description,
-        url: `https://www.devscratchpad.tech/ai-skill-studio/${formatSlug}/${presetSlug}`,
+        url: `https://www.devscratchpad.tech/ai-skill-studio/${formatSlug}/${route.presetSlug}`,
         applicationCategory: "DeveloperApplication",
         applicationSubCategory: route.category,
         operatingSystem: "Any",
@@ -67,7 +72,7 @@ export default async function ProgrammaticPresetPage({
       },
       {
         "@type": "TechArticle",
-        "@id": `https://www.devscratchpad.tech/ai-skill-studio/${formatSlug}/${presetSlug}#article`,
+        "@id": `https://www.devscratchpad.tech/ai-skill-studio/${formatSlug}/${route.presetSlug}#article`,
         headline: route.title,
         description: route.description,
         articleSection: route.category,
@@ -87,7 +92,7 @@ export default async function ProgrammaticPresetPage({
       },
       {
         "@type": "BreadcrumbList",
-        "@id": `https://www.devscratchpad.tech/ai-skill-studio/${formatSlug}/${presetSlug}#breadcrumb`,
+        "@id": `https://www.devscratchpad.tech/ai-skill-studio/${formatSlug}/${route.presetSlug}#breadcrumb`,
         itemListElement: [
           {
             "@type": "ListItem",
@@ -111,7 +116,7 @@ export default async function ProgrammaticPresetPage({
             "@type": "ListItem",
             position: 4,
             name: route.techName,
-            item: `https://www.devscratchpad.tech/ai-skill-studio/${formatSlug}/${presetSlug}`,
+            item: `https://www.devscratchpad.tech/ai-skill-studio/${formatSlug}/${route.presetSlug}`,
           },
         ],
       },
@@ -119,7 +124,7 @@ export default async function ProgrammaticPresetPage({
         ? [
             {
               "@type": "FAQPage",
-              "@id": `https://www.devscratchpad.tech/ai-skill-studio/${formatSlug}/${presetSlug}#faq`,
+              "@id": `https://www.devscratchpad.tech/ai-skill-studio/${formatSlug}/${route.presetSlug}#faq`,
               mainEntity: route.faqs.map((faq) => ({
                 "@type": "Question",
                 name: faq.question,

@@ -49,7 +49,13 @@ export function CheatSheetGrid({ cheats }: CheatSheetGridProps) {
                   </span>
                   {cheat.toolSlug && (
                     <Link
-                      href={`/tools/${cheat.toolSlug}`}
+                      href={
+                        cheat.toolSlug.startsWith("/")
+                          ? cheat.toolSlug
+                          : cheat.toolSlug === "ai-skill-studio"
+                          ? "/ai-skill-studio"
+                          : `/tools/${cheat.toolSlug}`
+                      }
                       className="text-[10px] font-mono text-zinc-400 hover:text-zinc-900 flex items-center gap-0.5 transition-colors"
                       title="Open interactive tool"
                     >

@@ -9,7 +9,7 @@ import { HubSearchAndFilter } from "@/components/blog/HubSearchAndFilter";
 const SITE_URL = "https://www.devscratchpad.tech";
 
 export const metadata: Metadata = {
-  title: "Developer Learning Hub, Cheat Sheets & Engineering Guides | DevScratchpad",
+  title: "Developer Learning Hub, Cheat Sheets & Engineering Guides",
   description: "Exhaustive technical guides, cheat sheets, and practical reference architectures for developers. Cron syntax, JWT RFC standards, cURL conversions, and offline cryptography.",
   alternates: {
     canonical: `${SITE_URL}/blog`,
@@ -20,11 +20,20 @@ export const metadata: Metadata = {
     url: `${SITE_URL}/blog`,
     type: "website",
     siteName: "DevScratchpad",
+    images: [
+      {
+        url: "https://www.devscratchpad.tech/og-ai-skill-studio.png",
+        width: 1200,
+        height: 630,
+        alt: "Developer Learning Hub & Engineering Guides",
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
     title: "Developer Learning Hub, Cheat Sheets & Engineering Guides | DevScratchpad",
     description: "Exhaustive technical guides, cheat sheets, and practical reference architectures for developers.",
+    images: ["https://www.devscratchpad.tech/og-ai-skill-studio.png"],
   },
 };
 
@@ -91,14 +100,14 @@ export default function BlogIndex() {
               Looking for client-side formatters, decoders, and converters?
             </h3>
             <p className="text-xs text-zinc-400 leading-relaxed">
-              Explore 25+ offline utilities including JSON Formatter, cURL converters, JWT decoder, UUID generator, and Bcrypt verifier.
+              Explore 28 offline utilities including JSON Formatter, cURL converters, JWT decoder, UUID generator, and Bcrypt verifier.
             </p>
           </div>
           <Link
             href="/developer-tools"
             className="px-4 py-2 bg-white hover:bg-zinc-100 text-zinc-900 text-xs font-medium rounded-md transition-colors whitespace-nowrap shrink-0 flex items-center gap-1.5"
           >
-            <span>Browse All Tools (25+)</span>
+            <span>Browse All 28 Tools</span>
             <ArrowRight className="w-3.5 h-3.5" />
           </Link>
         </div>

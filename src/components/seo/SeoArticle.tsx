@@ -16,9 +16,9 @@ export function SeoArticle({ title, explanation, codeExamples, shortcuts, howToU
       <div className="flex flex-col md:flex-row gap-12">
         {/* Main Prose */}
         <div className="flex-1">
-          <h2 className="text-xl font-semibold text-neutral-900 mb-4 tracking-tight">
+          <h1 className="text-xl font-semibold text-neutral-900 mb-4 tracking-tight">
             {title}
-          </h2>
+          </h1>
           <p className="text-sm text-neutral-600 leading-relaxed mb-6">
             {explanation}
           </p>

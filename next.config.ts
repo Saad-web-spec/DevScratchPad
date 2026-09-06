@@ -25,6 +25,71 @@ const nextConfig: NextConfig = {
         destination: "/blog",
         permanent: true,
       },
+      {
+        source: "/workspace",
+        destination: "/",
+        permanent: true,
+      },
+      {
+        source: "/tools/ai-skill-studio",
+        destination: "/ai-skill-studio",
+        permanent: true,
+      },
+      {
+        source: "/ai-skill-studio/:format/fastapi-ai",
+        destination: "/ai-skill-studio/:format/fastapi",
+        permanent: true,
+      },
+      {
+        source: "/ai-skill-studio/:format/fastapi-ai-backend",
+        destination: "/ai-skill-studio/:format/fastapi",
+        permanent: true,
+      },
+      {
+        source: "/ai-skill-studio/:format/claude-auditor",
+        destination: "/ai-skill-studio/:format/codebase-auditor",
+        permanent: true,
+      },
+      {
+        source: "/ai-skill-studio/:format/nextjs",
+        destination: "/ai-skill-studio/:format/nextjs-15",
+        permanent: true,
+      },
+      {
+        source: "/ai-skill-studio/:format/nextjs-fullstack-pro",
+        destination: "/ai-skill-studio/:format/nextjs-15",
+        permanent: true,
+      },
+      {
+        source: "/ai-skill-studio/:format/react",
+        destination: "/ai-skill-studio/:format/react-19",
+        permanent: true,
+      },
+      {
+        source: "/ai-skill-studio/:format/react-modern-spa",
+        destination: "/ai-skill-studio/:format/react-19",
+        permanent: true,
+      },
+      {
+        source: "/ai-skill-studio/:format/tailwind",
+        destination: "/ai-skill-studio/:format/tailwind-v4",
+        permanent: true,
+      },
+      {
+        source: "/ai-skill-studio/:format/tailwind-v4-styling",
+        destination: "/ai-skill-studio/:format/tailwind-v4",
+        permanent: true,
+      },
+      {
+        source: "/ai-skill-studio/:format/cursor-pro",
+        destination: "/ai-skill-studio/:format/cursor-rules-pro",
+        permanent: true,
+      },
+      {
+        source: "/ai-skill-studio/:format/postgresql",
+        destination: "/ai-skill-studio/:format/postgres",
+        permanent: true,
+      },
     ];
   },
   async headers() {

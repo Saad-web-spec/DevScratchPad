@@ -7,7 +7,7 @@ import { SiteFooter } from "@/components/layout/SiteFooter";
 const SITE_URL = "https://www.devscratchpad.tech";
 
 export const metadata: Metadata = {
-  title: "About DevScratchpad — 100% Offline, Privacy-Backed Developer Tools",
+  title: "About — 100% Offline, Privacy-Backed Developer Tools",
   description:
     "Learn about DevScratchpad: an open-source, client-side developer utility platform. Zero server transmission, client-side cryptography, and AI Skill Studio.",
   alternates: {
@@ -18,6 +18,21 @@ export const metadata: Metadata = {
     description:
       "DevScratchpad is an open-source developer platform built for speed and security. Free online tools that execute 100% in-browser.",
     url: `${SITE_URL}/about`,
+    images: [
+      {
+        url: "https://www.devscratchpad.tech/og-ai-skill-studio.png",
+        width: 1200,
+        height: 630,
+        alt: "About DevScratchpad",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "About DevScratchpad — 100% Offline, Privacy-Backed Developer Tools",
+    description:
+      "DevScratchpad is an open-source developer platform built for speed and security. Free online tools that execute 100% in-browser.",
+    images: ["https://www.devscratchpad.tech/og-ai-skill-studio.png"],
   },
 };
 
@@ -30,7 +45,7 @@ const aboutJsonLd = {
       url: `${SITE_URL}/about`,
       name: "About DevScratchpad",
       description:
-        "DevScratchpad is an open-source, privacy-backed developer platform providing 30+ client-side utilities and AI agent prompt generators.",
+        "DevScratchpad is an open-source, privacy-backed developer platform providing 28 offline client-side developer utilities and AI agent prompt generators.",
       publisher: {
         "@type": "Organization",
         "@id": `${SITE_URL}/#organization`,

@@ -2253,7 +2253,7 @@ ${exampleBad.trim()}
           {/* Left: Back button & Title */}
           <div className="flex items-center gap-2 sm:gap-3 min-w-0">
             <Link
-              href="/workspace"
+              href="/"
               className="flex items-center gap-1.5 px-2 py-1.5 sm:px-2.5 sm:py-1.5 rounded-lg text-xs font-semibold text-zinc-700 hover:text-zinc-900 bg-zinc-100 hover:bg-zinc-200 transition-all border border-zinc-200/80 active:scale-95 shrink-0"
               title="Open Developer Tools Workspace"
             >

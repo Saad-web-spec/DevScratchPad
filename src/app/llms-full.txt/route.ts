@@ -3,6 +3,7 @@ import { TOOLS_REGISTRY } from "@/lib/tools/registry";
 import { getAllCategories } from "@/lib/tools/categories";
 import { getAllDynamicPresetRoutes, getPresetBySlug, PRESET_ROUTES } from "@/app/claude-skills/lib/presetRegistry";
 import { getAllFormatHubs } from "@/app/claude-skills/lib/formatHubs";
+import { BLOG_POSTS } from "@/lib/blog/posts";
 
 const SITE_URL = "https://www.devscratchpad.tech";
 
@@ -100,10 +101,31 @@ ${steps}${edgeCases}${shortcuts}
 
   const presetsDetailed = presetsDetailedList.join("\n---\n\n");
 
+  const engineeringGuidesDetailed = BLOG_POSTS.map((p) => {
+    const faqs = p.faqs && p.faqs.length > 0
+      ? `\n- **Frequently Asked Questions**:\n${p.faqs.map((f) => `  - **Q: ${f.question}**\n    A: ${f.answer}`).join("\n")}`
+      : "";
+    const tags = p.tags && p.tags.length > 0 ? `\n- **Tags**: ${p.tags.join(", ")}` : "";
+
+    return `### ${p.title}
+- **URL**: ${SITE_URL}/blog/${p.slug}
+- **Category**: ${p.category}
+- **Type**: ${p.type} | Read Time: ${p.readTime} | Difficulty: ${p.difficulty}
+- **Summary**: ${p.seoDescription || p.description}${tags}${faqs}
+`;
+  }).join("\n---\n\n");
+
   const content = `# DevScratchpad — Full Documentation for AI Agents & Search Engines
 > The authoritative reference for DevScratchpad's privacy-backed developer utilities, cryptographic tools, and AI agent prompt specifications.
 
 DevScratchpad (${SITE_URL}) operates entirely on client-side code execution. No network requests are made when processing user data, ensuring 100% data confidentiality for enterprise and sensitive workloads.
+
+---
+
+## Primary Platforms & Root Hubs
+- [Developer Tools Directory](${SITE_URL}/developer-tools): Complete directory of 28 offline, client-side developer utilities across 5 categories.
+- [AI Skill Studio](${SITE_URL}/ai-skill-studio): Universal AI prompt engineering studio generating Claude Code skills, Cursor rules (.mdc), AGENTS.md specs, and MCP configs.
+- [Developer Learning Hub](${SITE_URL}/blog): In-depth technical guides, cheat sheets, and architectural references for modern engineering teams.
 
 ---
 
@@ -128,6 +150,12 @@ ${formatHubsDetailed}
 ## AI Skill Studio Specification Presets
 
 ${presetsDetailed}
+
+---
+
+## Engineering Guides & Cheat Sheets
+
+${engineeringGuidesDetailed}
 
 ---
 

@@ -63,7 +63,7 @@ export const QUICK_CHEATS: QuickCheatItem[] = [
     syntax: '{"mcpServers":{"github":{"command":"npx","args":["-y","@modelcontextprotocol/server-github"],"env":{"GITHUB_PERSONAL_ACCESS_TOKEN":"ghp_your_token"}}}}',
     description: "Model Context Protocol JSON configuration for GitHub repo tools in Claude.",
     category: "AI & MCP",
-    toolSlug: "ai-skill-studio",
+    toolSlug: "/ai-skill-studio",
   },
   {
     id: "cron-15",

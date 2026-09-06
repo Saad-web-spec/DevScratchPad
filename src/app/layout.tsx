@@ -55,12 +55,21 @@ export const metadata: Metadata = {
     title: "DevScratchpad - 100% Offline, Privacy Backed Developer Tools",
     description:
       "Massive collection of free online developer tools that work 100% offline. Zero server transmission. Privacy backed scratch pad for developers.",
+    images: [
+      {
+        url: "https://www.devscratchpad.tech/og-ai-skill-studio.png",
+        width: 1200,
+        height: 630,
+        alt: "DevScratchpad — Free Offline Developer Tools & AI Skill Studio",
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
     title: "DevScratchpad - 100% Offline, Privacy Backed Developer Tools",
     description:
       "Massive collection of free online developer tools that work 100% offline. Zero server transmission. Privacy backed scratch pad for developers.",
+    images: ["https://www.devscratchpad.tech/og-ai-skill-studio.png"],
   },
   alternates: {
     canonical: SITE_URL,

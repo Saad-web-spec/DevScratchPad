@@ -1255,9 +1255,6 @@ export function getAllDynamicPresetRoutes(): { formatSlug: string; presetSlug: s
     for (const slug of BASE_CODE_SLUGS) {
       addRoute(fmt, slug);
     }
-    // Include popular aliases
-    addRoute(fmt, "fastapi-ai");
-    addRoute(fmt, "claude-auditor");
   }
 
   for (const mcpSlug of MCP_SLUGS) {
@@ -1271,6 +1268,8 @@ export function getPresetRouteMetadata(formatSlug: string, presetSlug: string): 
   const route = getPresetBySlug(formatSlug, presetSlug);
   if (!route) return null;
   
+  const canonicalPresetSlug = SLUG_ALIASES[presetSlug] || presetSlug;
+
   return {
     title: route.title,
     description: route.description,
@@ -1280,7 +1279,7 @@ export function getPresetRouteMetadata(formatSlug: string, presetSlug: string): 
       type: "website",
       siteName: "DevScratchpad",
       locale: "en_US",
-      url: `https://www.devscratchpad.tech/ai-skill-studio/${formatSlug}/${presetSlug}`,
+      url: `https://www.devscratchpad.tech/ai-skill-studio/${formatSlug}/${canonicalPresetSlug}`,
       images: [
         {
           url: "https://www.devscratchpad.tech/og-ai-skill-studio.png",
@@ -1299,7 +1298,7 @@ export function getPresetRouteMetadata(formatSlug: string, presetSlug: string): 
       images: ["https://www.devscratchpad.tech/og-ai-skill-studio.png"],
     },
     alternates: {
-      canonical: `https://www.devscratchpad.tech/ai-skill-studio/${formatSlug}/${presetSlug}`,
+      canonical: `https://www.devscratchpad.tech/ai-skill-studio/${formatSlug}/${canonicalPresetSlug}`,
     },
   };
 }

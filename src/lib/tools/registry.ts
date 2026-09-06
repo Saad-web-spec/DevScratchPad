@@ -53,7 +53,7 @@ export const TOOLS_REGISTRY: Record<string, ToolMeta> = {
     name: "XML Formatter",
     shortName: "XML Formatter",
     description: "Pretty print and format XML documents.",
-    seoTitle: "XML Formatter Online — DevScratchpad",
+    seoTitle: "XML Formatter Online — Format & Indent XML Documents",
     seoDescription: "Format and pretty-print XML documents entirely in your browser.",
     howToUse: [
       "Paste raw XML into the editor.",
@@ -67,7 +67,7 @@ export const TOOLS_REGISTRY: Record<string, ToolMeta> = {
     name: "SQL Formatter",
     shortName: "SQL Formatter",
     description: "Format SQL queries (PostgreSQL, MySQL, SQLite, standard SQL) with proper indentation.",
-    seoTitle: "SQL Formatter Online — DevScratchpad",
+    seoTitle: "SQL Formatter Online — Format Postgres, MySQL & SQLite Queries",
     seoDescription: "Format SQL queries online. Supports PostgreSQL, MySQL, and generic SQL dialects.",
     howToUse: [
       "Paste your unformatted SQL query.",
@@ -82,7 +82,7 @@ export const TOOLS_REGISTRY: Record<string, ToolMeta> = {
     name: "GraphQL Formatter",
     shortName: "GraphQL Formatter",
     description: "Format GraphQL queries, mutations, and schema definitions.",
-    seoTitle: "GraphQL Formatter Online — DevScratchpad",
+    seoTitle: "GraphQL Formatter Online — Pretty Print Queries & Schemas",
     seoDescription: "Format and pretty-print GraphQL queries and schemas.",
     howToUse: [
       "Paste your GraphQL query or schema.",
@@ -96,7 +96,7 @@ export const TOOLS_REGISTRY: Record<string, ToolMeta> = {
     name: "CSS / SVG / HTML Minifier",
     shortName: "Minifier",
     description: "Minify and compress CSS stylesheets, SVG graphics, and HTML documents.",
-    seoTitle: "CSS/SVG/HTML Minifier Online — DevScratchpad",
+    seoTitle: "CSS/SVG/HTML Minifier Online — Compress Web Code",
     seoDescription: "Minify CSS, SVG, and HTML online instantly. Reduce file sizes securely in your browser.",
     howToUse: [
       "Select the input type (CSS, SVG, HTML).",
@@ -111,7 +111,7 @@ export const TOOLS_REGISTRY: Record<string, ToolMeta> = {
     name: "Mock Data Generator",
     shortName: "Mock Generator",
     description: "Generate thousands of rows of realistic dummy data (JSON, CSV, SQL) using Faker.js.",
-    seoTitle: "Mock Data Generator Online — DevScratchpad",
+    seoTitle: "Mock Data Generator Online — Generate JSON, CSV & SQL Test Data",
     seoDescription: "Generate massive amounts of realistic mock data in JSON, CSV, or SQL formats entirely in your browser using Faker.js.",
     howToUse: [
       "Define your schema using Faker template fields (e.g. {{person.firstName}}).",
@@ -175,7 +175,7 @@ export const TOOLS_REGISTRY: Record<string, ToolMeta> = {
     name: "Hash Generator (MD5, SHA256, SHA512)",
     shortName: "Hash Generator",
     description: "Computes MD5, SHA-1, SHA-256, and SHA-512 in parallel client-side in your browser.",
-    seoTitle: "Hash Generator Online (MD5, SHA-1, SHA-256, SHA-512) — DevScratchpad",
+    seoTitle: "Hash Generator Online (MD5, SHA-1, SHA-256, SHA-512)",
     seoDescription: "Generate MD5, SHA-1, SHA-256, and SHA-512 hashes online in parallel without uploading data to servers.",
     howToUse: [
       "Type or paste any input text or file hash data.",
@@ -206,7 +206,7 @@ export const TOOLS_REGISTRY: Record<string, ToolMeta> = {
     name: "Bcrypt / Argon2 / PBKDF2 Password Hash Verifier & Generator",
     shortName: "Password Hash & Verifier",
     description: "Generate and verify passwords against Bcrypt ($2a/$2b), Argon2id, and PBKDF2 hashes with cost factor controls.",
-    seoTitle: "Bcrypt & Argon2 Hash Generator & Verifier Online — DevScratchpad",
+    seoTitle: "Bcrypt & Argon2 Hash Generator & Verifier Online",
     seoDescription: "Generate Bcrypt, Argon2id, and PBKDF2 password hashes and verify candidate passwords against existing hashes entirely in your browser.",
     howToUse: [
       "Toggle between 'Generate Hash' and 'Verify Password Against Hash' modes.",
@@ -270,7 +270,7 @@ export const TOOLS_REGISTRY: Record<string, ToolMeta> = {
     name: "JSON to Zod Schema",
     shortName: "JSON to Zod",
     description: "Infer Zod validation schemas directly from JSON payloads.",
-    seoTitle: "JSON to Zod Schema Generator Online — DevScratchpad",
+    seoTitle: "JSON to Zod Schema Generator Online",
     seoDescription: "Generate Zod runtime validation schemas from JSON examples online.",
     howToUse: [
       "Paste your JSON payload into the left editor.",
@@ -284,7 +284,7 @@ export const TOOLS_REGISTRY: Record<string, ToolMeta> = {
     name: "JSON to Go Struct",
     shortName: "JSON to Go",
     description: "Convert JSON payloads into Go struct definitions with json tags.",
-    seoTitle: "JSON to Go Struct Generator Online — DevScratchpad",
+    seoTitle: "JSON to Go Struct Generator Online",
     seoDescription: "Automatically generate Go structs from JSON data securely in your browser.",
     howToUse: [
       "Paste your JSON payload into the left editor.",
@@ -312,7 +312,7 @@ export const TOOLS_REGISTRY: Record<string, ToolMeta> = {
     name: "cURL to JavaScript Fetch",
     shortName: "cURL to Fetch",
     description: "Translate bash cURL commands into JavaScript fetch() API calls.",
-    seoTitle: "cURL to Fetch Converter Online — DevScratchpad",
+    seoTitle: "cURL to Fetch Converter Online",
     seoDescription: "Convert cURL commands into JavaScript fetch() code snippets instantly.",
     howToUse: [
       "Paste a bash `curl` command into the input.",
@@ -326,7 +326,7 @@ export const TOOLS_REGISTRY: Record<string, ToolMeta> = {
     name: "cURL to Python Requests",
     shortName: "cURL to Python",
     description: "Translate bash cURL commands into Python `requests` code.",
-    seoTitle: "cURL to Python Requests Converter Online — DevScratchpad",
+    seoTitle: "cURL to Python Requests Converter Online",
     seoDescription: "Convert cURL commands into Python requests boilerplate instantly.",
     howToUse: [
       "Paste a bash `curl` command.",
@@ -354,7 +354,7 @@ export const TOOLS_REGISTRY: Record<string, ToolMeta> = {
     name: "SVG to JSX Converter",
     shortName: "SVG to JSX",
     description: "Convert raw SVG markup into React JSX/TSX components.",
-    seoTitle: "SVG to React JSX Converter Online — DevScratchpad",
+    seoTitle: "SVG to React JSX Converter Online",
     seoDescription: "Convert raw SVG icons into React JSX and TSX components instantly.",
     howToUse: [
       "Paste raw SVG markup into the left editor.",
@@ -368,7 +368,7 @@ export const TOOLS_REGISTRY: Record<string, ToolMeta> = {
     name: "Epoch / Timestamp Converter",
     shortName: "Epoch Converter",
     description: "Convert Unix epoch timestamps to human-readable dates (Local and UTC).",
-    seoTitle: "Epoch & Unix Timestamp Converter Online — DevScratchpad",
+    seoTitle: "Epoch & Unix Timestamp Converter Online",
     seoDescription: "Convert Unix timestamps to readable dates, seconds to milliseconds, and format times.",
     howToUse: [
       "Enter an epoch timestamp (seconds or milliseconds).",
@@ -415,7 +415,7 @@ export const TOOLS_REGISTRY: Record<string, ToolMeta> = {
     name: "Cron Expression Visualizer",
     shortName: "Cron Visualizer",
     description: "Translates complex cron schedules into plain English with a 5-column breakdown grid.",
-    seoTitle: "Cron Expression Visualizer & Generator — DevScratchpad",
+    seoTitle: "Cron Expression Visualizer & Generator",
     seoDescription: "Translate cron expressions into human-readable English schedules with next execution date forecasting.",
     howToUse: [
       "Paste any standard 5-field cron expression.",

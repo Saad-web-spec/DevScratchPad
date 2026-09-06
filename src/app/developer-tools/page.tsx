@@ -7,19 +7,29 @@ import { SiteHeader } from "@/components/layout/SiteHeader";
 import { SiteFooter } from "@/components/layout/SiteFooter";
 
 export const metadata: Metadata = {
-  title: "Developer Tools Directory (20+ Offline Utilities)",
+  title: "Developer Tools Directory (28 Offline Utilities)",
   description: "Explore the complete directory of 100% offline, privacy-first developer utilities. JSON formatters, cURL converters, JWT decoders, and regex testers.",
   alternates: {
     canonical: "https://www.devscratchpad.tech/developer-tools",
   },
   openGraph: {
-    title: "Developer Tools Directory (20+ Offline Utilities)",
+    title: "Developer Tools Directory (28 Offline Utilities) | DevScratchpad",
     description: "Explore the complete directory of 100% offline, privacy-first developer utilities. JSON formatters, cURL converters, JWT decoders, and regex testers.",
     url: "https://www.devscratchpad.tech/developer-tools",
+    images: [
+      {
+        url: "https://www.devscratchpad.tech/og-ai-skill-studio.png",
+        width: 1200,
+        height: 630,
+        alt: "Developer Tools Directory — DevScratchpad",
+      },
+    ],
   },
   twitter: {
-    title: "Developer Tools Directory (20+ Offline Utilities)",
+    card: "summary_large_image",
+    title: "Developer Tools Directory (28 Offline Utilities) | DevScratchpad",
     description: "Explore the complete directory of 100% offline, privacy-first developer utilities. JSON formatters, cURL converters, JWT decoders, and regex testers.",
+    images: ["https://www.devscratchpad.tech/og-ai-skill-studio.png"],
   },
 };
 
@@ -43,7 +53,7 @@ export default function DeveloperToolsPage() {
         "@type": "CollectionPage",
         "@id": "https://www.devscratchpad.tech/developer-tools#webpage",
         "url": "https://www.devscratchpad.tech/developer-tools",
-        "name": "Developer Tools Directory (20+ Offline Utilities)",
+        "name": "Developer Tools Directory (28 Offline Utilities)",
         "description": "Explore the complete directory of 100% offline, privacy-first developer utilities.",
         "publisher": {
           "@type": "Organization",

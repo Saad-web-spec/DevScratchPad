@@ -50,7 +50,7 @@ export async function generateMetadata({
 
   return {
     metadataBase: new URL(SITE_URL),
-    title: `${category.seoTitle} | DevScratchpad`,
+    title: category.seoTitle,
     description: category.seoDescription,
     alternates: {
       canonical: canonicalUrl,
@@ -61,11 +61,20 @@ export async function generateMetadata({
       url: canonicalUrl,
       type: "website",
       siteName: "DevScratchpad",
+      images: [
+        {
+          url: "https://www.devscratchpad.tech/og-ai-skill-studio.png",
+          width: 1200,
+          height: 630,
+          alt: category.name,
+        },
+      ],
     },
     twitter: {
       card: "summary_large_image",
       title: `${category.seoTitle} | DevScratchpad`,
       description: category.seoDescription,
+      images: ["https://www.devscratchpad.tech/og-ai-skill-studio.png"],
     },
   };
 }

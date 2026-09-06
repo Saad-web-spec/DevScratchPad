@@ -52,7 +52,7 @@ export function SiteHeader() {
           <div className="hidden md:flex bg-neutral-900 text-neutral-100 text-xs px-2.5 py-1 rounded-md items-center gap-1.5"><Lock className="w-3 h-3" /> 100% Local</div>
 
           <Link
-            href="/workspace"
+            href="/"
             className="flex items-center gap-2 px-3.5 py-1.5 bg-zinc-900 hover:bg-zinc-800 text-white rounded-md text-xs font-medium transition-all shadow-none"
           >
             <span>Open Tool Workspace</span>

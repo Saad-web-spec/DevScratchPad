@@ -50,7 +50,7 @@ export async function generateMetadata({
   }
 
   return {
-    title: `${post.seoTitle} | DevScratchpad`,
+    title: post.seoTitle,
     description: post.seoDescription,
     alternates: {
       canonical: `${SITE_URL}/blog/${slug}`,
@@ -64,11 +64,20 @@ export async function generateMetadata({
       modifiedTime: post.updatedAt,
       siteName: "DevScratchpad",
       tags: post.tags,
+      images: [
+        {
+          url: "https://www.devscratchpad.tech/og-ai-skill-studio.png",
+          width: 1200,
+          height: 630,
+          alt: post.title,
+        },
+      ],
     },
     twitter: {
       card: "summary_large_image",
       title: `${post.seoTitle} | DevScratchpad`,
       description: post.seoDescription,
+      images: ["https://www.devscratchpad.tech/og-ai-skill-studio.png"],
     },
   };
 }

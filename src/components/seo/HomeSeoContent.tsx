@@ -51,7 +51,7 @@ export function HomeSeoContent() {
 "@id":"https://www.devscratchpad.tech/#website",
 "url":"https://www.devscratchpad.tech",
 "name":"DevScratchpad",
-"description":"22+ Free online developer tools for formatting, converting, and analyzing data securely.",
+"description":"28 Free offline developer tools for formatting, converting, and analyzing data securely.",
  },
  {
 "@type":"ItemList",
@@ -123,7 +123,7 @@ export function HomeSeoContent() {
  100% Offline, Private Developer Tools
  </h1>
   <p className="text-zinc-600 text-base leading-relaxed mb-6 font-medium">
-  DevScratchpad is a suite of 20+ privacy-first developer utilities. Every tool runs entirely within your browser using client-side processing. <strong className="text-zinc-900">Zero server transmission.</strong> Once loaded, it works entirely offline. Your data, payloads, and tokens never leave your machine.
+  DevScratchpad is a suite of 28 offline, privacy-first developer utilities. Every tool runs entirely within your browser using client-side processing. <strong className="text-zinc-900">Zero server transmission.</strong> Once loaded, it works entirely offline. Your data, payloads, and tokens never leave your machine.
   </p>
 
   {/* Dedicated Homepage Feature Card: AI Skill Studio */}
@@ -241,7 +241,7 @@ export function HomeSeoContent() {
   What tools does DevScratchpad offer?
   </h3>
   <p className="text-xs text-zinc-600 leading-relaxed">
-  DevScratchpad provides over 20 developer tools including SVG to JSX, JSON/XML/SQL formatters, JWT decoders, Hash/HMAC generators, Base64/URL encoders, timestamp converters, CIDR calculators, diff checkers, and more.
+  DevScratchpad provides 28 offline developer tools including SVG to JSX, JSON/XML/SQL formatters, JWT decoders, Hash/HMAC generators, Base64/URL encoders, timestamp converters, CIDR calculators, diff checkers, and more.
   </p>
   </div>
   <div className="p-4 bg-zinc-50 border border-zinc-200 rounded-xl">

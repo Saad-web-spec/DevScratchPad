@@ -346,21 +346,28 @@ export function ProgrammaticSpokeSeoContent({ route }: { route: ProgrammaticPres
 
           {/* Alternative Formats Micro-Grid */}
           {(() => {
-            const filteredSpokes = (route.relatedSpokes || []).filter((spoke) => {
+            const CODE_FORMAT_SPECS = [
+              { formatSlug: "cursor-rules", label: "Cursor Rules (.mdc)" },
+              { formatSlug: "claude-skills", label: "Claude Skill (SKILL.md)" },
+              { formatSlug: "claude-md", label: "CLAUDE.md Memory" },
+              { formatSlug: "agents-md", label: "AGENTS.md Spec" },
+            ];
+
+            const isCodeFormat = CODE_FORMAT_SPECS.some((f) => f.formatSlug === route.formatSlug);
+
+            const generatedSpokes = isCodeFormat
+              ? CODE_FORMAT_SPECS.filter((f) => f.formatSlug !== route.formatSlug).map((f) => ({
+                  formatSlug: f.formatSlug,
+                  presetSlug: route.presetSlug,
+                  label: `${route.techName} ${f.label}`,
+                }))
+              : (route.relatedSpokes || []);
+
+            const filteredSpokes = generatedSpokes.filter((spoke) => {
               if (spoke.formatSlug !== route.formatSlug) return true;
-              if (spoke.presetSlug === route.presetSlug) return false;
-              const normalize = (slug: string) => {
-                if (slug === "fastapi-ai" || slug === "fastapi-ai-backend") return "fastapi";
-                if (slug === "claude-auditor") return "codebase-auditor";
-                if (slug === "nextjs" || slug === "nextjs-fullstack-pro") return "nextjs-15";
-                if (slug === "react" || slug === "react-modern-spa") return "react-19";
-                if (slug === "tailwind" || slug === "tailwind-v4-styling") return "tailwind-v4";
-                if (slug === "cursor-pro") return "cursor-rules-pro";
-                if (slug === "postgresql") return "postgres";
-                return slug;
-              };
-              return normalize(spoke.presetSlug) !== normalize(route.presetSlug);
+              return spoke.presetSlug !== route.presetSlug;
             });
+
             return filteredSpokes.length > 0 ? (
               <div className="space-y-3">
                 <div className="flex items-center justify-between">

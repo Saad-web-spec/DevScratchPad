@@ -3,6 +3,7 @@ import { TOOLS_REGISTRY } from "@/lib/tools/registry";
 import { getAllCategories } from "@/lib/tools/categories";
 import { getAllDynamicPresetRoutes, getPresetBySlug, PRESET_ROUTES } from "@/app/claude-skills/lib/presetRegistry";
 import { getAllFormatHubs } from "@/app/claude-skills/lib/formatHubs";
+import { BLOG_POSTS } from "@/lib/blog/posts";
 
 const SITE_URL = "https://www.devscratchpad.tech";
 
@@ -54,10 +55,19 @@ export async function GET() {
 
   const presetsSection = presetsList.join("\n");
 
+  const engineeringGuidesSection = BLOG_POSTS.map(
+    (p) => `- [${p.title}](${SITE_URL}/blog/${p.slug}): ${p.seoDescription || p.description} (${p.category})`
+  ).join("\n");
+
   const content = `# DevScratchpad
 > 100% Offline, Privacy-Backed Developer Tools & AI Skill Studio
 
 DevScratchpad (${SITE_URL}) is an open developer utility suite built for security, speed, and client-side privacy. Every tool operates exclusively within the browser's local memory—zero server transmission, zero remote logging, and zero network latency.
+
+## Primary Platforms & Hubs
+- [Developer Tools Directory](${SITE_URL}/developer-tools): Complete directory of 28 offline, client-side developer utilities across 5 categories.
+- [AI Skill Studio](${SITE_URL}/ai-skill-studio): Universal AI prompt engineering studio generating Claude Code skills, Cursor rules (.mdc), AGENTS.md specs, and MCP configs.
+- [Developer Learning Hub](${SITE_URL}/blog): In-depth technical guides, cheat sheets, and architectural references for modern engineering teams.
 
 ## Architecture & Privacy Guarantees
 - Zero Server Data Transmission: All inputs, secret keys, passwords, JWT tokens, and payloads are processed locally via browser APIs (Web Crypto API, WebAssembly, and local DOM parsers).
@@ -75,6 +85,9 @@ ${formatHubsSection}
 
 ## AI Skill Studio Presets
 ${presetsSection}
+
+## Engineering Guides & Cheat Sheets
+${engineeringGuidesSection}
 
 ## Learning Hub & Guides
 - [About DevScratchpad](${SITE_URL}/about): Mission, open-source repository, zero-trust client architecture.
