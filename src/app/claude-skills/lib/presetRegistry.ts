@@ -1131,7 +1131,7 @@ def make_user(data: dict):
   }
 ];
 
-const SLUG_ALIASES: Record<string, string> = {
+export const SLUG_ALIASES: Record<string, string> = {
   "fastapi-ai": "fastapi",
   "fastapi-ai-backend": "fastapi",
   "claude-auditor": "codebase-auditor",

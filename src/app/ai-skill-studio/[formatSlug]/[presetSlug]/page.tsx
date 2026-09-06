@@ -180,7 +180,12 @@ export default async function ProgrammaticPresetPage({
         </div>
       </div>
 
-      <ClaudeSkillsClient initialFormat={route.format} initialPresetId={route.presetId} />
+      <ClaudeSkillsClient
+        initialFormat={route.format}
+        initialPresetId={route.presetId}
+        formatSlug={route.formatSlug}
+        presetSlug={route.presetSlug}
+      />
 
       {/* Stack-Specific Rich Programmatic Spoke Content for Search Engines & Users */}
       <ProgrammaticSpokeSeoContent route={route} />

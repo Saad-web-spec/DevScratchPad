@@ -54,946 +54,38 @@ const Editor = dynamic(() => import("@monaco-editor/react"), {
   ),
 });
 
-// Format Types
-type OutputFormat = "skill_md" | "claude_md" | "cursor_mdc" | "agents_md" | "mcp_json";
-
-// MCP Server Preset Definition
-interface McpServerPreset {
-  id: string;
-  name: string;
-  label: string;
-  description: string;
-  command: string;
-  args: string[];
-  env: Record<string, string>;
-}
-
-const MCP_PRESETS: McpServerPreset[] = [
-  {
-    id: "filesystem",
-    name: "filesystem",
-    label: "Local Filesystem",
-    description: "Secure local file access with directory scoping for repository inspection.",
-    command: "npx",
-    args: ["-y", "@modelcontextprotocol/server-filesystem", "./"],
-    env: {},
-  },
-  {
-    id: "github",
-    name: "github",
-    label: "GitHub Operations",
-    description: "Search repos, inspect pull requests, read branches, and create issues.",
-    command: "npx",
-    args: ["-y", "@modelcontextprotocol/server-github"],
-    env: { GITHUB_PERSONAL_ACCESS_TOKEN: "ghp_your_token_here" },
-  },
-  {
-    id: "postgres",
-    name: "postgres",
-    label: "PostgreSQL Database",
-    description: "Read-only schema inspection and SQL query execution against Postgres.",
-    command: "npx",
-    args: ["-y", "@modelcontextprotocol/server-postgres", "postgresql://user:password@localhost:5432/mydb"],
-    env: {},
-  },
-  {
-    id: "brave-search",
-    name: "brave-search",
-    label: "Brave Web Search",
-    description: "Real-time web search and documentation discovery via Brave Search API.",
-    command: "npx",
-    args: ["-y", "@modelcontextprotocol/server-brave-search"],
-    env: { BRAVE_API_KEY: "your_brave_search_api_key" },
-  },
-  {
-    id: "fetch",
-    name: "fetch",
-    label: "Web Fetch & HTML",
-    description: "Converts remote web pages and API responses into clean markdown for context.",
-    command: "uvx",
-    args: ["mcp-server-fetch"],
-    env: {},
-  },
-  {
-    id: "memory",
-    name: "memory",
-    label: "Knowledge Graph",
-    description: "Persistent graph-based entity memory across agent coding sessions.",
-    command: "npx",
-    args: ["-y", "@modelcontextprotocol/server-memory"],
-    env: {},
-  },
-  {
-    id: "sqlite",
-    name: "sqlite",
-    label: "SQLite Database",
-    description: "Query and inspect local SQLite database files with zero server overhead.",
-    command: "uvx",
-    args: ["mcp-server-sqlite", "--db-path", "./local.db"],
-    env: {},
-  },
-  {
-    id: "puppeteer",
-    name: "puppeteer",
-    label: "Puppeteer Browser",
-    description: "Headless browser automation, website screenshots, and SPA scraping.",
-    command: "npx",
-    args: ["-y", "@modelcontextprotocol/server-puppeteer"],
-    env: {},
-  },
-  {
-    id: "docker",
-    name: "docker",
-    label: "Docker Engine",
-    description: "Inspect local containers, view container logs, and troubleshoot services.",
-    command: "npx",
-    args: ["-y", "@modelcontextprotocol/server-docker"],
-    env: {},
-  },
-  {
-    id: "custom",
-    name: "custom-server",
-    label: "Custom MCP Server",
-    description: "Configure any bespoke Node, Python, Docker, or CLI MCP server executable.",
-    command: "node",
-    args: ["./dist/index.js"],
-    env: {},
-  },
-];
-
-// Preset Definition
-interface SkillPreset {
-  id: string;
-  name: string;
-  badge: string;
-  title: string;
-  slug: string;
-  description: string;
-  role: string;
-  framework: string;
-  language: string;
-  styling: string;
-  database: string;
-  philosophy: "pragmatic" | "modern" | "strict" | "vibe" | "architect";
-  behaviors: string[];
-  conventions: string[];
-  procedures: string;
-  customDirectives: string;
-  exampleGood: string;
-  exampleBad: string;
-}
-
-const PRESETS: SkillPreset[] = [
-  {
-    id: "cursor-mdc-pro",
-    name: "Cursor .mdc Pro",
-    badge: "Cursor Rules",
-    title: "Cursor Modular Rulebook (.mdc)",
-    slug: "cursor-rules-pro",
-    description:
-      "Modern .cursor/rules/*.mdc configuration for Cursor IDE. Enforces modular scoping with globs, surgical diffs, guard clauses, and strict zero-any type safety.",
-    role: "Cursor Systems Architect",
-    framework: "Next.js / React / TypeScript",
-    language: "TypeScript 5.x",
-    styling: "Tailwind CSS",
-    database: "PostgreSQL / Supabase",
-    philosophy: "modern",
-    behaviors: ["inspect-first", "minimal-diffs", "concise-direct", "verification-driven", "preserve-style"],
-    conventions: ["guard-clauses", "feature-colocated", "result-types", "typed-schemas"],
-    procedures: `1. Inspect active file context and target globs before proposing edits.
-2. Deliver surgical, focused diffs rather than re-outputting entire files.
-3. Enforce strict TypeScript typing: avoid loose 'any' or unsafe type assertions.
-4. Adhere to existing repository naming conventions, quote styles, and directory idioms.
-5. Provide actionable verification commands and test steps with every modification.`,
-    customDirectives: `- Keep responses direct, dense, and code-first with minimal conversational filler.
-- Never modify unrequested files or remove unrelated comments.
-- Always implement explicit error handling for asynchronous code paths.`,
-    exampleGood: `// Good: Surgical, strictly typed handler with early exit
-export async function getSessionUser(req: Request): Promise<User | null> {
-  const token = req.headers.get("authorization")?.replace("Bearer ", "");
-  if (!token) return null;
-  return verifySessionToken(token);
-}`,
-    exampleBad: `// Discouraged: Loose any types and nested conditionals
-export async function getSession(req: any) {
-  if (req) {
-    if (req.headers) {
-      return req.headers.auth;
-    }
-  }
-  return null;
-}`,
-  },
-  {
-    id: "claude-auditor",
-    name: "Codebase Auditor",
-    badge: "Claude Code Skill",
-    title: "Codebase Health & Security Auditor",
-    slug: "codebase-auditor",
-    description:
-      "Audit codebases for structural health, dead code, security vulnerabilities, performance regressions, and architectural anti-patterns. Use when asked to evaluate, review, or refactor code.",
-    role: "Senior Security & Systems Auditor",
-    framework: "Framework Agnostic",
-    language: "TypeScript / Polyglot",
-    styling: "None / Irrelevant",
-    database: "None / Irrelevant",
-    philosophy: "architect",
-    behaviors: ["inspect-first", "minimal-diffs", "concise-direct", "verification-driven", "dependency-caution"],
-    conventions: ["guard-clauses", "result-types", "self-documenting", "typed-schemas"],
-    procedures: `1. Scan directory structure and parse manifest files (package.json, Cargo.toml, go.mod) to identify stack idioms.
-2. Trace critical execution flows to identify unhandled errors, memory leaks, and unauthenticated endpoints.
-3. Check for exposed secrets, sensitive environment variables, or unsafe deserialization patterns.
-4. Categorize findings into: [CRITICAL] Security, [HIGH] Performance, [MEDIUM] Architecture, [LOW] Style.
-5. Propose surgical, minimal refactoring patches with before/after rationale.`,
-    customDirectives: `- Never modify production code without explaining risk level.
-- Always provide reproducible proof-of-concept steps for discovered issues.
-- Preserve existing comments, docstrings, and license headers.`,
-    exampleGood: `// Good: Explicit error handling with structured result
-export async function fetchAccount(id: string): Promise<Result<Account, AccountError>> {
-  if (!isValidId(id)) return { ok: false, error: new InvalidIdError(id) };
-  try {
-    const data = await db.account.findUnique({ where: { id } });
-    if (!data) return { ok: false, error: new NotFoundError(id) };
-    return { ok: true, value: data };
-  } catch (err) {
-    return { ok: false, error: new DatabaseError(err) };
-  }
-}`,
-    exampleBad: `// Discouraged: Swallowed errors, loose types, and hidden mutations
-export async function getAccount(id: any) {
-  try {
-    return await db.account.findUnique({ where: { id } });
-  } catch (e) {
-    console.log(e);
-    return null;
-  }
-}`,
-  },
-  {
-    id: "nextjs-pro",
-    name: "Next.js 15 Fullstack",
-    badge: "Web App",
-    title: "Next.js 15 App Router & Server Actions Specialist",
-    slug: "nextjs-fullstack-pro",
-    description:
-      "Production guidelines for Next.js App Router. Enforces React Server Components (RSC) by default, Server Actions for mutations with Zod validation, and Tailwind CSS v4 styling.",
-    role: "Lead Fullstack Next.js Engineer",
-    framework: "Next.js 15 (App Router)",
-    language: "TypeScript 5.x",
-    styling: "Tailwind CSS v4",
-    database: "PostgreSQL / Prisma / Drizzle",
-    philosophy: "pragmatic",
-    behaviors: ["inspect-first", "minimal-diffs", "concise-direct", "verification-driven", "preserve-style"],
-    conventions: ["rsc-first", "feature-colocated", "guard-clauses", "typed-schemas", "strict-a11y"],
-    procedures: `1. Fetch data directly in React Server Components; never introduce 'use client' for purely read-only views.
-2. Isolate client interactivity to leaf components (buttons, dropdowns, forms) with strict props interfaces.
-3. Encapsulate data mutations inside Server Actions, validating input with Zod schemas before running database queries.
-4. Manage transient UI state with React 19 hooks (useActionState, useOptimistic) and searchParams for URL sync.
-5. Provide dedicated loading.tsx skeletons and error.tsx error boundaries for all dynamic route segments.`,
-    customDirectives: `- Banned: Do not use pages/ router conventions or old getServerSideProps.
-- Keep client bundles minimal; never import server libraries into client components.
-- Use Next/Image for optimized media with explicit width/height or fill.`,
-    exampleGood: `// Good: Server Action with Zod validation and safe error return
-"use server";
-import { z } from "zod";
-import { db } from "@/lib/db";
-
-const Schema = z.object({ email: z.string().email(), name: z.string().min(2) });
-
-export async function createUserAction(formData: FormData) {
-  const parsed = Schema.safeParse(Object.fromEntries(formData));
-  if (!parsed.success) return { ok: false, errors: parsed.error.flatten().fieldErrors };
-  await db.user.create({ data: parsed.data });
-  return { ok: true };
-}`,
-    exampleBad: `// Discouraged: Unvalidated client-side mutation with inline API call
-"use client";
-export function SubmitUser() {
-  const submit = async (data: any) => {
-    await fetch("/api/users", { method: "POST", body: JSON.stringify(data) });
-  };
-  return <button onClick={submit}>Save</button>;
-}`,
-  },
-  {
-    id: "react-spa",
-    name: "React 19 SPA",
-    badge: "Frontend",
-    title: "React 19 + TypeScript SPA Specialist",
-    slug: "react-modern-spa",
-    description:
-      "Modern React 19 SPA standards. Prioritizes custom hooks, TanStack Query for server state caching, Vite bundling, and avoiding redundant useEffect cycles.",
-    role: "Senior Frontend Engineer",
-    framework: "React 19 (Vite)",
-    language: "TypeScript",
-    styling: "Tailwind CSS",
-    database: "REST / GraphQL API",
-    philosophy: "modern",
-    behaviors: ["inspect-first", "minimal-diffs", "concise-direct", "preserve-style"],
-    conventions: ["feature-colocated", "guard-clauses", "self-documenting", "strict-a11y"],
-    procedures: `1. Separate server state (handled via TanStack Query/SWR) from local ephemeral UI state (useState).
-2. Avoid redundant useEffect calls; calculate derived state synchronously during render or with useMemo where heavy.
-3. Colocate component files: MyComponent.tsx, useMyComponent.ts, MyComponent.test.tsx in the same folder.
-4. Use standard semantic HTML tags and test keyboard accessibility for all custom interactive controls.`,
-    customDirectives: `- Prefer functional components with named exports.
-- Do not use React.FC typing; declare props interface explicitly.
-- Extract complex component logic into dedicated custom hooks.`,
-    exampleGood: `// Good: Derived state computed directly during render
-export function FilteredList({ items, query }: { items: Item[]; query: string }) {
-  const filtered = useMemo(
-    () => items.filter((item) => item.name.toLowerCase().includes(query.toLowerCase())),
-    [items, query]
-  );
-  return <ul>{filtered.map(item => <li key={item.id}>{item.name}</li>)}</ul>;
-}`,
-    exampleBad: `// Discouraged: Redundant useEffect triggering cascading re-renders
-export function BadFilteredList({ items, query }: any) {
-  const [filtered, setFiltered] = useState([]);
-  useEffect(() => {
-    setFiltered(items.filter((i: any) => i.name.includes(query)));
-  }, [items, query]);
-  return <ul>{filtered.map((item: any) => <li key={item.id}>{item.name}</li>)}</ul>;
-}`,
-  },
-  {
-    id: "fastapi-ai",
-    name: "FastAPI & AI Agent",
-    badge: "Backend",
-    title: "Python FastAPI & AI Agent Service Architecture",
-    slug: "fastapi-ai-backend",
-    description:
-      "Production standards for Python 3.12+, FastAPI, async I/O, Pydantic v2 schemas, LangChain/LlamaIndex integration, and defensive error propagation.",
-    role: "Senior AI Systems Backend Engineer",
-    framework: "FastAPI",
-    language: "Python 3.12+",
-    styling: "None / API Service",
-    database: "PostgreSQL / pgvector / Redis",
-    philosophy: "strict",
-    behaviors: ["inspect-first", "minimal-diffs", "concise-direct", "dependency-caution", "verification-driven"],
-    conventions: ["clean-layered", "guard-clauses", "result-types", "typed-schemas"],
-    procedures: `1. Define all request and response schemas strictly using Pydantic v2 BaseModels with Field validation.
-2. Use asynchronous route handlers (async def) for any network I/O, LLM inference calls, or database operations.
-3. Manage database sessions and external clients using FastAPI Depends injection.
-4. Structure the repository into: api/ (routes), services/ (business logic), core/ (config), models/ (schemas).
-5. Catch domain-specific exceptions at the service layer and translate to HTTPException at the route layer.`,
-    customDirectives: `- Never hardcode OpenAI/Anthropic API keys or secrets in source code.
-- Always implement streaming responses for LLM text generation endpoints.
-- Type annotate all function arguments and return types.`,
-    exampleGood: `# Good: Typed Pydantic v2 request with dependency injection
-from fastapi import APIRouter, Depends, HTTPException, status
-from pydantic import BaseModel, Field
-
-router = APIRouter()
-
-class PromptRequest(BaseModel):
-    query: str = Field(..., min_length=3, max_length=1000)
-    temperature: float = Field(0.7, ge=0.0, le=1.0)
-
-@router.post("/v1/generate", response_model=GenerationResponse)
-async def generate(req: PromptRequest, svc: AIService = Depends(get_ai_service)):
-    result = await svc.process_prompt(req.query, req.temperature)
-    if not result.is_ok:
-        raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=result.error_msg)
-    return result.payload`,
-    exampleBad: `# Discouraged: Untyped dict params and missing error handling
-@app.post("/generate")
-def generate(data: dict):
-    result = client.chat(data["query"])
-    return result`,
-  },
-  {
-    id: "vibe-coder",
-    name: "Pragmatic Vibe Coder",
-    badge: "High Velocity",
-    title: "High-Velocity Pragmatic Builder",
-    slug: "pragmatic-vibe-builder",
-    description:
-      "High-speed developer instructions. Prioritizes immediate working solutions, readable standard code over abstract architecture, and minimal ceremony.",
-    role: "Pragmatic Full-Stack Maker",
-    framework: "Any / Auto-Detect",
-    language: "TypeScript / Python / Go",
-    styling: "Tailwind CSS",
-    database: "SQLite / Supabase",
-    philosophy: "vibe",
-    behaviors: ["concise-direct", "minimal-diffs", "preserve-style"],
-    conventions: ["guard-clauses", "flat-pragmatic", "self-documenting"],
-    procedures: `1. Implement the simplest, most direct solution that solves the user's immediate requirement.
-2. Avoid premature optimization, unnecessary design patterns, and excessive micro-utilities.
-3. Write clean, flat, readable code that can be easily modified or deleted later.
-4. Keep feedback loops fast: verify functionality directly with immediate execution.`,
-    customDirectives: `- Do not over-engineer solutions or create layers of indirection.
-- Prefer readable, explicit code over clever one-liners.
-- When in doubt, deliver working software first.`,
-    exampleGood: `// Good: Simple, direct function doing exactly what is needed
-export async function getActiveUsers() {
-  const users = await db.users.findMany({ where: { active: true } });
-  return users.map(u => ({ id: u.id, name: u.name }));
-}`,
-    exampleBad: `// Discouraged: 5 layers of abstraction for a simple select query
-export class UserQueryFactoryProviderService {
-  constructor(private repo: IUserRepository) {}
-  async executeQueryWithFilterStrategy<T>(filter: FilterStrategy<T>) {
-    return this.repo.getTransformedEntities(filter);
-  }
-}`,
-  },
-  {
-    id: "security-guard",
-    name: "Security Guard",
-    badge: "Claude Code Skill",
-    title: "Security & Zero-Trust Vulnerability Guard",
-    slug: "security-vulnerability-guard",
-    description:
-      "Specialist skill for identifying security vulnerabilities, API key leaks, SQL injection, XSS attack surfaces, and insecure deserialization.",
-    role: "Principal Security Architect",
-    framework: "Framework Agnostic",
-    language: "Polyglot",
-    styling: "None / Irrelevant",
-    database: "PostgreSQL / MySQL / NoSQL",
-    philosophy: "architect",
-    behaviors: ["inspect-first", "minimal-diffs", "concise-direct", "dependency-caution", "verification-driven"],
-    conventions: ["guard-clauses", "result-types", "typed-schemas"],
-    procedures: `1. Inspect environment variables and secrets; ensure no sensitive tokens or private keys are exposed client-side.
-2. Verify all user inputs are sanitized and parameterized before reaching database queries or system shells.
-3. Audit authentication boundaries, JWT signature validations, session expiration, and CORS/CSRF headers.
-4. Check for Insecure Direct Object References (IDOR) on all mutating operations.
-5. Provide actionable remediation steps and automated regression tests for every flagged security flaw.`,
-    customDirectives: `- Flag any dynamic SQL concatenation as CRITICAL vulnerability.
-- Ensure all public endpoints are rate-limited or protected by CSRF tokens where appropriate.
-- Verify safe serialization; ban untrusted eval, pickle.loads, or dangerous innerHTML injection.`,
-    exampleGood: `// Good: Parameterized query avoiding SQL injection
-const user = await db.query(
-  "SELECT id, username, email FROM users WHERE id = $1 AND tenant_id = $2",
-  [userId, tenantId]
-);`,
-    exampleBad: `// Discouraged: String interpolation causing SQL injection vulnerability
-const user = await db.query(
-  \`SELECT * FROM users WHERE id = '\${userId}'\`
-);`,
-  },
-  {
-    id: "tailwind-v4",
-    name: "Tailwind CSS v4",
-    badge: "Frontend",
-    title: "Tailwind CSS v4 & CSS-First Styling Specialist",
-    slug: "tailwind-v4-styling",
-    description:
-      "Modern Tailwind CSS v4 conventions. Enforces CSS-first @theme configuration, zero tailwind.config.js, and strict class ordering.",
-    role: "Lead UI & Design Systems Engineer",
-    framework: "Tailwind CSS v4 / React / Next.js",
-    language: "CSS / TypeScript",
-    styling: "Tailwind CSS v4",
-    database: "None / UI Only",
-    philosophy: "modern",
-    behaviors: ["inspect-first", "minimal-diffs", "concise-direct"],
-    conventions: ["flat-pragmatic", "strict-a11y", "self-documenting"],
-    procedures: `1. Define all design tokens, font families, and brand colors inside globals.css using the @theme block.
-2. Never create or edit legacy tailwind.config.js or tailwind.config.ts files.
-3. Order utility classes logically: layout -> spacing -> typography -> visual -> interactive.
-4. Ensure sufficient contrast ratios and focus ring visibility for interactive elements.`,
-    customDirectives: `- Banned: Do not suggest tailwind.config.js; Tailwind v4 is pure CSS-configured.
-- Prefer CSS custom properties within @theme for dynamic theming.`,
-    exampleGood: `@import "tailwindcss";
-
-@theme {
-  --color-primary: #ea580c;
-  --font-mono: "Geist Mono", monospace;
-}`,
-    exampleBad: `// Discouraged in v4: Legacy JS config
-module.exports = {
-  theme: { extend: { colors: { primary: "#ea580c" } } }
-};`,
-  },
-  {
-    id: "supabase-fullstack",
-    name: "Supabase & Postgres",
-    badge: "Fullstack",
-    title: "Supabase Architecture & Row-Level Security Specialist",
-    slug: "supabase-postgres-security",
-    description:
-      "Production standards for Supabase. Mandates Row-Level Security (RLS) on all tables, typed database client, and secure SSR cookie auth.",
-    role: "Senior Fullstack & Database Security Engineer",
-    framework: "Next.js / Supabase SSR",
-    language: "TypeScript / SQL",
-    styling: "Tailwind CSS",
-    database: "PostgreSQL (Supabase)",
-    philosophy: "strict",
-    behaviors: ["inspect-first", "dependency-caution", "verification-driven"],
-    conventions: ["clean-layered", "guard-clauses", "typed-schemas"],
-    procedures: `1. Always write migration scripts that enable Row Level Security (RLS) on new tables.
-2. Never expose service_role key to client components or public network responses.
-3. Use @supabase/ssr for server component and server action authentication.
-4. Generate and maintain TypeScript database types via Supabase CLI.`,
-    customDirectives: `- Any table created without ENABLE ROW LEVEL SECURITY is considered a critical vulnerability.
-- Always use auth.uid() in RLS policy definitions.`,
-    exampleGood: `-- Good: Table with explicit RLS enabled and owner policy
-create table profiles (
-  id uuid references auth.users not null primary key,
-  username text unique
-);
-alter table profiles enable row level security;
-create policy "Users can view own profile" on profiles
-  for select using (auth.uid() = id);`,
-    exampleBad: `-- Dangerous: Table without RLS allows public anonymous read/write
-create table profiles (
-  id uuid primary key,
-  username text
-);`,
-  },
-  {
-    id: "prisma-orm",
-    name: "Prisma ORM",
-    badge: "Database",
-    title: "Prisma ORM & PostgreSQL Schema Architecture",
-    slug: "prisma-orm-performance",
-    description:
-      "Production guidelines for Prisma ORM. Enforces selective field fetching, batch transactions, explicit indexing, and singleton client patterns.",
-    role: "Database Systems Architect",
-    framework: "Node.js / Next.js / TypeScript",
-    language: "TypeScript",
-    styling: "None",
-    database: "PostgreSQL / Prisma",
-    philosophy: "strict",
-    behaviors: ["inspect-first", "minimal-diffs", "verification-driven"],
-    conventions: ["guard-clauses", "typed-schemas", "clean-layered"],
-    procedures: `1. Always use 'select' to fetch only necessary columns; ban broad unconstrained findMany() queries.
-2. Encapsulate dependent multi-model operations inside prisma.$transaction().
-3. Add @@index for columns used frequently in WHERE clauses or foreign key joins.
-4. Maintain a singleton PrismaClient instance to prevent connection pool exhaustion.`,
-    customDirectives: `- Never return raw hashed passwords or internal auth tokens from Prisma queries.
-- Prefer Prisma raw queries ($queryRaw) only when complex SQL window functions are required.`,
-    exampleGood: `// Good: Targeted field selection avoiding memory bloat
-const users = await db.user.findMany({
-  where: { active: true },
-  select: { id: true, email: true, name: true }
-});`,
-    exampleBad: `// Discouraged: Over-fetching entire table graph into memory
-const users = await db.user.findMany({
-  include: { posts: true, logs: true, auditHistory: true }
-});`,
-  },
-  {
-    id: "drizzle-orm",
-    name: "Drizzle ORM",
-    badge: "Database",
-    title: "Drizzle ORM & Type-Safe SQL Specialist",
-    slug: "drizzle-orm-typesafe",
-    description:
-      "Production guidelines for Drizzle ORM. Enforces relational schema modeling, parameterized SQL templates, and zero-runtime overhead.",
-    role: "TypeScript Data Engineer",
-    framework: "Next.js / Node.js",
-    language: "TypeScript / SQL",
-    styling: "None",
-    database: "PostgreSQL / SQLite (Drizzle)",
-    philosophy: "modern",
-    behaviors: ["inspect-first", "minimal-diffs", "verification-driven"],
-    conventions: ["typed-schemas", "guard-clauses", "clean-layered"],
-    procedures: `1. Define table schemas in dedicated schema files with explicit relations.
-2. Use db.query for relational lookups and db.insert/update for targeted mutations.
-3. Always parameterize raw SQL queries with the sql template tag.
-4. Run drizzle-kit generate and drizzle-kit migrate for safe migrations.`,
-    customDirectives: `- Ban raw string concatenation in SQL expressions.
-- Keep schema definitions colocated with their domain entities.`,
-    exampleGood: `// Good: Parameterized SQL template with type-safe query
-import { sql, eq } from "drizzle-orm";
-const result = await db.select().from(users).where(eq(users.status, "active"));`,
-    exampleBad: `// Discouraged: Unsafe raw string interpolation
-await db.execute(\`SELECT * FROM users WHERE status = '\${status}'\`);`,
-  },
-  {
-    id: "go-fiber",
-    name: "Go Fiber API",
-    badge: "Backend",
-    title: "High-Performance Go & Fiber API Specialist",
-    slug: "go-fiber-backend",
-    description:
-      "Production standards for Go Fiber microservices. Enforces explicit error handling, context propagation, and clean layered architecture.",
-    role: "Senior Go Systems Engineer",
-    framework: "Go Fiber v2/v3",
-    language: "Go (Golang 1.22+)",
-    styling: "None / API Service",
-    database: "PostgreSQL / pgx / Redis",
-    philosophy: "strict",
-    behaviors: ["inspect-first", "minimal-diffs", "verification-driven"],
-    conventions: ["clean-layered", "guard-clauses", "result-types"],
-    procedures: `1. Check all errors explicitly (if err != nil); never discard errors with '_'.
-2. Propagate request context (c.UserContext()) to all database and remote calls.
-3. Structure application into cmd/, internal/handlers/, internal/services/, and internal/models/.
-4. Use Fiber validator middleware to parse and validate request structs.`,
-    customDirectives: `- Never call panic() in production request handlers.
-- Inject dependencies into struct receivers rather than using package globals.`,
-    exampleGood: `// Good: Explicit error handling with context
-func (h *Handler) GetUser(c *fiber.Ctx) error {
-    id := c.Params("id")
-    user, err := h.service.FindByID(c.UserContext(), id)
-    if err != nil {
-        if errors.Is(err, domain.ErrNotFound) {
-            return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "not found"})
-        }
-        return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "internal"})
-    }
-    return c.JSON(user)
-}`,
-    exampleBad: `// Discouraged: Ignored errors and missing context
-func GetUser(c *fiber.Ctx) error {
-    id := c.Params("id")
-    user, _ := db.Find(id)
-    return c.JSON(user)
-}`,
-  },
-  {
-    id: "rust-axum",
-    name: "Rust Axum Service",
-    badge: "Backend",
-    title: "Idiomatic Rust & Axum Microservice Specialist",
-    slug: "rust-axum-service",
-    description:
-      "Idiomatic Rust standards with Axum, Tokio runtime, typed extractors, and zero-unwrap error handling.",
-    role: "Principal Rust Systems Architect",
-    framework: "Axum & Tokio",
-    language: "Rust 2021 Edition",
-    styling: "None / API Service",
-    database: "PostgreSQL (SQLx)",
-    philosophy: "strict",
-    behaviors: ["inspect-first", "minimal-diffs", "verification-driven"],
-    conventions: ["guard-clauses", "result-types", "typed-schemas"],
-    procedures: `1. Propagate errors with the '?' operator; never call .unwrap() or .expect() in handlers.
-2. Implement IntoResponse on a centralized AppError enum.
-3. Use Axum extractors (State, Json, Path) in strict dependency order.
-4. Pass shared resources via Arc<AppState> using Axum's State extractor.`,
-    customDirectives: `- Run 'cargo clippy -- -D warnings' as a standard validation gate.
-- Keep dependencies minimal; prefer serde and tokio primitives.`,
-    exampleGood: `// Good: Typed handler returning custom Result with IntoResponse
-pub async fn create_user(
-    State(state): State<Arc<AppState>>,
-    Json(payload): Json<CreateUserRequest>,
-) -> Result<Json<UserResponse>, AppError> {
-    let user = state.db.insert_user(&payload).await?;
-    Ok(Json(user.into()))
-}`,
-    exampleBad: `// Discouraged: Calling unwrap inside async handler
-pub async fn create_user(Json(payload): Json<CreateUserRequest>) -> Json<UserResponse> {
-    let user = db.insert_user(&payload).await.unwrap();
-    Json(user.into())
-}`,
-  },
-  {
-    id: "vue-nuxt",
-    name: "Vue 3 & Nuxt 3",
-    badge: "Frontend",
-    title: "Vue 3 & Nuxt 3 Composition API Specialist",
-    slug: "vue-nuxt-composition",
-    description:
-      "Modern Vue 3 and Nuxt 3 fullstack standards. Enforces <script setup lang='ts'>, useFetch, and Nitro server endpoints.",
-    role: "Senior Vue & Nuxt Engineer",
-    framework: "Vue 3 & Nuxt 3",
-    language: "TypeScript",
-    styling: "Tailwind CSS",
-    database: "Nitro / REST / Supabase",
-    philosophy: "modern",
-    behaviors: ["inspect-first", "minimal-diffs", "concise-direct"],
-    conventions: ["feature-colocated", "guard-clauses", "strict-a11y"],
-    procedures: `1. Always use <script setup lang="ts">; ban legacy Vue 2 Options API syntax.
-2. Fetch data via useAsyncData or useFetch with unique, declarative cache keys.
-3. Colocate server API handlers in server/api/ using defineEventHandler.
-4. Manage global client state using Pinia stores.`,
-    customDirectives: `- Rely on Nuxt auto-imports; avoid manual import statements for standard composables.
-- Use TypeScript interfaces for all component defineProps and defineEmits.`,
-    exampleGood: `<script setup lang="ts">
-interface Props {
-  title: string;
-}
-const props = defineProps<Props>();
-const { data: posts, status } = await useFetch('/api/posts');
-</script>`,
-    exampleBad: `// Discouraged: Options API with manual data/methods
-export default {
-  props: ['title'],
-  data() { return { posts: [] }; },
-  mounted() { fetch('/api/posts').then(r => r.json()).then(d => this.posts = d); }
-};`,
-  },
-  {
-    id: "sveltekit",
-    name: "SvelteKit 5",
-    badge: "Frontend",
-    title: "SvelteKit 5 & Svelte 5 Runes Specialist",
-    slug: "sveltekit-runes",
-    description:
-      "Modern SvelteKit 5 standards enforcing Svelte 5 Runes ($state, $derived, $props), server load functions, and form actions.",
-    role: "Senior Svelte Engineer",
-    framework: "SvelteKit 5 & Svelte 5",
-    language: "TypeScript",
-    styling: "Tailwind CSS",
-    database: "PostgreSQL / SQLite",
-    philosophy: "modern",
-    behaviors: ["inspect-first", "minimal-diffs", "concise-direct"],
-    conventions: ["feature-colocated", "guard-clauses", "self-documenting"],
-    procedures: `1. Use Svelte 5 runes: $state(), $derived(), $effect(), and $props().
-2. Ban legacy Svelte 3/4 'let' reactivity and '$: ' reactive labels.
-3. Load data server-side in +page.server.ts load() functions.
-4. Execute mutations using standard SvelteKit Form Actions with use:enhance.`,
-    customDirectives: `- Never mix Svelte 4 reactivity syntax with Svelte 5 runes.
-- Keep server-only code strictly in *.server.ts files.`,
-    exampleGood: `<script lang="ts">
-interface Props {
-  initialCount?: number;
-}
-let { initialCount = 0 }: Props = $props();
-let count = $state(initialCount);
-let double = $derived(count * 2);
-</script>`,
-    exampleBad: `<script>
-// Discouraged: Legacy Svelte 3/4 syntax
-export let initialCount = 0;
-let count = initialCount;
-$: double = count * 2;
-</script>`,
-  },
-  {
-    id: "docker-devops",
-    name: "Docker & CI/CD",
-    badge: "DevOps",
-    title: "Production Docker & Containerization Engineer",
-    slug: "docker-containerization",
-    description:
-      "Production containerization standards. Enforces multi-stage builds, non-root runtime users, layer caching, and health checks.",
-    role: "DevOps & Infrastructure Engineer",
-    framework: "Docker / Kubernetes / GitHub Actions",
-    language: "Dockerfile / Bash / YAML",
-    styling: "None",
-    database: "PostgreSQL / Redis Containers",
-    philosophy: "strict",
-    behaviors: ["inspect-first", "dependency-caution", "verification-driven"],
-    conventions: ["clean-layered", "guard-clauses"],
-    procedures: `1. Always construct multi-stage Dockerfiles with separate build and minimal runtime stages.
-2. Create and switch to a dedicated non-root user (e.g. USER node or USER app).
-3. Copy dependency lockfiles before source files to maximize Docker layer caching.
-4. Add HEALTHCHECK instruction to verify container readiness in production.`,
-    customDirectives: `- Never run production application containers as root.
-- Never include development tooling (compilers, git) in final runtime images.`,
-    exampleGood: `# Good: Lean multi-stage build with non-root user
-FROM node:20-alpine AS builder
-WORKDIR /app
-COPY package*.json ./
-RUN npm ci
-COPY . .
-RUN npm run build
-
-FROM node:20-alpine AS runner
-WORKDIR /app
-ENV NODE_ENV=production
-RUN addgroup -g 1001 -S nodejs && adduser -S nextjs -u 1001
-COPY --from=builder --chown=nextjs:nodejs /app/dist ./dist
-USER nextjs
-EXPOSE 3000
-CMD ["node", "dist/index.js"]`,
-    exampleBad: `# Discouraged: Bloated single-stage build running as root
-FROM node:20
-WORKDIR /app
-COPY . .
-RUN npm install
-CMD ["npm", "start"]`,
-  },
-  {
-    id: "tdd-specialist",
-    name: "TDD & Testing",
-    badge: "Testing",
-    title: "Test-Driven Development & Automation Specialist",
-    slug: "tdd-testing-automation",
-    description:
-      "TDD and test automation standards. Enforces unit testing, edge-case coverage, Vitest/Playwright patterns, and mock isolation.",
-    role: "Lead QA & Test Automation Architect",
-    framework: "Vitest / Jest / Playwright",
-    language: "TypeScript",
-    styling: "None",
-    database: "In-Memory / Testcontainers",
-    philosophy: "strict",
-    behaviors: ["verification-driven", "inspect-first", "minimal-diffs"],
-    conventions: ["result-types", "guard-clauses", "self-documenting"],
-    procedures: `1. Write failing unit tests first before writing business logic implementation.
-2. Structure tests clearly using the Arrange-Act-Assert (AAA) pattern.
-3. Mock external network and database calls; keep unit tests fast (<10ms per test).
-4. Verify both happy paths and boundary conditions (empty inputs, timeouts, errors).`,
-    customDirectives: `- Never disable or skip tests with test.skip or fit.
-- Provide executable verification commands with every code proposal.`,
-    exampleGood: `// Good: Clean Arrange-Act-Assert with mock isolation
-describe("parseAmount", () => {
-  it("converts valid currency strings to cents", () => {
-    // Arrange & Act
-    const cents = parseAmount("$19.99");
-    // Assert
-    expect(cents).toBe(1999);
-  });
-
-  it("throws on negative values", () => {
-    expect(() => parseAmount("-$5.00")).toThrow(InvalidAmountError);
-  });
-});`,
-    exampleBad: `// Discouraged: Unasserted test with external network call
-test("test user API", async () => {
-  const res = await fetch("https://api.external.com/users");
-  console.log(await res.json());
-});`,
-  },
-  {
-    id: "fullstack-agent-team",
-    name: "Fullstack Agent Team",
-    badge: "Multi-Agent",
-    title: "Fullstack Multi-Agent Team Orchestration",
-    slug: "fullstack-agent-team",
-    description:
-      "Universal multi-agent team specification coordinating Lead Architect, Frontend Engineer, Backend Specialist, and Security Reviewer subagents.",
-    role: "Autonomous Multi-Agent Coordinator",
-    framework: "Multi-Agent Frameworks (Antigravity / Devin / Claude)",
-    language: "TypeScript / Polyglot",
-    styling: "Tailwind CSS",
-    database: "PostgreSQL / Prisma",
-    philosophy: "architect",
-    behaviors: ["inspect-first", "minimal-diffs", "concise-direct", "verification-driven", "dependency-caution"],
-    conventions: ["clean-layered", "guard-clauses", "result-types", "typed-schemas"],
-    procedures: `1. Lead Architect parses requirements and assigns tasks to specialized subagents.
-2. Frontend & Backend subagents implement changes with strict interface contracts.
-3. Security subagent reviews modified code against zero-trust standards before commit.
-4. Autonomous verification gate: run test suite and typecheck before task completion.
-5. All code commits must be atomic and include reproduction or verification steps.`,
-    customDirectives: `- Subagents must never modify unassigned directories or conflicting files.
-- Preserve existing documentation, comments, and project conventions.
-- Report all blockers explicitly with reproducible context.`,
-    exampleGood: `<!-- BEGIN:agent-team -->
-Role: Lead Architect
-Contract: Define interfaces in /types before delegating implementation to subagents.
-Verification: 'npm run build' must exit 0 before merging.
-<!-- END:agent-team -->`,
-    exampleBad: `// Uncoordinated subagent edits overwriting parent contracts without verification`,
-  },
-];
-
-// Philosophy metadata
-const PHILOSOPHIES = [
-  {
-    id: "pragmatic",
-    title: "Pragmatic & Flexible",
-    desc: "Simplicity and readability over clever abstraction. Follow YAGNI: don't build until needed.",
-    color: "border-blue-200 bg-blue-50/50 text-blue-800",
-  },
-  {
-    id: "modern",
-    title: "Modern Balanced",
-    desc: "Clean interfaces, pragmatic typing, sensible defaults, and modular design.",
-    color: "border-emerald-200 bg-emerald-50/50 text-emerald-800",
-  },
-  {
-    id: "strict",
-    title: "Strict & Defensive",
-    desc: "Zero `any`, strict null safety, explicit return types, and schema boundary validation.",
-    color: "border-purple-200 bg-purple-50/50 text-purple-800",
-  },
-  {
-    id: "vibe",
-    title: "Vibe Coder (High Speed)",
-    desc: "High-velocity maker mode: immediate working solutions, fast iteration, minimal ceremony.",
-    color: "border-amber-200 bg-amber-50/50 text-amber-800",
-  },
-  {
-    id: "architect",
-    title: "Senior Architect",
-    desc: "Explain trade-offs, plan for scale, prioritize security, and document design decisions.",
-    color: "border-zinc-300 bg-zinc-100 text-zinc-900",
-  },
-];
-
-// Agent Behaviors
-const BEHAVIOR_OPTIONS = [
-  {
-    id: "inspect-first",
-    label: "Inspect Before Acting",
-    desc: "Always read and understand existing code and imports before suggesting changes.",
-  },
-  {
-    id: "minimal-diffs",
-    label: "Minimal Surgical Diffs",
-    desc: "Touch only lines relevant to prompt. Preserve existing comments and formatting.",
-  },
-  {
-    id: "concise-direct",
-    label: "Concise & Direct Tone",
-    desc: "Skip conversational pleasantries. Deliver clean code and targeted rationale.",
-  },
-  {
-    id: "dependency-caution",
-    label: "Dependency Caution",
-    desc: "Never introduce new third-party libraries or packages without explicit approval.",
-  },
-  {
-    id: "verification-driven",
-    label: "Propose Verification Steps",
-    desc: "With every modification, specify concrete commands or tests to verify correctness.",
-  },
-  {
-    id: "preserve-style",
-    label: "Preserve Codebase Idioms",
-    desc: "Match existing naming conventions, indentation, and directory patterns.",
-  },
-];
-
-// Code Conventions
-const CONVENTION_OPTIONS = [
-  {
-    id: "guard-clauses",
-    label: "Guard Clauses & Early Returns",
-    desc: "Exit early from functions to eliminate deeply nested if-else pyramids.",
-  },
-  {
-    id: "rsc-first",
-    label: "Server Components (RSC) First",
-    desc: "Default to React Server Components; keep client components confined to leaves.",
-  },
-  {
-    id: "feature-colocated",
-    label: "Feature-Colocated Structure",
-    desc: "Group components, hooks, tests, and utils inside domain feature folders.",
-  },
-  {
-    id: "clean-layered",
-    label: "Clean Layered Architecture",
-    desc: "Decouple presentation, business logic, and data access layers via interfaces.",
-  },
-  {
-    id: "flat-pragmatic",
-    label: "Flat & Pragmatic Layout",
-    desc: "Keep directory nesting minimal (max 2-3 levels) to avoid navigation friction.",
-  },
-  {
-    id: "result-types",
-    label: "Explicit Result / Tuple Returns",
-    desc: "Return [error, result] or Result<T, E> types for operations that can fail.",
-  },
-  {
-    id: "typed-schemas",
-    label: "Schema-Driven Boundaries",
-    desc: "Validate all external data (API, forms, env) with Zod or Pydantic schemas.",
-  },
-  {
-    id: "self-documenting",
-    label: "Self-Documenting Naming",
-    desc: "Expressive function and variable names over verbose redundant comments.",
-  },
-  {
-    id: "strict-a11y",
-    label: "Accessible UI by Default",
-    desc: "Enforce semantic HTML, keyboard navigability, and proper ARIA roles.",
-  },
-];
+import {
+  OutputFormat,
+  McpServerPreset,
+  SkillPreset,
+  MCP_PRESETS,
+  PRESETS,
+  PHILOSOPHIES,
+  BEHAVIOR_OPTIONS,
+  CONVENTION_OPTIONS,
+  deduceLangTag,
+  buildRuleContent,
+  getInstallCommands,
+  getHeredocCommand,
+  copyToClipboard,
+} from "./lib/ruleGenerator";
+import { PRESET_ROUTES, getPresetBySlug, SLUG_ALIASES } from "./lib/presetRegistry";
 
 import { encodeStudioState, decodeStudioState, createShareableUrl } from "./lib/stateSharing";
 
 interface ClaudeSkillsClientProps {
   initialFormat?: OutputFormat;
   initialPresetId?: string;
+  formatSlug?: string;
+  presetSlug?: string;
 }
 
-export function ClaudeSkillsClient({ initialFormat, initialPresetId }: ClaudeSkillsClientProps = {}) {
+export function ClaudeSkillsClient({
+  initialFormat,
+  initialPresetId,
+  formatSlug: initialFormatSlug,
+  presetSlug: initialPresetSlug,
+}: ClaudeSkillsClientProps = {}) {
   const [isMounted, setIsMounted] = useState(false);
 
   // Compute default preset based on initial props
@@ -1662,260 +754,31 @@ export function ClaudeSkillsClient({ initialFormat, initialPresetId }: ClaudeSki
   // Generated Content Builder for any target runtime format
   const buildContent = useCallback(
     (targetFormat: OutputFormat) => {
-      const philObj = PHILOSOPHIES.find((p) => p.id === philosophy);
-
-      const selectedBehaviorTexts = behaviors
-        .map((bId) => BEHAVIOR_OPTIONS.find((b) => b.id === bId))
-        .filter(Boolean)
-        .map((b) => `- **${b!.label}**: ${b!.desc}`);
-
-      const selectedConventionTexts = conventions
-        .map((cId) => CONVENTION_OPTIONS.find((c) => c.id === cId))
-        .filter(Boolean)
-        .map((c) => `- **${c!.label}**: ${c!.desc}`);
-
-      if (targetFormat === "skill_md") {
-        // Anthropic Claude Code / Antigravity SKILL.md specification
-        return `---
-name: ${skillName.trim().toLowerCase().replace(/[^a-z0-9_-]/g, "-") || "custom-skill"}
-description: ${description.trim().replace(/\n+/g, " ")}
----
-
-# ${skillTitle.trim() || "Claude Skill Instructions"}
-
-## 1. Overview & Role
-You are operating as a **${role}**.
-- **Philosophy**: ${philObj?.title} — ${philObj?.desc}
-- **Stack**: ${framework} • ${language} • ${styling} • ${database}
-
-## 2. Core Execution Procedures
-Follow this structured step-by-step workflow when this skill is active:
-${procedures.trim() || "- Execute standard domain workflow."}
-
-## 3. Code Conventions & Architectural Standards
-${selectedConventionTexts.length > 0 ? selectedConventionTexts.join("\n") : "- Follow standard idiomatic language conventions."}
-
-## 4. Agent Behavioral Guardrails
-${selectedBehaviorTexts.length > 0 ? selectedBehaviorTexts.join("\n") : "- Exercise standard engineering discretion."}
-
-${
-  customDirectives.trim()
-    ? `## 5. Project-Specific Directives & Constraints
-${customDirectives.trim()}
-`
-    : ""
-}${
-        exampleGood.trim() || exampleBad.trim()
-          ? `## 6. Implementation Reference
-
-### Preferred Patterns
-\`\`\`${langTag}
-${exampleGood.trim()}
-\`\`\`
-
-### Discouraged Anti-Patterns
-\`\`\`${langTag}
-${exampleBad.trim()}
-\`\`\`
-`
-          : ""
-}## 7. Verification & Quality Gates
-Before concluding any task:
-1. Verify that all modified files compile and satisfy strict type checking.
-2. Ensure no unnecessary files or artifacts were created.
-3. Confirm that error paths return meaningful messages without leaking sensitive internals.
-`;
-      }
-
-      if (targetFormat === "claude_md") {
-        // Anthropic Project Root CLAUDE.md specification
-        return `# ${skillTitle.trim() || "Project Instructions"}
-
-<project_context>
-${description.trim()}
-
-- Primary Role: ${role}
-- Philosophy: ${philObj?.title} (${philObj?.desc})
-</project_context>
-
-<tech_stack>
-- Framework: ${framework}
-- Language: ${language}
-- Styling: ${styling}
-- Database: ${database}
-</tech_stack>
-
-<workflows_and_procedures>
-${procedures.trim()}
-</workflows_and_procedures>
-
-<conventions>
-${selectedConventionTexts.length > 0 ? selectedConventionTexts.join("\n") : "- Follow idiomatic conventions."}
-</conventions>
-
-<agent_guardrails>
-${selectedBehaviorTexts.length > 0 ? selectedBehaviorTexts.join("\n") : "- Practice defensive engineering."}
-</agent_guardrails>
-${
-  customDirectives.trim()
-    ? `
-<custom_directives>
-${customDirectives.trim()}
-</custom_directives>
-`
-    : ""
-}${
-  exampleGood.trim() || exampleBad.trim()
-    ? `
-<implementation_reference>
-### Preferred Patterns
-\`\`\`${langTag}
-${exampleGood.trim()}
-\`\`\`
-
-### Discouraged Anti-Patterns
-\`\`\`${langTag}
-${exampleBad.trim()}
-\`\`\`
-</implementation_reference>
-`
-    : ""
-}
-<verification_protocol>
-- Run automated tests or linting before reporting completion.
-- Provide clear verification steps for UI or runtime behavior.
-</verification_protocol>
-`;
-      }
-
-      if (targetFormat === "cursor_mdc") {
-        // Modern Cursor .cursor/rules/*.mdc format
-        return `---
-description: "${description.trim().replace(/"/g, '\\"')}"
-globs: [${JSON.stringify(globPattern.trim() || "**/*")}]
-alwaysApply: ${alwaysApply}
----
-
-# ${skillTitle.trim() || "Cursor Rule Directives"}
-
-You are acting as: **${role}**.
-Engineering Philosophy: **${philObj?.title}** (${philObj?.desc})
-
-## Tech Stack Context
-- **Framework**: ${framework}
-- **Language**: ${language}
-- **Styling**: ${styling}
-- **Database / Data**: ${database}
-
-## Execution Procedures
-${procedures.trim()}
-
-## Code Conventions
-${selectedConventionTexts.length > 0 ? selectedConventionTexts.join("\n") : "- Follow clean code standards."}
-
-## Agent Directives
-${selectedBehaviorTexts.length > 0 ? selectedBehaviorTexts.join("\n") : "- Deliver concise, tested code."}
-${
-  customDirectives.trim()
-    ? `
-## Specific Project Constraints
-${customDirectives.trim()}
-`
-    : ""
-}${
-  exampleGood.trim() || exampleBad.trim()
-    ? `
-## Implementation Reference
-
-### Preferred Patterns
-\`\`\`${langTag}
-${exampleGood.trim()}
-\`\`\`
-
-### Discouraged Anti-Patterns
-\`\`\`${langTag}
-${exampleBad.trim()}
-\`\`\`
-`
-    : ""
-}`;
-      }
-
-      if (targetFormat === "mcp_json") {
-        const argsArray = mcpArgs
-          .split("\n")
-          .map((a) => a.trim())
-          .filter(Boolean);
-
-        const envObj: Record<string, string> = {};
-        if (mcpEnvKey.trim() && mcpEnvValue.trim()) {
-          envObj[mcpEnvKey.trim()] = mcpEnvValue.trim();
-        }
-
-        const serverConfig: Record<string, any> = {
-          command: mcpCommand.trim() || "npx",
-          args: argsArray,
-        };
-
-        if (Object.keys(envObj).length > 0) {
-          serverConfig.env = envObj;
-        }
-
-        const mcpJson = {
-          "$schema": "https://json-schema.org/draft/2020-12/schema",
-          "mcpServers": {
-            [mcpServerName.trim() || "project-tools"]: serverConfig,
-          },
-        };
-
-        return JSON.stringify(mcpJson, null, 2);
-      }
-
-      // AGENTS.md format
-      return `<!-- BEGIN:agent-rules -->
-# AI Agent Specification: ${skillTitle.trim() || "Core Rules"}
-
-## Role & Mission
-Act as **${role}**.
-Philosophy: ${philObj?.title} — ${philObj?.desc}
-
-## Target Architecture
-- Stack: ${framework} | ${language} | ${styling} | ${database}
-
-## Standard Operating Procedures
-${procedures.trim()}
-
-## Architectural Directives
-${selectedConventionTexts.length > 0 ? selectedConventionTexts.join("\n") : "- Follow standard conventions."}
-
-## Operational Guardrails
-${selectedBehaviorTexts.length > 0 ? selectedBehaviorTexts.join("\n") : "- Exercise standard precision."}
-${
-  customDirectives.trim()
-    ? `
-## Mandatory Project Rules
-${customDirectives.trim()}
-`
-    : ""
-}${
-  exampleGood.trim() || exampleBad.trim()
-    ? `
-## Reference Implementations
-
-### Preferred Pattern
-\`\`\`${langTag}
-${exampleGood.trim()}
-\`\`\`
-
-### Anti-Pattern
-\`\`\`${langTag}
-${exampleBad.trim()}
-\`\`\`
-`
-    : ""
-}
-<!-- END:agent-rules -->
-`;
+      return buildRuleContent({
+        targetFormat,
+        skillName,
+        skillTitle,
+        description,
+        role,
+        framework,
+        language,
+        styling,
+        database,
+        philosophy,
+        behaviors,
+        conventions,
+        procedures,
+        customDirectives,
+        exampleGood,
+        exampleBad,
+        globPattern,
+        alwaysApply,
+        mcpServerName,
+        mcpCommand,
+        mcpArgs,
+        mcpEnvKey,
+        mcpEnvValue,
+      });
     },
     [
       philosophy,
@@ -1935,7 +798,6 @@ ${exampleBad.trim()}
       exampleBad,
       globPattern,
       alwaysApply,
-      langTag,
       mcpServerName,
       mcpCommand,
       mcpArgs,
@@ -2120,6 +982,193 @@ ${exampleBad.trim()}
     } catch {
       // Fallback
     }
+  };
+
+  // CLI / Terminal One-Liner Handler & State
+  const [cliCopied, setCliCopied] = useState(false);
+  const [showCliDropdown, setShowCliDropdown] = useState(false);
+  const [cliActiveTab, setCliActiveTab] = useState<"bash" | "powershell" | "wget" | "heredoc" | "cli">("bash");
+  const [cliHost, setCliHost] = useState("https://www.devscratchpad.tech");
+  const cliDropdownRef = React.useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const isLocal =
+        window.location.hostname === "localhost" ||
+        window.location.hostname === "127.0.0.1" ||
+        window.location.hostname.endsWith(".local");
+      if (isLocal) {
+        setCliHost(window.location.origin);
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!showCliDropdown) return;
+    const handleClickOutside = (e: MouseEvent) => {
+      if (cliDropdownRef.current && !cliDropdownRef.current.contains(e.target as Node)) {
+        setShowCliDropdown(false);
+      }
+    };
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setShowCliDropdown(false);
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [showCliDropdown]);
+
+  const activeFormatSlug = useMemo(() => {
+    const formatSlugMap: Record<OutputFormat, string> = {
+      cursor_mdc: "cursor-rules",
+      skill_md: "claude-skills",
+      claude_md: "claude-md",
+      agents_md: "agents-md",
+      mcp_json: "mcp-config",
+    };
+    return formatSlugMap[format] || "cursor-rules";
+  }, [format]);
+
+  const activePresetSlug = useMemo(() => {
+    if (format === "mcp_json") {
+      return mcpPresetId || mcpServerName || "filesystem";
+    }
+    if (initialPresetSlug && selectedPresetId === initialPresetId) {
+      return initialPresetSlug;
+    }
+    const matchedRoute = PRESET_ROUTES.find(
+      (r) => (r.presetId === selectedPresetId || r.presetSlug === selectedPresetId) && r.formatSlug === activeFormatSlug
+    );
+    if (matchedRoute) return matchedRoute.presetSlug;
+
+    const matchedPreset = PRESETS.find((p) => p.id === selectedPresetId);
+    if (matchedPreset) {
+      return SLUG_ALIASES[matchedPreset.slug] || matchedPreset.slug;
+    }
+    return skillName || "rule";
+  }, [format, mcpPresetId, mcpServerName, initialPresetSlug, selectedPresetId, initialPresetId, activeFormatSlug, skillName]);
+
+  const targetInstallFile = useMemo(() => {
+    const matchedRoute = PRESET_ROUTES.find(
+      (r) => (r.presetSlug === activePresetSlug || r.presetId === selectedPresetId) && r.formatSlug === activeFormatSlug
+    );
+    if (matchedRoute && !isManuallyEdited) {
+      return matchedRoute.targetFile;
+    }
+
+    if (format === "skill_md") return `.claude/skills/${skillName || activePresetSlug || "skill"}/SKILL.md`;
+    if (format === "claude_md") return "CLAUDE.md";
+    if (format === "cursor_mdc") return `.cursor/rules/${skillName || activePresetSlug || "rule"}.mdc`;
+    if (format === "mcp_json") return "claude_desktop_config.json";
+    return "AGENTS.md";
+  }, [activePresetSlug, selectedPresetId, activeFormatSlug, isManuallyEdited, format, skillName]);
+
+  const cliCommands = useMemo(() => {
+    return getInstallCommands(activeFormatSlug, activePresetSlug, targetInstallFile, cliHost);
+  }, [activeFormatSlug, activePresetSlug, targetInstallFile, cliHost]);
+
+  const heredocCommand = useMemo(() => {
+    return getHeredocCommand(targetInstallFile, activeContent);
+  }, [targetInstallFile, activeContent]);
+
+  const powershellHeredoc = useMemo(() => {
+    const lastSlash = targetInstallFile.lastIndexOf("/");
+    const targetDir = lastSlash !== -1 ? targetInstallFile.substring(0, lastSlash) : "";
+    const winDir = targetDir.replace(/\//g, "\\");
+    const winFile = targetInstallFile.replace(/\//g, "\\");
+    const mkdirPs = winDir ? `New-Item -ItemType Directory -Force -Path "${winDir}"; ` : "";
+    const safeContent = activeContent.trim().replace(/\n'@/g, "\n '@");
+    return `${mkdirPs}@'\n${safeContent}\n'@ | Set-Content -Path "${winFile}" -Encoding UTF8`;
+  }, [targetInstallFile, activeContent]);
+
+  // Determine if content is customized from default preset
+  const isCustomEdited = useMemo(() => {
+    if (isManuallyEdited) return true;
+    if (format === "mcp_json") {
+      const defaultMcp = MCP_PRESETS.find((p) => p.id === mcpPresetId) || MCP_PRESETS[0];
+      const defaultArgs = defaultMcp.args.join("\n");
+      const defaultEnvKey = Object.keys(defaultMcp.env)[0] || "";
+      const defaultEnvVal = Object.values(defaultMcp.env)[0] || "";
+      return (
+        mcpServerName !== defaultMcp.name ||
+        mcpCommand !== defaultMcp.command ||
+        mcpArgs !== defaultArgs ||
+        mcpEnvKey !== defaultEnvKey ||
+        mcpEnvValue !== defaultEnvVal
+      );
+    }
+    const currentPreset = PRESETS.find((p) => p.id === selectedPresetId) || defaultPreset;
+    return (
+      skillTitle !== currentPreset.title ||
+      description !== currentPreset.description ||
+      role !== currentPreset.role ||
+      framework !== currentPreset.framework ||
+      language !== currentPreset.language ||
+      styling !== currentPreset.styling ||
+      database !== currentPreset.database ||
+      philosophy !== currentPreset.philosophy ||
+      procedures !== currentPreset.procedures ||
+      customDirectives !== currentPreset.customDirectives ||
+      exampleGood !== currentPreset.exampleGood ||
+      exampleBad !== currentPreset.exampleBad
+    );
+  }, [
+    isManuallyEdited,
+    format,
+    mcpPresetId,
+    mcpServerName,
+    mcpCommand,
+    mcpArgs,
+    mcpEnvKey,
+    mcpEnvValue,
+    selectedPresetId,
+    defaultPreset,
+    skillTitle,
+    description,
+    role,
+    framework,
+    language,
+    styling,
+    database,
+    philosophy,
+    procedures,
+    customDirectives,
+    exampleGood,
+    exampleBad,
+  ]);
+
+  const primaryCliCommand = isCustomEdited ? heredocCommand : cliCommands.bash;
+
+  const currentTabCliCommand = useMemo(() => {
+    if (isCustomEdited) {
+      if (cliActiveTab === "powershell") return powershellHeredoc;
+      return heredocCommand;
+    }
+    switch (cliActiveTab) {
+      case "powershell":
+        return cliCommands.powershell;
+      case "wget":
+        return cliCommands.wget;
+      case "cli":
+        return cliCommands.cliRunner || cliCommands.bash;
+      case "heredoc":
+        return heredocCommand;
+      case "bash":
+      default:
+        return cliCommands.bash;
+    }
+  }, [isCustomEdited, cliActiveTab, powershellHeredoc, heredocCommand, cliCommands]);
+
+  const handleCliAction = async () => {
+    const success = await copyToClipboard(primaryCliCommand);
+    if (success) {
+      setCliCopied(true);
+      setTimeout(() => setCliCopied(false), 2000);
+    }
+    setShowCliDropdown((prev) => !prev);
   };
 
   // Share Link handler
@@ -3142,6 +2191,202 @@ ${exampleBad.trim()}
                   <Download className="w-3.5 h-3.5" />
                   <span className="hidden xl:inline">Download</span>
                 </button>
+
+                <div className="w-px h-3.5 bg-zinc-700/80 mx-0.5" />
+
+                {/* CLI / Terminal One-Liner Install Button & Popover */}
+                <div className="relative">
+                  <button
+                    type="button"
+                    onClick={handleCliAction}
+                    className={cn(
+                      "flex items-center gap-1 px-2 xl:px-2.5 py-1 text-xs rounded-md transition-colors font-medium cursor-pointer",
+                      showCliDropdown
+                        ? "bg-zinc-700 text-orange-400"
+                        : "text-zinc-300 hover:text-white hover:bg-zinc-700/60"
+                    )}
+                    title={
+                      isCustomEdited
+                        ? "Copy custom Heredoc terminal command to install in repo"
+                        : "Copy terminal curl install command to install in repo"
+                    }
+                  >
+                    {cliCopied ? (
+                      <>
+                        <Check className="w-3.5 h-3.5 text-emerald-400" />
+                        <span className="text-emerald-400 font-semibold">{isCustomEdited ? "Heredoc!" : "Copied!"}</span>
+                      </>
+                    ) : (
+                      <>
+                        <Terminal className="w-3.5 h-3.5 text-orange-400" />
+                        <span className="hidden xl:inline">CLI</span>
+                      </>
+                    )}
+                  </button>
+
+                  {/* Dropdown Modal */}
+                  {showCliDropdown && (
+                    <div
+                      ref={cliDropdownRef}
+                      className="absolute right-0 top-full mt-2 w-80 sm:w-[480px] bg-zinc-900 border border-zinc-700 rounded-xl shadow-2xl z-50 p-4 font-sans text-xs text-zinc-200 animate-in fade-in zoom-in-95 duration-150"
+                    >
+                      <div className="flex items-center justify-between pb-3 border-b border-zinc-800">
+                        <div className="flex items-center gap-2">
+                          <Terminal className="w-4 h-4 text-orange-400" />
+                          <span className="font-semibold text-zinc-100">Terminal Command</span>
+                          <span
+                            className={cn(
+                              "px-1.5 py-0.5 rounded text-[10px] font-mono",
+                              isCustomEdited
+                                ? "bg-amber-950/80 text-amber-300 border border-amber-800/80"
+                                : "bg-emerald-950/80 text-emerald-300 border border-emerald-800/80"
+                            )}
+                          >
+                            {isCustomEdited ? "Custom Heredoc" : "Preset Stream"}
+                          </span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setShowCliDropdown(false)}
+                          className="text-zinc-400 hover:text-white p-0.5 rounded hover:bg-zinc-800 transition-colors cursor-pointer"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+
+                      {/* Tab Options */}
+                      <div className="flex items-center gap-1 mt-3 mb-2 flex-wrap">
+                        {!isCustomEdited ? (
+                          <>
+                            <button
+                              type="button"
+                              onClick={() => setCliActiveTab("bash")}
+                              className={cn(
+                                "px-2.5 py-1 rounded text-[11px] font-mono transition-colors cursor-pointer",
+                                cliActiveTab === "bash"
+                                  ? "bg-zinc-800 text-orange-400 border border-zinc-700 font-semibold"
+                                  : "text-zinc-400 hover:text-zinc-200"
+                              )}
+                            >
+                              Bash (curl)
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setCliActiveTab("powershell")}
+                              className={cn(
+                                "px-2.5 py-1 rounded text-[11px] font-mono transition-colors cursor-pointer",
+                                cliActiveTab === "powershell"
+                                  ? "bg-zinc-800 text-orange-400 border border-zinc-700 font-semibold"
+                                  : "text-zinc-400 hover:text-zinc-200"
+                              )}
+                            >
+                              PowerShell
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setCliActiveTab("wget")}
+                              className={cn(
+                                "px-2.5 py-1 rounded text-[11px] font-mono transition-colors cursor-pointer",
+                                cliActiveTab === "wget"
+                                  ? "bg-zinc-800 text-orange-400 border border-zinc-700 font-semibold"
+                                  : "text-zinc-400 hover:text-zinc-200"
+                              )}
+                            >
+                              Wget
+                            </button>
+                            {format === "mcp_json" && cliCommands.cliRunner && (
+                              <button
+                                type="button"
+                                onClick={() => setCliActiveTab("cli")}
+                                className={cn(
+                                  "px-2.5 py-1 rounded text-[11px] font-mono transition-colors cursor-pointer",
+                                  cliActiveTab === "cli"
+                                    ? "bg-zinc-800 text-orange-400 border border-zinc-700 font-semibold"
+                                    : "text-zinc-400 hover:text-zinc-200"
+                                )}
+                              >
+                                CLI Runner
+                              </button>
+                            )}
+                            <button
+                              type="button"
+                              onClick={() => setCliActiveTab("heredoc")}
+                              className={cn(
+                                "px-2.5 py-1 rounded text-[11px] font-mono transition-colors cursor-pointer",
+                                cliActiveTab === "heredoc"
+                                  ? "bg-zinc-800 text-orange-400 border border-zinc-700 font-semibold"
+                                  : "text-zinc-400 hover:text-zinc-200"
+                              )}
+                            >
+                              Heredoc
+                            </button>
+                          </>
+                        ) : (
+                          <>
+                            <button
+                              type="button"
+                              onClick={() => setCliActiveTab("bash")}
+                              className={cn(
+                                "px-2.5 py-1 rounded text-[11px] font-mono transition-colors cursor-pointer",
+                                cliActiveTab === "bash"
+                                  ? "bg-zinc-800 text-orange-400 border border-zinc-700 font-semibold"
+                                  : "text-zinc-400 hover:text-zinc-200"
+                              )}
+                            >
+                              Heredoc (Bash)
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setCliActiveTab("powershell")}
+                              className={cn(
+                                "px-2.5 py-1 rounded text-[11px] font-mono transition-colors cursor-pointer",
+                                cliActiveTab === "powershell"
+                                  ? "bg-zinc-800 text-orange-400 border border-zinc-700 font-semibold"
+                                  : "text-zinc-400 hover:text-zinc-200"
+                              )}
+                            >
+                              PowerShell Script
+                            </button>
+                          </>
+                        )}
+                      </div>
+
+                      {/* Code Display Area */}
+                      <pre className="p-3 bg-zinc-950 border border-zinc-800 rounded-lg font-mono text-[11px] leading-relaxed max-h-44 overflow-y-auto overflow-x-auto text-zinc-300 select-all whitespace-pre-wrap">
+                        {currentTabCliCommand}
+                      </pre>
+
+                      <div className="flex items-center justify-between mt-3 pt-2 border-t border-zinc-800/80">
+                        <span className="text-[10px] text-zinc-500 truncate mr-2">
+                          Target: <code className="text-zinc-400">{targetInstallFile}</code>
+                        </span>
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            const success = await copyToClipboard(currentTabCliCommand);
+                            if (success) {
+                              setCliCopied(true);
+                              setTimeout(() => setCliCopied(false), 2000);
+                            }
+                          }}
+                          className="inline-flex items-center gap-1.5 px-3 py-1 rounded bg-orange-600 hover:bg-orange-500 text-white font-medium text-xs transition-colors shrink-0 cursor-pointer shadow-xs"
+                        >
+                          {cliCopied ? (
+                            <>
+                              <Check className="w-3.5 h-3.5" />
+                              <span>Copied!</span>
+                            </>
+                          ) : (
+                            <>
+                              <Copy className="w-3.5 h-3.5" />
+                              <span>Copy Command</span>
+                            </>
+                          )}
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
 
                 <div className="w-px h-3.5 bg-zinc-700/80 mx-0.5" />
 

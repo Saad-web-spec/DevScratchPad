@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import {
   ShieldAlert,
@@ -12,17 +12,21 @@ import {
   XCircle,
   Copy,
   Check,
+  Terminal,
 } from "lucide-react";
 import { ProgrammaticPresetRoute, getPresetsByFormat } from "../../claude-skills/lib/presetRegistry";
 import { getFormatHub } from "../../claude-skills/lib/formatHubs";
+import { getInstallCommands, copyToClipboard } from "../../claude-skills/lib/ruleGenerator";
 
 function CopyButton({ text, label }: { text: string; label?: string }) {
   const [copied, setCopied] = useState(false);
 
-  const handleCopy = () => {
-    navigator.clipboard.writeText(text);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+  const handleCopy = async () => {
+    const success = await copyToClipboard(text);
+    if (success) {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
   };
 
   return (
@@ -92,6 +96,160 @@ function getFormatMeta(formatSlug: string) {
         aiSupport: "Universal AI Assistants",
       };
   }
+}
+
+function TerminalInstallWidget({ route }: { route: ProgrammaticPresetRoute }) {
+  const [activeTab, setActiveTab] = useState<"bash" | "powershell" | "wget" | "cli">("bash");
+  const [baseUrl, setBaseUrl] = useState("https://www.devscratchpad.tech");
+  const [copied, setCopied] = useState(false);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const isLocal =
+        window.location.hostname === "localhost" ||
+        window.location.hostname === "127.0.0.1" ||
+        window.location.hostname.endsWith(".local");
+      if (isLocal) {
+        setBaseUrl(window.location.origin);
+      }
+    }
+  }, []);
+
+  const commands = useMemo(
+    () => getInstallCommands(route.formatSlug, route.presetSlug, route.targetFile, baseUrl),
+    [route.formatSlug, route.presetSlug, route.targetFile, baseUrl]
+  );
+
+  const activeCommand = useMemo(() => {
+    switch (activeTab) {
+      case "powershell":
+        return commands.powershell;
+      case "wget":
+        return commands.wget;
+      case "cli":
+        return commands.cliRunner || commands.bash;
+      case "bash":
+      default:
+        return commands.bash;
+    }
+  }, [activeTab, commands]);
+
+  const handleCopy = async () => {
+    const success = await copyToClipboard(activeCommand);
+    if (success) {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
+
+  const isMcp = route.formatSlug === "mcp-config" && Boolean(commands.cliRunner);
+
+  return (
+    <div className="rounded-xl border border-zinc-200 bg-white overflow-hidden shadow-2xs space-y-0">
+      <div className="p-5 sm:p-6 pb-4 border-b border-zinc-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-zinc-50/60">
+        <div>
+          <h4 className="text-sm sm:text-base font-bold text-zinc-900 flex items-center gap-2">
+            <Terminal className="w-4 h-4 text-orange-600" />
+            Terminal One-Liner Install
+          </h4>
+          <p className="text-xs text-zinc-600 mt-0.5">
+            Run directly in your project root to stream and write this rule file with one command.
+          </p>
+        </div>
+
+        <div className="flex items-center gap-1.5 self-start sm:self-auto">
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-mono font-medium bg-emerald-50 text-emerald-700 border border-emerald-200">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+            Raw API Stream
+          </span>
+        </div>
+      </div>
+
+      {/* Terminal Container */}
+      <div className="bg-zinc-950 text-zinc-100 font-mono text-xs">
+        {/* Tab & Action Bar */}
+        <div className="flex flex-wrap items-center justify-between border-b border-zinc-800 px-3 py-2 bg-zinc-900/90 gap-2">
+          <div className="flex items-center gap-1">
+            <button
+              type="button"
+              onClick={() => setActiveTab("bash")}
+              className={`px-3 py-1.5 rounded-md text-xs font-mono font-medium transition-colors cursor-pointer ${
+                activeTab === "bash"
+                  ? "bg-zinc-800 text-orange-400 border border-zinc-700 shadow-xs"
+                  : "text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/50"
+              }`}
+            >
+              Bash (curl)
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab("powershell")}
+              className={`px-3 py-1.5 rounded-md text-xs font-mono font-medium transition-colors cursor-pointer ${
+                activeTab === "powershell"
+                  ? "bg-zinc-800 text-orange-400 border border-zinc-700 shadow-xs"
+                  : "text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/50"
+              }`}
+            >
+              PowerShell
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab("wget")}
+              className={`px-3 py-1.5 rounded-md text-xs font-mono font-medium transition-colors cursor-pointer ${
+                activeTab === "wget"
+                  ? "bg-zinc-800 text-orange-400 border border-zinc-700 shadow-xs"
+                  : "text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/50"
+              }`}
+            >
+              Wget
+            </button>
+            {isMcp && (
+              <button
+                type="button"
+                onClick={() => setActiveTab("cli")}
+                className={`px-3 py-1.5 rounded-md text-xs font-mono font-medium transition-colors cursor-pointer ${
+                  activeTab === "cli"
+                    ? "bg-zinc-800 text-orange-400 border border-zinc-700 shadow-xs"
+                    : "text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/50"
+                }`}
+              >
+                CLI Runner ({commands.cliRunner?.split(" ")[0]})
+              </button>
+            )}
+          </div>
+
+          <button
+            type="button"
+            onClick={handleCopy}
+            className="flex items-center gap-1.5 px-2.5 py-1 rounded bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-white border border-zinc-700 transition-colors font-mono text-[11px] cursor-pointer"
+            title="Copy command to clipboard"
+          >
+            {copied ? (
+              <>
+                <Check className="w-3.5 h-3.5 text-emerald-400" />
+                <span className="text-emerald-400 font-semibold">Copied!</span>
+              </>
+            ) : (
+              <>
+                <Copy className="w-3.5 h-3.5 text-zinc-400" />
+                <span>Copy Command</span>
+              </>
+            )}
+          </button>
+        </div>
+
+        {/* Command Box */}
+        <div className="p-4 overflow-x-auto flex items-start sm:items-center gap-3">
+          <span className="text-zinc-500 select-none font-bold shrink-0 pt-0.5 sm:pt-0">
+            {activeTab === "powershell" ? "PS>" : "$"}
+          </span>
+          <code className="text-zinc-200 font-mono text-xs sm:text-sm whitespace-pre select-all">
+            {activeCommand}
+          </code>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 export function ProgrammaticSpokeSeoContent({ route }: { route: ProgrammaticPresetRoute }) {
@@ -333,6 +491,9 @@ export function ProgrammaticSpokeSeoContent({ route }: { route: ProgrammaticPres
               <CopyButton text={route.targetFile} label="Copy Path" />
             </div>
           </div>
+
+          {/* Terminal One-Liner Install Interactive Widget */}
+          <TerminalInstallWidget route={route} />
         </section>
 
         {/* 5. Lateral Hub-and-Spoke Route Directory */}
