@@ -1,5 +1,6 @@
 import { MetadataRoute } from "next";
 import { TOOL_SLUGS } from "@/lib/tools/registry";
+import { getAllCategories } from "@/lib/tools/categories";
 import { BLOG_SLUGS } from "@/lib/blog/posts";
 import { ROUTES } from "@/lib/routes";
 import { PRESET_ROUTES, getAllDynamicPresetRoutes } from "./claude-skills/lib/presetRegistry";
@@ -27,6 +28,13 @@ export default function sitemap(): MetadataRoute.Sitemap {
     lastModified: new Date(),
     changeFrequency: "weekly" as const,
     priority: 0.8,
+  }));
+
+  const categoryHubRoutes = getAllCategories().map((category) => ({
+    url: `${SITE_URL}/developer-tools/${category.slug}`,
+    lastModified: new Date(),
+    changeFrequency: "weekly" as const,
+    priority: 0.9,
   }));
 
   const formatHubRoutes = getAllFormatHubs().map((hub) => ({
@@ -93,6 +101,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: "weekly" as const,
       priority: 0.9,
     },
+    ...categoryHubRoutes,
     ...formatHubRoutes,
     ...routes,
     ...blogRoutes,

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { TOOLS_REGISTRY } from "@/lib/tools/registry";
+import { getAllCategories } from "@/lib/tools/categories";
 import { getAllDynamicPresetRoutes, getPresetBySlug, PRESET_ROUTES } from "@/app/claude-skills/lib/presetRegistry";
 import { getAllFormatHubs } from "@/app/claude-skills/lib/formatHubs";
 
@@ -7,6 +8,32 @@ const SITE_URL = "https://www.devscratchpad.tech";
 
 export async function GET() {
   const tools = Object.values(TOOLS_REGISTRY);
+
+  const categoriesDetailed = getAllCategories()
+    .map((c) => {
+      const toolList = c.toolSlugs
+        .map((s) => {
+          const t = TOOLS_REGISTRY[s];
+          return `  - **${t?.name || s}** (${SITE_URL}/tools/${s}): ${t?.description || ""}`;
+        })
+        .join("\n");
+      const workflows = c.deepGuide.usageWorkflows.map((w, i) => `  ${i + 1}. ${w}`).join("\n");
+      const benefits = c.keyBenefits.map((b) => `  - ${b}`).join("\n");
+
+      return `### ${c.name}
+- **URL**: ${SITE_URL}/developer-tools/${c.slug}
+- **Short Title**: ${c.shortTitle}
+- **Description**: ${c.seoDescription}
+- **Technical Architecture**: ${c.deepGuide.technicalArchitecture}
+- **Key Engineering Benefits**:
+${benefits}
+- **Standard Workflows**:
+${workflows}
+- **Included Offline Utilities**:
+${toolList}
+`;
+    })
+    .join("\n---\n\n");
 
   const toolsDetailed = tools
     .map((t) => {
@@ -77,6 +104,12 @@ ${steps}${edgeCases}${shortcuts}
 > The authoritative reference for DevScratchpad's privacy-backed developer utilities, cryptographic tools, and AI agent prompt specifications.
 
 DevScratchpad (${SITE_URL}) operates entirely on client-side code execution. No network requests are made when processing user data, ensuring 100% data confidentiality for enterprise and sensitive workloads.
+
+---
+
+## Developer Tools Category Hubs
+
+${categoriesDetailed}
 
 ---
 

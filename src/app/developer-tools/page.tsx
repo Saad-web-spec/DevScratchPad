@@ -1,7 +1,8 @@
 import { Metadata } from "next";
 import Link from "next/link";
 import { TOOLS_REGISTRY } from "@/lib/tools/registry";
-import { ArrowUpRight } from "lucide-react";
+import { getCategoryByRegistryName } from "@/lib/tools/categories";
+import { ArrowUpRight, ArrowRight } from "lucide-react";
 import { SiteHeader } from "@/components/layout/SiteHeader";
 import { SiteFooter } from "@/components/layout/SiteFooter";
 
@@ -115,16 +116,43 @@ export default function DeveloperToolsPage() {
         </div>
 
         <div className="space-y-12 mb-16">
-          {categories.map((category) => (
-            <section key={category} className="space-y-4">
-              <div className="flex items-center justify-between border-b border-zinc-200 pb-2.5">
-                <h2 className="text-sm font-mono font-semibold uppercase tracking-wider text-zinc-800">
-                  {category}
-                </h2>
-                <span className="text-xs font-mono text-zinc-400">
-                  {groupedTools[category].length} tools
-                </span>
-              </div>
+          {categories.map((category) => {
+            const catMeta = getCategoryByRegistryName(category);
+            const hubUrl = catMeta ? `/developer-tools/${catMeta.slug}` : undefined;
+
+            return (
+              <section key={category} className="space-y-4">
+                <div className="flex items-center justify-between border-b border-zinc-200 pb-2.5">
+                  <div className="flex items-center gap-2.5">
+                    {hubUrl ? (
+                      <Link
+                        href={hubUrl}
+                        className="group inline-flex items-center gap-1.5 hover:text-blue-600 transition-colors"
+                      >
+                        <h2 className="text-sm font-mono font-semibold uppercase tracking-wider text-zinc-800 group-hover:text-blue-600 transition-colors">
+                          {category}
+                        </h2>
+                      </Link>
+                    ) : (
+                      <h2 className="text-sm font-mono font-semibold uppercase tracking-wider text-zinc-800">
+                        {category}
+                      </h2>
+                    )}
+                    <span className="text-xs font-mono text-zinc-400">
+                      ({groupedTools[category].length} tools)
+                    </span>
+                  </div>
+
+                  {hubUrl && (
+                    <Link
+                      href={hubUrl}
+                      className="text-xs font-medium text-zinc-500 hover:text-zinc-900 flex items-center gap-1 group transition-colors"
+                    >
+                      <span>View Category Hub</span>
+                      <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
+                    </Link>
+                  )}
+                </div>
               
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
                 {groupedTools[category].map((tool) => (
@@ -146,7 +174,8 @@ export default function DeveloperToolsPage() {
                 ))}
               </div>
             </section>
-          ))}
+          );
+        })}
         </div>
       </main>
 

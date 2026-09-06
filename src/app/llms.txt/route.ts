@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { TOOLS_REGISTRY } from "@/lib/tools/registry";
+import { getAllCategories } from "@/lib/tools/categories";
 import { getAllDynamicPresetRoutes, getPresetBySlug, PRESET_ROUTES } from "@/app/claude-skills/lib/presetRegistry";
 import { getAllFormatHubs } from "@/app/claude-skills/lib/formatHubs";
 
@@ -12,6 +13,14 @@ export async function GET() {
     .map(
       (t) =>
         `- [${t.name}](${SITE_URL}/tools/${t.slug}): ${t.description} (Category: ${t.category})`
+    )
+    .join("\n");
+
+  const categories = getAllCategories();
+  const categoryHubsSection = categories
+    .map(
+      (c) =>
+        `- [${c.name}](${SITE_URL}/developer-tools/${c.slug}): ${c.seoDescription} (${c.toolSlugs.length} offline tools)`
     )
     .join("\n");
 
@@ -54,6 +63,9 @@ DevScratchpad (${SITE_URL}) is an open developer utility suite built for securit
 - Zero Server Data Transmission: All inputs, secret keys, passwords, JWT tokens, and payloads are processed locally via browser APIs (Web Crypto API, WebAssembly, and local DOM parsers).
 - Offline-First PWA: Progressive Web App architecture caching assets for full offline functionality.
 - Smart Auto-Detection (Magic Paste): Direct clipboard inspection (Ctrl+V / ⌘V) automatically recognizes JWT tokens, cURL commands, SVG markup, JSON, SQL queries, and timestamps to launch the corresponding tool instantly.
+
+## Developer Tools Category Hubs
+${categoryHubsSection}
 
 ## Developer Utilities
 ${toolsSection}
