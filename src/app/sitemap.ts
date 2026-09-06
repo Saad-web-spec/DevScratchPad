@@ -2,7 +2,8 @@ import { MetadataRoute } from "next";
 import { TOOL_SLUGS } from "@/lib/tools/registry";
 import { BLOG_SLUGS } from "@/lib/blog/posts";
 import { ROUTES } from "@/lib/routes";
-import { PRESET_ROUTES } from "./claude-skills/lib/presetRegistry";
+import { PRESET_ROUTES, getAllDynamicPresetRoutes } from "./claude-skills/lib/presetRegistry";
+import { getAllFormatHubs } from "./claude-skills/lib/formatHubs";
 
 const SITE_URL = "https://www.devscratchpad.tech";
 
@@ -28,12 +29,43 @@ export default function sitemap(): MetadataRoute.Sitemap {
     priority: 0.8,
   }));
 
-  const presetRoutes = PRESET_ROUTES.map((route) => ({
-    url: `${SITE_URL}/ai-skill-studio/${route.formatSlug}/${route.presetSlug}`,
+  const formatHubRoutes = getAllFormatHubs().map((hub) => ({
+    url: `${SITE_URL}/ai-skill-studio/${hub.slug}`,
     lastModified: new Date(),
     changeFrequency: "weekly" as const,
-    priority: 0.9,
+    priority: 0.95,
   }));
+
+  // Full deduplicated set of dynamic spoke routes + any format-specific routes
+  const dynamicSpokes = getAllDynamicPresetRoutes();
+  const seenSpokeUrls = new Set<string>();
+  const presetRoutes: MetadataRoute.Sitemap = [];
+
+  for (const route of dynamicSpokes) {
+    const url = `${SITE_URL}/ai-skill-studio/${route.formatSlug}/${route.presetSlug}`;
+    if (!seenSpokeUrls.has(url)) {
+      seenSpokeUrls.add(url);
+      presetRoutes.push({
+        url,
+        lastModified: new Date(),
+        changeFrequency: "weekly" as const,
+        priority: 0.85,
+      });
+    }
+  }
+
+  for (const route of PRESET_ROUTES) {
+    const url = `${SITE_URL}/ai-skill-studio/${route.formatSlug}/${route.presetSlug}`;
+    if (!seenSpokeUrls.has(url)) {
+      seenSpokeUrls.add(url);
+      presetRoutes.push({
+        url,
+        lastModified: new Date(),
+        changeFrequency: "weekly" as const,
+        priority: 0.85,
+      });
+    }
+  }
 
   return [
     {
@@ -61,6 +93,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: "weekly" as const,
       priority: 0.9,
     },
+    ...formatHubRoutes,
     ...routes,
     ...blogRoutes,
     ...presetRoutes,

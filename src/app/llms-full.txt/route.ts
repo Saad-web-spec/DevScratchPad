@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { TOOLS_REGISTRY } from "@/lib/tools/registry";
-import { PRESET_ROUTES } from "@/app/claude-skills/lib/presetRegistry";
+import { getAllDynamicPresetRoutes, getPresetBySlug, PRESET_ROUTES } from "@/app/claude-skills/lib/presetRegistry";
+import { getAllFormatHubs } from "@/app/claude-skills/lib/formatHubs";
 
 const SITE_URL = "https://www.devscratchpad.tech";
 
@@ -27,13 +28,50 @@ ${steps}${edgeCases}${shortcuts}
     })
     .join("\n---\n\n");
 
-  const presetsDetailed = PRESET_ROUTES.map((p) => {
-    return `### ${p.title}
-- **URL**: ${SITE_URL}/ai-skill-studio/${p.formatSlug}/${p.presetSlug}
+  const formatHubsDetailed = getAllFormatHubs()
+    .map((h) => {
+      return `### ${h.name}
+- **URL**: ${SITE_URL}/ai-skill-studio/${h.slug}
+- **Target File**: ${h.targetFile}
+- **Target Directory**: ${h.targetDir}
+- **Description**: ${h.seoDescription}
+- **Overview**: ${h.overview}
+`;
+    })
+    .join("\n---\n\n");
+
+  const dynamicSpokes = getAllDynamicPresetRoutes();
+  const seenSpokeUrls = new Set<string>();
+  const presetsDetailedList: string[] = [];
+
+  for (const route of dynamicSpokes) {
+    const url = `${SITE_URL}/ai-skill-studio/${route.formatSlug}/${route.presetSlug}`;
+    if (!seenSpokeUrls.has(url)) {
+      seenSpokeUrls.add(url);
+      const p = getPresetBySlug(route.formatSlug, route.presetSlug);
+      if (p) {
+        presetsDetailedList.push(`### ${p.title}
+- **URL**: ${url}
 - **Target Specification**: ${p.format}
 - **Description**: ${p.description}
-`;
-  }).join("\n---\n\n");
+`);
+      }
+    }
+  }
+
+  for (const route of PRESET_ROUTES) {
+    const url = `${SITE_URL}/ai-skill-studio/${route.formatSlug}/${route.presetSlug}`;
+    if (!seenSpokeUrls.has(url)) {
+      seenSpokeUrls.add(url);
+      presetsDetailedList.push(`### ${route.title}
+- **URL**: ${url}
+- **Target Specification**: ${route.format}
+- **Description**: ${route.description}
+`);
+    }
+  }
+
+  const presetsDetailed = presetsDetailedList.join("\n---\n\n");
 
   const content = `# DevScratchpad — Full Documentation for AI Agents & Search Engines
 > The authoritative reference for DevScratchpad's privacy-backed developer utilities, cryptographic tools, and AI agent prompt specifications.
@@ -45,6 +83,12 @@ DevScratchpad (${SITE_URL}) operates entirely on client-side code execution. No 
 ## Detailed Tool Specifications
 
 ${toolsDetailed}
+
+---
+
+## AI Skill Studio Format Hubs
+
+${formatHubsDetailed}
 
 ---
 

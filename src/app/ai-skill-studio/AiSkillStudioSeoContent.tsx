@@ -42,7 +42,10 @@ export function AiSkillStudioSeoContent() {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 items-stretch">
             {/* 1. SKILL.md */}
-            <div className="flex flex-col justify-between border border-zinc-200/90 rounded-xl p-4.5 bg-white shadow-2xs hover:shadow-xs hover:border-zinc-300 transition-all">
+            <Link
+              href="/ai-skill-studio/claude-skills"
+              className="flex flex-col justify-between border border-zinc-200/90 rounded-xl p-4.5 bg-white shadow-2xs hover:shadow-xs hover:border-zinc-300 transition-all text-inherit no-underline"
+            >
               <div className="space-y-3">
                 <div className="flex items-center justify-between gap-2 pb-2.5 border-b border-zinc-100">
                   <span className="font-mono text-xs font-bold text-orange-600 bg-orange-50 border border-orange-200/80 px-2 py-0.5 rounded-md whitespace-nowrap shadow-2xs">
@@ -66,10 +69,13 @@ export function AiSkillStudioSeoContent() {
                   <span className="truncate">.claude/skills/&lt;name&gt;/SKILL.md</span>
                 </div>
               </div>
-            </div>
+            </Link>
 
             {/* 2. .mdc Rules */}
-            <div className="flex flex-col justify-between border border-zinc-200/90 rounded-xl p-4.5 bg-white shadow-2xs hover:shadow-xs hover:border-zinc-300 transition-all">
+            <Link
+              href="/ai-skill-studio/cursor-rules"
+              className="flex flex-col justify-between border border-zinc-200/90 rounded-xl p-4.5 bg-white shadow-2xs hover:shadow-xs hover:border-zinc-300 transition-all text-inherit no-underline"
+            >
               <div className="space-y-3">
                 <div className="flex items-center justify-between gap-2 pb-2.5 border-b border-zinc-100">
                   <span className="font-mono text-xs font-bold text-blue-600 bg-blue-50 border border-blue-200/80 px-2 py-0.5 rounded-md whitespace-nowrap shadow-2xs">
@@ -93,10 +99,13 @@ export function AiSkillStudioSeoContent() {
                   <span className="truncate">.cursor/rules/&lt;name&gt;.mdc</span>
                 </div>
               </div>
-            </div>
+            </Link>
 
             {/* 3. CLAUDE.md */}
-            <div className="flex flex-col justify-between border border-zinc-200/90 rounded-xl p-4.5 bg-white shadow-2xs hover:shadow-xs hover:border-zinc-300 transition-all">
+            <Link
+              href="/ai-skill-studio/claude-md"
+              className="flex flex-col justify-between border border-zinc-200/90 rounded-xl p-4.5 bg-white shadow-2xs hover:shadow-xs hover:border-zinc-300 transition-all text-inherit no-underline"
+            >
               <div className="space-y-3">
                 <div className="flex items-center justify-between gap-2 pb-2.5 border-b border-zinc-100">
                   <span className="font-mono text-xs font-bold text-emerald-600 bg-emerald-50 border border-emerald-200/80 px-2 py-0.5 rounded-md whitespace-nowrap shadow-2xs">
@@ -120,10 +129,13 @@ export function AiSkillStudioSeoContent() {
                   <span className="truncate">/CLAUDE.md (Root)</span>
                 </div>
               </div>
-            </div>
+            </Link>
 
             {/* 4. AGENTS.md */}
-            <div className="flex flex-col justify-between border border-zinc-200/90 rounded-xl p-4.5 bg-white shadow-2xs hover:shadow-xs hover:border-zinc-300 transition-all">
+            <Link
+              href="/ai-skill-studio/agents-md"
+              className="flex flex-col justify-between border border-zinc-200/90 rounded-xl p-4.5 bg-white shadow-2xs hover:shadow-xs hover:border-zinc-300 transition-all text-inherit no-underline"
+            >
               <div className="space-y-3">
                 <div className="flex items-center justify-between gap-2 pb-2.5 border-b border-zinc-100">
                   <span className="font-mono text-xs font-bold text-purple-600 bg-purple-50 border border-purple-200/80 px-2 py-0.5 rounded-md whitespace-nowrap shadow-2xs">
@@ -147,10 +159,13 @@ export function AiSkillStudioSeoContent() {
                   <span className="truncate">/AGENTS.md (Root)</span>
                 </div>
               </div>
-            </div>
+            </Link>
 
             {/* 5. claude.json */}
-            <div className="flex flex-col justify-between border border-zinc-200/90 rounded-xl p-4.5 bg-white shadow-2xs hover:shadow-xs hover:border-zinc-300 transition-all">
+            <Link
+              href="/ai-skill-studio/mcp-config"
+              className="flex flex-col justify-between border border-zinc-200/90 rounded-xl p-4.5 bg-white shadow-2xs hover:shadow-xs hover:border-zinc-300 transition-all text-inherit no-underline"
+            >
               <div className="space-y-3">
                 <div className="flex items-center justify-between gap-2 pb-2.5 border-b border-zinc-100">
                   <span className="font-mono text-xs font-bold text-sky-600 bg-sky-50 border border-sky-200/80 px-2 py-0.5 rounded-md whitespace-nowrap shadow-2xs">
@@ -174,7 +189,7 @@ export function AiSkillStudioSeoContent() {
                   <span className="truncate">~/.claude.json</span>
                 </div>
               </div>
-            </div>
+            </Link>
           </div>
         </section>
 

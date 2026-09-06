@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { TOOLS_REGISTRY } from "@/lib/tools/registry";
-import { PRESET_ROUTES } from "@/app/claude-skills/lib/presetRegistry";
+import { getAllDynamicPresetRoutes, getPresetBySlug, PRESET_ROUTES } from "@/app/claude-skills/lib/presetRegistry";
+import { getAllFormatHubs } from "@/app/claude-skills/lib/formatHubs";
 
 const SITE_URL = "https://www.devscratchpad.tech";
 
@@ -14,10 +15,35 @@ export async function GET() {
     )
     .join("\n");
 
-  const presetsSection = PRESET_ROUTES.map(
-    (p) =>
-      `- [${p.title}](${SITE_URL}/ai-skill-studio/${p.formatSlug}/${p.presetSlug}): ${p.description}`
-  ).join("\n");
+  const formatHubs = getAllFormatHubs();
+  const formatHubsSection = formatHubs
+    .map((h) => `- [${h.name}](${SITE_URL}/ai-skill-studio/${h.slug}): ${h.seoDescription}`)
+    .join("\n");
+
+  const dynamicSpokes = getAllDynamicPresetRoutes();
+  const seenSpokeUrls = new Set<string>();
+  const presetsList: string[] = [];
+
+  for (const route of dynamicSpokes) {
+    const url = `${SITE_URL}/ai-skill-studio/${route.formatSlug}/${route.presetSlug}`;
+    if (!seenSpokeUrls.has(url)) {
+      seenSpokeUrls.add(url);
+      const p = getPresetBySlug(route.formatSlug, route.presetSlug);
+      if (p) {
+        presetsList.push(`- [${p.title}](${url}): ${p.description}`);
+      }
+    }
+  }
+
+  for (const route of PRESET_ROUTES) {
+    const url = `${SITE_URL}/ai-skill-studio/${route.formatSlug}/${route.presetSlug}`;
+    if (!seenSpokeUrls.has(url)) {
+      seenSpokeUrls.add(url);
+      presetsList.push(`- [${route.title}](${url}): ${route.description}`);
+    }
+  }
+
+  const presetsSection = presetsList.join("\n");
 
   const content = `# DevScratchpad
 > 100% Offline, Privacy-Backed Developer Tools & AI Skill Studio
@@ -31,6 +57,9 @@ DevScratchpad (${SITE_URL}) is an open developer utility suite built for securit
 
 ## Developer Utilities
 ${toolsSection}
+
+## AI Skill Studio Format Hubs
+${formatHubsSection}
 
 ## AI Skill Studio Presets
 ${presetsSection}

@@ -124,6 +124,33 @@ const MCP_PRESETS: McpServerPreset[] = [
     env: {},
   },
   {
+    id: "sqlite",
+    name: "sqlite",
+    label: "SQLite Database",
+    description: "Query and inspect local SQLite database files with zero server overhead.",
+    command: "uvx",
+    args: ["mcp-server-sqlite", "--db-path", "./local.db"],
+    env: {},
+  },
+  {
+    id: "puppeteer",
+    name: "puppeteer",
+    label: "Puppeteer Browser",
+    description: "Headless browser automation, website screenshots, and SPA scraping.",
+    command: "npx",
+    args: ["-y", "@modelcontextprotocol/server-puppeteer"],
+    env: {},
+  },
+  {
+    id: "docker",
+    name: "docker",
+    label: "Docker Engine",
+    description: "Inspect local containers, view container logs, and troubleshoot services.",
+    command: "npx",
+    args: ["-y", "@modelcontextprotocol/server-docker"],
+    env: {},
+  },
+  {
     id: "custom",
     name: "custom-server",
     label: "Custom MCP Server",
@@ -444,6 +471,402 @@ const user = await db.query(
   \`SELECT * FROM users WHERE id = '\${userId}'\`
 );`,
   },
+  {
+    id: "tailwind-v4",
+    name: "Tailwind CSS v4",
+    badge: "Frontend",
+    title: "Tailwind CSS v4 & CSS-First Styling Specialist",
+    slug: "tailwind-v4-styling",
+    description:
+      "Modern Tailwind CSS v4 conventions. Enforces CSS-first @theme configuration, zero tailwind.config.js, and strict class ordering.",
+    role: "Lead UI & Design Systems Engineer",
+    framework: "Tailwind CSS v4 / React / Next.js",
+    language: "CSS / TypeScript",
+    styling: "Tailwind CSS v4",
+    database: "None / UI Only",
+    philosophy: "modern",
+    behaviors: ["inspect-first", "minimal-diffs", "concise-direct"],
+    conventions: ["flat-pragmatic", "strict-a11y", "self-documenting"],
+    procedures: `1. Define all design tokens, font families, and brand colors inside globals.css using the @theme block.
+2. Never create or edit legacy tailwind.config.js or tailwind.config.ts files.
+3. Order utility classes logically: layout -> spacing -> typography -> visual -> interactive.
+4. Ensure sufficient contrast ratios and focus ring visibility for interactive elements.`,
+    customDirectives: `- Banned: Do not suggest tailwind.config.js; Tailwind v4 is pure CSS-configured.
+- Prefer CSS custom properties within @theme for dynamic theming.`,
+    exampleGood: `@import "tailwindcss";
+
+@theme {
+  --color-primary: #ea580c;
+  --font-mono: "Geist Mono", monospace;
+}`,
+    exampleBad: `// Discouraged in v4: Legacy JS config
+module.exports = {
+  theme: { extend: { colors: { primary: "#ea580c" } } }
+};`,
+  },
+  {
+    id: "supabase-fullstack",
+    name: "Supabase & Postgres",
+    badge: "Fullstack",
+    title: "Supabase Architecture & Row-Level Security Specialist",
+    slug: "supabase-postgres-security",
+    description:
+      "Production standards for Supabase. Mandates Row-Level Security (RLS) on all tables, typed database client, and secure SSR cookie auth.",
+    role: "Senior Fullstack & Database Security Engineer",
+    framework: "Next.js / Supabase SSR",
+    language: "TypeScript / SQL",
+    styling: "Tailwind CSS",
+    database: "PostgreSQL (Supabase)",
+    philosophy: "strict",
+    behaviors: ["inspect-first", "dependency-caution", "verification-driven"],
+    conventions: ["clean-layered", "guard-clauses", "typed-schemas"],
+    procedures: `1. Always write migration scripts that enable Row Level Security (RLS) on new tables.
+2. Never expose service_role key to client components or public network responses.
+3. Use @supabase/ssr for server component and server action authentication.
+4. Generate and maintain TypeScript database types via Supabase CLI.`,
+    customDirectives: `- Any table created without ENABLE ROW LEVEL SECURITY is considered a critical vulnerability.
+- Always use auth.uid() in RLS policy definitions.`,
+    exampleGood: `-- Good: Table with explicit RLS enabled and owner policy
+create table profiles (
+  id uuid references auth.users not null primary key,
+  username text unique
+);
+alter table profiles enable row level security;
+create policy "Users can view own profile" on profiles
+  for select using (auth.uid() = id);`,
+    exampleBad: `-- Dangerous: Table without RLS allows public anonymous read/write
+create table profiles (
+  id uuid primary key,
+  username text
+);`,
+  },
+  {
+    id: "prisma-orm",
+    name: "Prisma ORM",
+    badge: "Database",
+    title: "Prisma ORM & PostgreSQL Schema Architecture",
+    slug: "prisma-orm-performance",
+    description:
+      "Production guidelines for Prisma ORM. Enforces selective field fetching, batch transactions, explicit indexing, and singleton client patterns.",
+    role: "Database Systems Architect",
+    framework: "Node.js / Next.js / TypeScript",
+    language: "TypeScript",
+    styling: "None",
+    database: "PostgreSQL / Prisma",
+    philosophy: "strict",
+    behaviors: ["inspect-first", "minimal-diffs", "verification-driven"],
+    conventions: ["guard-clauses", "typed-schemas", "clean-layered"],
+    procedures: `1. Always use 'select' to fetch only necessary columns; ban broad unconstrained findMany() queries.
+2. Encapsulate dependent multi-model operations inside prisma.$transaction().
+3. Add @@index for columns used frequently in WHERE clauses or foreign key joins.
+4. Maintain a singleton PrismaClient instance to prevent connection pool exhaustion.`,
+    customDirectives: `- Never return raw hashed passwords or internal auth tokens from Prisma queries.
+- Prefer Prisma raw queries ($queryRaw) only when complex SQL window functions are required.`,
+    exampleGood: `// Good: Targeted field selection avoiding memory bloat
+const users = await db.user.findMany({
+  where: { active: true },
+  select: { id: true, email: true, name: true }
+});`,
+    exampleBad: `// Discouraged: Over-fetching entire table graph into memory
+const users = await db.user.findMany({
+  include: { posts: true, logs: true, auditHistory: true }
+});`,
+  },
+  {
+    id: "drizzle-orm",
+    name: "Drizzle ORM",
+    badge: "Database",
+    title: "Drizzle ORM & Type-Safe SQL Specialist",
+    slug: "drizzle-orm-typesafe",
+    description:
+      "Production guidelines for Drizzle ORM. Enforces relational schema modeling, parameterized SQL templates, and zero-runtime overhead.",
+    role: "TypeScript Data Engineer",
+    framework: "Next.js / Node.js",
+    language: "TypeScript / SQL",
+    styling: "None",
+    database: "PostgreSQL / SQLite (Drizzle)",
+    philosophy: "modern",
+    behaviors: ["inspect-first", "minimal-diffs", "verification-driven"],
+    conventions: ["typed-schemas", "guard-clauses", "clean-layered"],
+    procedures: `1. Define table schemas in dedicated schema files with explicit relations.
+2. Use db.query for relational lookups and db.insert/update for targeted mutations.
+3. Always parameterize raw SQL queries with the sql template tag.
+4. Run drizzle-kit generate and drizzle-kit migrate for safe migrations.`,
+    customDirectives: `- Ban raw string concatenation in SQL expressions.
+- Keep schema definitions colocated with their domain entities.`,
+    exampleGood: `// Good: Parameterized SQL template with type-safe query
+import { sql, eq } from "drizzle-orm";
+const result = await db.select().from(users).where(eq(users.status, "active"));`,
+    exampleBad: `// Discouraged: Unsafe raw string interpolation
+await db.execute(\`SELECT * FROM users WHERE status = '\${status}'\`);`,
+  },
+  {
+    id: "go-fiber",
+    name: "Go Fiber API",
+    badge: "Backend",
+    title: "High-Performance Go & Fiber API Specialist",
+    slug: "go-fiber-backend",
+    description:
+      "Production standards for Go Fiber microservices. Enforces explicit error handling, context propagation, and clean layered architecture.",
+    role: "Senior Go Systems Engineer",
+    framework: "Go Fiber v2/v3",
+    language: "Go (Golang 1.22+)",
+    styling: "None / API Service",
+    database: "PostgreSQL / pgx / Redis",
+    philosophy: "strict",
+    behaviors: ["inspect-first", "minimal-diffs", "verification-driven"],
+    conventions: ["clean-layered", "guard-clauses", "result-types"],
+    procedures: `1. Check all errors explicitly (if err != nil); never discard errors with '_'.
+2. Propagate request context (c.UserContext()) to all database and remote calls.
+3. Structure application into cmd/, internal/handlers/, internal/services/, and internal/models/.
+4. Use Fiber validator middleware to parse and validate request structs.`,
+    customDirectives: `- Never call panic() in production request handlers.
+- Inject dependencies into struct receivers rather than using package globals.`,
+    exampleGood: `// Good: Explicit error handling with context
+func (h *Handler) GetUser(c *fiber.Ctx) error {
+    id := c.Params("id")
+    user, err := h.service.FindByID(c.UserContext(), id)
+    if err != nil {
+        if errors.Is(err, domain.ErrNotFound) {
+            return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "not found"})
+        }
+        return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "internal"})
+    }
+    return c.JSON(user)
+}`,
+    exampleBad: `// Discouraged: Ignored errors and missing context
+func GetUser(c *fiber.Ctx) error {
+    id := c.Params("id")
+    user, _ := db.Find(id)
+    return c.JSON(user)
+}`,
+  },
+  {
+    id: "rust-axum",
+    name: "Rust Axum Service",
+    badge: "Backend",
+    title: "Idiomatic Rust & Axum Microservice Specialist",
+    slug: "rust-axum-service",
+    description:
+      "Idiomatic Rust standards with Axum, Tokio runtime, typed extractors, and zero-unwrap error handling.",
+    role: "Principal Rust Systems Architect",
+    framework: "Axum & Tokio",
+    language: "Rust 2021 Edition",
+    styling: "None / API Service",
+    database: "PostgreSQL (SQLx)",
+    philosophy: "strict",
+    behaviors: ["inspect-first", "minimal-diffs", "verification-driven"],
+    conventions: ["guard-clauses", "result-types", "typed-schemas"],
+    procedures: `1. Propagate errors with the '?' operator; never call .unwrap() or .expect() in handlers.
+2. Implement IntoResponse on a centralized AppError enum.
+3. Use Axum extractors (State, Json, Path) in strict dependency order.
+4. Pass shared resources via Arc<AppState> using Axum's State extractor.`,
+    customDirectives: `- Run 'cargo clippy -- -D warnings' as a standard validation gate.
+- Keep dependencies minimal; prefer serde and tokio primitives.`,
+    exampleGood: `// Good: Typed handler returning custom Result with IntoResponse
+pub async fn create_user(
+    State(state): State<Arc<AppState>>,
+    Json(payload): Json<CreateUserRequest>,
+) -> Result<Json<UserResponse>, AppError> {
+    let user = state.db.insert_user(&payload).await?;
+    Ok(Json(user.into()))
+}`,
+    exampleBad: `// Discouraged: Calling unwrap inside async handler
+pub async fn create_user(Json(payload): Json<CreateUserRequest>) -> Json<UserResponse> {
+    let user = db.insert_user(&payload).await.unwrap();
+    Json(user.into())
+}`,
+  },
+  {
+    id: "vue-nuxt",
+    name: "Vue 3 & Nuxt 3",
+    badge: "Frontend",
+    title: "Vue 3 & Nuxt 3 Composition API Specialist",
+    slug: "vue-nuxt-composition",
+    description:
+      "Modern Vue 3 and Nuxt 3 fullstack standards. Enforces <script setup lang='ts'>, useFetch, and Nitro server endpoints.",
+    role: "Senior Vue & Nuxt Engineer",
+    framework: "Vue 3 & Nuxt 3",
+    language: "TypeScript",
+    styling: "Tailwind CSS",
+    database: "Nitro / REST / Supabase",
+    philosophy: "modern",
+    behaviors: ["inspect-first", "minimal-diffs", "concise-direct"],
+    conventions: ["feature-colocated", "guard-clauses", "strict-a11y"],
+    procedures: `1. Always use <script setup lang="ts">; ban legacy Vue 2 Options API syntax.
+2. Fetch data via useAsyncData or useFetch with unique, declarative cache keys.
+3. Colocate server API handlers in server/api/ using defineEventHandler.
+4. Manage global client state using Pinia stores.`,
+    customDirectives: `- Rely on Nuxt auto-imports; avoid manual import statements for standard composables.
+- Use TypeScript interfaces for all component defineProps and defineEmits.`,
+    exampleGood: `<script setup lang="ts">
+interface Props {
+  title: string;
+}
+const props = defineProps<Props>();
+const { data: posts, status } = await useFetch('/api/posts');
+</script>`,
+    exampleBad: `// Discouraged: Options API with manual data/methods
+export default {
+  props: ['title'],
+  data() { return { posts: [] }; },
+  mounted() { fetch('/api/posts').then(r => r.json()).then(d => this.posts = d); }
+};`,
+  },
+  {
+    id: "sveltekit",
+    name: "SvelteKit 5",
+    badge: "Frontend",
+    title: "SvelteKit 5 & Svelte 5 Runes Specialist",
+    slug: "sveltekit-runes",
+    description:
+      "Modern SvelteKit 5 standards enforcing Svelte 5 Runes ($state, $derived, $props), server load functions, and form actions.",
+    role: "Senior Svelte Engineer",
+    framework: "SvelteKit 5 & Svelte 5",
+    language: "TypeScript",
+    styling: "Tailwind CSS",
+    database: "PostgreSQL / SQLite",
+    philosophy: "modern",
+    behaviors: ["inspect-first", "minimal-diffs", "concise-direct"],
+    conventions: ["feature-colocated", "guard-clauses", "self-documenting"],
+    procedures: `1. Use Svelte 5 runes: $state(), $derived(), $effect(), and $props().
+2. Ban legacy Svelte 3/4 'let' reactivity and '$: ' reactive labels.
+3. Load data server-side in +page.server.ts load() functions.
+4. Execute mutations using standard SvelteKit Form Actions with use:enhance.`,
+    customDirectives: `- Never mix Svelte 4 reactivity syntax with Svelte 5 runes.
+- Keep server-only code strictly in *.server.ts files.`,
+    exampleGood: `<script lang="ts">
+interface Props {
+  initialCount?: number;
+}
+let { initialCount = 0 }: Props = $props();
+let count = $state(initialCount);
+let double = $derived(count * 2);
+</script>`,
+    exampleBad: `<script>
+// Discouraged: Legacy Svelte 3/4 syntax
+export let initialCount = 0;
+let count = initialCount;
+$: double = count * 2;
+</script>`,
+  },
+  {
+    id: "docker-devops",
+    name: "Docker & CI/CD",
+    badge: "DevOps",
+    title: "Production Docker & Containerization Engineer",
+    slug: "docker-containerization",
+    description:
+      "Production containerization standards. Enforces multi-stage builds, non-root runtime users, layer caching, and health checks.",
+    role: "DevOps & Infrastructure Engineer",
+    framework: "Docker / Kubernetes / GitHub Actions",
+    language: "Dockerfile / Bash / YAML",
+    styling: "None",
+    database: "PostgreSQL / Redis Containers",
+    philosophy: "strict",
+    behaviors: ["inspect-first", "dependency-caution", "verification-driven"],
+    conventions: ["clean-layered", "guard-clauses"],
+    procedures: `1. Always construct multi-stage Dockerfiles with separate build and minimal runtime stages.
+2. Create and switch to a dedicated non-root user (e.g. USER node or USER app).
+3. Copy dependency lockfiles before source files to maximize Docker layer caching.
+4. Add HEALTHCHECK instruction to verify container readiness in production.`,
+    customDirectives: `- Never run production application containers as root.
+- Never include development tooling (compilers, git) in final runtime images.`,
+    exampleGood: `# Good: Lean multi-stage build with non-root user
+FROM node:20-alpine AS builder
+WORKDIR /app
+COPY package*.json ./
+RUN npm ci
+COPY . .
+RUN npm run build
+
+FROM node:20-alpine AS runner
+WORKDIR /app
+ENV NODE_ENV=production
+RUN addgroup -g 1001 -S nodejs && adduser -S nextjs -u 1001
+COPY --from=builder --chown=nextjs:nodejs /app/dist ./dist
+USER nextjs
+EXPOSE 3000
+CMD ["node", "dist/index.js"]`,
+    exampleBad: `# Discouraged: Bloated single-stage build running as root
+FROM node:20
+WORKDIR /app
+COPY . .
+RUN npm install
+CMD ["npm", "start"]`,
+  },
+  {
+    id: "tdd-specialist",
+    name: "TDD & Testing",
+    badge: "Testing",
+    title: "Test-Driven Development & Automation Specialist",
+    slug: "tdd-testing-automation",
+    description:
+      "TDD and test automation standards. Enforces unit testing, edge-case coverage, Vitest/Playwright patterns, and mock isolation.",
+    role: "Lead QA & Test Automation Architect",
+    framework: "Vitest / Jest / Playwright",
+    language: "TypeScript",
+    styling: "None",
+    database: "In-Memory / Testcontainers",
+    philosophy: "strict",
+    behaviors: ["verification-driven", "inspect-first", "minimal-diffs"],
+    conventions: ["result-types", "guard-clauses", "self-documenting"],
+    procedures: `1. Write failing unit tests first before writing business logic implementation.
+2. Structure tests clearly using the Arrange-Act-Assert (AAA) pattern.
+3. Mock external network and database calls; keep unit tests fast (<10ms per test).
+4. Verify both happy paths and boundary conditions (empty inputs, timeouts, errors).`,
+    customDirectives: `- Never disable or skip tests with test.skip or fit.
+- Provide executable verification commands with every code proposal.`,
+    exampleGood: `// Good: Clean Arrange-Act-Assert with mock isolation
+describe("parseAmount", () => {
+  it("converts valid currency strings to cents", () => {
+    // Arrange & Act
+    const cents = parseAmount("$19.99");
+    // Assert
+    expect(cents).toBe(1999);
+  });
+
+  it("throws on negative values", () => {
+    expect(() => parseAmount("-$5.00")).toThrow(InvalidAmountError);
+  });
+});`,
+    exampleBad: `// Discouraged: Unasserted test with external network call
+test("test user API", async () => {
+  const res = await fetch("https://api.external.com/users");
+  console.log(await res.json());
+});`,
+  },
+  {
+    id: "fullstack-agent-team",
+    name: "Fullstack Agent Team",
+    badge: "Multi-Agent",
+    title: "Fullstack Multi-Agent Team Orchestration",
+    slug: "fullstack-agent-team",
+    description:
+      "Universal multi-agent team specification coordinating Lead Architect, Frontend Engineer, Backend Specialist, and Security Reviewer subagents.",
+    role: "Autonomous Multi-Agent Coordinator",
+    framework: "Multi-Agent Frameworks (Antigravity / Devin / Claude)",
+    language: "TypeScript / Polyglot",
+    styling: "Tailwind CSS",
+    database: "PostgreSQL / Prisma",
+    philosophy: "architect",
+    behaviors: ["inspect-first", "minimal-diffs", "concise-direct", "verification-driven", "dependency-caution"],
+    conventions: ["clean-layered", "guard-clauses", "result-types", "typed-schemas"],
+    procedures: `1. Lead Architect parses requirements and assigns tasks to specialized subagents.
+2. Frontend & Backend subagents implement changes with strict interface contracts.
+3. Security subagent reviews modified code against zero-trust standards before commit.
+4. Autonomous verification gate: run test suite and typecheck before task completion.
+5. All code commits must be atomic and include reproduction or verification steps.`,
+    customDirectives: `- Subagents must never modify unassigned directories or conflicting files.
+- Preserve existing documentation, comments, and project conventions.
+- Report all blockers explicitly with reproducible context.`,
+    exampleGood: `<!-- BEGIN:agent-team -->
+Role: Lead Architect
+Contract: Define interfaces in /types before delegating implementation to subagents.
+Verification: 'npm run build' must exit 0 before merging.
+<!-- END:agent-team -->`,
+    exampleBad: `// Uncoordinated subagent edits overwriting parent contracts without verification`,
+  },
 ];
 
 // Philosophy metadata
@@ -572,48 +995,45 @@ interface ClaudeSkillsClientProps {
 
 export function ClaudeSkillsClient({ initialFormat, initialPresetId }: ClaudeSkillsClientProps = {}) {
   const [isMounted, setIsMounted] = useState(false);
-  const [selectedPresetId, setSelectedPresetId] = useState<string>("claude-auditor");
-  const [format, setFormat] = useState<OutputFormat>("skill_md");
+
+  // Compute default preset based on initial props
+  const defaultPreset = useMemo(() => {
+    if (initialPresetId) {
+      const found = PRESETS.find((p) => p.id === initialPresetId);
+      if (found) return found;
+    }
+    return PRESETS.find((p) => p.id === "claude-auditor") || PRESETS[0];
+  }, [initialPresetId]);
+
+  const defaultMcpPreset = useMemo(() => {
+    if (initialFormat === "mcp_json" && initialPresetId) {
+      const found = MCP_PRESETS.find((p) => p.id === initialPresetId);
+      if (found) return found;
+    }
+    return MCP_PRESETS[0];
+  }, [initialFormat, initialPresetId]);
+
+  const [selectedPresetId, setSelectedPresetId] = useState<string>(() => initialPresetId || "claude-auditor");
+  const [format, setFormat] = useState<OutputFormat>(() => initialFormat || "skill_md");
   const [copied, setCopied] = useState(false);
   const [shareCopied, setShareCopied] = useState(false);
 
   // Form State
-  const [skillName, setSkillName] = useState("codebase-auditor");
-  const [skillTitle, setSkillTitle] = useState("Codebase Health & Security Auditor");
-  const [description, setDescription] = useState(
-    "Audit codebases for structural health, dead code, security vulnerabilities, performance regressions, and architectural anti-patterns. Use when asked to evaluate, review, or refactor code."
-  );
-  const [role, setRole] = useState("Senior Security & Systems Auditor");
-  const [framework, setFramework] = useState("Next.js 15 (App Router)");
-  const [language, setLanguage] = useState("TypeScript 5.x");
-  const [styling, setStyling] = useState("Tailwind CSS v4");
-  const [database, setDatabase] = useState("PostgreSQL / Prisma");
-  const [philosophy, setPhilosophy] = useState<"pragmatic" | "modern" | "strict" | "vibe" | "architect">("architect");
-  const [behaviors, setBehaviors] = useState<string[]>([
-    "inspect-first",
-    "minimal-diffs",
-    "concise-direct",
-    "verification-driven",
-    "dependency-caution",
-  ]);
-  const [conventions, setConventions] = useState<string[]>([
-    "guard-clauses",
-    "result-types",
-    "self-documenting",
-    "typed-schemas",
-  ]);
-  const [procedures, setProcedures] = useState(
-    `1. Scan directory structure and parse manifest files (package.json, Cargo.toml, go.mod) to identify stack idioms.\n2. Trace critical execution flows to identify unhandled errors, memory leaks, and unauthenticated endpoints.\n3. Check for exposed secrets, sensitive environment variables, or unsafe deserialization patterns.\n4. Categorize findings into: [CRITICAL] Security, [HIGH] Performance, [MEDIUM] Architecture, [LOW] Style.\n5. Propose surgical, minimal refactoring patches with before/after rationale.`
-  );
-  const [customDirectives, setCustomDirectives] = useState(
-    `- Never modify production code without explaining risk level.\n- Always provide reproducible proof-of-concept steps for discovered issues.\n- Preserve existing comments, docstrings, and license headers.`
-  );
-  const [exampleGood, setExampleGood] = useState(
-    `// Good: Explicit error handling with structured result\nexport async function fetchAccount(id: string): Promise<Result<Account, AccountError>> {\n  if (!isValidId(id)) return { ok: false, error: new InvalidIdError(id) };\n  try {\n    const data = await db.account.findUnique({ where: { id } });\n    if (!data) return { ok: false, error: new NotFoundError(id) };\n    return { ok: true, value: data };\n  } catch (err) {\n    return { ok: false, error: new DatabaseError(err) };\n  }\n}`
-  );
-  const [exampleBad, setExampleBad] = useState(
-    `// Discouraged: Swallowed errors, loose types, and hidden mutations\nexport async function getAccount(id: any) {\n  try {\n    return await db.account.findUnique({ where: { id } });\n  } catch (e) {\n    console.log(e);\n    return null;\n  }\n}`
-  );
+  const [skillName, setSkillName] = useState(() => defaultPreset.slug);
+  const [skillTitle, setSkillTitle] = useState(() => defaultPreset.title);
+  const [description, setDescription] = useState(() => defaultPreset.description);
+  const [role, setRole] = useState(() => defaultPreset.role);
+  const [framework, setFramework] = useState(() => defaultPreset.framework);
+  const [language, setLanguage] = useState(() => defaultPreset.language);
+  const [styling, setStyling] = useState(() => defaultPreset.styling);
+  const [database, setDatabase] = useState(() => defaultPreset.database);
+  const [philosophy, setPhilosophy] = useState<"pragmatic" | "modern" | "strict" | "vibe" | "architect">(() => defaultPreset.philosophy);
+  const [behaviors, setBehaviors] = useState<string[]>(() => defaultPreset.behaviors);
+  const [conventions, setConventions] = useState<string[]>(() => defaultPreset.conventions);
+  const [procedures, setProcedures] = useState(() => defaultPreset.procedures);
+  const [customDirectives, setCustomDirectives] = useState(() => defaultPreset.customDirectives);
+  const [exampleGood, setExampleGood] = useState(() => defaultPreset.exampleGood);
+  const [exampleBad, setExampleBad] = useState(() => defaultPreset.exampleBad);
 
   // Advanced Runtime Controls & Direct Editor Editing
   const [globPattern, setGlobPattern] = useState("**/*");
@@ -663,12 +1083,12 @@ export function ClaudeSkillsClient({ initialFormat, initialPresetId }: ClaudeSki
   }, [description]);
 
   // MCP Server state
-  const [mcpPresetId, setMcpPresetId] = useState<string>("filesystem");
-  const [mcpServerName, setMcpServerName] = useState<string>("filesystem");
-  const [mcpCommand, setMcpCommand] = useState<string>("npx");
-  const [mcpArgs, setMcpArgs] = useState<string>("-y\n@modelcontextprotocol/server-filesystem\n./");
-  const [mcpEnvKey, setMcpEnvKey] = useState<string>("");
-  const [mcpEnvValue, setMcpEnvValue] = useState<string>("");
+  const [mcpPresetId, setMcpPresetId] = useState<string>(() => defaultMcpPreset.id);
+  const [mcpServerName, setMcpServerName] = useState<string>(() => defaultMcpPreset.name);
+  const [mcpCommand, setMcpCommand] = useState<string>(() => defaultMcpPreset.command);
+  const [mcpArgs, setMcpArgs] = useState<string>(() => defaultMcpPreset.args.join("\n"));
+  const [mcpEnvKey, setMcpEnvKey] = useState<string>(() => Object.keys(defaultMcpPreset.env)[0] || "");
+  const [mcpEnvValue, setMcpEnvValue] = useState<string>(() => Object.values(defaultMcpPreset.env)[0] || "");
 
   // Real-time MCP Validation
   const mcpValidation = useMemo(() => {
@@ -846,25 +1266,38 @@ export function ClaudeSkillsClient({ initialFormat, initialPresetId }: ClaudeSki
         }
       } else if (initialFormat && initialPresetId) {
         // Hydrate from programmatic route props
-        const preset = PRESETS.find(p => p.id === initialPresetId) || PRESETS[0];
-        s = {
-          format: initialFormat,
-          skillName: preset.slug,
-          skillTitle: preset.title,
-          description: preset.description,
-          role: preset.role,
-          framework: preset.framework,
-          language: preset.language,
-          styling: preset.styling,
-          database: preset.database,
-          philosophy: preset.philosophy,
-          behaviors: preset.behaviors,
-          conventions: preset.conventions,
-          procedures: preset.procedures,
-          customDirectives: preset.customDirectives,
-          exampleGood: preset.exampleGood,
-          exampleBad: preset.exampleBad,
-        };
+        if (initialFormat === "mcp_json") {
+          const mcp = MCP_PRESETS.find((p) => p.id === initialPresetId) || MCP_PRESETS[0];
+          s = {
+            format: "mcp_json",
+            mcpPresetId: mcp.id,
+            mcpServerName: mcp.name,
+            mcpCommand: mcp.command,
+            mcpArgs: mcp.args.join("\n"),
+            mcpEnvKey: Object.keys(mcp.env)[0] || "",
+            mcpEnvValue: Object.values(mcp.env)[0] || "",
+          };
+        } else {
+          const preset = PRESETS.find((p) => p.id === initialPresetId) || PRESETS[0];
+          s = {
+            format: initialFormat,
+            skillName: preset.slug,
+            skillTitle: preset.title,
+            description: preset.description,
+            role: preset.role,
+            framework: preset.framework,
+            language: preset.language,
+            styling: preset.styling,
+            database: preset.database,
+            philosophy: preset.philosophy,
+            behaviors: preset.behaviors,
+            conventions: preset.conventions,
+            procedures: preset.procedures,
+            customDirectives: preset.customDirectives,
+            exampleGood: preset.exampleGood,
+            exampleBad: preset.exampleBad,
+          };
+        }
         // Remove hash so it doesn't stay in URL if it was invalid? No need.
       } else {
         // Fallback to local storage envelope
@@ -943,6 +1376,9 @@ export function ClaudeSkillsClient({ initialFormat, initialPresetId }: ClaudeSki
   // Debounced Versioned Envelope Auto-Save
   useEffect(() => {
     if (!isMounted) return;
+    // Guard against overwriting primary studio draft when merely visiting a pre-configured spoke page
+    if (initialPresetId && !isManuallyEdited) return;
+
     const timer = setTimeout(() => {
       const res = saveToStorageEnvelope(STORAGE_KEY_V2, {
         selectedPresetId,
@@ -987,6 +1423,7 @@ export function ClaudeSkillsClient({ initialFormat, initialPresetId }: ClaudeSki
     return () => clearTimeout(timer);
   }, [
     isMounted,
+    initialPresetId,
     skillName,
     skillTitle,
     isSlugLocked,
@@ -1043,6 +1480,8 @@ export function ClaudeSkillsClient({ initialFormat, initialPresetId }: ClaudeSki
       setAlwaysApply(false);
     } else if (preset.id === "claude-auditor" || preset.id === "security-guard") {
       setFormat("skill_md");
+    } else if (preset.id === "fullstack-agent-team") {
+      setFormat("agents_md");
     }
 
     // Reset manual edit flag so the preset content takes over immediately
@@ -1804,6 +2243,8 @@ ${exampleBad.trim()}
     return "AGENTS.md";
   }, [format, skillName]);
 
+  if (!isMounted) return null;
+
   return (
     <div suppressHydrationWarning className="min-h-screen bg-zinc-50 flex flex-col font-sans selection:bg-orange-500 selection:text-white">
       {/* Top Navigation Bar */}
@@ -1825,9 +2266,9 @@ ${exampleBad.trim()}
 
             <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
               <img src="/ai-skill-icon.png" alt="AI Skill Studio" className="w-5 h-4 sm:w-6 sm:h-5 object-contain shrink-0" />
-              <h1 className="text-xs sm:text-base font-bold text-zinc-900 tracking-tight truncate">
+              <span className="text-xs sm:text-base font-bold text-zinc-900 tracking-tight truncate">
                 AI Skill Studio
-              </h1>
+              </span>
             </div>
           </div>
 
@@ -1857,6 +2298,7 @@ ${exampleBad.trim()}
                   <button
                     key={preset.id}
                     onClick={() => handleApplyPreset(preset)}
+                    suppressHydrationWarning
                     className={cn(
                       "px-2.5 py-1 text-xs font-medium rounded-md whitespace-nowrap transition-all flex items-center gap-1.5 border shrink-0",
                       isActive
@@ -1947,8 +2389,9 @@ ${exampleBad.trim()}
               <span>Target Standard & File Format</span>
               <span className="text-[10px] text-zinc-400 font-normal">Select AI runtime</span>
             </label>
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
+            <div suppressHydrationWarning className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
               <button
+                suppressHydrationWarning
                 onClick={() => setFormat("cursor_mdc")}
                 className={cn(
                   "p-2 sm:p-2.5 rounded-lg border text-left transition-all flex flex-col gap-1 overflow-hidden",
@@ -1967,6 +2410,7 @@ ${exampleBad.trim()}
               </button>
 
               <button
+                suppressHydrationWarning
                 onClick={() => setFormat("skill_md")}
                 className={cn(
                   "p-2 sm:p-2.5 rounded-lg border text-left transition-all flex flex-col gap-1 overflow-hidden",
@@ -1983,6 +2427,7 @@ ${exampleBad.trim()}
               </button>
 
               <button
+                suppressHydrationWarning
                 onClick={() => setFormat("claude_md")}
                 className={cn(
                   "p-2 sm:p-2.5 rounded-lg border text-left transition-all flex flex-col gap-1 overflow-hidden",
@@ -1999,6 +2444,7 @@ ${exampleBad.trim()}
               </button>
 
               <button
+                suppressHydrationWarning
                 onClick={() => setFormat("agents_md")}
                 className={cn(
                   "p-2 sm:p-2.5 rounded-lg border text-left transition-all flex flex-col gap-1 overflow-hidden",
@@ -2015,6 +2461,7 @@ ${exampleBad.trim()}
               </button>
 
               <button
+                suppressHydrationWarning
                 onClick={() => setFormat("mcp_json")}
                 className={cn(
                   "p-2 sm:p-2.5 rounded-lg border text-left transition-all flex flex-col gap-1 overflow-hidden",
@@ -2287,6 +2734,7 @@ ${exampleBad.trim()}
                 <h3 className="text-sm font-bold text-zinc-900">Identity & Activation Rules</h3>
               </div>
               <button
+                suppressHydrationWarning
                 type="button"
                 onClick={synthesizeFromContext}
                 className="flex items-center justify-center gap-1.5 text-[11px] font-semibold text-orange-700 hover:text-orange-800 bg-orange-50 hover:bg-orange-100 border border-orange-200/90 px-2.5 py-1.5 rounded-md transition-all active:scale-95 shadow-xs w-full sm:w-auto shrink-0"
@@ -2621,6 +3069,7 @@ ${exampleBad.trim()}
             <div className="px-3 py-2 flex items-center justify-between border-b border-zinc-800 bg-zinc-900/95 shrink-0 gap-2 overflow-hidden">
               <div className="flex items-center gap-2 min-w-0 flex-1 overflow-hidden">
                 <div
+                  suppressHydrationWarning
                   className={cn(
                     "w-2.5 h-2.5 rounded-full shrink-0",
                     format === "cursor_mdc"
@@ -2631,6 +3080,7 @@ ${exampleBad.trim()}
                   )}
                 />
                 <span
+                  suppressHydrationWarning
                   className="font-mono text-xs text-zinc-200 font-semibold truncate"
                   title={currentFileName}
                 >
@@ -3119,7 +3569,7 @@ ${exampleBad.trim()}
           </div>
 
           {/* Instructional Target Location Card (Compact) */}
-          <div className="bg-white rounded-xl border border-zinc-200 p-3 shadow-xs text-xs space-y-1.5 shrink-0">
+          <div suppressHydrationWarning className="bg-white rounded-xl border border-zinc-200 p-3 shadow-xs text-xs space-y-1.5 shrink-0">
             <div className="flex items-center gap-1.5 font-semibold text-zinc-900">
               {format === "cursor_mdc" ? (
                 <img src="/cursor-icon.png" alt="Cursor" className="w-3.5 h-3.5 object-contain" />
