@@ -110,7 +110,9 @@ function TerminalInstallWidget({ route }: { route: ProgrammaticPresetRoute }) {
         window.location.hostname === "127.0.0.1" ||
         window.location.hostname.endsWith(".local");
       if (isLocal) {
-        setBaseUrl(window.location.origin);
+        queueMicrotask(() => {
+          setBaseUrl(window.location.origin);
+        });
       }
     }
   }, []);
@@ -158,8 +160,8 @@ function TerminalInstallWidget({ route }: { route: ProgrammaticPresetRoute }) {
         </div>
 
         <div className="flex items-center gap-1.5 self-start sm:self-auto">
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-mono font-medium bg-emerald-50 text-emerald-700 border border-emerald-200">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-mono font-medium bg-[#fff7ed] text-[#9a3412] border border-[#fed7aa]">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#ea580c] shrink-0 shadow-[0_0_6px_rgba(234,88,12,0.8)] animate-pulse" />
             Raw API Stream
           </span>
         </div>
@@ -387,13 +389,13 @@ export function ProgrammaticSpokeSeoContent({ route }: { route: ProgrammaticPres
             </div>
 
             {/* Column 2: With This Rule */}
-            <div className="rounded-xl border border-emerald-200 bg-emerald-50/40 p-6 space-y-4">
-              <div className="flex items-center justify-between border-b border-emerald-200 pb-3">
-                <span className="flex items-center gap-2 text-emerald-800 font-semibold text-xs font-mono uppercase tracking-wider">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+            <div className="rounded-xl border border-[#fed7aa] bg-[#fff7ed]/50 p-6 space-y-4">
+              <div className="flex items-center justify-between border-b border-[#fed7aa] pb-3">
+                <span className="flex items-center gap-2 text-[#9a3412] font-semibold text-xs font-mono uppercase tracking-wider">
+                  <CheckCircle2 className="w-4 h-4 text-[#ea580c]" />
                   With This Rule (Guaranteed Invariants)
                 </span>
-                <span className="text-[10px] font-mono text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded border border-emerald-300 uppercase font-semibold">
+                <span className="text-[10px] font-mono text-[#9a3412] bg-[#ffedd5] px-2 py-0.5 rounded border border-[#fed7aa] uppercase font-semibold">
                   Deterministic
                 </span>
               </div>
@@ -401,7 +403,7 @@ export function ProgrammaticSpokeSeoContent({ route }: { route: ProgrammaticPres
               <div className="space-y-2.5">
                 {route.keyRules.map((rule, idx) => (
                   <div key={idx} className="flex items-start gap-2.5 text-xs sm:text-sm text-zinc-800 font-medium">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-600 mt-0.5 shrink-0" />
+                    <CheckCircle2 className="w-4 h-4 text-[#ea580c] mt-0.5 shrink-0" />
                     <span>{rule}</span>
                   </div>
                 ))}
@@ -452,8 +454,8 @@ export function ProgrammaticSpokeSeoContent({ route }: { route: ProgrammaticPres
                   {/* Top Bar with Filename & Action */}
                   <div className="bg-zinc-100 border-b border-zinc-200 px-4 py-2.5 flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                      <span className="text-xs font-mono text-emerald-800 font-semibold">
+                      <CheckCircle2 className="w-3.5 h-3.5 text-[#ea580c]" />
+                      <span className="text-xs font-mono text-[#9a3412] font-semibold">
                         Verified Production Standard
                       </span>
                     </div>
@@ -469,31 +471,77 @@ export function ProgrammaticSpokeSeoContent({ route }: { route: ProgrammaticPres
           </section>
         )}
 
-        {/* 4. Target Placement Specification */}
-        <section className="space-y-4">
+        {/* 4. Target Placement Specification & 3-Step Terminal Installation */}
+        <section id="installation-guide" className="space-y-6">
           <div className="flex items-center gap-2 mb-2">
             <span className="text-xs font-mono text-orange-700 tracking-wider font-semibold uppercase">
-              04 / REPOSITORY PLACEMENT &amp; INSTALLATION
+              04 / REPOSITORY PLACEMENT &amp; 3-STEP TERMINAL INSTALLATION
             </span>
             <div className="h-px flex-1 bg-zinc-200" />
           </div>
 
-          <div className="rounded-xl border border-zinc-200 bg-white p-6 sm:p-7 space-y-4 shadow-2xs">
-            <h3 className="text-lg font-bold text-zinc-900 flex items-center gap-2">
-              <FolderTree className="w-5 h-5 text-orange-600" />
-              Where to Save This Rule in Your Repository
-            </h3>
-            <p className="text-sm text-zinc-600 leading-relaxed">
-              Export the rules from the interactive editor above or download the full ZIP bundle. Ensure the file is placed at the exact path below relative to your project root so the AI engine automatically loads it:
-            </p>
-            <div className="bg-zinc-100 border border-zinc-200 rounded-lg px-4 py-3 font-mono text-xs text-zinc-900 flex items-center justify-between">
-              <span className="truncate pr-4 font-bold text-zinc-900">{route.targetFile}</span>
-              <CopyButton text={route.targetFile} label="Copy Path" />
+          <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-zinc-900 flex items-center gap-2">
+            <Terminal className="w-5 h-5 text-orange-600" />
+            How to Install {route.techName} {hub?.name || "Rules"} via Terminal
+          </h2>
+
+          <div className="space-y-4">
+            {/* Step 1 */}
+            <div id="step-1" className="rounded-xl border border-zinc-200 bg-white p-6 sm:p-7 space-y-3 shadow-2xs scroll-mt-20">
+              <div className="flex items-center gap-2.5">
+                <span className="flex items-center justify-center w-6 h-6 rounded-full bg-orange-100 text-orange-700 text-xs font-mono font-bold shrink-0">
+                  1
+                </span>
+                <h3 className="text-base sm:text-lg font-bold text-zinc-900 flex items-center gap-2">
+                  <FolderTree className="w-4 h-4 text-orange-600 shrink-0" />
+                  Step 1: Open Project Directory &amp; Verify Target Placement
+                </h3>
+              </div>
+              <p className="text-sm text-zinc-600 leading-relaxed pl-8">
+                Open your terminal and navigate to your project root folder where the <code>{route.targetFile}</code> file will reside. Ensure the file is placed at the exact path below relative to your project root so the AI engine automatically loads it:
+              </p>
+              <div className="bg-zinc-100 border border-zinc-200 rounded-lg px-4 py-3 font-mono text-xs text-zinc-900 flex items-center justify-between ml-8">
+                <span className="truncate pr-4 font-bold text-zinc-900">{route.targetFile}</span>
+                <CopyButton text={route.targetFile} label="Copy Path" />
+              </div>
+            </div>
+
+            {/* Step 2 */}
+            <div id="step-2" className="rounded-xl border border-zinc-200 bg-white overflow-hidden shadow-2xs scroll-mt-20">
+              <div className="p-6 sm:p-7 pb-3 space-y-2">
+                <div className="flex items-center gap-2.5">
+                  <span className="flex items-center justify-center w-6 h-6 rounded-full bg-orange-100 text-orange-700 text-xs font-mono font-bold shrink-0">
+                    2
+                  </span>
+                  <h3 className="text-base sm:text-lg font-bold text-zinc-900">
+                    Step 2: Fetch Rule File via Terminal Command
+                  </h3>
+                </div>
+                <p className="text-sm text-zinc-600 leading-relaxed pl-8">
+                  Run curl, PowerShell, or wget to stream the rule directly from the DevScratchpad raw API endpoint and write it to <code>{route.targetFile}</code>:
+                </p>
+              </div>
+              <div className="px-6 pb-6">
+                <TerminalInstallWidget route={route} />
+              </div>
+            </div>
+
+            {/* Step 3 */}
+            <div id="step-3" className="rounded-xl border border-zinc-200 bg-white p-6 sm:p-7 space-y-3 shadow-2xs scroll-mt-20">
+              <div className="flex items-center gap-2.5">
+                <span className="flex items-center justify-center w-6 h-6 rounded-full bg-orange-100 text-orange-700 text-xs font-mono font-bold shrink-0">
+                  3
+                </span>
+                <h3 className="text-base sm:text-lg font-bold text-zinc-900 flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-[#ea580c] shrink-0" />
+                  Step 3: Verify and Activate with AI Agent
+                </h3>
+              </div>
+              <p className="text-sm text-zinc-600 leading-relaxed pl-8">
+                Launch your AI coding assistant ({meta.aiSupport}). The assistant will automatically discover <code>{route.targetFile}</code> in your repository and apply the architectural guardrails, type constraints, and verification protocols during code generation.
+              </p>
             </div>
           </div>
-
-          {/* Terminal One-Liner Install Interactive Widget */}
-          <TerminalInstallWidget route={route} />
         </section>
 
         {/* 5. Lateral Hub-and-Spoke Route Directory */}

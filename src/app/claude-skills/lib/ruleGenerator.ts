@@ -810,6 +810,435 @@ Verification: 'npm run build' must exit 0 before merging.
 <!-- END:agent-team -->`,
     exampleBad: `// Uncoordinated subagent edits overwriting parent contracts without verification`,
   },
+  {
+    id: "python-django",
+    name: "Django 5 & Ninja",
+    badge: "Backend",
+    title: "Django 5 & Ninja / DRF Architecture Specialist",
+    slug: "python-django",
+    description:
+      "Production guidelines for Django 5. Enforces async ORM methods, Django Ninja Pydantic schemas, strict migrations, and N+1 query elimination.",
+    role: "Senior Django & Python Systems Architect",
+    framework: "Django 5 / Django Ninja / DRF",
+    language: "Python 3.12+",
+    styling: "None / API Service",
+    database: "PostgreSQL / Django ORM",
+    philosophy: "strict",
+    behaviors: ["inspect-first", "minimal-diffs", "verification-driven", "concise-direct"],
+    conventions: ["clean-layered", "guard-clauses", "typed-schemas"],
+    procedures: `1. Use asynchronous ORM methods (aget, acreate, afirst) inside async view handlers.
+2. Prevent N+1 queries: always apply select_related for foreign keys and prefetch_related for M2M relations.
+3. Validate API payloads with Django Ninja Schema or DRF Serializers before domain logic execution.
+4. Never modify existing committed migration files; create new sequential migrations via makemigrations.
+5. Use Django 5 GeneratedField for database-computed columns rather than overriding model save().`,
+    customDirectives: `- Never execute raw SQL without query parameterization.
+- Ensure all model fields declare explicit verbose_name and db_index where filtered.`,
+    exampleGood: `from ninja import Router, Schema
+from django.shortcuts import aget_object_or_404
+from .models import Article
+
+router = Router()
+
+class ArticleOut(Schema):
+    id: int
+    title: str
+    author_name: str
+
+@router.get("/articles/{article_id}", response=ArticleOut)
+async def get_article(request, article_id: int):
+    article = await Article.objects.select_related("author").aget(id=article_id)
+    return {"id": article.id, "title": article.title, "author_name": article.author.username}`,
+    exampleBad: `@router.get("/articles/{article_id}")
+async def get_article(request, article_id: int):
+    article = Article.objects.get(id=article_id) # Blocking sync query inside async handler!
+    return {"id": article.id, "title": article.title, "author": article.author.username}`,
+  },
+  {
+    id: "bun-elysia",
+    name: "Bun & Elysia",
+    badge: "Backend",
+    title: "Bun & Elysia High-Performance TypeScript Specialist",
+    slug: "bun-elysia",
+    description:
+      "Production standards for Bun and Elysia.js. Enforces TypeBox runtime schemas, Eden Treaty client typing, and zero-overhead native Bun APIs.",
+    role: "Lead Bun & Edge TypeScript Engineer",
+    framework: "Elysia.js / Hono",
+    language: "TypeScript (Bun runtime)",
+    styling: "None / API Service",
+    database: "PostgreSQL / SQLite / Drizzle",
+    philosophy: "modern",
+    behaviors: ["inspect-first", "minimal-diffs", "concise-direct"],
+    conventions: ["typed-schemas", "guard-clauses", "flat-pragmatic"],
+    procedures: `1. Validate request bodies, parameters, and query strings using Elysia's native 't' schema builder (TypeBox).
+2. Leverage native Bun APIs (Bun.serve, Bun.file, Bun.password) instead of slow Node polyfills.
+3. Define explicit Eden Treaty export contracts for type-safe frontend client consumption.
+4. Centralize error handling using Elysia .onError handler with typed response envelopes.`,
+    customDirectives: `- Do not import node:crypto or express middlewares when native Bun equivalents exist.
+- Always annotate response types on public API endpoints.`,
+    exampleGood: `import { Elysia, t } from "elysia";
+
+export const app = new Elysia()
+  .post("/api/users", async ({ body, set }) => {
+    const hash = await Bun.password.hash(body.password);
+    set.status = 201;
+    return { ok: true, email: body.email };
+  }, {
+    body: t.Object({
+      email: t.String({ format: "email" }),
+      password: t.String({ minLength: 8 }),
+    }),
+  });`,
+    exampleBad: `import bcrypt from "bcrypt";
+app.post("/users", async (req: any, res: any) => {
+  const hash = await bcrypt.hash(req.body.password, 10);
+  res.json({ success: true });
+});`,
+  },
+  {
+    id: "react-native-expo",
+    name: "Expo & React Native",
+    badge: "Mobile",
+    title: "Expo Router & React Native Mobile Specialist",
+    slug: "react-native-expo",
+    description:
+      "Modern React Native standards with Expo Router v3/v4, New Architecture (Fabric/TurboModules), and safe area boundaries.",
+    role: "Senior React Native Mobile Architect",
+    framework: "Expo Router & React Native",
+    language: "TypeScript",
+    styling: "StyleSheet / NativeWind",
+    database: "SQLite / Supabase / REST",
+    philosophy: "modern",
+    behaviors: ["inspect-first", "minimal-diffs", "preserve-style"],
+    conventions: ["feature-colocated", "guard-clauses", "strict-a11y"],
+    procedures: `1. Use Expo Router file-based routing under app/ directory; avoid legacy navigation container wrappers.
+2. Guard all screen boundaries with react-native-safe-area-context insets.
+3. Use expo-image for high-performance memory-cached image rendering.
+4. Test styles on both iOS and Android platforms to prevent layout clipping and notch collisions.`,
+    customDirectives: `- Never perform heavy synchronous calculations during render passes.
+- Do not import bare native modules that break Expo Go unless config plugins are configured.`,
+    exampleGood: `import { View, Text, StyleSheet } from "react-native";
+import { Image } from "expo-image";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+
+export default function ProfileScreen() {
+  const insets = useSafeAreaInsets();
+  return (
+    <View style={[styles.container, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
+      <Image source={{ uri: "https://example.com/avatar.png" }} style={styles.avatar} contentFit="cover" />
+      <Text style={styles.title}>User Profile</Text>
+    </View>
+  );
+}
+const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: "#fff", paddingHorizontal: 16 },
+  avatar: { width: 80, height: 80, borderRadius: 40 },
+  title: { fontSize: 20, fontWeight: "600", marginTop: 12 },
+});`,
+    exampleBad: `export default function BadProfile({ navigation }: any) {
+  return (
+    <div style={{ marginTop: 50 }}>
+      <img src="avatar.png" />
+      <button onClick={() => navigation.navigate("Home")}>Go</button>
+    </div>
+  );
+}`,
+  },
+  {
+    id: "flutter-dart",
+    name: "Flutter & Riverpod",
+    badge: "Mobile",
+    title: "Flutter 3 & Riverpod Architecture Specialist",
+    slug: "flutter-dart",
+    description:
+      "Modern Flutter 3 and Riverpod 2 conventions. Enforces sound null safety, pattern matching, const widget constructors, and immutable state.",
+    role: "Lead Flutter Mobile Systems Engineer",
+    framework: "Flutter 3.x",
+    language: "Dart 3.x (Null-Safe)",
+    styling: "Material 3 / Cupertino",
+    database: "Isar / SQLite / REST",
+    philosophy: "strict",
+    behaviors: ["inspect-first", "minimal-diffs", "verification-driven"],
+    conventions: ["clean-layered", "guard-clauses", "self-documenting"],
+    procedures: `1. Always use const constructors on immutable widgets to short-circuit Flutter rebuilds.
+2. Manage reactive state using Riverpod 2 with code generation (@riverpod / NotifierProvider).
+3. Leverage Dart 3 pattern matching and sealed classes for exhaustive UI state switching.
+4. Enforce strict null safety: ban force-unwrap operator (!) without preceding guard checks.`,
+    customDirectives: `- Separate UI presentation widgets from business repositories and HTTP clients.
+- Never use raw StatefulWidget with mutable setState in shared business logic.`,
+    exampleGood: `@immutable
+sealed class ViewState<T> { const ViewState(); }
+class Loading<T> extends ViewState<T> { const Loading(); }
+class Success<T> extends ViewState<T> { final T data; const Success(this.data); }
+
+class ProfileView extends ConsumerWidget {
+  const ProfileView({super.key});
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final state = ref.watch(profileProvider);
+    return Scaffold(
+      body: switch (state) {
+        Loading() => const Center(child: CircularProgressIndicator.adaptive()),
+        Success(:final data) => Center(child: Text('Welcome, \${data.name}')),
+      },
+    );
+  }
+}`,
+    exampleBad: `class _BadProfileState extends State<BadProfile> {
+  var user;
+  void load() async { user = await fetchUser(); setState(() {}); }
+  @override
+  Widget build(BuildContext context) { return Container(child: Text(user!.name)); }
+}`,
+  },
+  {
+    id: "kubernetes-helm",
+    name: "Kubernetes & Helm",
+    badge: "DevOps",
+    title: "Kubernetes & Helm Manifest Validation Specialist",
+    slug: "kubernetes-helm",
+    description:
+      "Cloud-native Kubernetes and Helm rules. Enforces container resource limits, non-root security contexts, readiness probes, and valid YAML indentation.",
+    role: "Principal Cloud-Native Infrastructure Engineer",
+    framework: "Kubernetes 1.30+ / Helm 3",
+    language: "YAML / Go Templates",
+    styling: "None / Infrastructure",
+    database: "etcd / Cloud Native",
+    philosophy: "architect",
+    behaviors: ["inspect-first", "minimal-diffs", "verification-driven", "dependency-caution"],
+    conventions: ["self-documenting", "clean-layered", "typed-schemas"],
+    procedures: `1. Always specify explicit resources.requests and resources.limits on every container.
+2. Enforce strict securityContext: runAsNonRoot: true, allowPrivilegeEscalation: false, readOnlyRootFilesystem: true.
+3. Configure both livenessProbe and readinessProbe with realistic timeouts and initialDelaySeconds.
+4. Format Helm template interpolations using nindent filters to preserve valid YAML indentation.`,
+    customDirectives: `- Never deploy containers using mutable :latest image tags.
+- Always include standard app.kubernetes.io/* metadata labels.`,
+    exampleGood: `apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api-service
+  labels:
+    app.kubernetes.io/name: api-service
+spec:
+  replicas: 3
+  template:
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+      containers:
+        - name: api
+          image: registry.example.com/api:v1.4.0
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+          resources:
+            requests: { cpu: 100m, memory: 128Mi }
+            limits: { cpu: 500m, memory: 512Mi }
+          readinessProbe:
+            httpGet: { path: /healthz, port: 8080 }`,
+    exampleBad: `apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: bad-service
+spec:
+  template:
+    spec:
+      containers:
+        - name: app
+          image: myapp:latest # No resource limits, root container, missing probes!`,
+  },
+  {
+    id: "terraform-iac",
+    name: "Terraform & OpenTofu",
+    badge: "DevOps",
+    title: "Terraform & OpenTofu Cloud Infrastructure Specialist",
+    slug: "terraform-iac",
+    description:
+      "Production standards for Terraform and OpenTofu IaC. Enforces remote state locking, provider version pinning, tag propagation, and secret masking.",
+    role: "Senior Infrastructure as Code Architect",
+    framework: "Terraform 1.7+ / OpenTofu",
+    language: "HCL 2.0",
+    styling: "None / Infrastructure",
+    database: "Cloud Managed (RDS/DynamoDB)",
+    philosophy: "strict",
+    behaviors: ["inspect-first", "minimal-diffs", "verification-driven", "dependency-caution"],
+    conventions: ["clean-layered", "self-documenting", "guard-clauses"],
+    procedures: `1. Pin required_version and provider version constraints explicitly in terraform block.
+2. Store state in remote backends (S3, GCS, Terraform Cloud) with distributed state locking enabled.
+3. Propagate mandatory resource tags (Environment, Project, Owner, ManagedBy) to all cloud resources.
+4. Mark sensitive variables with 'sensitive = true' and never commit plaintext credentials.
+5. Add lifecycle { prevent_destroy = true } blocks on critical databases and stateful storage.`,
+    customDirectives: `- Run 'terraform fmt -check' and 'terraform validate' before committing changes.
+- Ban raw local state files (.terraform.tfstate) in git repositories.`,
+    exampleGood: `terraform {
+  required_version = ">= 1.7.0"
+  required_providers {
+    aws = { source = "hashicorp/aws", version = "~> 5.40" }
+  }
+}
+resource "aws_db_instance" "primary" {
+  identifier        = "app-db-prod"
+  engine            = "postgres"
+  instance_class    = "db.r6g.large"
+  password          = var.db_password
+  lifecycle {
+    prevent_destroy = true
+  }
+}`,
+    exampleBad: `resource "aws_db_instance" "bad_db" {
+  engine   = "postgres"
+  password = "plaintext_password_in_repo" # Leaked secrets!
+}`,
+  },
+  {
+    id: "playwright-e2e",
+    name: "Playwright E2E",
+    badge: "Testing",
+    title: "Playwright E2E Browser Automation Specialist",
+    slug: "playwright-e2e",
+    description:
+      "Resilient browser automation standards for Playwright. Enforces user-facing locators (getByRole, getByText), web-first auto-waiting assertions, and zero sleep() calls.",
+    role: "Lead Test Automation & QA Architect",
+    framework: "Playwright Test Runner",
+    language: "TypeScript",
+    styling: "None / Test Suite",
+    database: "Test Fixtures / Mock Service Worker",
+    philosophy: "strict",
+    behaviors: ["inspect-first", "minimal-diffs", "verification-driven"],
+    conventions: ["self-documenting", "guard-clauses", "clean-layered"],
+    procedures: `1. Ban arbitrary sleep timeouts (page.waitForTimeout); rely on web-first auto-waiting assertions.
+2. Target elements via accessible user-facing locators: page.getByRole(), page.getByLabel(), page.getByTestId().
+3. Encapsulate multi-step interactions inside modular Page Object Models (POM).
+4. Isolate test authentication using saved storageState rather than UI logins in every test.
+5. Record trace files and video on first retry for fast CI failure diagnosis.`,
+    customDirectives: `- Never write fragile CSS selectors or brittle deep XPath selectors.
+- Verify tests run cleanly across Chromium, Firefox, and WebKit engines.`,
+    exampleGood: `import { test, expect } from "@playwright/test";
+
+test("allows user to complete checkout", async ({ page }) => {
+  await page.goto("/catalog");
+  await page.getByRole("button", { name: "Add to Cart" }).first().click();
+  await page.getByRole("link", { name: "Cart" }).click();
+  await expect(page.getByRole("heading", { name: "Shopping Cart" })).toBeVisible();
+  await page.getByRole("button", { name: "Checkout" }).click();
+  await expect(page).toHaveURL(/.*checkout/);
+});`,
+    exampleBad: `test("flaky checkout", async ({ page }) => {
+  await page.goto("/catalog");
+  await page.click("div.col > button:nth-child(2)");
+  await page.waitForTimeout(5000); // Flaky sleep anti-pattern!
+  expect(await page.innerText("#status")).toBe("OK");
+});`,
+  },
+  {
+    id: "spring-boot-3",
+    name: "Spring Boot 3 & Java 21",
+    badge: "Backend",
+    title: "Spring Boot 3 & Java 21 Virtual Threads Specialist",
+    slug: "spring-boot-3",
+    description:
+      "Enterprise Java standards for Spring Boot 3.3+ and Java 21. Enforces record DTOs, virtual threads (Project Loom), Jakarta EE 10 namespaces, and Spring Data JPA optimization.",
+    role: "Principal Enterprise Java Architect",
+    framework: "Spring Boot 3.3+ (Spring 6)",
+    language: "Java 21 (Records, Virtual Threads)",
+    styling: "None / API Service",
+    database: "PostgreSQL / Spring Data JPA / Hibernate 6",
+    philosophy: "strict",
+    behaviors: ["inspect-first", "minimal-diffs", "verification-driven"],
+    conventions: ["clean-layered", "guard-clauses", "typed-schemas"],
+    procedures: `1. Use jakarta.* packages for persistence, validation, and servlet APIs; ban legacy javax.* imports.
+2. Model request and response DTOs using native Java Records with Jakarta validation constraints.
+3. Enable Java 21 Virtual Threads (spring.threads.virtual.enabled=true) for non-blocking I/O throughput.
+4. Configure Spring Security using SecurityFilterChain beans; never extend WebSecurityConfigurerAdapter.
+5. Eliminate JPA N+1 queries using @EntityGraph or JOIN FETCH JPQL expressions.`,
+    customDirectives: `- Prefer constructor dependency injection over @Autowired field injection.
+- Handle business exceptions via @RestControllerAdvice with ProblemDetail (RFC 7807) responses.`,
+    exampleGood: `public record CreateOrderRequest(
+    @NotBlank String customerId,
+    @Positive BigDecimal amount
+) {}
+
+public record OrderResponse(Long id, String customerId, BigDecimal amount) {}
+
+@RestController
+@RequestMapping("/api/v1/orders")
+public class OrderController {
+    private final OrderService orderService;
+    public OrderController(OrderService orderService) { this.orderService = orderService; }
+
+    @PostMapping
+    public ResponseEntity<OrderResponse> create(@RequestBody @Valid CreateOrderRequest request) {
+        return ResponseEntity.ok(orderService.processOrder(request));
+    }
+}`,
+    exampleBad: `import javax.persistence.*; // Obsolete in Spring Boot 3!
+
+public class BadOrderDTO {
+    private String customerId;
+    public String getCustomerId() { return customerId; }
+    public void setCustomerId(String id) { this.customerId = id; }
+}`,
+  },
+  {
+    id: "csharp-dotnet-8",
+    name: ".NET 8 & C# 12",
+    badge: "Backend",
+    title: ".NET 8 & C# 12 Minimal APIs Specialist",
+    slug: "csharp-dotnet-8",
+    description:
+      "Production guidelines for .NET 8 and C# 12. Enforces Minimal APIs, primary constructors, collection expressions, file-scoped namespaces, and EF Core 8 query optimization.",
+    role: "Senior .NET & Cloud Systems Architect",
+    framework: "ASP.NET Core 8.0 Minimal APIs",
+    language: "C# 12 (.NET 8 SDK)",
+    styling: "None / API Service",
+    database: "PostgreSQL / SQL Server / EF Core 8",
+    philosophy: "modern",
+    behaviors: ["inspect-first", "minimal-diffs", "verification-driven"],
+    conventions: ["clean-layered", "guard-clauses", "typed-schemas"],
+    procedures: `1. Leverage C# 12 features: primary constructors, collection expressions, and file-scoped namespaces.
+2. Structure high-performance microservices using ASP.NET Core Minimal APIs with TypedResults.
+3. Enforce AsNoTracking() on read-only EF Core queries to eliminate change tracking memory overhead.
+4. Validate incoming request payloads with FluentValidation or MiniValidation before executing queries.
+5. Configure resilient outgoing HTTP requests via IHttpClientFactory and Polly pipelines.`,
+    customDirectives: `- Enable '#nullable enable' across all C# project files.
+- Return explicit IResult types (TypedResults.Ok, TypedResults.NotFound) rather than untyped object responses.`,
+    exampleGood: `namespace App.Features.Users;
+
+using Microsoft.AspNetCore.Http.HttpResults;
+using Microsoft.EntityFrameworkCore;
+
+public record UserDto(Guid Id, string Email, string FullName);
+
+public static class UserEndpoints
+{
+    public static RouteGroupBuilder MapUserEndpoints(this RouteGroupBuilder group)
+    {
+        group.MapGet("/{id:guid}", async Task<Results<Ok<UserDto>, NotFound>> (Guid id, AppDbContext db) =>
+        {
+            var user = await db.Users
+                .AsNoTracking()
+                .Where(u => u.Id == id)
+                .Select(u => new UserDto(u.Id, u.Email, u.FullName))
+                .FirstOrDefaultAsync();
+
+            return user is not null ? TypedResults.Ok(user) : TypedResults.NotFound();
+        });
+        return group;
+    }
+}`,
+    exampleBad: `namespace App.Controllers
+{
+    public class UsersController : Controller
+    {
+        [HttpGet]
+        public IActionResult GetUser(Guid id)
+        {
+            var user = _context.Users.Find(id); // Untracked query loading full entity graph into tracker
+            return Ok(user);
+        }
+    }
+}`,
+  },
 ];
 
 export const PHILOSOPHIES = [
@@ -1178,7 +1607,7 @@ ${exampleBad.trim()}
       envObj[mcpEnvKey.trim()] = mcpEnvValue.trim();
     }
 
-    const serverConfig: Record<string, any> = {
+    const serverConfig: Record<string, unknown> = {
       command: mcpCommand.trim() || "npx",
       args: argsArray,
     };
@@ -1251,7 +1680,7 @@ export function generateContentFromRoute(route: ProgrammaticPresetRoute): string
         (p) => p.id === route.presetId || p.name === route.presetId || p.id === route.presetSlug
       ) || MCP_PRESETS[0];
 
-    const serverConfig: Record<string, any> = {
+    const serverConfig: Record<string, unknown> = {
       command: mcp.command,
       args: mcp.args,
     };

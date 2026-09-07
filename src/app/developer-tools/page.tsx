@@ -100,7 +100,7 @@ export default function DeveloperToolsPage() {
 
         {/* Featured AI Agent Architecture Spotlight */}
         <div className="mb-12">
-          <div className="border border-orange-200 bg-gradient-to-r from-orange-50/70 via-amber-50/40 to-white p-5 sm:p-6 rounded-xl relative overflow-hidden shadow-xs">
+          <div className="border border-orange-200 bg-gradient-to-r from-orange-50/70 via-amber-50/40 to-white p-5 sm:p-6 rounded-xl relative overflow-hidden shadow-xs space-y-4">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div className="space-y-1.5 max-w-xl">
                 <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-orange-100 text-orange-800 border border-orange-200">
@@ -108,10 +108,10 @@ export default function DeveloperToolsPage() {
                   <span>Featured AI Agent Studio</span>
                 </div>
                 <h2 className="text-lg sm:text-xl font-bold text-zinc-900 tracking-tight">
-                  AI Skill Studio — SKILL.md, CLAUDE.md & Cursor Rules
+                  AI Skill Studio — Cursor Rules (.mdc), Claude Skills &amp; MCP Configs
                 </h2>
                 <p className="text-xs sm:text-sm text-zinc-600 leading-relaxed">
-                  Generate production-grade Claude Code skills, Cursor <code className="font-mono text-xs bg-orange-100/60 px-1 py-0.5 rounded">.mdc</code> rules, and multi-agent system directives. 100% client-side privacy with zero API keys required.
+                  Generate production-grade Cursor <code className="font-mono text-xs bg-orange-100/60 px-1 py-0.5 rounded">.mdc</code> rules, Claude Code skills, and multi-agent directives for top frameworks. 100% client-side privacy with zero API keys required.
                 </p>
               </div>
               <Link
@@ -121,6 +121,35 @@ export default function DeveloperToolsPage() {
                 <span>Launch AI Studio</span>
                 <ArrowUpRight className="w-4 h-4" />
               </Link>
+            </div>
+
+            {/* Quick-links to High-Demand Tech Stack Presets */}
+            <div className="pt-3 border-t border-orange-200/60">
+              <div className="text-[11px] font-mono text-zinc-500 uppercase tracking-wider font-semibold mb-2">
+                Popular &amp; High-Demand Rulebook Presets:
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {[
+                  { name: "Django 5 & Ninja", href: "/ai-skill-studio/cursor-rules/python-django" },
+                  { name: "Bun & Elysia", href: "/ai-skill-studio/cursor-rules/bun-elysia" },
+                  { name: "Expo React Native", href: "/ai-skill-studio/cursor-rules/react-native-expo" },
+                  { name: "Flutter & Riverpod", href: "/ai-skill-studio/cursor-rules/flutter-dart" },
+                  { name: "Kubernetes & Helm", href: "/ai-skill-studio/cursor-rules/kubernetes-helm" },
+                  { name: "Terraform IaC", href: "/ai-skill-studio/cursor-rules/terraform-iac" },
+                  { name: "Playwright E2E", href: "/ai-skill-studio/cursor-rules/playwright-e2e" },
+                  { name: "Spring Boot 3", href: "/ai-skill-studio/cursor-rules/spring-boot-3" },
+                  { name: ".NET 8 / C# 12", href: "/ai-skill-studio/cursor-rules/csharp-dotnet-8" },
+                ].map((stack) => (
+                  <Link
+                    key={stack.href}
+                    href={stack.href}
+                    className="inline-flex items-center text-xs font-medium px-2.5 py-1 rounded-md bg-white border border-zinc-200 hover:border-orange-400 hover:text-orange-700 text-zinc-700 transition-colors shadow-2xs"
+                  >
+                    <span>{stack.name}</span>
+                    <ArrowRight className="w-3 h-3 ml-1 text-zinc-400" />
+                  </Link>
+                ))}
+              </div>
             </div>
           </div>
         </div>

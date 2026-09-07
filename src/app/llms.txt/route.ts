@@ -66,7 +66,7 @@ DevScratchpad (${SITE_URL}) is an open developer utility suite built for securit
 
 ## Primary Platforms & Hubs
 - [Developer Tools Directory](${SITE_URL}/developer-tools): Complete directory of 28 offline, client-side developer utilities across 5 categories.
-- [AI Skill Studio](${SITE_URL}/ai-skill-studio): Universal AI prompt engineering studio generating Claude Code skills, Cursor rules (.mdc), AGENTS.md specs, and MCP configs.
+- [AI Skill Studio](${SITE_URL}/ai-skill-studio): Cursor Rules (.mdc), Claude Skills, CLAUDE.md, AGENTS.md & MCP Config Generator with 100% offline privacy.
 - [Developer Learning Hub](${SITE_URL}/blog): In-depth technical guides, cheat sheets, and architectural references for modern engineering teams.
 
 ## Architecture & Privacy Guarantees

@@ -544,6 +544,631 @@ def make_user(data: dict):
       { formatSlug: "claude-skills", presetSlug: "codebase-auditor", label: "Codebase Auditor Claude Skill" }
     ]
   },
+  {
+    formatSlug: "cursor-rules",
+    presetSlug: "python-django",
+    format: "cursor_mdc",
+    presetId: "python-django",
+    title: "Django 5 Cursor Rules (.mdc) | Async ORM & Ninja API Generator",
+    description: "Generate production Django 5 Cursor rules enforcing async ORM queries, Django Ninja typed schemas, strict migrations, and query optimization.",
+    category: "Backend",
+    techName: "Django 5 & Ninja / DRF",
+    targetFile: ".cursor/rules/python-django.mdc",
+    whyNeeded: "Django 5 introduces asynchronous ORM methods, generated model fields, and modern API patterns via Django Ninja and DRF. LLMs constantly hallucinate synchronous N+1 queries inside async views, unparameterized raw SQL, and unmanaged migration modifications.",
+    keyRules: [
+      "Use asynchronous ORM operations (aget(), acreate(), afirst()) inside async def view handlers.",
+      "Prevent N+1 query catastrophes: always apply select_related() for ForeignKey/OneToOne and prefetch_related() for ManyToMany/reverse relationships.",
+      "Enforce Django Ninja schemas or DRF serializers with explicit field typing; never return raw unvalidated model instances.",
+      "Never alter existing committed migration files; generate new sequential migrations via python manage.py makemigrations.",
+      "Leverage Django 5 GeneratedField for computed database columns rather than redundant model save() recalculations."
+    ],
+    exampleGood: `from ninja import Router, Schema
+from django.shortcuts import aget_object_or_404
+from .models import Article
+
+router = Router()
+
+class ArticleOut(Schema):
+    id: int
+    title: str
+    author_name: str
+
+@router.get("/articles/{article_id}", response=ArticleOut)
+async def get_article(request, article_id: int):
+    # Asynchronous fetch with joined relationship preventing N+1
+    article = await Article.objects.select_related("author").aget(id=article_id)
+    return {
+        "id": article.id,
+        "title": article.title,
+        "author_name": article.author.username,
+    }`,
+    exampleBad: `# Discouraged: Synchronous blocking query inside async context & N+1 queries
+@router.get("/articles/{article_id}")
+async def get_article(request, article_id: int):
+    article = Article.objects.get(id=article_id)  # Synchronous blocking call!
+    return {"id": article.id, "title": article.title, "author": article.author.username}  # N+1 DB hit!`,
+    faqs: [
+      {
+        question: "Does this enforce Django 5 async ORM conventions?",
+        answer: "Yes, it guides the model to use aget(), afilter(), and acreate() in async view functions."
+      },
+      {
+        question: "Can this be used with Django REST Framework or Django Ninja?",
+        answer: "Yes, it supports both DRF serializers and modern Pydantic-powered Django Ninja endpoints."
+      }
+    ],
+    relatedSpokes: [
+      { formatSlug: "claude-skills", presetSlug: "python-django", label: "Django 5 Claude Skill" },
+      { formatSlug: "claude-md", presetSlug: "python-django", label: "Django 5 CLAUDE.md" },
+      { formatSlug: "agents-md", presetSlug: "python-django", label: "Django 5 AGENTS.md" },
+      { formatSlug: "cursor-rules", presetSlug: "fastapi", label: "FastAPI Cursor Rules" },
+      { formatSlug: "mcp-config", presetSlug: "postgres", label: "PostgreSQL MCP Config" }
+    ]
+  },
+  {
+    formatSlug: "cursor-rules",
+    presetSlug: "bun-elysia",
+    format: "cursor_mdc",
+    presetId: "bun-elysia",
+    title: "Bun & Elysia Cursor Rules (.mdc) | High-Performance TypeScript Backend",
+    description: "Generate Bun and Elysia.js Cursor rules enforcing TypeBox schema validation, Eden Treaty client type safety, and zero-overhead native Bun APIs.",
+    category: "Backend",
+    techName: "Bun & Elysia / Hono",
+    targetFile: ".cursor/rules/bun-elysia.mdc",
+    whyNeeded: "Bun and Elysia provide blazingly fast HTTP backends with TypeBox runtime validation and end-to-end type safety. Outdated AI models frequently hallucinate Node.js core modules, slow express-style middlewares, and redundant JSON serialization.",
+    keyRules: [
+      "Use Elysia's native t schema builder (powered by TypeBox) for request body, query, and parameter validation.",
+      "Leverage native Bun.serve(), Bun.file(), and Bun.password instead of slow Node.js polyfills or external dependencies.",
+      "Structure plugins using .use() and define explicit Eden Treaty contracts for frontend consumption.",
+      "Handle application errors using Elysia .onError(({ code, error, set }) => ...) with typed error codes.",
+      "Ensure zero unhandled promise rejections and use strict type inference for all endpoint responses."
+    ],
+    exampleGood: `import { Elysia, t } from "elysia";
+
+export const app = new Elysia()
+  .onError(({ code, set }) => {
+    if (code === "NOT_FOUND") {
+      set.status = 404;
+      return { ok: false, error: "Resource not found" };
+    }
+  })
+  .post(
+    "/api/users",
+    async ({ body, set }) => {
+      const hash = await Bun.password.hash(body.password);
+      set.status = 201;
+      return { ok: true, email: body.email };
+    },
+    {
+      body: t.Object({
+        email: t.String({ format: "email" }),
+        password: t.String({ minLength: 8 }),
+      }),
+    }
+  );`,
+    exampleBad: `// Discouraged: Node.js bcrypt imports, unvalidated body, and Express paradigms
+import bcrypt from "bcrypt";
+app.post("/users", async (req: any, res: any) => {
+  const hash = await bcrypt.hash(req.body.password, 10);
+  res.json({ success: true });
+});`,
+    faqs: [
+      {
+        question: "Why use TypeBox instead of Zod with Elysia?",
+        answer: "Elysia is tightly integrated with TypeBox through its t builder, which compiles to high-performance JavaScript validators that are orders of magnitude faster than runtime reflection."
+      },
+      {
+        question: "Is this rulebook compatible with Hono on Bun?",
+        answer: "Yes, the conventions for native Bun APIs, context extractors, and edge TypeScript performance apply smoothly to Hono as well."
+      }
+    ],
+    relatedSpokes: [
+      { formatSlug: "claude-skills", presetSlug: "bun-elysia", label: "Bun & Elysia Claude Skill" },
+      { formatSlug: "claude-md", presetSlug: "bun-elysia", label: "Bun & Elysia CLAUDE.md" },
+      { formatSlug: "cursor-rules", presetSlug: "nextjs-15", label: "Next.js 15 Cursor Rules" },
+      { formatSlug: "cursor-rules", presetSlug: "drizzle", label: "Drizzle ORM Cursor Rules" }
+    ]
+  },
+  {
+    formatSlug: "cursor-rules",
+    presetSlug: "react-native-expo",
+    format: "cursor_mdc",
+    presetId: "react-native-expo",
+    title: "Expo & React Native Cursor Rules (.mdc) | Modern Mobile Architecture",
+    description: "Generate Expo Router and React Native Cursor rules enforcing file-based routing, New Architecture (Fabric/TurboModules), and safe native layouts.",
+    category: "Frontend",
+    techName: "React Native & Expo Router",
+    targetFile: ".cursor/rules/expo.mdc",
+    whyNeeded: "Modern React Native uses Expo Router v3/v4 with file-based layout groups (app/(tabs)), typed routes, and React Native New Architecture (Fabric/TurboModules). LLMs constantly generate obsolete React Navigation Stack wrappers, deprecated AsyncStorage imports, and un-safe-area layout overflows.",
+    keyRules: [
+      "Use Expo Router file-based filesystem routing (app/_layout.tsx, app/(tabs)/index.tsx); ban legacy React Navigation container boilerplate.",
+      "Enforce react-native-safe-area-context (useSafeAreaInsets or SafeAreaView) for all top-level mobile screen boundaries.",
+      "Use modern Expo SDK native modules (expo-image, expo-secure-store, expo-crypto) instead of unmaintained bare native packages.",
+      "Optimize for React Native New Architecture (Fabric renderer): avoid synchronous layout measurements in render passes.",
+      "Always test cross-platform styling on both iOS and Android (e.g. elevation vs shadowColor, notch handling)."
+    ],
+    exampleGood: `import { View, Text, StyleSheet } from "react-native";
+import { Image } from "expo-image";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+
+export default function ProfileScreen() {
+  const insets = useSafeAreaInsets();
+  return (
+    <View style={[styles.container, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
+      <Image
+        source={{ uri: "https://example.com/avatar.png" }}
+        style={styles.avatar}
+        contentFit="cover"
+        transition={200}
+      />
+      <Text style={styles.title}>User Profile</Text>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: "#fff", paddingHorizontal: 16 },
+  avatar: { width: 80, height: 80, borderRadius: 40 },
+  title: { fontSize: 20, fontWeight: "600", marginTop: 12 },
+});`,
+    exampleBad: `// Discouraged: Missing safe-area insets, slow standard Image component, obsolete navigation prop
+export default function BadProfile({ navigation }: any) {
+  return (
+    <div style={{ marginTop: 50 }}>
+      <img src="avatar.png" />
+      <button onClick={() => navigation.navigate("Home")}>Go</button>
+    </div>
+  );
+}`,
+    faqs: [
+      {
+        question: "Does this support Expo Router v3 and v4?",
+        answer: "Yes, it enforces typed routes, layout groups (tabs), and useLocalSearchParams."
+      },
+      {
+        question: "Why use expo-image over React Native Image?",
+        answer: "expo-image provides hardware decoding, progressive loading, blurhash previews, and superior memory caching on iOS and Android."
+      }
+    ],
+    relatedSpokes: [
+      { formatSlug: "claude-skills", presetSlug: "react-native-expo", label: "Expo React Native Claude Skill" },
+      { formatSlug: "claude-md", presetSlug: "react-native-expo", label: "Expo React Native CLAUDE.md" },
+      { formatSlug: "cursor-rules", presetSlug: "react-19", label: "React 19 Cursor Rules" },
+      { formatSlug: "cursor-rules", presetSlug: "flutter-dart", label: "Flutter Dart Cursor Rules" }
+    ]
+  },
+  {
+    formatSlug: "cursor-rules",
+    presetSlug: "flutter-dart",
+    format: "cursor_mdc",
+    presetId: "flutter-dart",
+    title: "Flutter & Riverpod Cursor Rules (.mdc) | Modern Dart 3 Mobile Generator",
+    description: "Generate Flutter 3 and Riverpod Cursor rules enforcing sound null safety, pattern matching, immutable widgets, and clean reactive state.",
+    category: "Frontend",
+    techName: "Flutter 3 & Riverpod / Dart",
+    targetFile: ".cursor/rules/flutter.mdc",
+    whyNeeded: "Flutter 3 and Dart 3 introduce records, pattern matching, sealed classes, and Riverpod 2 code generation (@riverpod). AI models routinely emit obsolete setState() spaghetti, mutable widget state, un-const constructors, and legacy Riverpod syntax.",
+    keyRules: [
+      "Always add const constructors wherever possible to maximize Flutter element rebuild caching.",
+      "Use Riverpod 2 with code generation (@riverpod / NotifierProvider) or BLoC; ban raw mutable setState() in business logic.",
+      "Leverage Dart 3 pattern matching and sealed classes for exhaustive state and error representation.",
+      "Enforce sound null safety: avoid force-unwrapping with ! unless proven non-null by a preceding guard clause.",
+      "Separate presentation UI widgets from asynchronous repository and API service layers."
+    ],
+    exampleGood: `import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+@immutable
+sealed class ViewState<T> {
+  const ViewState();
+}
+class Loading<T> extends ViewState<T> { const Loading(); }
+class Success<T> extends ViewState<T> { final T data; const Success(this.data); }
+class Failure<T> extends ViewState<T> { final String message; const Failure(this.message); }
+
+class ProfileView extends ConsumerWidget {
+  const ProfileView({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final state = ref.watch(profileProvider);
+    return Scaffold(
+      appBar: AppBar(title: const Text('Profile')),
+      body: switch (state) {
+        Loading() => const Center(child: CircularProgressIndicator.adaptive()),
+        Success(:final data) => Center(child: Text('Welcome, \${data.name}')),
+        Failure(:final message) => Center(child: Text('Error: \$message')),
+      },
+    );
+  }
+}`,
+    exampleBad: `// Discouraged: Mutable setState with force-unwrap and missing const
+class BadProfile extends StatefulWidget {
+  @override
+  _BadProfileState createState() => _BadProfileState();
+}
+class _BadProfileState extends State<BadProfile> {
+  var user;
+  void load() async {
+    user = await fetchUser();
+    setState(() {});
+  }
+  @override
+  Widget build(BuildContext context) {
+    return Container(child: Text(user!.name)); // Runtime crash if null!
+  }
+}`,
+    faqs: [
+      {
+        question: "Does this rulebook support Riverpod 2 and BLoC?",
+        answer: "Yes, it provides architecture rules for both modern code-generated Riverpod and idiomatic BLoC/Cubit event streams."
+      },
+      {
+        question: "Why does it require const constructors?",
+        answer: "In Flutter, const widgets short-circuit the rebuild tree, providing substantial UI frame-rate gains especially on mobile devices."
+      }
+    ],
+    relatedSpokes: [
+      { formatSlug: "claude-skills", presetSlug: "flutter-dart", label: "Flutter Dart Claude Skill" },
+      { formatSlug: "claude-md", presetSlug: "flutter-dart", label: "Flutter Dart CLAUDE.md" },
+      { formatSlug: "cursor-rules", presetSlug: "react-native-expo", label: "React Native Expo Cursor Rules" },
+      { formatSlug: "cursor-rules", presetSlug: "cursor-rules-pro", label: "Cursor Rules Pro" }
+    ]
+  },
+  {
+    formatSlug: "cursor-rules",
+    presetSlug: "kubernetes-helm",
+    format: "cursor_mdc",
+    presetId: "kubernetes-helm",
+    title: "Kubernetes & Helm Cursor Rules (.mdc) | Cloud-Native Manifest Validator",
+    description: "Generate Kubernetes and Helm chart Cursor rules enforcing resource limits, security contexts, readiness/liveness probes, and lint standards.",
+    category: "DevOps & Tooling",
+    techName: "Kubernetes & Helm Charts",
+    targetFile: ".cursor/rules/kubernetes.mdc",
+    whyNeeded: "AI models frequently write dangerous Kubernetes manifests with missing CPU/memory limits, root privilege escalation, missing health probes, and invalid Helm template whitespace indentation, causing cluster outages or CVE vulnerabilities.",
+    keyRules: [
+      "Always specify explicit resources.requests and resources.limits (both CPU and memory) on every container.",
+      "Enforce strict security contexts: readOnlyRootFilesystem: true, runAsNonRoot: true, and allowPrivilegeEscalation: false.",
+      "Mandate both livenessProbe and readinessProbe with appropriate initialDelaySeconds on deployment workloads.",
+      "Validate Helm template indentation using nindent filters (e.g. toYaml . | nindent 8) to eliminate YAML formatting corruption.",
+      "Configure PodDisruptionBudgets (PDB) and topology spread constraints for multi-node high availability."
+    ],
+    exampleGood: `apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api-service
+  labels:
+    app.kubernetes.io/name: api-service
+spec:
+  replicas: 3
+  template:
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+      containers:
+        - name: api
+          image: registry.example.com/api:v1.4.0
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 8080
+            initialDelaySeconds: 5`,
+    exampleBad: `# Dangerous: No resource constraints, root container, missing probes
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: bad-service
+spec:
+  template:
+    spec:
+      containers:
+        - name: app
+          image: myapp:latest # Mutable tag and unconstrained limits!`,
+    faqs: [
+      {
+        question: "Does this rulebook enforce resource requests and limits?",
+        answer: "Yes, it requires explicit CPU and memory boundaries to prevent OOMKilled cascade failures."
+      },
+      {
+        question: "Can this rule be applied to Helm templates?",
+        answer: "Yes, it covers Helm values.yaml schema constraints and helper template indentation rules."
+      }
+    ],
+    relatedSpokes: [
+      { formatSlug: "claude-skills", presetSlug: "kubernetes-helm", label: "Kubernetes Helm Claude Skill" },
+      { formatSlug: "claude-md", presetSlug: "kubernetes-helm", label: "Kubernetes Helm CLAUDE.md" },
+      { formatSlug: "cursor-rules", presetSlug: "terraform-iac", label: "Terraform IaC Cursor Rules" },
+      { formatSlug: "cursor-rules", presetSlug: "docker-devops", label: "Docker DevOps Cursor Rules" },
+      { formatSlug: "mcp-config", presetSlug: "docker", label: "Docker MCP Config" }
+    ]
+  },
+  {
+    formatSlug: "cursor-rules",
+    presetSlug: "terraform-iac",
+    format: "cursor_mdc",
+    presetId: "terraform-iac",
+    title: "Terraform & OpenTofu Cursor Rules (.mdc) | Cloud Infrastructure as Code",
+    description: "Generate Terraform and OpenTofu Cursor rules enforcing remote state locking, provider version pinning, tag propagation, and tfsec compliance.",
+    category: "DevOps & Tooling",
+    techName: "Terraform & OpenTofu IaC",
+    targetFile: ".cursor/rules/terraform.mdc",
+    whyNeeded: "Cloud infrastructure provisioning through AI often leads to catastrophic resource destruction, unpinned provider versions, missing remote state locks, and hardcoded plaintext credentials.",
+    keyRules: [
+      "Pin explicit version constraints for all providers and required Terraform/OpenTofu core versions (required_providers).",
+      "Store state securely in remote backends (S3 with DynamoDB state locking or GCS/Terraform Cloud); ban local terraform.tfstate.",
+      "Enforce mandatory resource tagging (Environment, Project, Owner, ManagedBy) on all provisioned cloud assets.",
+      "Never hardcode secrets, API keys, or master database passwords; inject via secure variables with sensitive = true or secret managers.",
+      "Declare explicit lifecycle { prevent_destroy = true } blocks on critical production databases and storage buckets."
+    ],
+    exampleGood: `terraform {
+  required_version = ">= 1.7.0"
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 5.40"
+    }
+  }
+  backend "s3" {
+    bucket         = "corp-tf-state-prod"
+    key            = "vpc/terraform.tfstate"
+    region         = "us-east-1"
+    dynamodb_table = "terraform-locks"
+    encrypt        = true
+  }
+}
+
+resource "aws_db_instance" "primary" {
+  identifier          = "app-db-prod"
+  allocated_storage   = 50
+  engine              = "postgres"
+  instance_class      = "db.r6g.large"
+  password            = var.db_password
+  skip_final_snapshot = false
+  
+  lifecycle {
+    prevent_destroy = true
+  }
+}`,
+    exampleBad: `# Dangerous: Hardcoded secret, no version lock, unmanaged state
+resource "aws_db_instance" "bad_db" {
+  engine   = "postgres"
+  password = "plaintextpassword123" # Leaked credentials in git!
+}`,
+    faqs: [
+      {
+        question: "Does this rulebook support OpenTofu?",
+        answer: "Yes, OpenTofu is fully compatible with standard Terraform HCL and shares identical provider pinning standards."
+      },
+      {
+        question: "How does it handle secret management?",
+        answer: "It mandates that all secret variables declare sensitive = true and prohibits hardcoded tokens in .tf source files."
+      }
+    ],
+    relatedSpokes: [
+      { formatSlug: "claude-skills", presetSlug: "terraform-iac", label: "Terraform IaC Claude Skill" },
+      { formatSlug: "claude-md", presetSlug: "terraform-iac", label: "Terraform IaC CLAUDE.md" },
+      { formatSlug: "cursor-rules", presetSlug: "kubernetes-helm", label: "Kubernetes Helm Cursor Rules" },
+      { formatSlug: "cursor-rules", presetSlug: "docker-devops", label: "Docker DevOps Cursor Rules" }
+    ]
+  },
+  {
+    formatSlug: "cursor-rules",
+    presetSlug: "playwright-e2e",
+    format: "cursor_mdc",
+    presetId: "playwright-e2e",
+    title: "Playwright E2E Cursor Rules (.mdc) | Resilient Browser Automation",
+    description: "Generate Playwright Cursor rules enforcing user-facing locators (getByRole, getByText), auto-waiting assertions, page object models, and zero sleep() calls.",
+    category: "DevOps & Tooling",
+    techName: "Playwright End-to-End Testing",
+    targetFile: ".cursor/rules/playwright.mdc",
+    whyNeeded: "AI models frequently write fragile test automation scripts with brittle CSS/XPath selectors (e.g. div > span:nth-child(3)), hardcoded page.waitForTimeout() delays, and un-isolated test state, leading to flaky test suites.",
+    keyRules: [
+      "Strictly ban hardcoded delays (page.waitForTimeout()); rely exclusively on Playwright web-first auto-waiting assertions (expect(locator).toBeVisible()).",
+      "Prioritize user-facing accessible locators: page.getByRole(), page.getByLabel(), and page.getByTestId(); never write fragile CSS selectors or brittle XPaths.",
+      "Encapsulate multi-step interactions inside modular Page Object Models (POM) with typed parameters.",
+      "Ensure total test isolation: authenticate via storage state (storageState) instead of repeating manual UI logins in every test.",
+      "Configure trace viewer and video capture on first retry (trace: 'on-first-retry') for painless CI debugging."
+    ],
+    exampleGood: `import { test, expect } from "@playwright/test";
+
+test.describe("Checkout Flow", () => {
+  test("allows user to complete cart purchase", async ({ page }) => {
+    await page.goto("/catalog");
+    
+    // Accessible, user-facing locators
+    await page.getByRole("button", { name: "Add to Cart" }).first().click();
+    await page.getByRole("link", { name: "Cart (1)" }).click();
+    
+    // Auto-waiting assertions
+    await expect(page.getByRole("heading", { name: "Your Shopping Cart" })).toBeVisible();
+    await page.getByRole("button", { name: "Proceed to Checkout" }).click();
+    
+    await expect(page).toHaveURL(/.*checkout/);
+  });
+});`,
+    exampleBad: `// Flaky: Brittle selectors, arbitrary sleep timeouts, and no auto-waiting
+test("bad test", async ({ page }) => {
+  await page.goto("/catalog");
+  await page.click("div.col-md-4 > button:nth-child(2)"); // Breaks on minor CSS tweak!
+  await page.waitForTimeout(5000); // Flaky anti-pattern!
+  const text = await page.innerText("#cart-total");
+  expect(text).toBe("1");
+});`,
+    faqs: [
+      {
+        question: "Why are arbitrary sleep timeouts banned?",
+        answer: "Arbitrary delays like waitForTimeout waste CI test execution time and still fail randomly under variable network latency. Playwright auto-waiting assertions check conditions dynamically."
+      },
+      {
+        question: "Why use getByRole instead of class names?",
+        answer: "getByRole verifies that elements are accessible to screen readers and resilient to CSS redesigns."
+      }
+    ],
+    relatedSpokes: [
+      { formatSlug: "claude-skills", presetSlug: "playwright-e2e", label: "Playwright E2E Claude Skill" },
+      { formatSlug: "claude-md", presetSlug: "playwright-e2e", label: "Playwright E2E CLAUDE.md" },
+      { formatSlug: "cursor-rules", presetSlug: "tdd-specialist", label: "TDD Specialist Cursor Rules" },
+      { formatSlug: "cursor-rules", presetSlug: "react-19", label: "React 19 Cursor Rules" },
+      { formatSlug: "mcp-config", presetSlug: "puppeteer", label: "Puppeteer MCP Config" }
+    ]
+  },
+  {
+    formatSlug: "cursor-rules",
+    presetSlug: "spring-boot-3",
+    format: "cursor_mdc",
+    presetId: "spring-boot-3",
+    title: "Spring Boot 3 & Java 21 Cursor Rules (.mdc) | Modern Enterprise Java",
+    description: "Generate Spring Boot 3 and Java 21 Cursor rules enforcing record DTOs, virtual threads (Project Loom), Jakarta EE 10 namespaces, and Spring Data JPA standards.",
+    category: "Backend",
+    techName: "Spring Boot 3 & Java 21",
+    targetFile: ".cursor/rules/spring-boot-3.mdc",
+    whyNeeded: "Spring Boot 3 requires Java 17+ (ideally Java 21) and migrates all packages from javax.* to jakarta.*. AI models trained on legacy Java code constantly hallucinate deprecated javax.persistence imports, bulky Lombok boilerplate instead of Java Records, and legacy WebSecurityConfigurerAdapter classes.",
+    keyRules: [
+      "Use jakarta.* packages for persistence, validation, and servlets; ban legacy javax.* imports.",
+      "Represent immutable request/response DTOs using native Java Records with Jakarta validation annotations.",
+      "Enable Java 21 Virtual Threads (spring.threads.virtual.enabled=true) for high-throughput non-blocking I/O.",
+      "Configure Spring Security using the modern SecurityFilterChain bean approach; never extend deprecated WebSecurityConfigurerAdapter.",
+      "Avoid N+1 queries in Spring Data JPA: use @EntityGraph or JOIN FETCH JPQL queries for relational fetches."
+    ],
+    exampleGood: `package com.example.demo.order;
+
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Positive;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+import java.math.BigDecimal;
+
+public record CreateOrderRequest(
+    @NotBlank String customerId,
+    @Positive BigDecimal amount
+) {}
+
+public record OrderResponse(Long id, String customerId, BigDecimal amount) {}
+
+@RestController
+@RequestMapping("/api/v1/orders")
+public class OrderController {
+    private final OrderService orderService;
+
+    public OrderController(OrderService orderService) {
+        this.orderService = orderService;
+    }
+
+    @PostMapping
+    public ResponseEntity<OrderResponse> create(@RequestBody CreateOrderRequest request) {
+        OrderResponse response = orderService.processOrder(request);
+        return ResponseEntity.ok(response);
+    }
+}`,
+    exampleBad: `// Discouraged: Legacy javax namespace, verbose POJO with setters, mutable entity exposure
+import javax.persistence.*; // Obsolete in Spring Boot 3!
+
+public class BadOrderDTO {
+    private String customerId;
+    public void setCustomerId(String id) { this.customerId = id; }
+}`,
+    faqs: [
+      {
+        question: "Does this rulebook support Java 21 virtual threads?",
+        answer: "Yes, it guides configuration and usage of lightweight virtual threads (Project Loom) for high-concurrency Spring Boot 3 services."
+      },
+      {
+        question: "Why does it ban javax.* packages?",
+        answer: "Spring Boot 3 requires Jakarta EE 10 APIs; javax.persistence and javax.servlet cause immediate compilation failures."
+      }
+    ],
+    relatedSpokes: [
+      { formatSlug: "claude-skills", presetSlug: "spring-boot-3", label: "Spring Boot 3 Claude Skill" },
+      { formatSlug: "claude-md", presetSlug: "spring-boot-3", label: "Spring Boot 3 CLAUDE.md" },
+      { formatSlug: "cursor-rules", presetSlug: "csharp-dotnet-8", label: ".NET 8 C# Cursor Rules" },
+      { formatSlug: "mcp-config", presetSlug: "postgres", label: "PostgreSQL MCP Config" }
+    ]
+  },
+  {
+    formatSlug: "cursor-rules",
+    presetSlug: "csharp-dotnet-8",
+    format: "cursor_mdc",
+    presetId: "csharp-dotnet-8",
+    title: ".NET 8 & C# 12 Cursor Rules (.mdc) | Clean Architecture & Minimal APIs",
+    description: "Generate .NET 8 and C# 12 Cursor rules enforcing Minimal APIs, primary constructors, file-scoped namespaces, and EF Core 8 query optimizations.",
+    category: "Backend",
+    techName: ".NET 8 & C# 12 Minimal APIs",
+    targetFile: ".cursor/rules/csharp-dotnet-8.mdc",
+    whyNeeded: "C# 12 and .NET 8 introduce primary constructors, collection expressions ([1, 2, 3]), frozen collections, and lightweight Minimal APIs. Outdated LLMs continually generate verbose 2018-era boilerplate with nested namespaces, Startup.cs classes, and unindexed EF Core queries.",
+    keyRules: [
+      "Use modern C# 12 features: primary constructors, collection expressions, file-scoped namespaces, and nullable reference types (#nullable enable).",
+      "Structure lightweight microservices with ASP.NET Core Minimal APIs using typed route groups and TypedResults return values.",
+      "Enforce AsNoTracking() on read-only EF Core queries to eliminate memory overhead from change trackers.",
+      "Validate request payloads using FluentValidation or MiniValidation before executing business logic.",
+      "Use IHttpClientFactory with typed resilience pipelines (Polly) for outbound HTTP calls."
+    ],
+    exampleGood: `namespace App.Features.Users;
+
+using Microsoft.AspNetCore.Http.HttpResults;
+using Microsoft.EntityFrameworkCore;
+
+public record CreateUserRequest(string Email, string FullName);
+public record UserDto(Guid Id, string Email, string FullName);
+
+public static class UserEndpoints
+{
+    public static RouteGroupBuilder MapUserEndpoints(this RouteGroupBuilder group)
+    {
+        group.MapGet("/{id:guid}", async Task<Results<Ok<UserDto>, NotFound>> (Guid id, AppDbContext db) =>
+        {
+            var user = await db.Users
+                .AsNoTracking()
+                .Where(u => u.Id == id)
+                .Select(u => new UserDto(u.Id, u.Email, u.FullName))
+                .FirstOrDefaultAsync();
+
+            return user is not null ? TypedResults.Ok(user) : TypedResults.NotFound();
+        });
+
+        return group;
+    }
+}`,
+    exampleBad: `// Discouraged: Nested namespaces, missing AsNoTracking, untyped object returns
+namespace App.Controllers
+{
+    public class UsersController : Controller
+    {
+        [HttpGet]
+        public IActionResult GetUser(Guid id)
+        {
+            var user = _context.Users.Find(id); // Untracked query tracking all state!
+            return Ok(user);
+        }
+    }
+}`,
+    faqs: [
+      {
+        question: "Does this rulebook support both Minimal APIs and traditional Controllers?",
+        answer: "Yes, though it prioritizes modern .NET 8 Minimal APIs with typed results for reduced overhead and cleaner unit testing."
+      },
+      {
+        question: "Why is AsNoTracking required for EF Core reads?",
+        answer: "AsNoTracking prevents EF Core from allocating memory for entity snapshot tracking on queries that do not modify state."
+      }
+    ],
+    relatedSpokes: [
+      { formatSlug: "claude-skills", presetSlug: "csharp-dotnet-8", label: ".NET 8 C# Claude Skill" },
+      { formatSlug: "claude-md", presetSlug: "csharp-dotnet-8", label: ".NET 8 C# CLAUDE.md" },
+      { formatSlug: "cursor-rules", presetSlug: "spring-boot-3", label: "Spring Boot 3 Cursor Rules" },
+      { formatSlug: "cursor-rules", presetSlug: "go-fiber", label: "Go Fiber Cursor Rules" }
+    ]
+  },
 
   // ==========================================
   // CLAUDE CODE SKILLS (SKILL.md)
@@ -1143,6 +1768,20 @@ export const SLUG_ALIASES: Record<string, string> = {
   "tailwind-v4-styling": "tailwind-v4",
   "cursor-pro": "cursor-rules-pro",
   "postgresql": "postgres",
+  "django": "python-django",
+  "elysia": "bun-elysia",
+  "expo": "react-native-expo",
+  "flutter": "flutter-dart",
+  "k8s": "kubernetes-helm",
+  "helm": "kubernetes-helm",
+  "terraform": "terraform-iac",
+  "opentofu": "terraform-iac",
+  "playwright": "playwright-e2e",
+  "springboot": "spring-boot-3",
+  "spring-boot": "spring-boot-3",
+  "dotnet": "csharp-dotnet-8",
+  "dotnet-8": "csharp-dotnet-8",
+  "csharp": "csharp-dotnet-8",
 };
 
 // Base presets list for universal multi-format synthesis
@@ -1165,6 +1804,16 @@ const BASE_CODE_SLUGS = [
   "tdd-specialist",
   "codebase-auditor",
   "fullstack-agent-team",
+  // Top-searched developer stacks (Phase 2 expansion)
+  "python-django",
+  "bun-elysia",
+  "react-native-expo",
+  "flutter-dart",
+  "kubernetes-helm",
+  "terraform-iac",
+  "playwright-e2e",
+  "spring-boot-3",
+  "csharp-dotnet-8",
 ];
 
 const MCP_SLUGS = [
@@ -1183,18 +1832,19 @@ function synthesizeRouteForFormat(
   formatSlug: string,
   presetSlug: string
 ): ProgrammaticPresetRoute | null {
-  const normalizedPreset = SLUG_ALIASES[presetSlug] || presetSlug;
+  const lowerPreset = presetSlug.toLowerCase();
+  const normalizedPreset = SLUG_ALIASES[lowerPreset] || lowerPreset;
 
   // Find any route with this presetSlug across the registry as a template
   const baseRoute = PRESET_ROUTES.find(
-    (r) => r.presetSlug === normalizedPreset || r.presetSlug === presetSlug
+    (r) => r.presetSlug === normalizedPreset || r.presetSlug === lowerPreset
   );
 
   if (!baseRoute) return null;
 
   if (formatSlug === "mcp-config") {
     if (baseRoute.format === "mcp_json") {
-      return { ...baseRoute, formatSlug: "mcp-config", presetSlug };
+      return { ...baseRoute, formatSlug: "mcp-config", presetSlug: normalizedPreset };
     }
     return null;
   }
@@ -1225,7 +1875,7 @@ function synthesizeRouteForFormat(
   return {
     ...baseRoute,
     formatSlug,
-    presetSlug,
+    presetSlug: normalizedPreset,
     format,
     targetFile,
     title,
@@ -1321,11 +1971,12 @@ export function getPresetBySlug(formatSlug: string, presetSlug: string): Program
   const direct = PRESET_ROUTES.find((r) => r.formatSlug === formatSlug && r.presetSlug === presetSlug);
   if (direct) return direct;
 
-  // 2. Alias match in PRESET_ROUTES
-  const normalized = SLUG_ALIASES[presetSlug] || presetSlug;
+  // 2. Alias match in PRESET_ROUTES (case-insensitive)
+  const lowerPreset = presetSlug.toLowerCase();
+  const normalized = SLUG_ALIASES[lowerPreset] || lowerPreset;
   const aliasMatch = PRESET_ROUTES.find((r) => r.formatSlug === formatSlug && r.presetSlug === normalized);
   if (aliasMatch) {
-    return { ...aliasMatch, presetSlug };
+    return aliasMatch;
   }
 
   // 3. Multi-format synthesis

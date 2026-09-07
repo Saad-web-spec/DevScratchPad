@@ -319,7 +319,7 @@ export default async function FormatHubPage({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
             {hub.bestPractices.map((tip, idx) => (
               <div key={idx} className="flex items-start gap-3.5 p-4 rounded-xl border border-zinc-200 bg-white shadow-2xs">
-                <CheckCircle2 className="w-4 h-4 text-emerald-600 mt-0.5 shrink-0" />
+                <CheckCircle2 className="w-4 h-4 text-[#ea580c] mt-0.5 shrink-0" />
                 <span className="text-xs sm:text-sm text-zinc-700 leading-relaxed font-medium">{tip}</span>
               </div>
             ))}

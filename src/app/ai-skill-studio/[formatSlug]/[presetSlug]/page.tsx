@@ -54,11 +54,12 @@ export default async function ProgrammaticPresetPage({
     "@context": "https://schema.org",
     "@graph": [
       {
-        "@type": "WebApplication",
-        "@id": `https://www.devscratchpad.tech/ai-skill-studio/${formatSlug}/${route.presetSlug}#webapp`,
+        "@type": ["SoftwareApplication", "WebApplication"],
+        "@id": `https://www.devscratchpad.tech/ai-skill-studio/${formatSlug}/${route.presetSlug}#software`,
         name: route.title,
         description: route.description,
         url: `https://www.devscratchpad.tech/ai-skill-studio/${formatSlug}/${route.presetSlug}`,
+        downloadUrl: `https://www.devscratchpad.tech/api/raw/${formatSlug}/${route.presetSlug}`,
         applicationCategory: "DeveloperApplication",
         applicationSubCategory: route.category,
         operatingSystem: "Any",
@@ -69,6 +70,35 @@ export default async function ProgrammaticPresetPage({
           priceCurrency: "USD",
         },
         featureList: route.keyRules,
+      },
+      {
+        "@type": "HowTo",
+        "@id": `https://www.devscratchpad.tech/ai-skill-studio/${formatSlug}/${route.presetSlug}#howto`,
+        name: `How to Install ${route.techName} ${hub?.name || "Rule"} via Terminal`,
+        description: `Install and configure ${route.techName} ${hub?.name || "rules"} in your project in 3 simple terminal steps using the DevScratchpad raw API endpoint.`,
+        step: [
+          {
+            "@type": "HowToStep",
+            position: 1,
+            name: "Open Project Directory",
+            text: `Open your terminal and navigate to your project root folder where the ${route.targetFile} file will reside.`,
+            url: `https://www.devscratchpad.tech/ai-skill-studio/${formatSlug}/${route.presetSlug}#step-1`,
+          },
+          {
+            "@type": "HowToStep",
+            position: 2,
+            name: "Fetch Rule File via Terminal Command",
+            text: `Run curl or PowerShell to stream the rule directly from https://www.devscratchpad.tech/api/raw/${formatSlug}/${route.presetSlug} and write it to ${route.targetFile}.`,
+            url: `https://www.devscratchpad.tech/ai-skill-studio/${formatSlug}/${route.presetSlug}#step-2`,
+          },
+          {
+            "@type": "HowToStep",
+            position: 3,
+            name: "Verify and Activate with AI Agent",
+            text: `Launch your AI coding assistant (Cursor IDE, Claude Code CLI, Windsurf, or Codex). The assistant will automatically discover ${route.targetFile} and apply the architectural guardrails.`,
+            url: `https://www.devscratchpad.tech/ai-skill-studio/${formatSlug}/${route.presetSlug}#step-3`,
+          },
+        ],
       },
       {
         "@type": "TechArticle",

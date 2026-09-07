@@ -96,10 +96,16 @@ export const CATEGORIES_REGISTRY: Record<string, CategoryMeta> = {
         badge: "Cursor Rules",
       },
       {
-        title: "Fullstack Agent Team",
-        description: "Coordinate multi-agent personas with strict input validation, API contract adherence, and zero data leakage.",
-        link: "/ai-skill-studio/cursor-rules/fullstack-agent-team",
-        badge: "Multi-Agent",
+        title: "Spring Boot 3 & Java 21",
+        description: "Enforce Jakarta EE 10 validation, Java records, and virtual threads for enterprise APIs.",
+        link: "/ai-skill-studio/cursor-rules/spring-boot-3",
+        badge: "Backend",
+      },
+      {
+        title: ".NET 8 & C# 12 Minimal APIs",
+        description: "Enforce Minimal APIs, typed schemas, and EF Core 8 query optimizations.",
+        link: "/ai-skill-studio/cursor-rules/csharp-dotnet-8",
+        badge: "Backend",
       },
       {
         title: "Codebase Auditor Claude Skill",
@@ -165,10 +171,16 @@ export const CATEGORIES_REGISTRY: Record<string, CategoryMeta> = {
     ],
     aiStudioRecommendations: [
       {
-        title: "Next.js 15 Cursor Rules",
-        description: "Automatically translate backend API contracts into strict TypeScript interfaces and Zod schemas in Next.js.",
-        link: "/ai-skill-studio/cursor-rules/nextjs-15",
-        badge: "Cursor Rules",
+        title: "Django 5 & Ninja Cursor Rules",
+        description: "Bridge Python data models into async ORM queries and Django Ninja typed schemas.",
+        link: "/ai-skill-studio/cursor-rules/python-django",
+        badge: "Backend",
+      },
+      {
+        title: "Bun & Elysia Cursor Rules",
+        description: "Enforce TypeBox schemas, Eden Treaty type safety, and native Bun runtime performance.",
+        link: "/ai-skill-studio/cursor-rules/bun-elysia",
+        badge: "Backend",
       },
       {
         title: "Python FastAPI Cursor Rules",
@@ -305,6 +317,18 @@ export const CATEGORIES_REGISTRY: Record<string, CategoryMeta> = {
     ],
     aiStudioRecommendations: [
       {
+        title: "Playwright E2E Testing Rules",
+        description: "Generate resilient browser automation tests with auto-waiting assertions and accessible role locators.",
+        link: "/ai-skill-studio/cursor-rules/playwright-e2e",
+        badge: "Testing",
+      },
+      {
+        title: "Expo & React Native Rules",
+        description: "Enforce modern Expo Router navigation, New Architecture, and safe area screens.",
+        link: "/ai-skill-studio/cursor-rules/react-native-expo",
+        badge: "Mobile",
+      },
+      {
         title: "TDD Specialist Cursor Rules",
         description: "Equip Cursor with test-driven development methodologies, automated test fixture generation, and mock assertions.",
         link: "/ai-skill-studio/cursor-rules/tdd-specialist",
@@ -314,12 +338,6 @@ export const CATEGORIES_REGISTRY: Record<string, CategoryMeta> = {
         title: "Prisma ORM Cursor Rules",
         description: "Enforce safe database migrations, typed seeders, and relational entity fixtures.",
         link: "/ai-skill-studio/cursor-rules/prisma",
-        badge: "Cursor Rules",
-      },
-      {
-        title: "Vibe Coder Agent Rules",
-        description: "Rapidly prototype functional applications with realistic mock data scaffolding and creative UI iteration.",
-        link: "/ai-skill-studio/cursor-rules/vibe-coder",
         badge: "Cursor Rules",
       },
     ],
@@ -378,16 +396,22 @@ export const CATEGORIES_REGISTRY: Record<string, CategoryMeta> = {
     ],
     aiStudioRecommendations: [
       {
+        title: "Kubernetes & Helm Rules",
+        description: "Validate container resource boundaries, security contexts, probes, and Helm chart manifests.",
+        link: "/ai-skill-studio/cursor-rules/kubernetes-helm",
+        badge: "DevOps",
+      },
+      {
+        title: "Terraform & OpenTofu IaC",
+        description: "Enforce cloud infrastructure as code standards, remote state locking, and provider version pinning.",
+        link: "/ai-skill-studio/cursor-rules/terraform-iac",
+        badge: "IaC",
+      },
+      {
         title: "Docker & DevOps Cursor Rules",
         description: "Automate container networking, CIDR subnets, and cron daemon configurations in Docker environments.",
         link: "/ai-skill-studio/cursor-rules/docker-devops",
         badge: "Cursor Rules",
-      },
-      {
-        title: "Fullstack Agent Team",
-        description: "Coordinate distributed system logic, timestamp conversions, and regex input validation across services.",
-        link: "/ai-skill-studio/cursor-rules/fullstack-agent-team",
-        badge: "Multi-Agent",
       },
       {
         title: "Fetch MCP Server Config",
