@@ -2127,17 +2127,30 @@ Anthropic's open standard for connecting AI coding assistants to external data s
 - **How to verify**: Open your browser's Developer Tools (F12) -> Network tab. Perform an import, customize rules, and export a ZIP—zero outgoing HTTP requests are made.
 
 ### Feature 10: Rule Quality & Security Audit with 1-Click ⚡ Auto-Fix Remediation
-- **What it does**: Embeds a real-time static analysis linter directly beneath the Monaco editor that continuously evaluates rule quality and security constraints (0–100 score) across 4 engineering dimensions:
+- **What it does**: Embeds a real-time static analysis linter directly beneath the Monaco editor that continuously evaluates rule quality and security constraints (0–100 score) across 5 engineering dimensions:
   - **Clarity & Ambiguity (30%)**: Detects non-testable directives (*"write clean code"*, *"be helpful"*, *"avoid bugs"*) that cause LLM instruction drift, and flags rules lacking concrete code implementation references.
   - **Token Density & Economy (25%)**: Calculates token footprint (~4 characters per token) to prevent context window bloat and inference slowdowns. Recommends staying within 150 to 1,200 tokens.
   - **Negative Guardrails & Security Boundaries (25%)**: Ensures explicit negative constraints (*"never"*, *"do not"*, *"prohibited"*) are defined to prevent agents from overwriting unrequested files, modifying \`.env\` secrets, or executing destructive shell commands (\`rm -rf\`, \`git push --force\`).
-  - **Trigger Precision & Scoping (20%)**: Evaluates Cursor \`.mdc\` file globs and Claude Code \`SKILL.md\` activation trigger descriptions to avoid accidental global rule attachment.
+  - **Trigger Precision & Scoping (20%)**: Evaluates Cursor \`.mdc\` file globs, activation trigger chips, and Claude Code \`SKILL.md\` trigger descriptions to avoid accidental global rule attachment.
+  - **Architectural Invariants**: Validates typed contracts, schema boundaries, and error handling patterns.
 - **How to use it**:
   - **Status Bar Launcher**: Located in the editor's native bottom status bar alongside line count and language indicators. Displays your live score (e.g. \`99/100 · PRODUCTION GRADE\`) with an orange star icon.
-  - **Interactive Troubleshooting Filters**: Inside the panel, click any of the 4 metric cards (\`CLARITY\`, \`TOKENS\`, \`GUARDRAILS\`, \`PRECISION\`) to filter diagnostics and isolate specific engineering weaknesses.
+  - **Interactive Troubleshooting Filters**: Inside the panel, click any of the metric cards (\`CLARITY\`, \`TOKENS\`, \`GUARDRAILS\`, \`PRECISION\`) to filter diagnostics and isolate specific engineering weaknesses.
   - **⚡ Auto-Fix All Engine**: If issues are detected, click **"⚡ Auto-Fix All"** to execute a deterministic remediation pass. It automatically replaces vague phrases with concrete engineering requirements, injects negative boundary guardrails, confines unscoped globs to \`src/**/*.{ts,tsx,js,jsx}\`, and adds typed reference code blocks.
-  - **Rule Checklist**: Switch to the "Rule Checklist" tab for a live 4-pillar verification breakdown before committing or exporting your rules.
+  - **Rule Checklist**: Switch to the "Rule Checklist" tab for a live verification breakdown before committing or exporting your rules.
   - **Copy Report for PRs**: Click **"Copy Report"** in the panel header to copy a formatted Markdown audit breakdown directly into pull request descriptions or CI logs.
+
+### Feature 11: Direct Terminal One-Liner Install Endpoints
+- **What it does**: Stream rule files directly into your project root with a single terminal command using raw API endpoints (\`/api/raw/[formatSlug]/[presetSlug]\`).
+- **Supported Terminal Commands**:
+  - **Bash / zsh (curl)**: \`curl -fsSL "https://devscratchpad.tech/api/raw/cursor-rules/nextjs-15" -o ".cursor/rules/nextjs-15.mdc"\`
+  - **PowerShell**: \`Invoke-RestMethod "https://devscratchpad.tech/api/raw/cursor-rules/nextjs-15" -OutFile ".cursor\\rules\\nextjs-15.mdc"\`
+  - **Wget**: \`wget -qO ".cursor/rules/nextjs-15.mdc" "https://devscratchpad.tech/api/raw/cursor-rules/nextjs-15"\`
+
+### Feature 12: Source-Available Licensing & Commercial Protection (BSL 1.1)
+- **What it does**: DevScratchpad is distributed under the **Business Source License 1.1 (BSL 1.1)**.
+- **Privacy & Auditability**: 100% of source code remains publicly viewable on GitHub for security verification and personal/educational evaluation.
+- **Commercial Guardrails**: Strictly prohibits competitors from cloning, re-hosting, or commercializing the platform as a paid SaaS or public service without permission.
 
 ---
 

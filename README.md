@@ -34,9 +34,19 @@
 
 ### Key Studio Capabilities
 - 📦 **Manifest Auto-Detection:** Drop your `package.json`, `Cargo.toml`, `pyproject.toml`, or `go.mod` to auto-detect your stack and generate tailored rules in seconds.
-- 🩺 **Static Analysis Audit Panel:** Real-time scoring across 5 critical dimensions (Trigger Specificity, Rule Density, Boundary Enforcements, Format Precision, Security Hardening) with one-click Auto-Fix.
+- 🩺 **Static Analysis Audit Panel:** Real-time scoring across 5 critical dimensions (Trigger Specificity, Rule Density, Negative Guardrails, Format Compliance, Architectural Boundaries) with one-click ⚡ Auto-Fix.
+- 🏷️ **Trigger Tagging & Heuristic Validation:** Real-time activation trigger chips with heuristic warning feedback for broad catch-all words to prevent context token bloat.
+- 💻 **Terminal One-Liner Stream:** Native `curl`, `PowerShell`, `wget`, and CLI installation endpoints (`/api/raw/[formatSlug]/[presetSlug]`) to install rule files directly from terminal into local project roots.
 - ⚡ **Curated Production Presets:** Statically pre-rendered presets ready for immediate use:
   - [Next.js 15 App Router Cursor Rules](https://devscratchpad.tech/ai-skill-studio/cursor-rules/nextjs-15)
+  - [.NET 8 & C# 12 Minimal APIs Rules](https://devscratchpad.tech/ai-skill-studio/cursor-rules/csharp-dotnet-8)
+  - [Spring Boot 3 & Java 21 Rules](https://devscratchpad.tech/ai-skill-studio/cursor-rules/spring-boot-3)
+  - [Django 5 & Ninja Cursor Rules](https://devscratchpad.tech/ai-skill-studio/cursor-rules/python-django)
+  - [Bun & Elysia TypeBox Rules](https://devscratchpad.tech/ai-skill-studio/cursor-rules/bun-elysia)
+  - [Playwright E2E Browser Testing Rules](https://devscratchpad.tech/ai-skill-studio/cursor-rules/playwright-e2e)
+  - [Expo & React Native Rules](https://devscratchpad.tech/ai-skill-studio/cursor-rules/react-native-expo)
+  - [Kubernetes & Helm Manifest Rules](https://devscratchpad.tech/ai-skill-studio/cursor-rules/kubernetes-helm)
+  - [Terraform & OpenTofu IaC Rules](https://devscratchpad.tech/ai-skill-studio/cursor-rules/terraform-iac)
   - [Cursor Rules Pro (.mdc)](https://devscratchpad.tech/ai-skill-studio/cursor-rules/cursor-rules-pro)
   - [React 19 SPA Cursor Rules](https://devscratchpad.tech/ai-skill-studio/cursor-rules/react-19)
   - [FastAPI Python Cursor Rules](https://devscratchpad.tech/ai-skill-studio/cursor-rules/fastapi)
@@ -70,7 +80,7 @@
 
 ---
 
-## 🛠️ The 23+ Developer Utilities Matrix
+## 🛠️ The 28 Developer Utilities Matrix
 
 | Category | Tool Name | Route | What It Does |
 | :--- | :--- | :--- | :--- |
