@@ -1433,8 +1433,9 @@ export function buildRuleContent(params: RuleBuilderParams): string {
     .map((c) => `- **${c!.label}**: ${c!.desc}`);
 
   if (targetFormat === "skill_md") {
+    const safeSkillName = (skillName || "custom-skill").trim().replace(/[^a-zA-Z0-9._-]/g, "-").toLowerCase() || "custom-skill";
     return `---
-name: ${skillName.trim().toLowerCase().replace(/[^a-z0-9_-]/g, "-") || "custom-skill"}
+name: ${safeSkillName}
 description: ${description.trim().replace(/\n+/g, " ")}
 ---
 

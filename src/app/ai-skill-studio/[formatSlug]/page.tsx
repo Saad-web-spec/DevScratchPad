@@ -33,7 +33,7 @@ export async function generateMetadata({
     title: hub.seoTitle,
     description: hub.seoDescription,
     openGraph: {
-      title: hub.seoTitle,
+      title: `${hub.seoTitle} | DevScratchpad`,
       description: hub.seoDescription,
       type: "website",
       siteName: "DevScratchpad",
@@ -45,16 +45,23 @@ export async function generateMetadata({
           secureUrl: "https://www.devscratchpad.tech/og-ai-skill-studio.png",
           width: 1200,
           height: 630,
-          alt: hub.seoTitle,
+          alt: `${hub.seoTitle} — DevScratchpad`,
           type: "image/png",
         },
       ],
     },
     twitter: {
       card: "summary_large_image",
-      title: hub.seoTitle,
+      title: `${hub.seoTitle} | DevScratchpad`,
       description: hub.seoDescription,
-      images: ["https://www.devscratchpad.tech/og-ai-skill-studio.png"],
+      images: [
+        {
+          url: "https://www.devscratchpad.tech/og-ai-skill-studio.png",
+          width: 1200,
+          height: 630,
+          alt: `${hub.seoTitle} — DevScratchpad`,
+        },
+      ],
     },
     alternates: {
       canonical: `https://www.devscratchpad.tech/ai-skill-studio/${hub.slug}`,
@@ -141,7 +148,7 @@ export default async function FormatHubPage({
     <div className="min-h-screen bg-zinc-50 text-zinc-800 font-sans selection:bg-orange-500 selection:text-white">
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLdGraph) }}
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLdGraph).replace(/</g, "\\u003c") }}
       />
 
       {/* Top Breadcrumb Navigation */}

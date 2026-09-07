@@ -150,7 +150,7 @@ export function SeoContent({ tool }: { tool: ToolMeta }) {
     <>
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLdGraph) }}
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLdGraph).replace(/</g, "\\u003c") }}
       />
 
       {/* Visual Breadcrumb Navigation */}

@@ -117,7 +117,7 @@ export function HomeSeoContent() {
  <div className="mt-12 pt-8 border-t border-zinc-200 ] max-w-4xl pb-24 mx-auto px-4 w-full">
  <script
  type="application/ld+json"
- dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLdGraph) }}
+ dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLdGraph).replace(/</g, "\\u003c") }}
  />
  <h1 className="mt-6 mb-3 text-3xl font-black text-zinc-900 tracking-tight">
  100% Offline, Private Developer Tools

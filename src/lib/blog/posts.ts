@@ -1499,7 +1499,7 @@ Learn more about how Base64 applies to authentication in our [JWT Token Guide](/
   {
     slug: "json-formatter-privacy-backed-developer-tools",
     title: "JSON Formatter: Privacy Backed & 100% Client-Side Developer Tools",
-    seoTitle: "JSON Formatter - Privacy Backed Developer Tools",
+    seoTitle: "Private Offline JSON Formatter Guide",
     description: "Learn why a privacy-backed JSON formatter is essential for developers. 100% client-side, zero server transmission formatting for sensitive API payloads.",
     seoDescription: "Secure JSON formatter for developers. Privacy backed, 100% client-side, zero server transmission. Formatting sensitive API payloads offline on DevScratchpad.",
     publishedAt: "2026-09-02T12:00:00Z",

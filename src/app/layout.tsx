@@ -12,7 +12,7 @@ const SITE_URL = "https://www.devscratchpad.tech";
 export const metadata: Metadata = {
   title: {
     template: "%s | DevScratchpad",
-    default: "DevScratchpad - 100% Offline, Privacy Backed Developer Tools",
+    default: "DevScratchpad — Free Offline Developer Tools",
   },
   description:
     "Massive collection of free online developer tools that work 100% offline. JSON formatter, YAML to JSON, cURL to Go, JWT decoder, Base64 encoder, SSH key generator, Password hashing, and more. Zero server transmission, 100% client-side privacy backed scratch pad for developers.",
@@ -52,7 +52,7 @@ export const metadata: Metadata = {
     siteName: "DevScratchpad",
     locale: "en_US",
     url: SITE_URL,
-    title: "DevScratchpad - 100% Offline, Privacy Backed Developer Tools",
+    title: "DevScratchpad — Free Offline Developer Tools",
     description:
       "Massive collection of free online developer tools that work 100% offline. Zero server transmission. Privacy backed scratch pad for developers.",
     images: [
@@ -66,10 +66,17 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "DevScratchpad - 100% Offline, Privacy Backed Developer Tools",
+    title: "DevScratchpad — Free Offline Developer Tools",
     description:
       "Massive collection of free online developer tools that work 100% offline. Zero server transmission. Privacy backed scratch pad for developers.",
-    images: ["https://www.devscratchpad.tech/og-ai-skill-studio.png"],
+    images: [
+      {
+        url: "https://www.devscratchpad.tech/og-ai-skill-studio.png",
+        width: 1200,
+        height: 630,
+        alt: "DevScratchpad — Free Offline Developer Tools & AI Skill Studio",
+      },
+    ],
   },
   alternates: {
     canonical: SITE_URL,
@@ -155,7 +162,7 @@ export default function RootLayout({
         <link rel="dns-prefetch" href="https://cdn.jsdelivr.net" />
         <script
           type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(siteJsonLd) }}
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(siteJsonLd).replace(/</g, "\\u003c") }}
         />
         {process.env.NODE_ENV === "development" && (
           <script

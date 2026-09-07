@@ -155,7 +155,7 @@ export function ClaudeSkillsClient({
   };
 
   const handleSlugChange = (rawSlug: string) => {
-    const safe = rawSlug.toLowerCase().replace(/[\s_./\\]+/g, "-").replace(/[^a-z0-9-]/g, "");
+    const safe = rawSlug.toLowerCase().replace(/[\s/\\]+/g, "-").replace(/[^a-zA-Z0-9._-]/g, "-");
     setSkillName(safe);
     setIsSlugLocked(true);
   };
@@ -472,44 +472,49 @@ export function ClaudeSkillsClient({
     if (initialPresetId && !isManuallyEdited) return;
 
     const timer = setTimeout(() => {
-      const res = saveToStorageEnvelope(STORAGE_KEY_V2, {
-        selectedPresetId,
-        skillName,
-        skillTitle,
-        isSlugLocked,
-        description,
-        role,
-        framework,
-        language,
-        styling,
-        database,
-        philosophy,
-        behaviors,
-        conventions,
-        procedures,
-        customDirectives,
-        exampleGood,
-        exampleBad,
-        format,
-        globPattern,
-        alwaysApply,
-        mcpPresetId,
-        mcpServerName,
-        mcpCommand,
-        mcpArgs,
-        mcpEnvKey,
-        mcpEnvValue,
-        editorContent,
-        isManuallyEdited,
-      });
-      if (res.success) {
-        const now = new Date();
-        setLastAutoSaved(
-          now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" })
-        );
-        setQuotaError(null);
-      } else if (res.error) {
-        setQuotaError(res.error);
+      try {
+        const res = saveToStorageEnvelope(STORAGE_KEY_V2, {
+          selectedPresetId,
+          skillName,
+          skillTitle,
+          isSlugLocked,
+          description,
+          role,
+          framework,
+          language,
+          styling,
+          database,
+          philosophy,
+          behaviors,
+          conventions,
+          procedures,
+          customDirectives,
+          exampleGood,
+          exampleBad,
+          format,
+          globPattern,
+          alwaysApply,
+          mcpPresetId,
+          mcpServerName,
+          mcpCommand,
+          mcpArgs,
+          mcpEnvKey,
+          mcpEnvValue,
+          editorContent,
+          isManuallyEdited,
+        });
+        if (res.success) {
+          const now = new Date();
+          setLastAutoSaved(
+            now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" })
+          );
+          setQuotaError(null);
+        } else if (res.error) {
+          setQuotaError(res.error);
+        }
+      } catch (saveErr) {
+        console.warn("[ClaudeSkillsClient] Auto-save failed gracefully:", saveErr);
+        setQuotaError("Storage limit reached or browser restricted. Export your configuration to keep your changes.");
       }
     }, 500);
     return () => clearTimeout(timer);
@@ -1059,9 +1064,10 @@ export function ClaudeSkillsClient({
       return matchedRoute.targetFile;
     }
 
-    if (format === "skill_md") return `.claude/skills/${skillName || activePresetSlug || "skill"}/SKILL.md`;
+    const safeSkill = (skillName || activePresetSlug || "skill").replace(/[^a-zA-Z0-9._-]/g, "-");
+    if (format === "skill_md") return `.claude/skills/${safeSkill}/SKILL.md`;
     if (format === "claude_md") return "CLAUDE.md";
-    if (format === "cursor_mdc") return `.cursor/rules/${skillName || activePresetSlug || "rule"}.mdc`;
+    if (format === "cursor_mdc") return `.cursor/rules/${safeSkill}.mdc`;
     if (format === "mcp_json") return "claude_desktop_config.json";
     return "AGENTS.md";
   }, [activePresetSlug, selectedPresetId, activeFormatSlug, isManuallyEdited, format, skillName]);
@@ -1262,10 +1268,11 @@ export function ClaudeSkillsClient({
 
   // Download handler
   const handleDownload = () => {
+    const safeSkill = (skillName || "rule").replace(/[^a-zA-Z0-9._-]/g, "-");
     let filename = "SKILL.md";
     let mimeType = "text/markdown;charset=utf-8;";
     if (format === "claude_md") filename = "CLAUDE.md";
-    if (format === "cursor_mdc") filename = `${skillName || "rule"}.mdc`;
+    if (format === "cursor_mdc") filename = `${safeSkill}.mdc`.replace(/[^a-zA-Z0-9._-]/g, "-");
     if (format === "agents_md") filename = "AGENTS.md";
     if (format === "mcp_json") {
       filename = "claude.json";
@@ -1285,9 +1292,10 @@ export function ClaudeSkillsClient({
 
   // Get file name indicator
   const currentFileName = useMemo(() => {
+    const safeSkill = (skillName || "rule").replace(/[^a-zA-Z0-9._-]/g, "-");
     if (format === "skill_md") return "SKILL.md";
     if (format === "claude_md") return "CLAUDE.md";
-    if (format === "cursor_mdc") return `.cursor/rules/${skillName || "rule"}.mdc`;
+    if (format === "cursor_mdc") return `.cursor/rules/${safeSkill}.mdc`;
     if (format === "mcp_json") return "claude.json (mcpServers)";
     return "AGENTS.md";
   }, [format, skillName]);
@@ -2829,7 +2837,7 @@ export function ClaudeSkillsClient({
             </div>
             {format === "skill_md" && (
               <p className="text-zinc-500 text-xs leading-relaxed">
-                Save as <code className="bg-zinc-100 px-1 py-0.5 rounded text-zinc-800 font-mono text-[11px]">.claude/skills/{skillName}/SKILL.md</code> in project root, or in <code className="bg-zinc-100 px-1 py-0.5 rounded text-zinc-800 font-mono text-[11px]">~/.claude/skills/{skillName}/SKILL.md</code> for global Claude Code availability.
+                Save as <code className="bg-zinc-100 px-1 py-0.5 rounded text-zinc-800 font-mono text-[11px]">.claude/skills/{(skillName || "skill").replace(/[^a-zA-Z0-9._-]/g, "-")}/SKILL.md</code> in project root, or in <code className="bg-zinc-100 px-1 py-0.5 rounded text-zinc-800 font-mono text-[11px]">~/.claude/skills/{(skillName || "skill").replace(/[^a-zA-Z0-9._-]/g, "-")}/SKILL.md</code> for global Claude Code availability.
               </p>
             )}
             {format === "claude_md" && (
@@ -2839,7 +2847,7 @@ export function ClaudeSkillsClient({
             )}
             {format === "cursor_mdc" && (
               <p className="text-zinc-500 text-xs leading-relaxed">
-                Save in <code className="bg-zinc-100 px-1 py-0.5 rounded text-zinc-800 font-mono text-[11px]">.cursor/rules/{skillName || "rule"}.mdc</code>. Evaluated via glob patterns for targeted context.
+                Save in <code className="bg-zinc-100 px-1 py-0.5 rounded text-zinc-800 font-mono text-[11px]">.cursor/rules/{(skillName || "rule").replace(/[^a-zA-Z0-9._-]/g, "-")}.mdc</code>. Evaluated via glob patterns for targeted context.
               </p>
             )}
             {format === "agents_md" && (

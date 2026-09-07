@@ -7,14 +7,14 @@ import { SiteFooter } from "@/components/layout/SiteFooter";
 const SITE_URL = "https://www.devscratchpad.tech";
 
 export const metadata: Metadata = {
-  title: "About — 100% Offline, Privacy-Backed Developer Tools",
+  title: "About — Offline Developer Tools",
   description:
     "Learn about DevScratchpad: a source-available, client-side developer utility platform. Zero server transmission, client-side cryptography, and AI Skill Studio.",
   alternates: {
     canonical: `${SITE_URL}/about`,
   },
   openGraph: {
-    title: "About DevScratchpad — 100% Offline, Privacy-Backed Developer Tools",
+    title: "About — Offline Developer Tools | DevScratchpad",
     description:
       "DevScratchpad is a source-available developer platform built for speed and security. Free online tools that execute 100% in-browser.",
     url: `${SITE_URL}/about`,
@@ -29,10 +29,17 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "About DevScratchpad — 100% Offline, Privacy-Backed Developer Tools",
+    title: "About — Offline Developer Tools | DevScratchpad",
     description:
       "DevScratchpad is a source-available developer platform built for speed and security. Free online tools that execute 100% in-browser.",
-    images: ["https://www.devscratchpad.tech/og-ai-skill-studio.png"],
+    images: [
+      {
+        url: "https://www.devscratchpad.tech/og-ai-skill-studio.png",
+        width: 1200,
+        height: 630,
+        alt: "About DevScratchpad",
+      },
+    ],
   },
 };
 
@@ -74,7 +81,7 @@ export default function AboutPage() {
     <div className="min-h-screen bg-zinc-50 flex flex-col font-sans selection:bg-zinc-900 selection:text-white">
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(aboutJsonLd) }}
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(aboutJsonLd).replace(/</g, "\\u003c") }}
       />
       <SiteHeader />
 

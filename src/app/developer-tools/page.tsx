@@ -7,13 +7,13 @@ import { SiteHeader } from "@/components/layout/SiteHeader";
 import { SiteFooter } from "@/components/layout/SiteFooter";
 
 export const metadata: Metadata = {
-  title: "Developer Tools Directory (28 Offline Utilities)",
+  title: "Offline Developer Tools Directory",
   description: "Explore the complete directory of 100% offline, privacy-first developer utilities. JSON formatters, cURL converters, JWT decoders, and regex testers.",
   alternates: {
     canonical: "https://www.devscratchpad.tech/developer-tools",
   },
   openGraph: {
-    title: "Developer Tools Directory (28 Offline Utilities) | DevScratchpad",
+    title: "Offline Developer Tools Directory | DevScratchpad",
     description: "Explore the complete directory of 100% offline, privacy-first developer utilities. JSON formatters, cURL converters, JWT decoders, and regex testers.",
     url: "https://www.devscratchpad.tech/developer-tools",
     images: [
@@ -21,15 +21,22 @@ export const metadata: Metadata = {
         url: "https://www.devscratchpad.tech/og-ai-skill-studio.png",
         width: 1200,
         height: 630,
-        alt: "Developer Tools Directory — DevScratchpad",
+        alt: "Offline Developer Tools Directory — DevScratchpad",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Developer Tools Directory (28 Offline Utilities) | DevScratchpad",
+    title: "Offline Developer Tools Directory | DevScratchpad",
     description: "Explore the complete directory of 100% offline, privacy-first developer utilities. JSON formatters, cURL converters, JWT decoders, and regex testers.",
-    images: ["https://www.devscratchpad.tech/og-ai-skill-studio.png"],
+    images: [
+      {
+        url: "https://www.devscratchpad.tech/og-ai-skill-studio.png",
+        width: 1200,
+        height: 630,
+        alt: "Offline Developer Tools Directory — DevScratchpad",
+      },
+    ],
   },
 };
 
@@ -79,7 +86,7 @@ export default function DeveloperToolsPage() {
     <div className="min-h-screen bg-zinc-50 flex flex-col font-sans selection:bg-zinc-900 selection:text-white">
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c") }}
       />
       <SiteHeader />
       

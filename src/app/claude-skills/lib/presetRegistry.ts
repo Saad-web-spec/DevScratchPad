@@ -1852,23 +1852,23 @@ function synthesizeRouteForFormat(
   // Synthesis for code rule formats: cursor-rules, claude-skills, claude-md, agents-md
   let format: OutputFormat = "cursor_mdc";
   let targetFile = `.cursor/rules/${normalizedPreset}.mdc`;
-  let title = `${baseRoute.techName} Cursor Rules Generator (.mdc) | Free & Offline`;
+  let title = `${baseRoute.techName} Cursor Rules (.mdc)`;
   let desc = `Generate production-grade Cursor rules (.mdc) for ${baseRoute.techName}.`;
 
   if (formatSlug === "claude-skills") {
     format = "skill_md";
     targetFile = `.claude/skills/${normalizedPreset}/SKILL.md`;
-    title = `${baseRoute.techName} Claude Skill (.md) | Free & Offline`;
+    title = `${baseRoute.techName} Claude Skill (SKILL.md)`;
     desc = `Generate a specialized Claude Code skill (SKILL.md) for ${baseRoute.techName}.`;
   } else if (formatSlug === "claude-md") {
     format = "claude_md";
     targetFile = "CLAUDE.md";
-    title = `${baseRoute.techName} CLAUDE.md Generator | Free & Offline`;
+    title = `${baseRoute.techName} CLAUDE.md Guide`;
     desc = `Generate a ${baseRoute.techName} CLAUDE.md repository guideline for Claude Code.`;
   } else if (formatSlug === "agents-md") {
     format = "agents_md";
     targetFile = "AGENTS.md";
-    title = `${baseRoute.techName} AGENTS.md Generator | Free & Offline`;
+    title = `${baseRoute.techName} AGENTS.md Protocol`;
     desc = `Generate an AGENTS.md multi-agent specification for ${baseRoute.techName}.`;
   }
 
@@ -1920,11 +1920,49 @@ export function getPresetRouteMetadata(formatSlug: string, presetSlug: string): 
   
   const canonicalPresetSlug = SLUG_ALIASES[presetSlug] || presetSlug;
 
+  // Derive format label
+  let formatSuffix = "Cursor Rules";
+  if (formatSlug === "claude-skills") formatSuffix = "Claude Skill";
+  else if (formatSlug === "claude-md") formatSuffix = "CLAUDE.md Guide";
+  else if (formatSlug === "agents-md") formatSuffix = "AGENTS.md Rules";
+  else if (formatSlug === "mcp-config") formatSuffix = "MCP Config";
+
+  // Clean and simplify tech name for crisp, predictable SERP title
+  const cleanTech = route.techName
+    .replace(/\s*App Router/gi, "")
+    .replace(/\s*&\s*Vite/gi, "")
+    .replace(/CSS\s*v4/gi, "v4")
+    .replace(/& Pydantic\s*v\d+/gi, "")
+    .replace(/Minimal APIs/gi, "")
+    .replace(/React Native & Expo Router/gi, "Expo & React Native")
+    .replace(/Pragmatic Rapid Prototyping/gi, "Vibe Coder")
+    .replace(/Zero-Trust Security/gi, "Security Guard")
+    .replace(/Universal Cursor Pro/gi, "Cursor Pro")
+    .replace(/Vitest & Playwright TDD/gi, "Vitest & Playwright")
+    .replace(/\/\s*DRF/gi, "")
+    .replace(/\/\s*Hono/gi, "")
+    .replace(/\/\s*Dart/gi, "")
+    .replace(/\s*&\s*Svelte\s*5/gi, "")
+    .replace(/\s*&\s*Java\s*21/gi, "")
+    .replace(/\s*&\s*PostgreSQL/gi, "")
+    .replace(/\s*&\s*Helm Charts/gi, "")
+    .replace(/\s*&\s*OpenTofu IaC/gi, "")
+    .replace(/\s*&\s*Cypress E2E/gi, "")
+    .replace(/\s*MCP Server/gi, "")
+    .trim();
+
+  let cleanTitle = `${cleanTech} ${formatSuffix}`;
+  if (cleanTitle.length > 38) {
+    const sub = cleanTitle.slice(0, 38);
+    const lastSpace = sub.lastIndexOf(" ");
+    cleanTitle = lastSpace > 20 ? sub.slice(0, lastSpace) : sub;
+  }
+
   return {
-    title: route.title,
+    title: cleanTitle,
     description: route.description,
     openGraph: {
-      title: route.title,
+      title: `${cleanTitle} | DevScratchpad`,
       description: route.description,
       type: "website",
       siteName: "DevScratchpad",
@@ -1936,16 +1974,23 @@ export function getPresetRouteMetadata(formatSlug: string, presetSlug: string): 
           secureUrl: "https://www.devscratchpad.tech/og-ai-skill-studio.png",
           width: 1200,
           height: 630,
-          alt: route.title,
+          alt: `${cleanTitle} — DevScratchpad`,
           type: "image/png",
         },
       ],
     },
     twitter: {
       card: "summary_large_image",
-      title: route.title,
+      title: `${cleanTitle} | DevScratchpad`,
       description: route.description,
-      images: ["https://www.devscratchpad.tech/og-ai-skill-studio.png"],
+      images: [
+        {
+          url: "https://www.devscratchpad.tech/og-ai-skill-studio.png",
+          width: 1200,
+          height: 630,
+          alt: `${cleanTitle} — DevScratchpad`,
+        },
+      ],
     },
     alternates: {
       canonical: `https://www.devscratchpad.tech/ai-skill-studio/${formatSlug}/${canonicalPresetSlug}`,

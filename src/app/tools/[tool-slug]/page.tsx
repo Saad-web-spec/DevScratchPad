@@ -34,11 +34,27 @@ export async function generateMetadata({
  url: `${SITE_URL}/tools/${slug}`,
  type:"website",
  siteName:"DevScratchpad",
+ images: [
+ {
+ url: "https://www.devscratchpad.tech/og-ai-skill-studio.png",
+ width: 1200,
+ height: 630,
+ alt: tool.name,
+ },
+ ],
  },
  twitter: {
  card:"summary_large_image",
  title: `${tool.seoTitle} | DevScratchpad`,
  description: tool.seoDescription,
+ images: [
+ {
+ url: "https://www.devscratchpad.tech/og-ai-skill-studio.png",
+ width: 1200,
+ height: 630,
+ alt: tool.name,
+ },
+ ],
  },
  alternates: {
  canonical: `${SITE_URL}/tools/${slug}`,

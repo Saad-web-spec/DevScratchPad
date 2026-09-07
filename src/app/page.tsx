@@ -3,7 +3,9 @@ import { WorkspaceShell } from "@/components/WorkspaceShell";
 import { HomeSeoContent } from "@/components/seo/HomeSeoContent";
 
 export const metadata: Metadata = {
-  title: "DevScratchpad — Free Offline Developer Tools & Scratchpad",
+  title: {
+    absolute: "DevScratchpad — Free Offline Developer Tools",
+  },
   description:
     "DevScratchpad is a free, 100% offline, privacy-first developer utility suite. Client-side JSON formatting, JWT decoding, cURL converters, Base64 inspection, and AI Skill Studio with zero server transmission.",
   keywords: [
@@ -23,18 +25,34 @@ export const metadata: Metadata = {
     canonical: "https://www.devscratchpad.tech",
   },
   openGraph: {
-    title: "DevScratchpad — Free Offline Developer Tools & Scratchpad",
+    title: "DevScratchpad — Free Offline Developer Tools",
     description:
       "DevScratchpad is a free, 100% offline, privacy-first developer utility suite. Client-side JSON formatting, JWT decoding, cURL converters, Base64 inspection, and AI Skill Studio with zero server transmission.",
     url: "https://www.devscratchpad.tech",
     siteName: "DevScratchpad",
     type: "website",
+    images: [
+      {
+        url: "https://www.devscratchpad.tech/og-ai-skill-studio.png",
+        width: 1200,
+        height: 630,
+        alt: "DevScratchpad — Free Offline Developer Tools & AI Skill Studio",
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "DevScratchpad — Free Offline Developer Tools & Scratchpad",
+    title: "DevScratchpad — Free Offline Developer Tools",
     description:
       "DevScratchpad is a free, 100% offline, privacy-first developer utility suite. Zero server transmission.",
+    images: [
+      {
+        url: "https://www.devscratchpad.tech/og-ai-skill-studio.png",
+        width: 1200,
+        height: 630,
+        alt: "DevScratchpad — Free Offline Developer Tools & AI Skill Studio",
+      },
+    ],
   },
 };
 

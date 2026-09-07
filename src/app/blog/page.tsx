@@ -33,7 +33,14 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Developer Learning Hub, Cheat Sheets & Engineering Guides | DevScratchpad",
     description: "Exhaustive technical guides, cheat sheets, and practical reference architectures for developers.",
-    images: ["https://www.devscratchpad.tech/og-ai-skill-studio.png"],
+    images: [
+      {
+        url: "https://www.devscratchpad.tech/og-ai-skill-studio.png",
+        width: 1200,
+        height: 630,
+        alt: "Developer Learning Hub & Engineering Guides",
+      },
+    ],
   },
 };
 
@@ -78,7 +85,7 @@ export default function BlogIndex() {
 
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c") }}
       />
 
       <main className="flex-1 w-full max-w-6xl mx-auto px-4 sm:px-6 py-10 md:py-14">

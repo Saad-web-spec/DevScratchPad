@@ -173,7 +173,7 @@ export default async function ProgrammaticPresetPage({
     <div className="min-h-screen bg-zinc-50 text-zinc-800 font-sans selection:bg-orange-500 selection:text-white flex flex-col">
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLdGraph) }}
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLdGraph).replace(/</g, "\\u003c") }}
       />
 
       {/* Top Breadcrumb Navigation Bar matching /ai-skill-studio */}

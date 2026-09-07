@@ -74,7 +74,14 @@ export async function generateMetadata({
       card: "summary_large_image",
       title: `${category.seoTitle} | DevScratchpad`,
       description: category.seoDescription,
-      images: ["https://www.devscratchpad.tech/og-ai-skill-studio.png"],
+      images: [
+        {
+          url: "https://www.devscratchpad.tech/og-ai-skill-studio.png",
+          width: 1200,
+          height: 630,
+          alt: category.name,
+        },
+      ],
     },
   };
 }
@@ -163,7 +170,7 @@ export default async function CategoryHubPage({
     <div className="min-h-screen bg-zinc-50 flex flex-col font-sans selection:bg-zinc-900 selection:text-white">
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c") }}
       />
       <SiteHeader />
 
