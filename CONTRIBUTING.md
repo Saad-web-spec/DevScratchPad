@@ -60,3 +60,9 @@ Adding a new tool to DevScratchpad is simple and structured:
    - `fix: resolve regex catastrophic backtracking warning`
    - `docs: update readme with awesome-lists badge`
 4. Push to your fork and submit a Pull Request against `main`.
+
+---
+
+## ⚖️ Contributor Licensing
+
+By submitting a pull request or contributing code to DevScratchpad, you agree that your contributions will be licensed under the project's [**Business Source License 1.1 (BSL 1.1)**](./LICENSE).

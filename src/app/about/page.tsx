@@ -9,14 +9,14 @@ const SITE_URL = "https://www.devscratchpad.tech";
 export const metadata: Metadata = {
   title: "About — 100% Offline, Privacy-Backed Developer Tools",
   description:
-    "Learn about DevScratchpad: an open-source, client-side developer utility platform. Zero server transmission, client-side cryptography, and AI Skill Studio.",
+    "Learn about DevScratchpad: a source-available, client-side developer utility platform. Zero server transmission, client-side cryptography, and AI Skill Studio.",
   alternates: {
     canonical: `${SITE_URL}/about`,
   },
   openGraph: {
     title: "About DevScratchpad — 100% Offline, Privacy-Backed Developer Tools",
     description:
-      "DevScratchpad is an open-source developer platform built for speed and security. Free online tools that execute 100% in-browser.",
+      "DevScratchpad is a source-available developer platform built for speed and security. Free online tools that execute 100% in-browser.",
     url: `${SITE_URL}/about`,
     images: [
       {
@@ -31,7 +31,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "About DevScratchpad — 100% Offline, Privacy-Backed Developer Tools",
     description:
-      "DevScratchpad is an open-source developer platform built for speed and security. Free online tools that execute 100% in-browser.",
+      "DevScratchpad is a source-available developer platform built for speed and security. Free online tools that execute 100% in-browser.",
     images: ["https://www.devscratchpad.tech/og-ai-skill-studio.png"],
   },
 };
@@ -45,7 +45,7 @@ const aboutJsonLd = {
       url: `${SITE_URL}/about`,
       name: "About DevScratchpad",
       description:
-        "DevScratchpad is an open-source, privacy-backed developer platform providing 28 offline client-side developer utilities and AI agent prompt generators.",
+        "DevScratchpad is a source-available, privacy-backed developer platform providing 28 offline client-side developer utilities and AI agent prompt generators.",
       publisher: {
         "@type": "Organization",
         "@id": `${SITE_URL}/#organization`,
@@ -82,13 +82,13 @@ export default function AboutPage() {
         <div className="mb-12 border-b border-zinc-200 pb-8">
           <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-mono font-medium bg-zinc-100 text-zinc-800 mb-4 border border-zinc-200">
             <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
-            <span>Open Source & Privacy First</span>
+            <span>Source-Available & Privacy First</span>
           </div>
           <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-zinc-900">
             About DevScratchpad
           </h1>
           <p className="mt-3 text-base text-zinc-600 leading-relaxed max-w-3xl">
-            DevScratchpad is an active, open-source developer productivity suite providing over 30 offline-first utilities and an AI agent prompt steering studio. Every feature runs 100% inside your browser memory with <strong>zero server data transmission</strong>.
+            DevScratchpad is an active, source-available developer productivity suite providing over 30 offline-first utilities and an AI agent prompt steering studio. Every feature runs 100% inside your browser memory with <strong>zero server data transmission</strong>.
           </p>
         </div>
 
@@ -156,12 +156,12 @@ export default function AboutPage() {
             </div>
           </section>
 
-          {/* Open Source / Verification */}
+          {/* Source-Available / Verification */}
           <section className="p-6 bg-zinc-100 border border-zinc-200 rounded-xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div className="space-y-1">
               <h3 className="text-sm font-bold text-zinc-900 flex items-center gap-2">
                 <FolderGit2 className="w-4 h-4" />
-                Auditable & Open Source
+                Auditable & Source-Available
               </h3>
               <p className="text-xs text-zinc-600">
                 Inspect the source code, verify our zero-server claims, or contribute utilities on GitHub.

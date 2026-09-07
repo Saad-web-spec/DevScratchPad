@@ -8,7 +8,7 @@
 [![Next.js 16](https://img.shields.io/badge/Next.js-16.3.3-black?style=for-the-badge&logo=next.js&logoColor=white)](https://nextjs.org/)
 [![React 19](https://img.shields.io/badge/React-19.2.8-61DAFB?style=for-the-badge&logo=react&logoColor=black)](https://react.dev/)
 [![Tailwind CSS v4](https://img.shields.io/badge/Tailwind_CSS-v4.0-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-emerald?style=for-the-badge)](./LICENSE)
+[![License: BSL 1.1](https://img.shields.io/badge/License-BSL%201.1%20(Source--Available)-orange?style=for-the-badge)](./LICENSE)
 
 <br/>
 
@@ -54,7 +54,7 @@
 **DevScratchpad is 100% client-side:**
 - **Zero API Endpoints:** Every formatter, parser, hash generator, and converter executes in pure browser JavaScript & WASM.
 - **Zero Telemetry on Payloads:** Your inputs never touch a server or database.
-- **Auditable & Open-Source:** Inspect the network tab or the source code in this repository to verify that no network requests leave your machine.
+- **Auditable & Source-Available:** Inspect the network tab or the source code in this repository to verify that no network requests leave your machine.
 
 ---
 
@@ -128,11 +128,16 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 ---
 
-## 🚢 One-Click Deployment
+## 💻 Local Development & Verification
 
-Deploy your own private, customized instance of DevScratchpad for your team on Vercel:
+Run DevScratchpad locally on your machine for personal use and security verification:
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/Saad-web-spec/DevScratchPad)
+```bash
+git clone https://github.com/Saad-web-spec/DevScratchPad.git
+cd DevScratchPad
+npm install
+npm run dev
+```
 
 ---
 
@@ -154,9 +159,13 @@ If DevScratchpad has saved you time or improved your workflow, consider starring
 
 ---
 
-## 📄 License
+## 📄 License & Commercial Protection
 
-Distributed under the MIT License. See [`LICENSE`](./LICENSE) for more information.
+DevScratchpad is distributed under the **Business Source License 1.1 (BSL 1.1)**.
+
+- ✅ **Free for Personal, Research & Educational Use:** Anyone may view, audit, run locally, and contribute to the source code.
+- 🛡️ **Commercial & Competitor Restrictions:** Publicly hosting DevScratchpad (or any derivative) as a competing website, SaaS, API, or commercial platform is strictly prohibited without prior written commercial licensing agreement.
+- See the full legal terms in [`LICENSE`](./LICENSE).
 
 <div align="center">
   <sub>Built with ❤️ by <a href="https://saadengineer.works">Saad</a> &bull; Powered by Next.js 16 &amp; Monaco Editor</sub>
