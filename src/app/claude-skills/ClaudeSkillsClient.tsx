@@ -169,10 +169,41 @@ export function ClaudeSkillsClient({
     }
   };
 
+  // Interactive Trigger Tag Chips State & Validation
+  const [triggerTags, setTriggerTags] = useState<string[]>(["api-routes", "code-audits", "refactoring"]);
+  const [newTagInput, setNewTagInput] = useState("");
+
+  const PRESET_TRIGGER_TAGS = useMemo(
+    () => [
+      "api-routes",
+      "database-schema",
+      "react-components",
+      "unit-tests",
+      "security-audit",
+      "refactoring",
+      "auth-flow",
+      "orm-prisma",
+      "state-management",
+    ],
+    []
+  );
+
+  const handleAddTag = (tagToAdd: string) => {
+    const clean = tagToAdd.trim().toLowerCase().replace(/[^a-z0-9-]/g, "-").replace(/-+/g, "-").replace(/^-+|-+$/g, "");
+    if (clean && !triggerTags.includes(clean)) {
+      setTriggerTags((prev) => [...prev, clean]);
+    }
+    setNewTagInput("");
+  };
+
+  const handleRemoveTag = (tagToRemove: string) => {
+    setTriggerTags((prev) => prev.filter((t) => t !== tagToRemove));
+  };
+
   // Real-time Activation Trigger Validation
   const triggerValidation = useMemo(() => {
-    return validateTriggerPhrase(description);
-  }, [description]);
+    return validateTriggerPhrase(description, triggerTags);
+  }, [description, triggerTags]);
 
   // MCP Server state
   const [mcpPresetId, setMcpPresetId] = useState<string>(() => defaultMcpPreset.id);
@@ -827,7 +858,7 @@ export function ClaudeSkillsClient({
   // Active content being viewed/copied/downloaded
   const activeContent = isManuallyEdited ? editorContent : generatedContent;
 
-  // Real-time Rule Quality & Security Audit Engine
+  // Real-time Rule Quality & Security Audit Engine (5 Core Dimensions)
   const auditReport = useMemo(() => {
     return auditRuleQuality({
       content: activeContent,
@@ -835,6 +866,7 @@ export function ClaudeSkillsClient({
       description,
       globPattern,
       alwaysApply,
+      triggerTags,
       exampleGood,
       exampleBad,
     });
@@ -844,6 +876,7 @@ export function ClaudeSkillsClient({
     description,
     globPattern,
     alwaysApply,
+    triggerTags,
     exampleGood,
     exampleBad,
   ]);
@@ -851,11 +884,12 @@ export function ClaudeSkillsClient({
   // Copy audit report summary for PRs / documentation
   const handleCopyAuditReport = () => {
     const lines = [
-      `### Rule Quality & Security Audit: ${auditReport.overallScore}/100 · ${auditReport.gradeLabel}`,
-      `- **Clarity & Ambiguity**: ${auditReport.dimensions.clarity.score}%`,
-      `- **Token Footprint**: ~${auditReport.tokenCount} tokens (${auditReport.dimensions.tokenDensity.score}%)`,
-      `- **Guardrails & Boundaries**: ${auditReport.dimensions.guardrails.score}%`,
-      `- **Trigger Precision & Scoping**: ${auditReport.dimensions.triggers.score}%`,
+      `### Static Rule Quality Audit: ${auditReport.overallScore}/100 · ${auditReport.gradeLabel}`,
+      `- **Trigger Specificity**: ${auditReport.dimensions.triggers.score}%`,
+      `- **Rule Density**: ${auditReport.dimensions.tokenDensity.score}% (~${auditReport.tokenCount} tokens)`,
+      `- **Negative Guardrails**: ${auditReport.dimensions.guardrails.score}%`,
+      `- **Format Compliance**: ${auditReport.dimensions.formatCompliance.score}%`,
+      `- **Architectural Boundaries**: ${auditReport.dimensions.architecture.score}%`,
       "",
       `**Summary**: ${auditReport.summary}`,
     ];
@@ -873,7 +907,9 @@ export function ClaudeSkillsClient({
   };
 
   // One-click quick fix: Inject negative boundary guardrails
+  // One-click quick fix: Inject negative boundary guardrails
   const handleInjectNegativeGuardrails = () => {
+    if (format === "mcp_json") return;
     const snippet = `\n\n## Strict Negative Guardrails\n- Never modify \`.env\` files, production credentials, or secrets without explicit permission.\n- Do not run destructive shell commands (e.g. \`rm -rf\`, \`git push --force\`, database drops).\n- Deliver surgical, focused diffs rather than re-outputting entire existing files.\n- Strictly avoid loose \`any\` or unverified type assertions.`;
     setEditorContent((prev) => (prev || activeContent) + snippet);
     setIsManuallyEdited(true);
@@ -881,6 +917,7 @@ export function ClaudeSkillsClient({
 
   // One-click quick fix: Inject code block example
   const handleInjectCodeBlock = () => {
+    if (format === "mcp_json") return;
     const snippet = `\n\n## Implementation Reference\n\`\`\`typescript\n// Good Pattern: Explicit typing and input validation\nexport function validateInput(value: string): boolean {\n  if (!value || value.trim().length === 0) return false;\n  return true;\n}\n\`\`\``;
     setEditorContent((prev) => (prev || activeContent) + snippet);
     setIsManuallyEdited(true);
@@ -914,6 +951,52 @@ export function ClaudeSkillsClient({
     setAlwaysApply(false);
   };
 
+  // One-click quick fix: Fix Format Compliance
+  const handleFixFormatCompliance = () => {
+    if (format === "cursor_mdc" && !activeContent.startsWith("---")) {
+      const frontmatter = `---\ndescription: ${description || skillTitle}\nglobs: ${globPattern || "**/*"}\nalwaysApply: ${alwaysApply}\n---\n\n`;
+      setEditorContent(frontmatter + activeContent);
+      setIsManuallyEdited(true);
+    } else if (format === "mcp_json") {
+      try {
+        JSON.parse(activeContent);
+      } catch {
+        const fixedJson = JSON.stringify(
+          {
+            mcpServers: {
+              [mcpServerName || "server"]: {
+                command: mcpCommand || "npx",
+                args: mcpArgs.split("\n").map((a) => a.trim()).filter(Boolean),
+                ...(mcpEnvKey ? { env: { [mcpEnvKey]: mcpEnvValue } } : {}),
+              },
+            },
+          },
+          null,
+          2
+        );
+        setEditorContent(fixedJson);
+        setIsManuallyEdited(true);
+      }
+    }
+  };
+
+  // One-click quick fix: Replace broad trigger chips
+  const handleFixBroadTriggers = () => {
+    const broadWords = new Set(["help", "code", "fix", "debug", "test", "write", "program", "build", "create", "run", "make", "do", "assist", "work", "task", "dev", "generate", "prompt", "ai", "ask"]);
+    const isBroadTag = (tag: string) => {
+      const tagWords = tag.toLowerCase().match(/[a-z0-9]+/g) || [];
+      return tagWords.length > 0 && tagWords.every((w) => broadWords.has(w));
+    };
+    const scopedTags = triggerTags.filter((t) => !isBroadTag(t));
+    if (scopedTags.length === 0) {
+      scopedTags.push("api-routes", "domain-services");
+    }
+    setTriggerTags(scopedTags);
+    if (!description || description.length < 10) {
+      setDescription(`Activates automatically when working on ${framework || "system"} domain services, API endpoints, or database queries.`);
+    }
+  };
+
   // Comprehensive Auto-Fix: Resolves all detected deficiencies in one click
   const handleAutoFixAll = () => {
     let updated = activeContent;
@@ -933,12 +1016,37 @@ export function ClaudeSkillsClient({
       updated = updated.replace(regex, replacement);
     }
 
-    if (auditReport.dimensions.guardrails.score < 70) {
-      updated += `\n\n## Strict Negative Guardrails\n- Never modify \`.env\` files, production credentials, or secrets without explicit permission.\n- Do not run destructive shell commands (e.g. \`rm -rf\`, \`git push --force\`, database drops).\n- Deliver surgical, focused diffs rather than re-outputting entire existing files.\n- Strictly avoid loose \`any\` or unverified type assertions.`;
-    }
+    if (format !== "mcp_json") {
+      if (auditReport.dimensions.guardrails.score < 70) {
+        updated += `\n\n## Strict Negative Guardrails\n- Never modify \`.env\` files, production credentials, or secrets without explicit permission.\n- Do not run destructive shell commands (e.g. \`rm -rf\`, \`git push --force\`, database drops).\n- Deliver surgical, focused diffs rather than re-outputting entire existing files.\n- Strictly avoid loose \`any\` or unverified type assertions.`;
+      }
 
-    if (!updated.includes("```") && updated.length > 300) {
-      updated += `\n\n## Implementation Reference\n\`\`\`typescript\n// Good Pattern: Explicit typing and input validation\nexport function validateScope(input: string): boolean {\n  if (!input || input.trim().length === 0) return false;\n  return true;\n}\n\`\`\``;
+      if (format === "cursor_mdc" && !updated.startsWith("---")) {
+        updated = `---\ndescription: ${description || skillTitle}\nglobs: ${globPattern || "**/*"}\nalwaysApply: ${alwaysApply}\n---\n\n` + updated;
+      }
+
+      if (!updated.includes("```") && updated.length > 300) {
+        updated += `\n\n## Implementation Reference\n\`\`\`typescript\n// Good Pattern: Explicit typing and input validation\nexport function validateScope(input: string): boolean {\n  if (!input || input.trim().length === 0) return false;\n  return true;\n}\n\`\`\``;
+      }
+    } else {
+      // For MCP JSON, ensure format compliance auto-fix if invalid JSON
+      try {
+        JSON.parse(updated);
+      } catch {
+        updated = JSON.stringify(
+          {
+            mcpServers: {
+              [mcpServerName || "server"]: {
+                command: mcpCommand || "npx",
+                args: mcpArgs.split("\n").map((a) => a.trim()).filter(Boolean),
+                ...(mcpEnvKey ? { env: { [mcpEnvKey]: mcpEnvValue } } : {}),
+              },
+            },
+          },
+          null,
+          2
+        );
+      }
     }
 
     setEditorContent(updated);
@@ -948,6 +1056,8 @@ export function ClaudeSkillsClient({
       setGlobPattern("src/**/*.{ts,tsx,js,jsx}");
       setAlwaysApply(false);
     }
+
+    handleFixBroadTriggers();
   };
 
   // Filtered issues based on selected dimension
@@ -1850,48 +1960,148 @@ export function ClaudeSkillsClient({
               </div>
             </div>
 
-            <div className="space-y-1.5">
+            {/* Interactive Trigger Tag Chips & Heuristic Validation */}
+            <div className="space-y-3">
               <div className="flex flex-col sm:flex-row sm:items-baseline justify-between gap-0.5 sm:gap-2">
-                <label className="text-xs font-semibold text-zinc-700">
-                  Activation Trigger
+                <label className="text-xs font-semibold text-zinc-700 flex items-center gap-1.5">
+                  <span>Interactive Activation Trigger Chips</span>
+                  <span className="text-[10px] bg-orange-100 text-orange-800 font-mono px-1.5 py-0.2 rounded font-medium">
+                    {triggerTags.length} chips
+                  </span>
                 </label>
-                <span className="text-[10px] text-zinc-400">Progressive disclosure condition evaluated by AI</span>
+                <span className="text-[10px] text-zinc-400">Scoped domain keywords evaluated in real time</span>
               </div>
-              <textarea
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                rows={4}
-                placeholder="When should the AI activate this skill? (e.g., progressive disclosure condition for Claude Code or file globs for Cursor .mdc rules)..."
-                className="w-full p-3 border border-zinc-200 rounded-lg text-xs leading-relaxed focus:outline-none focus:ring-2 focus:ring-zinc-900/10 focus:border-zinc-900 min-h-[105px] resize-y"
-              />
 
-              {/* Activation Trigger Validation Feedback */}
-              {description.trim().length > 0 && (!triggerValidation.isValid || triggerValidation.severity) && (
+              {/* Active Chips List */}
+              <div className="flex flex-wrap items-center gap-1.5 p-2 bg-zinc-50 border border-zinc-200 rounded-lg min-h-[42px]">
+                {triggerTags.map((tag) => {
+                  const isBroad = triggerValidation.broadTags?.includes(tag);
+                  return (
+                    <span
+                      key={tag}
+                      className={cn(
+                        "inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium border transition-all animate-in fade-in zoom-in-95 duration-100",
+                        isBroad
+                          ? "bg-amber-100/90 text-amber-900 border-amber-300 font-semibold shadow-2xs"
+                          : "bg-white text-zinc-800 border-zinc-300 shadow-2xs"
+                      )}
+                    >
+                      {isBroad && <AlertTriangle className="w-3 h-3 text-amber-600 shrink-0" />}
+                      <span>{tag}</span>
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveTag(tag)}
+                        className="text-zinc-400 hover:text-zinc-900 rounded p-0.5 transition-colors cursor-pointer"
+                        title={`Remove tag '${tag}'`}
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </span>
+                  );
+                })}
+
+                {/* Add Custom Tag Input */}
+                <div className="flex items-center gap-1 ml-auto">
+                  <input
+                    type="text"
+                    value={newTagInput}
+                    onChange={(e) => setNewTagInput(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        handleAddTag(newTagInput);
+                      }
+                    }}
+                    placeholder="+ Add tag..."
+                    className="px-2 py-1 text-xs border border-zinc-200 rounded-md focus:outline-none focus:ring-1 focus:ring-orange-500 font-mono w-24 sm:w-32 bg-white"
+                  />
+                  {newTagInput.trim() && (
+                    <button
+                      type="button"
+                      onClick={() => handleAddTag(newTagInput)}
+                      className="px-2 py-1 bg-orange-600 text-white rounded text-xs font-semibold hover:bg-orange-500 cursor-pointer shadow-2xs"
+                    >
+                      Add
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* Quick-Add Preset Tag Chips Suggestions */}
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <span className="text-[10px] font-semibold text-zinc-400 uppercase tracking-wider">Suggested Chips:</span>
+                {PRESET_TRIGGER_TAGS.map((presetTag) => {
+                  const isAdded = triggerTags.includes(presetTag);
+                  return (
+                    <button
+                      key={presetTag}
+                      type="button"
+                      onClick={() => (isAdded ? handleRemoveTag(presetTag) : handleAddTag(presetTag))}
+                      className={cn(
+                        "text-[10px] px-2 py-0.5 rounded-full border transition-all font-mono cursor-pointer",
+                        isAdded
+                          ? "bg-zinc-800 text-white border-zinc-700 font-semibold"
+                          : "bg-white hover:bg-zinc-100 text-zinc-600 border-zinc-200"
+                      )}
+                    >
+                      {isAdded ? `✓ ${presetTag}` : `+ ${presetTag}`}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Detailed Activation Description */}
+              <div className="space-y-1 pt-1">
+                <label className="text-xs font-semibold text-zinc-700">Activation Description & Conditions</label>
+                <textarea
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  rows={3}
+                  placeholder="When should the AI activate this skill? (e.g., progressive disclosure condition for Claude Code or file globs for Cursor .mdc rules)..."
+                  className="w-full p-3 border border-zinc-200 rounded-lg text-xs leading-relaxed focus:outline-none focus:ring-2 focus:ring-zinc-900/10 focus:border-zinc-900 min-h-[90px] resize-y"
+                />
+              </div>
+
+              {/* Real-time Heuristic Warning & Auto-Fix Banner */}
+              {(!triggerValidation.isValid || triggerValidation.severity) && (
                 <div
                   className={cn(
-                    "flex items-start gap-2 p-2.5 rounded-lg border text-xs leading-relaxed transition-all",
+                    "flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-2.5 rounded-lg border text-xs leading-relaxed transition-all",
                     triggerValidation.severity === "warning" || !triggerValidation.isValid
                       ? "bg-amber-50/80 border-amber-200/90 text-amber-900"
                       : "bg-blue-50/80 border-blue-200/90 text-blue-900"
                   )}
                 >
-                  <AlertTriangle
-                    className={cn(
-                      "w-4 h-4 shrink-0 mt-0.5",
-                      triggerValidation.severity === "warning" || !triggerValidation.isValid
-                        ? "text-amber-600"
-                        : "text-blue-600"
-                    )}
-                  />
-                  <div className="space-y-0.5">
-                    <p className="font-semibold text-[11px]">{triggerValidation.message}</p>
-                    {triggerValidation.recommendation && (
-                      <p className="text-[10px] text-zinc-600">
-                        <span className="font-semibold text-zinc-700">Tip: </span>
-                        {triggerValidation.recommendation}
-                      </p>
-                    )}
+                  <div className="flex items-start gap-2 min-w-0">
+                    <AlertTriangle
+                      className={cn(
+                        "w-4 h-4 shrink-0 mt-0.5",
+                        triggerValidation.severity === "warning" || !triggerValidation.isValid
+                          ? "text-amber-600"
+                          : "text-blue-600"
+                      )}
+                    />
+                    <div className="space-y-0.5 min-w-0">
+                      <p className="font-semibold text-[11px]">{triggerValidation.message}</p>
+                      {triggerValidation.recommendation && (
+                        <p className="text-[10px] text-zinc-600">
+                          <span className="font-semibold text-zinc-700">Tip: </span>
+                          {triggerValidation.recommendation}
+                        </p>
+                      )}
+                    </div>
                   </div>
+
+                  {(triggerValidation.broadTags?.length || triggerValidation.matches?.length) ? (
+                    <button
+                      type="button"
+                      onClick={handleFixBroadTriggers}
+                      className="inline-flex items-center justify-center gap-1 px-2.5 py-1 bg-amber-900 hover:bg-amber-800 text-white rounded-md text-[10px] font-mono font-semibold transition-all shrink-0 cursor-pointer shadow-2xs"
+                      title="Refine broad tags into domain-specific chips"
+                    >
+                      ⚡ Refine Triggers
+                    </button>
+                  ) : null}
                 </div>
               )}
             </div>
@@ -2450,6 +2660,12 @@ export function ClaudeSkillsClient({
                   scrollBeyondLastLine: false,
                   smoothScrolling: true,
                   automaticLayout: true,
+                  maxTokenizationLineLength: 20000,
+                  unicodeHighlight: { ambiguousCharacters: false },
+                  renderLineHighlight: "none",
+                  folding: false,
+                  quickSuggestions: false,
+                  fixedOverflowWidgets: true,
                   padding: { top: 10, bottom: 10 },
                   scrollbar: {
                     vertical: "visible",
@@ -2495,85 +2711,95 @@ export function ClaudeSkillsClient({
                         className="text-zinc-400 hover:text-zinc-100 p-1 rounded-md hover:bg-zinc-800/80 transition-colors cursor-pointer"
                         title="Close audit panel"
                       >
-                        <X className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                  </div>
+                                <X className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          </div>
 
-                  {/* Standardized 4-Column Metric Grid (Interactive Troubleshooting Filters) */}
-                  <div className="p-3 bg-[#121316]/90 border-b border-zinc-800/80 shrink-0">
-                    <div
-                      style={{
-                        display: "grid",
-                        gridTemplateColumns: "repeat(4, 1fr)",
-                        gap: "8px",
-                      }}
-                    >
-                      {/* Clarity */}
-                      <button
-                        type="button"
-                        onClick={() => setSelectedDimension((prev: AuditDimension | "all") => (prev === "clarity" ? "all" : "clarity"))}
-                        className={cn(
-                          "flex flex-col items-start min-w-0 p-2 rounded-lg text-left transition-colors cursor-pointer border",
-                          selectedDimension === "clarity"
-                            ? "bg-zinc-800/80 border-zinc-500"
-                            : "bg-white/[0.02] border-white/[0.06] hover:bg-white/[0.05]"
-                        )}
-                        title="Click to filter Clarity diagnostics"
-                      >
-                        <span className="text-[10px] font-mono uppercase tracking-wider text-zinc-500">CLARITY</span>
-                        <span className="text-[13px] font-mono font-semibold text-zinc-100">{auditReport.dimensions.clarity.score}%</span>
-                      </button>
+                          {/* Standardized 5-Column Metric Grid (Interactive Troubleshooting Filters) */}
+                          <div className="p-2.5 bg-[#121316]/90 border-b border-zinc-800/80 shrink-0">
+                            <div className="grid grid-cols-5 gap-1.5">
+                              {/* Triggers */}
+                              <button
+                                type="button"
+                                onClick={() => setSelectedDimension((prev: AuditDimension | "all") => (prev === "triggers" ? "all" : "triggers"))}
+                                className={cn(
+                                  "flex flex-col items-start min-w-0 p-1.5 rounded-lg text-left transition-colors cursor-pointer border",
+                                  selectedDimension === "triggers"
+                                    ? "bg-zinc-800/80 border-zinc-500"
+                                    : "bg-white/[0.02] border-white/[0.06] hover:bg-white/[0.05]"
+                                )}
+                                title="Click to filter Trigger Specificity diagnostics"
+                              >
+                                <span className="text-[9px] font-mono uppercase tracking-wider text-zinc-500 truncate w-full">TRIGGERS</span>
+                                <span className="text-[12px] font-mono font-semibold text-zinc-100">{auditReport.dimensions.triggers.score}%</span>
+                              </button>
 
-                      {/* Tokens */}
-                      <button
-                        type="button"
-                        onClick={() => setSelectedDimension((prev: AuditDimension | "all") => (prev === "tokenDensity" ? "all" : "tokenDensity"))}
-                        className={cn(
-                          "flex flex-col items-start min-w-0 p-2 rounded-lg text-left transition-colors cursor-pointer border",
-                          selectedDimension === "tokenDensity"
-                            ? "bg-zinc-800/80 border-zinc-500"
-                            : "bg-white/[0.02] border-white/[0.06] hover:bg-white/[0.05]"
-                        )}
-                        title="Click to filter Token Economy diagnostics"
-                      >
-                        <span className="text-[10px] font-mono uppercase tracking-wider text-zinc-500">TOKENS</span>
-                        <span className="text-[13px] font-mono font-semibold text-zinc-100">~{auditReport.tokenCount}</span>
-                      </button>
+                              {/* Density */}
+                              <button
+                                type="button"
+                                onClick={() => setSelectedDimension((prev: AuditDimension | "all") => (prev === "tokenDensity" ? "all" : "tokenDensity"))}
+                                className={cn(
+                                  "flex flex-col items-start min-w-0 p-1.5 rounded-lg text-left transition-colors cursor-pointer border",
+                                  selectedDimension === "tokenDensity"
+                                    ? "bg-zinc-800/80 border-zinc-500"
+                                    : "bg-white/[0.02] border-white/[0.06] hover:bg-white/[0.05]"
+                                )}
+                                title="Click to filter Rule Density diagnostics"
+                              >
+                                <span className="text-[9px] font-mono uppercase tracking-wider text-zinc-500 truncate w-full">DENSITY</span>
+                                <span className="text-[12px] font-mono font-semibold text-zinc-100">~{auditReport.tokenCount}t</span>
+                              </button>
 
-                      {/* Guardrails */}
-                      <button
-                        type="button"
-                        onClick={() => setSelectedDimension((prev: AuditDimension | "all") => (prev === "guardrails" ? "all" : "guardrails"))}
-                        className={cn(
-                          "flex flex-col items-start min-w-0 p-2 rounded-lg text-left transition-colors cursor-pointer border",
-                          selectedDimension === "guardrails"
-                            ? "bg-zinc-800/80 border-zinc-500"
-                            : "bg-white/[0.02] border-white/[0.06] hover:bg-white/[0.05]"
-                        )}
-                        title="Click to filter Guardrails diagnostics"
-                      >
-                        <span className="text-[10px] font-mono uppercase tracking-wider text-zinc-500">GUARDRAILS</span>
-                        <span className="text-[13px] font-mono font-semibold text-zinc-100">{auditReport.dimensions.guardrails.score}%</span>
-                      </button>
+                              {/* Guardrails */}
+                              <button
+                                type="button"
+                                onClick={() => setSelectedDimension((prev: AuditDimension | "all") => (prev === "guardrails" ? "all" : "guardrails"))}
+                                className={cn(
+                                  "flex flex-col items-start min-w-0 p-1.5 rounded-lg text-left transition-colors cursor-pointer border",
+                                  selectedDimension === "guardrails"
+                                    ? "bg-zinc-800/80 border-zinc-500"
+                                    : "bg-white/[0.02] border-white/[0.06] hover:bg-white/[0.05]"
+                                )}
+                                title="Click to filter Negative Guardrails diagnostics"
+                              >
+                                <span className="text-[9px] font-mono uppercase tracking-wider text-zinc-500 truncate w-full">GUARDS</span>
+                                <span className="text-[12px] font-mono font-semibold text-zinc-100">{auditReport.dimensions.guardrails.score}%</span>
+                              </button>
 
-                      {/* Precision */}
-                      <button
-                        type="button"
-                        onClick={() => setSelectedDimension((prev: AuditDimension | "all") => (prev === "triggers" ? "all" : "triggers"))}
-                        className={cn(
-                          "flex flex-col items-start min-w-0 p-2 rounded-lg text-left transition-colors cursor-pointer border",
-                          selectedDimension === "triggers"
-                            ? "bg-zinc-800/80 border-zinc-500"
-                            : "bg-white/[0.02] border-white/[0.06] hover:bg-white/[0.05]"
-                        )}
-                        title="Click to filter Precision & Scoping diagnostics"
-                      >
-                        <span className="text-[10px] font-mono uppercase tracking-wider text-zinc-500">PRECISION</span>
-                        <span className="text-[13px] font-mono font-semibold text-zinc-100">{auditReport.dimensions.triggers.score}%</span>
-                      </button>
-                    </div>
-                  </div>
+                              {/* Format Compliance */}
+                              <button
+                                type="button"
+                                onClick={() => setSelectedDimension((prev: AuditDimension | "all") => (prev === "formatCompliance" ? "all" : "formatCompliance"))}
+                                className={cn(
+                                  "flex flex-col items-start min-w-0 p-1.5 rounded-lg text-left transition-colors cursor-pointer border",
+                                  selectedDimension === "formatCompliance"
+                                    ? "bg-zinc-800/80 border-zinc-500"
+                                    : "bg-white/[0.02] border-white/[0.06] hover:bg-white/[0.05]"
+                                )}
+                                title="Click to filter Format Compliance diagnostics"
+                              >
+                                <span className="text-[9px] font-mono uppercase tracking-wider text-zinc-500 truncate w-full">FORMAT</span>
+                                <span className="text-[12px] font-mono font-semibold text-zinc-100">{auditReport.dimensions.formatCompliance.score}%</span>
+                              </button>
+
+                              {/* Architectural Boundaries */}
+                              <button
+                                type="button"
+                                onClick={() => setSelectedDimension((prev: AuditDimension | "all") => (prev === "architecture" ? "all" : "architecture"))}
+                                className={cn(
+                                  "flex flex-col items-start min-w-0 p-1.5 rounded-lg text-left transition-colors cursor-pointer border",
+                                  selectedDimension === "architecture"
+                                    ? "bg-zinc-800/80 border-zinc-500"
+                                    : "bg-white/[0.02] border-white/[0.06] hover:bg-white/[0.05]"
+                                )}
+                                title="Click to filter Architectural Boundaries diagnostics"
+                              >
+                                <span className="text-[9px] font-mono uppercase tracking-wider text-zinc-500 truncate w-full">ARCH</span>
+                                <span className="text-[12px] font-mono font-semibold text-zinc-100">{auditReport.dimensions.architecture.score}%</span>
+                              </button>
+                            </div>
+                          </div>
 
                   {/* Sub-Tabs: Findings vs Checklist (Actionable & Powerful) */}
                   <div className="flex items-center justify-between px-3 bg-[#121316] border-b border-zinc-800/60 text-xs font-mono shrink-0">
@@ -2706,6 +2932,24 @@ export function ClaudeSkillsClient({
                                       <span>{"+ Scope Globs (src/**/*.{ts,tsx})"}</span>
                                     </button>
                                   )}
+                                  {issue.id.startsWith("format-") && (
+                                    <button
+                                      type="button"
+                                      onClick={handleFixFormatCompliance}
+                                      className="inline-flex items-center gap-1 text-[10px] font-mono font-medium px-2 py-0.5 rounded bg-zinc-800 hover:bg-zinc-700 text-zinc-200 border border-zinc-700 transition-colors cursor-pointer"
+                                    >
+                                      <span>+ Fix Format Syntax</span>
+                                    </button>
+                                  )}
+                                  {issue.id.startsWith("trigger-") && (
+                                    <button
+                                      type="button"
+                                      onClick={handleFixBroadTriggers}
+                                      className="inline-flex items-center gap-1 text-[10px] font-mono font-medium px-2 py-0.5 rounded bg-zinc-800 hover:bg-zinc-700 text-zinc-200 border border-zinc-700 transition-colors cursor-pointer"
+                                    >
+                                      <span>+ Refine Triggers & Chips</span>
+                                    </button>
+                                  )}
                                   {issue.id === "clarity-no-code-blocks" && (
                                     <button
                                       type="button"
@@ -2722,57 +2966,55 @@ export function ClaudeSkillsClient({
                         )}
                       </>
                     ) : (
-                      /* Checklist Tab: Powerful 4-Pillar Quality Audit Verification */
+                      /* Checklist Tab: 5-Pillar Quality Audit Verification */
                       <div className="space-y-2 font-sans">
                         <div className="p-2 rounded-lg bg-zinc-900/80 border border-zinc-800 text-[11px] space-y-0.5">
                           <div className="flex items-center justify-between">
-                            <span className="font-semibold text-zinc-200 font-mono">1. Boundary Guardrails</span>
-                            <span className={cn("text-[9px] font-mono font-bold uppercase px-1.5 py-0.5 rounded", auditReport.dimensions.guardrails.score >= 70 ? "bg-zinc-800 text-zinc-200" : "bg-zinc-800 text-amber-300")}>
-                              {auditReport.dimensions.guardrails.score >= 70 ? "Passed" : "Needs Review"}
-                            </span>
-                          </div>
-                          <p className="text-zinc-400 text-[10px]">
-                            {auditReport.dimensions.guardrails.score >= 70
-                              ? "Explicit negative constraints ('never', 'do not') detected to prevent AI overreach."
-                              : "Missing negative boundaries. Use '+ Inject Guardrails' to protect files."}
-                          </p>
-                        </div>
-
-                        <div className="p-2 rounded-lg bg-zinc-900/80 border border-zinc-800 text-[11px] space-y-0.5">
-                          <div className="flex items-center justify-between">
-                            <span className="font-semibold text-zinc-200 font-mono">2. Token Economy</span>
-                            <span className={cn("text-[9px] font-mono font-bold uppercase px-1.5 py-0.5 rounded", auditReport.tokenCount <= 1200 && auditReport.tokenCount >= 70 ? "bg-zinc-800 text-zinc-200" : "bg-zinc-800 text-amber-300")}>
-                              {auditReport.tokenCount <= 1200 && auditReport.tokenCount >= 70 ? "Optimal" : "Attention"}
-                            </span>
-                          </div>
-                          <p className="text-zinc-400 text-[10px]">
-                            ~{auditReport.tokenCount} tokens footprint. Keeps conversation windows lean without degrading prompt context.
-                          </p>
-                        </div>
-
-                        <div className="p-2 rounded-lg bg-zinc-900/80 border border-zinc-800 text-[11px] space-y-0.5">
-                          <div className="flex items-center justify-between">
-                            <span className="font-semibold text-zinc-200 font-mono">3. Directive Clarity</span>
-                            <span className={cn("text-[9px] font-mono font-bold uppercase px-1.5 py-0.5 rounded", auditReport.dimensions.clarity.score >= 85 ? "bg-zinc-800 text-zinc-200" : "bg-zinc-800 text-amber-300")}>
-                              {auditReport.dimensions.clarity.score >= 85 ? "Passed" : "Vague Terms"}
-                            </span>
-                          </div>
-                          <p className="text-zinc-400 text-[10px]">
-                            {auditReport.dimensions.clarity.score >= 85
-                              ? "Actionable instructions without subjective preambles ('write clean code')."
-                              : "Found vague directives. Replace with concrete technical standards."}
-                          </p>
-                        </div>
-
-                        <div className="p-2 rounded-lg bg-zinc-900/80 border border-zinc-800 text-[11px] space-y-0.5">
-                          <div className="flex items-center justify-between">
-                            <span className="font-semibold text-zinc-200 font-mono">4. Scope & Triggers</span>
+                            <span className="font-semibold text-zinc-200 font-mono">1. Trigger Specificity</span>
                             <span className={cn("text-[9px] font-mono font-bold uppercase px-1.5 py-0.5 rounded", auditReport.dimensions.triggers.score >= 80 ? "bg-zinc-800 text-zinc-200" : "bg-zinc-800 text-amber-300")}>
                               {auditReport.dimensions.triggers.score >= 80 ? "Passed" : "Review Scope"}
                             </span>
                           </div>
                           <p className="text-zinc-400 text-[10px]">
-                            Evaluates target globs or activation description so rules only fire on relevant file contexts.
+                            Evaluates trigger chips, activation phrase precision, and glob scoping so rules only activate when relevant.
+                          </p>
+                        </div>
+
+                        <div className="p-2 rounded-lg bg-zinc-900/80 border border-zinc-800 text-[11px] space-y-0.5">
+                          <div className="flex items-center justify-between">
+                            <span className="font-semibold text-zinc-200 font-mono">2. Rule Density</span>
+                            <span className={cn("text-[9px] font-mono font-bold uppercase px-1.5 py-0.5 rounded", auditReport.tokenCount <= 1200 && auditReport.tokenCount >= 70 ? "bg-zinc-800 text-zinc-200" : "bg-zinc-800 text-amber-300")}>
+                              {auditReport.tokenCount <= 1200 && auditReport.tokenCount >= 70 ? "Optimal" : "Attention"}
+                            </span>
+                          </div>
+                          <p className="text-zinc-400 text-[10px]">
+                            ~{auditReport.tokenCount} tokens footprint. Keeps context lean without degrading instruction recall.
+                          </p>
+                        </div>
+
+                        <div className="p-2 rounded-lg bg-zinc-900/80 border border-zinc-800 text-[11px] space-y-0.5">
+                          <div className="flex items-center justify-between">
+                            <span className="font-semibold text-zinc-200 font-mono">4. Format Compliance</span>
+                            <span className={cn("text-[9px] font-mono font-bold uppercase px-1.5 py-0.5 rounded", auditReport.dimensions.formatCompliance.score >= 80 ? "bg-zinc-800 text-zinc-200" : "bg-zinc-800 text-amber-300")}>
+                              {auditReport.dimensions.formatCompliance.score >= 80 ? "Passed" : "Syntax Check"}
+                            </span>
+                          </div>
+                          <p className="text-zinc-400 text-[10px]">
+                            Validates syntax and header metadata formatting for target standard ({format}).
+                          </p>
+                        </div>
+
+                        <div className="p-2 rounded-lg bg-zinc-900/80 border border-zinc-800 text-[11px] space-y-0.5">
+                          <div className="flex items-center justify-between">
+                            <span className="font-semibold text-zinc-200 font-mono">5. Architectural Boundaries</span>
+                            <span className={cn("text-[9px] font-mono font-bold uppercase px-1.5 py-0.5 rounded", auditReport.dimensions.architecture.score >= 80 ? "bg-zinc-800 text-zinc-200" : "bg-zinc-800 text-amber-300")}>
+                              {auditReport.dimensions.architecture.score >= 80 ? "Passed" : "Review Rules"}
+                            </span>
+                          </div>
+                          <p className="text-zinc-400 text-[10px]">
+                            {auditReport.dimensions.architecture.score >= 80
+                              ? "Concrete technical parameters free of vague directives ('write clean code')."
+                              : "Found vague directives. Use '+ Replace with Concrete Rules'."}
                           </p>
                         </div>
                       </div>
