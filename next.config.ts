@@ -110,7 +110,42 @@ const nextConfig: NextConfig = {
     const cspDirectivesEmbed = [...commonCspDirectives, "frame-ancestors *"].join("; ");
 
     return [
-      // 1. Tool routes: allow iframe embedding for the interactive embed feature
+      // 1. Crawler & metadata endpoints: unrestricted access with CORS and caching
+      {
+        source: '/robots.txt',
+        headers: [
+          {
+            key: 'Content-Type',
+            value: 'text/plain; charset=utf-8',
+          },
+          {
+            key: 'Access-Control-Allow-Origin',
+            value: '*',
+          },
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=86400, stale-while-revalidate=86400',
+          },
+        ],
+      },
+      {
+        source: '/sitemap.xml',
+        headers: [
+          {
+            key: 'Content-Type',
+            value: 'application/xml; charset=utf-8',
+          },
+          {
+            key: 'Access-Control-Allow-Origin',
+            value: '*',
+          },
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=86400, stale-while-revalidate=86400',
+          },
+        ],
+      },
+      // 2. Tool routes: allow iframe embedding for the interactive embed feature
       {
         source: '/tools/:path*',
         headers: [
@@ -128,7 +163,7 @@ const nextConfig: NextConfig = {
           },
           {
             key: 'Permissions-Policy',
-            value: 'camera=(), microphone=(), geolocation=(), interest-cohort=()',
+            value: 'camera=(), microphone=(), geolocation=()',
           },
           {
             key: 'Content-Security-Policy',
@@ -136,9 +171,9 @@ const nextConfig: NextConfig = {
           },
         ],
       },
-      // 2. All other routes: prevent clickjacking with strict frame-ancestors and X-Frame-Options
+      // 3. All other HTML routes: prevent clickjacking with strict frame-ancestors and X-Frame-Options
       {
-        source: '/((?!tools/).*)',
+        source: '/((?!tools/|_next/|robots\\.txt|sitemap\\.xml|llms\\.txt|llms-full\\.txt).*)',
         headers: [
           {
             key: 'X-Frame-Options',
@@ -158,7 +193,7 @@ const nextConfig: NextConfig = {
           },
           {
             key: 'Permissions-Policy',
-            value: 'camera=(), microphone=(), geolocation=(), interest-cohort=()',
+            value: 'camera=(), microphone=(), geolocation=()',
           },
           {
             key: 'Content-Security-Policy',

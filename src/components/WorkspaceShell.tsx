@@ -176,36 +176,15 @@ export function WorkspaceShell({ initialToolSlug, toolMeta, children }: Workspac
     ? getToolMeta(currentSlug)
     : toolMeta ?? undefined;
 
-  // Dynamically update document metadata on client-side tab change
+  // Dynamically update document title only on dedicated /tools/[tool-slug] pages during client tab switches
   useEffect(() => {
-    if (currentMeta && typeof document !== "undefined") {
+    if (initialToolSlug && currentMeta && typeof document !== "undefined") {
       const newTitle = `${currentMeta.seoTitle} | DevScratchpad`;
       if (document.title !== newTitle) {
         document.title = newTitle;
       }
-      
-      let metaDesc = document.querySelector('meta[name="description"]');
-      if (metaDesc) {
-        metaDesc.setAttribute("content", currentMeta.seoDescription);
-      } else {
-        metaDesc = document.createElement("meta");
-        metaDesc.setAttribute("name", "description");
-        metaDesc.setAttribute("content", currentMeta.seoDescription);
-        document.head.appendChild(metaDesc);
-      }
-      
-      let canonical = document.querySelector('link[rel="canonical"]');
-      const canonicalUrl = `https://www.devscratchpad.tech/tools/${currentSlug}`;
-      if (canonical) {
-        canonical.setAttribute("href", canonicalUrl);
-      } else {
-        canonical = document.createElement("link");
-        canonical.setAttribute("rel", "canonical");
-        canonical.setAttribute("href", canonicalUrl);
-        document.head.appendChild(canonical);
-      }
     }
-  }, [currentMeta, currentSlug]);
+  }, [initialToolSlug, currentMeta]);
 
   const handleValidationChange = useCallback(
     (valid: boolean, error?: string, line?: number) => {
