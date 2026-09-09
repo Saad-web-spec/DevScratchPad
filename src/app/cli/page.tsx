@@ -3,7 +3,6 @@ import Link from "next/link";
 import {
   Terminal,
   ShieldCheck,
-  Zap,
   ArrowRight,
   Sparkles,
   Lock,
@@ -178,7 +177,7 @@ export default function CliPage() {
           <div className="flex items-center gap-2 text-xs font-mono text-zinc-500">
             <span>npm: devscratchpad</span>
             <span>·</span>
-            <span className="text-emerald-600 dark:text-emerald-400 font-semibold">v2.1.0</span>
+            <span className="text-sky-600 dark:text-sky-400 font-semibold">v2.1.0</span>
           </div>
         </div>
 
@@ -229,8 +228,8 @@ export default function CliPage() {
             </div>
 
             <div className="p-6 bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-xs space-y-3">
-              <div className="w-10 h-10 rounded-xl bg-emerald-100 dark:bg-emerald-950/80 text-emerald-600 flex items-center justify-center">
-                <Zap className="w-5 h-5" />
+              <div className="w-10 h-10 rounded-xl bg-orange-100 dark:bg-orange-950/80 flex items-center justify-center">
+                <img src="/orange-star.png" className="w-5 h-5 object-contain" alt="DevScratchpad Star" />
               </div>
               <h3 className="font-bold text-base text-zinc-900 dark:text-zinc-100">Zero External Dependencies</h3>
               <p className="text-xs text-zinc-600 dark:text-zinc-400 leading-relaxed">
@@ -256,14 +255,19 @@ export default function CliPage() {
         <div className="space-y-4">
           <div className="flex items-center justify-between border-b border-zinc-200 dark:border-zinc-800 pb-3">
             <div>
-              <h3 className="text-xl font-bold text-zinc-900 dark:text-zinc-100">CLI Command Reference</h3>
-              <p className="text-xs text-zinc-500">Comprehensive syntax and options for terminal execution</p>
+              <h3 className="text-xl font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
+                <Terminal className="w-5 h-5 text-orange-600" />
+                <span>CLI Command Reference</span>
+              </h3>
+              <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-0.5">
+                Comprehensive syntax and options for terminal execution
+              </p>
             </div>
           </div>
 
           <div className="overflow-x-auto bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 shadow-xs">
-            <table className="w-full text-left text-xs">
-              <thead className="bg-zinc-50 dark:bg-zinc-800/60 border-b border-zinc-200 dark:border-zinc-800 font-semibold text-zinc-700 dark:text-zinc-300">
+            <table className="w-full text-left text-xs sm:text-sm">
+              <thead className="bg-zinc-100 dark:bg-zinc-800/80 border-b border-zinc-200 dark:border-zinc-800 font-semibold text-slate-700 dark:text-slate-200">
                 <tr>
                   <th className="py-3 px-4">Command</th>
                   <th className="py-3 px-4">Description</th>
@@ -271,36 +275,76 @@ export default function CliPage() {
                   <th className="py-3 px-4">Target Filesystem Output</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-zinc-200 dark:divide-zinc-800 font-mono text-[11px] text-zinc-600 dark:text-zinc-300">
-                <tr>
-                  <td className="py-3 px-4 font-bold text-orange-600 dark:text-orange-400">add &lt;format&gt;/&lt;preset&gt;</td>
-                  <td className="py-3 px-4 font-sans text-xs">Installs rulebook into standard folder</td>
-                  <td className="py-3 px-4">npx devscratchpad add cursor-rules/nextjs-15</td>
-                  <td className="py-3 px-4">.cursor/rules/nextjs-15.mdc</td>
+              <tbody className="divide-y divide-zinc-200 dark:divide-zinc-800">
+                <tr className="hover:bg-zinc-50/50 dark:hover:bg-zinc-800/40 transition-colors">
+                  <td className="py-3.5 px-4 font-mono font-medium text-amber-500 dark:text-amber-400">
+                    add &lt;format&gt;/&lt;preset&gt;
+                  </td>
+                  <td className="py-3.5 px-4 text-slate-600 dark:text-slate-400">
+                    Installs rulebook into standard folder
+                  </td>
+                  <td className="py-3.5 px-4 font-mono text-xs text-slate-800 dark:text-slate-200">
+                    <span className="text-slate-400 select-none mr-1.5">$</span>npx devscratchpad add cursor-rules/nextjs-15
+                  </td>
+                  <td className="py-3.5 px-4 font-mono text-xs text-sky-600 dark:text-sky-400 font-medium">
+                    .cursor/rules/nextjs-15.mdc
+                  </td>
                 </tr>
-                <tr>
-                  <td className="py-3 px-4 font-bold text-orange-600 dark:text-orange-400">add &lt;preset&gt; --format &lt;fmt&gt;</td>
-                  <td className="py-3 px-4 font-sans text-xs">Installs rulebook via flag syntax</td>
-                  <td className="py-3 px-4">npx devscratchpad add fastapi -f claude-skills</td>
-                  <td className="py-3 px-4">.claude/skills/fastapi/SKILL.md</td>
+                <tr className="hover:bg-zinc-50/50 dark:hover:bg-zinc-800/40 transition-colors">
+                  <td className="py-3.5 px-4 font-mono font-medium text-amber-500 dark:text-amber-400">
+                    add &lt;preset&gt; --format &lt;fmt&gt;
+                  </td>
+                  <td className="py-3.5 px-4 text-slate-600 dark:text-slate-400">
+                    Installs rulebook via flag syntax
+                  </td>
+                  <td className="py-3.5 px-4 font-mono text-xs text-slate-800 dark:text-slate-200">
+                    <span className="text-slate-400 select-none mr-1.5">$</span>npx devscratchpad add fastapi -f claude-skills
+                  </td>
+                  <td className="py-3.5 px-4 font-mono text-xs text-sky-600 dark:text-sky-400 font-medium">
+                    .claude/skills/fastapi/SKILL.md
+                  </td>
                 </tr>
-                <tr>
-                  <td className="py-3 px-4 font-bold text-orange-600 dark:text-orange-400">audit [dir]</td>
-                  <td className="py-3 px-4 font-sans text-xs">Scans and scores existing repo rule health (0-100)</td>
-                  <td className="py-3 px-4">npx devscratchpad audit</td>
-                  <td className="py-3 px-4 font-sans text-xs text-zinc-500">Read-only static heuristic scan</td>
+                <tr className="hover:bg-zinc-50/50 dark:hover:bg-zinc-800/40 transition-colors">
+                  <td className="py-3.5 px-4 font-mono font-medium text-amber-500 dark:text-amber-400">
+                    audit [dir]
+                  </td>
+                  <td className="py-3.5 px-4 text-slate-600 dark:text-slate-400">
+                    Scans and scores existing repo rule health (0-100)
+                  </td>
+                  <td className="py-3.5 px-4 font-mono text-xs text-slate-800 dark:text-slate-200">
+                    <span className="text-slate-400 select-none mr-1.5">$</span>npx devscratchpad audit
+                  </td>
+                  <td className="py-3.5 px-4 text-xs text-slate-500">
+                    Read-only static heuristic scan
+                  </td>
                 </tr>
-                <tr>
-                  <td className="py-3 px-4 font-bold text-orange-600 dark:text-orange-400">list</td>
-                  <td className="py-3 px-4 font-sans text-xs">Lists all 9 formats & 23+ technology presets</td>
-                  <td className="py-3 px-4">npx devscratchpad list</td>
-                  <td className="py-3 px-4 font-sans text-xs text-zinc-500">Terminal stdout catalog</td>
+                <tr className="hover:bg-zinc-50/50 dark:hover:bg-zinc-800/40 transition-colors">
+                  <td className="py-3.5 px-4 font-mono font-medium text-amber-500 dark:text-amber-400">
+                    list
+                  </td>
+                  <td className="py-3.5 px-4 text-slate-600 dark:text-slate-400">
+                    Lists all 9 formats & 23+ technology presets
+                  </td>
+                  <td className="py-3.5 px-4 font-mono text-xs text-slate-800 dark:text-slate-200">
+                    <span className="text-slate-400 select-none mr-1.5">$</span>npx devscratchpad list
+                  </td>
+                  <td className="py-3.5 px-4 text-xs text-slate-500">
+                    Terminal stdout catalog
+                  </td>
                 </tr>
-                <tr>
-                  <td className="py-3 px-4 font-bold text-orange-600 dark:text-orange-400">init</td>
-                  <td className="py-3 px-4 font-sans text-xs">Scaffolds universal multi-agent starter rules</td>
-                  <td className="py-3 px-4">npx devscratchpad init</td>
-                  <td className="py-3 px-4">.cursor/rules/cursor-rules-pro.mdc</td>
+                <tr className="hover:bg-zinc-50/50 dark:hover:bg-zinc-800/40 transition-colors">
+                  <td className="py-3.5 px-4 font-mono font-medium text-amber-500 dark:text-amber-400">
+                    init
+                  </td>
+                  <td className="py-3.5 px-4 text-slate-600 dark:text-slate-400">
+                    Scaffolds universal multi-agent starter rules
+                  </td>
+                  <td className="py-3.5 px-4 font-mono text-xs text-slate-800 dark:text-slate-200">
+                    <span className="text-slate-400 select-none mr-1.5">$</span>npx devscratchpad init
+                  </td>
+                  <td className="py-3.5 px-4 font-mono text-xs text-sky-600 dark:text-sky-400 font-medium">
+                    .cursor/rules/cursor-rules-pro.mdc
+                  </td>
                 </tr>
               </tbody>
             </table>

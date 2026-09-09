@@ -99,3 +99,41 @@ export function CopilotIcon({ className = "w-4 h-4", size, ...props }: IconProps
     </svg>
   );
 }
+
+/**
+ * Authentic Cursor Logo (Official Asset)
+ * 100% transparent background, supports dark/light mode and white variant
+ */
+export function CursorIcon({
+  className = "w-4 h-4",
+  white,
+  ...props
+}: {
+  className?: string;
+  white?: boolean;
+  [key: string]: any;
+}) {
+  return (
+    <img
+      src={white ? "/icons/cursor-white.png" : "/icons/cursor-official.png"}
+      alt="Cursor"
+      className={`w-4 h-4 object-contain inline-block shrink-0 ${className}`}
+      {...props}
+    />
+  );
+}
+
+/**
+ * Authentic Anthropic Claude Logo (Official Terracotta Asset)
+ * 100% transparent background
+ */
+export function ClaudeIcon({ className = "w-4 h-4", ...props }: { className?: string; [key: string]: any }) {
+  return (
+    <img
+      src="/icons/claude-official.png"
+      alt="Claude"
+      className={`w-4 h-4 object-contain inline-block shrink-0 ${className}`}
+      {...props}
+    />
+  );
+}
