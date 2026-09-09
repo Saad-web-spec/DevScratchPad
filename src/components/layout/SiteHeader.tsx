@@ -1,6 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
-import { ArrowRight, Lock } from "lucide-react";
+import { ArrowRight, Lock, Terminal } from "lucide-react";
 
 export function SiteHeader() {
   return (
@@ -41,6 +41,15 @@ export function SiteHeader() {
 
         {/* Right Side Actions */}
         <div className="flex items-center gap-2 sm:gap-3">
+          <Link
+            href="/cli"
+            className="hidden md:flex bg-zinc-100 hover:bg-zinc-200 text-zinc-800 border border-zinc-200 text-xs px-2.5 py-1 rounded-md items-center gap-1.5 transition-colors font-mono font-medium shadow-xs shrink-0"
+            title="DevScratchpad CLI (npx devscratchpad)"
+          >
+            <Terminal className="w-3.5 h-3.5 text-orange-600" />
+            <span>npx CLI</span>
+          </Link>
+
           <Link
             href="/ai-skill-studio"
             className="flex bg-orange-50 hover:bg-orange-100 text-orange-700 border border-orange-200 text-xs px-2 sm:px-2.5 py-1 rounded-md items-center gap-1.5 transition-colors font-semibold shadow-xs hover:shadow-sm shrink-0"

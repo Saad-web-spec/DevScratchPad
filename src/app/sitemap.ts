@@ -96,6 +96,18 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 0.8,
     },
     {
+      url: `${SITE_URL}/cli`,
+      lastModified: new Date(),
+      changeFrequency: "weekly" as const,
+      priority: 0.95,
+    },
+    {
+      url: `${SITE_URL}/ai-skill-studio/rules-converter`,
+      lastModified: new Date(),
+      changeFrequency: "weekly" as const,
+      priority: 0.95,
+    },
+    {
       url: `${SITE_URL}/developer-tools`,
       lastModified: new Date(),
       changeFrequency: "weekly" as const,
