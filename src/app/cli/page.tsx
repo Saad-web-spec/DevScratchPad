@@ -165,19 +165,37 @@ export default function CliPage() {
       />
 
       <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8 sm:py-12 space-y-16">
-        {/* Header Breadcrumb */}
-        <div className="flex items-center justify-between">
+        {/* Header Breadcrumb & Badges */}
+        <div className="flex flex-wrap items-center justify-between gap-3">
           <Link
             href="/ai-skill-studio"
-            className="inline-flex items-center gap-1.5 text-xs font-semibold text-zinc-500 hover:text-orange-600 transition-colors"
+            className="inline-flex items-center gap-1.5 text-xs font-semibold text-zinc-500 hover:text-orange-600 transition-colors focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:outline-none rounded px-1"
           >
             <span>← Back to AI Skill Studio</span>
           </Link>
 
           <div className="flex items-center gap-2 text-xs font-mono text-zinc-500">
-            <span>npm: devscratchpad</span>
+            <a
+              href="https://github.com/Saad-web-spec/DevScratchPad"
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white border border-zinc-200 dark:border-zinc-700 transition-colors focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:outline-none"
+            >
+              <svg className="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
+                <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z" />
+              </svg>
+              <span>GitHub</span>
+            </a>
             <span>·</span>
-            <span className="text-sky-600 dark:text-sky-400 font-semibold">v2.1.0</span>
+            <a
+              href="https://www.npmjs.com/package/devscratchpad"
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-1 text-sky-600 dark:text-sky-400 font-semibold hover:underline focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:outline-none rounded px-1"
+            >
+              <span>npm: devscratchpad</span>
+              <span className="text-zinc-400">v2.1.0</span>
+            </a>
           </div>
         </div>
 
@@ -188,9 +206,9 @@ export default function CliPage() {
             <span>Headless Terminal AI Engine</span>
           </div>
 
-          <h1 className="text-3xl sm:text-5xl font-extrabold tracking-tight text-zinc-900 dark:text-white">
+          <h1 className="text-3xl sm:text-5xl font-black tracking-tight text-zinc-900 dark:text-white">
             The Zero-Install CLI for <br className="hidden sm:block" />
-            <span className="bg-gradient-to-r from-orange-600 via-amber-600 to-orange-500 bg-clip-text text-transparent">
+            <span className="bg-gradient-to-r from-orange-600 via-orange-700 to-amber-700 dark:from-orange-500 dark:via-amber-500 dark:to-orange-400 bg-clip-text text-transparent">
               AI Agent & IDE Rulebooks
             </span>
           </h1>
@@ -248,6 +266,69 @@ export default function CliPage() {
                 OpenAI, and Gemini from a single command syntax.
               </p>
             </div>
+          </div>
+        </div>
+
+        {/* 3-Step "How It Works" Flow */}
+        <div className="space-y-6">
+          <div className="text-center max-w-xl mx-auto space-y-1">
+            <h2 className="text-2xl font-bold text-zinc-900 dark:text-zinc-100">
+              How It Works in 3 Simple Steps
+            </h2>
+            <p className="text-xs sm:text-sm text-zinc-500">
+              From zero installation to production-grade AI agent steering in seconds
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+            <div className="p-5 bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-xs relative space-y-3">
+              <div className="w-8 h-8 rounded-lg bg-orange-100 dark:bg-orange-950/80 text-orange-600 dark:text-orange-400 font-bold text-xs flex items-center justify-center font-mono">
+                01
+              </div>
+              <h3 className="font-bold text-sm text-zinc-900 dark:text-zinc-100">Pick Assistant & Stack</h3>
+              <p className="text-xs text-zinc-600 dark:text-zinc-400 leading-relaxed">
+                Choose your AI IDE format (Cursor .mdc, Claude SKILL.md, Windsurf, Copilot, OpenAI, Gemini) and framework preset.
+              </p>
+            </div>
+
+            <div className="p-5 bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-xs relative space-y-3">
+              <div className="w-8 h-8 rounded-lg bg-sky-100 dark:bg-sky-950/80 text-sky-600 dark:text-sky-400 font-bold text-xs flex items-center justify-center font-mono">
+                02
+              </div>
+              <h3 className="font-bold text-sm text-zinc-900 dark:text-zinc-100">Run Terminal One-Liner</h3>
+              <p className="text-xs text-zinc-600 dark:text-zinc-400 leading-relaxed">
+                Execute directly via <code>npx</code>, <code>pnpm dlx</code>, or <code>bunx</code>. No npm install or global binaries needed.
+              </p>
+            </div>
+
+            <div className="p-5 bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-xs relative space-y-3">
+              <div className="w-8 h-8 rounded-lg bg-teal-100 dark:bg-teal-950/80 text-teal-600 dark:text-teal-400 font-bold text-xs flex items-center justify-center font-mono">
+                03
+              </div>
+              <h3 className="font-bold text-sm text-zinc-900 dark:text-zinc-100">Instant Local Activation</h3>
+              <p className="text-xs text-zinc-600 dark:text-zinc-400 leading-relaxed">
+                Rules are automatically placed in standard paths (e.g. <code>.cursor/rules/</code>) ready to steer your assistant.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Tangible Zero-Telemetry Security Verification Callout */}
+        <div className="p-5 sm:p-6 bg-gradient-to-r from-zinc-900 via-zinc-900 to-zinc-950 border border-zinc-800 rounded-2xl text-zinc-300 shadow-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+          <div className="space-y-1.5 max-w-2xl">
+            <div className="flex items-center gap-2 text-xs font-semibold text-amber-400">
+              <ShieldCheck className="w-4 h-4 text-amber-400" />
+              <span>Verifiable Enterprise Privacy & Zero Telemetry</span>
+            </div>
+            <h3 className="text-base font-bold text-white">Under the Hood: 100% Local & Auditable</h3>
+            <p className="text-xs text-zinc-400 leading-relaxed">
+              Every execution runs strictly inside your local Node.js process without analytics, telemetry, or remote prompt logging. Inspect the open-source runner or execute with dry-run mode to verify zero network requests outside of static preset delivery.
+            </p>
+          </div>
+          <div className="shrink-0 flex items-center gap-3">
+            <code className="text-xs font-mono bg-black/60 border border-zinc-800 px-3 py-2 rounded-lg text-sky-400">
+              $ npx devscratchpad --dry-run
+            </code>
           </div>
         </div>
 

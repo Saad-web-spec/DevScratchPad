@@ -100,13 +100,16 @@ function getTargetFilePath(format: string, preset: string) {
   }
 }
 
+type Runtime = "npx" | "pnpm dlx" | "bunx";
+
 export function CliClient() {
   const [activeCommandTab, setActiveCommandTab] = useState<"add" | "audit" | "list" | "init">("add");
   const [selectedFormat, setSelectedFormat] = useState("cursor-rules");
   const [selectedPreset, setSelectedPreset] = useState("nextjs-15");
+  const [selectedRuntime, setSelectedRuntime] = useState<Runtime>("npx");
   const [copiedCmd, setCopiedCmd] = useState(false);
 
-  const currentAddCommand = `npx devscratchpad add ${selectedFormat}/${selectedPreset}`;
+  const currentAddCommand = `${selectedRuntime} devscratchpad add ${selectedFormat}/${selectedPreset}`;
 
   const handleCopy = (text: string) => {
     navigator.clipboard.writeText(text);
@@ -117,71 +120,101 @@ export function CliClient() {
   return (
     <div className="space-y-12">
       {/* Quick Install Hero Card */}
-      <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 sm:p-8 shadow-2xl relative overflow-hidden">
-        {/* Glow effect */}
-        <div className="absolute -right-20 -top-20 w-80 h-80 bg-sky-500/10 rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute -left-20 -bottom-20 w-80 h-80 bg-orange-500/10 rounded-full blur-3xl pointer-events-none" />
+      <div className="relative group">
+        {/* Ambient radial glow to ground the dark container */}
+        <div className="absolute -inset-1.5 bg-gradient-to-r from-orange-500/20 via-sky-500/15 to-violet-500/20 rounded-3xl blur-xl opacity-70 group-hover:opacity-90 transition duration-700 -z-10" />
 
-        <div className="relative z-10 space-y-6">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div className="flex items-center gap-2">
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-sky-500/10 text-sky-400 border border-sky-500/20 shadow-xs">
-                <span className="w-2 h-2 rounded-full bg-sky-400 animate-pulse" />
-                Live on NPM Registry
-              </span>
-              <a
-                href="https://www.npmjs.com/package/devscratchpad"
-                target="_blank"
-                rel="noreferrer"
-                className="inline-flex items-center gap-1 text-xs text-zinc-400 hover:text-white transition-colors font-mono"
-              >
-                <span>v2.1.0</span>
-                <ExternalLink className="w-3 h-3" />
-              </a>
-            </div>
+        <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 sm:p-8 shadow-2xl relative overflow-hidden">
+          {/* Internal gradient lighting */}
+          <div className="absolute -right-20 -top-20 w-80 h-80 bg-sky-500/10 rounded-full blur-3xl pointer-events-none" />
+          <div className="absolute -left-20 -bottom-20 w-80 h-80 bg-orange-500/10 rounded-full blur-3xl pointer-events-none" />
 
-            <div className="flex items-center gap-2 text-xs text-zinc-400">
-              <ShieldCheck className="w-3.5 h-3.5 text-sky-400" />
-              <span>Zero Dependencies</span>
-              <span className="text-zinc-600">·</span>
-              <Lock className="w-3.5 h-3.5 text-amber-400" />
-              <span>100% Offline-First</span>
-            </div>
-          </div>
-
-          {/* Interactive Command Display */}
-          <div className="space-y-3">
-            <div className="text-xs font-bold text-zinc-400 uppercase tracking-wider">
-              Run Instantly via Terminal (No Installation Required)
-            </div>
-
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-zinc-950 border border-zinc-800 p-3 sm:p-4 rounded-xl font-mono text-sm">
-              <div className="flex items-center gap-2 overflow-x-auto py-1 select-all">
-                <span className="text-[#94A3B8] font-bold select-none">$</span>
-                <span className="text-[#A855F7] font-semibold">npx</span>
-                <span className="text-[#38BDF8] font-semibold">devscratchpad</span>
-                <span className="text-[#F8FAFC] font-semibold">add</span>
-                <span className="text-[#F8FAFC] font-semibold">{selectedFormat}/{selectedPreset}</span>
+          <div className="relative z-10 space-y-6">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-sky-500/10 text-sky-400 border border-sky-500/20 shadow-xs">
+                  <span className="w-2 h-2 rounded-full bg-sky-400 animate-pulse" />
+                  Live on NPM Registry
+                </span>
+                <a
+                  href="https://www.npmjs.com/package/devscratchpad"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-1 text-xs text-zinc-400 hover:text-white transition-colors font-mono focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:outline-none rounded px-1"
+                >
+                  <span>v2.1.0</span>
+                  <ExternalLink className="w-3 h-3" />
+                </a>
               </div>
 
-              <button
-                onClick={() => handleCopy(currentAddCommand)}
-                className="flex items-center justify-center gap-2 px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-white rounded-lg text-xs font-medium transition-all shrink-0 cursor-pointer active:scale-95 shadow-xs"
-              >
-                {copiedCmd ? (
-                  <>
-                    <Check className="w-3.5 h-3.5 text-[#38BDF8]" />
-                    <span className="text-[#38BDF8] font-semibold">Copied!</span>
-                  </>
-                ) : (
-                  <>
-                    <Copy className="w-3.5 h-3.5" />
-                    <span>Copy Command</span>
-                  </>
-                )}
-              </button>
+              <div className="flex items-center gap-2 text-xs text-zinc-400">
+                <ShieldCheck className="w-3.5 h-3.5 text-sky-400" />
+                <span>Zero Dependencies</span>
+                <span className="text-zinc-600">·</span>
+                <Lock className="w-3.5 h-3.5 text-amber-400" />
+                <span>100% Offline-First</span>
+              </div>
             </div>
-          </div>
+
+            {/* Interactive Command Display with Runtime Switcher */}
+            <div className="space-y-3">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <span className="text-xs font-bold text-zinc-400 uppercase tracking-wider">
+                  Run Instantly via Terminal (No Installation Required)
+                </span>
+
+                {/* Multi-Runtime Tabs */}
+                <div className="flex items-center gap-1 bg-zinc-950 p-1 rounded-lg border border-zinc-800 text-[11px] font-mono">
+                  {(["npx", "pnpm dlx", "bunx"] as const).map((rt) => (
+                    <button
+                      key={rt}
+                      onClick={() => setSelectedRuntime(rt)}
+                      className={`px-2.5 py-0.5 rounded transition-all cursor-pointer focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:outline-none ${
+                        selectedRuntime === rt
+                          ? "bg-orange-600 text-white font-bold shadow-xs"
+                          : "text-zinc-400 hover:text-white hover:bg-zinc-800/60"
+                      }`}
+                    >
+                      {rt}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-zinc-950 border border-zinc-800 p-3 sm:p-4 rounded-xl font-mono text-sm shadow-inner">
+                <div className="flex items-center gap-2 overflow-x-auto py-1 select-all">
+                  <span className="text-[#94A3B8] font-bold select-none">$</span>
+                  <span className="text-[#A855F7] font-semibold">{selectedRuntime}</span>
+                  <span className="text-[#38BDF8] font-semibold">devscratchpad</span>
+                  <span className="text-[#F8FAFC] font-semibold">add</span>
+                  <span
+                    key={`${selectedFormat}-${selectedPreset}`}
+                    className="text-[#F8FAFC] font-semibold bg-orange-500/20 text-orange-200 px-1.5 py-0.5 rounded border border-orange-500/30 animate-pulse transition-all"
+                  >
+                    {selectedFormat}/{selectedPreset}
+                  </span>
+                </div>
+
+                <button
+                  onClick={() => handleCopy(currentAddCommand)}
+                  aria-label="Copy terminal command to clipboard"
+                  aria-live="polite"
+                  className="flex items-center justify-center gap-2 px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-white rounded-lg text-xs font-medium transition-all shrink-0 cursor-pointer active:scale-95 shadow-xs focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:outline-none"
+                >
+                  {copiedCmd ? (
+                    <>
+                      <Check className="w-3.5 h-3.5 text-[#38BDF8]" />
+                      <span className="text-[#38BDF8] font-semibold">Copied!</span>
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="w-3.5 h-3.5" />
+                      <span>Copy Command</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
 
           {/* Preset & Format Quick Selectors */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
@@ -192,7 +225,7 @@ export function CliClient() {
                   <button
                     key={fmt.id}
                     onClick={() => setSelectedFormat(fmt.id)}
-                    className={`flex items-center justify-center px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all truncate cursor-pointer ${
+                    className={`flex items-center justify-center px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all truncate cursor-pointer focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:outline-none ${
                       selectedFormat === fmt.id
                         ? "bg-orange-600 text-white shadow-xs font-semibold"
                         : "bg-zinc-800/80 hover:bg-zinc-800 text-zinc-300"
@@ -212,7 +245,7 @@ export function CliClient() {
                   <button
                     key={p.slug}
                     onClick={() => setSelectedPreset(p.slug)}
-                    className={`px-2.5 py-1.5 rounded-lg text-xs font-medium text-left transition-all truncate cursor-pointer ${
+                    className={`px-2.5 py-1.5 rounded-lg text-xs font-medium text-left transition-all truncate cursor-pointer focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:outline-none ${
                       selectedPreset === p.slug
                         ? "bg-zinc-100 text-zinc-950 font-bold shadow-xs"
                         : "bg-zinc-800/80 hover:bg-zinc-800 text-zinc-300"
@@ -226,6 +259,7 @@ export function CliClient() {
           </div>
         </div>
       </div>
+    </div>
 
       {/* Interactive Terminal Output Simulator */}
       <div className="space-y-4">
@@ -244,7 +278,7 @@ export function CliClient() {
               <button
                 key={cmd}
                 onClick={() => setActiveCommandTab(cmd)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-semibold capitalize transition-all cursor-pointer ${
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold capitalize transition-all cursor-pointer focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:outline-none ${
                   activeCommandTab === cmd
                     ? "bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 shadow-xs font-bold"
                     : "text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white"
@@ -256,140 +290,207 @@ export function CliClient() {
           </div>
         </div>
 
-        {/* Terminal Window */}
-        <div className="bg-zinc-950 rounded-xl border border-zinc-800 overflow-hidden shadow-xl font-mono text-xs">
-          {/* Terminal Titlebar */}
-          <div className="flex items-center justify-between px-4 py-2.5 bg-zinc-900 border-b border-zinc-800 select-none">
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full bg-rose-500/80" />
-              <div className="w-3 h-3 rounded-full bg-amber-500/80" />
-              <div className="w-3 h-3 rounded-full bg-sky-500/80" />
-              <span className="text-[11px] text-zinc-400 ml-2">bash — npx devscratchpad {activeCommandTab}</span>
-            </div>
-            <span className="text-[10px] text-zinc-500">Node.js ESM · Zero Telemetry</span>
-          </div>
+        {/* Terminal Window with Ambient Glow */}
+        <div className="relative group">
+          <div className="absolute -inset-1 bg-gradient-to-r from-orange-500/10 via-sky-500/10 to-violet-500/10 rounded-2xl blur-xl opacity-60 group-hover:opacity-80 transition duration-700 -z-10" />
 
-          {/* Terminal Body */}
-          <div className="p-4 sm:p-5 space-y-3 leading-relaxed text-zinc-300">
-            {/* Syntax Highlighted Command Line */}
-            <div className="flex flex-wrap items-center gap-2 text-xs sm:text-[13px] font-mono pb-2 border-b border-zinc-800/80">
-              <span className="text-[#94A3B8] select-none">$</span>
-              <span className="text-[#A855F7] font-semibold">npx</span>
-              <span className="text-[#38BDF8] font-semibold">devscratchpad</span>
-              {activeCommandTab === "add" && (
-                <>
-                  <span className="text-[#F8FAFC] font-semibold">add</span>
-                  <span className="text-[#F8FAFC] font-semibold">{selectedFormat}/{selectedPreset}</span>
-                </>
-              )}
-              {activeCommandTab === "audit" && (
-                <span className="text-[#F8FAFC] font-semibold">audit</span>
-              )}
-              {activeCommandTab === "list" && (
-                <span className="text-[#F8FAFC] font-semibold">list</span>
-              )}
-              {activeCommandTab === "init" && (
-                <span className="text-[#F8FAFC] font-semibold">init</span>
-              )}
-            </div>
-
-            {activeCommandTab === "add" && (
-              <div className="space-y-3 pt-1">
-                <div className="text-slate-400 text-xs flex items-center gap-2">
-                  <img src="/orange-star.png" className="w-3.5 h-3.5 object-contain shrink-0" alt="DevScratchpad Star" />
-                  <span>Fetching rules for &quot;{selectedPreset}&quot; in format &quot;{selectedFormat}&quot;...</span>
-                </div>
-                <div className="text-[#2DD4BF] font-semibold flex items-center gap-1.5 text-xs">
-                  <Check className="w-3.5 h-3.5 text-[#2DD4BF]" />
-                  <span>Successfully installed!</span>
-                </div>
-                <div className="pl-3 border-l-2 border-zinc-800 space-y-1 text-xs text-slate-300">
-                  <div>Target:  <span className="font-mono font-medium text-white">{getTargetFilePath(selectedFormat, selectedPreset)}</span></div>
-                  <div>Format:  <span className="text-slate-200">{selectedFormat}</span></div>
-                  <div>Privacy: <span className="text-slate-200">100% Client-Side Confined</span></div>
-                </div>
-                <div className="text-xs text-slate-400 pt-1">
-                  👉 Customize interactively in AI Skill Studio:{" "}
-                  <Link
-                    href={`/ai-skill-studio/${selectedFormat}/${selectedPreset}`}
-                    className="text-[#38BDF8] hover:text-[#7DD3FC] underline font-medium transition-colors"
-                  >
-                    https://www.devscratchpad.tech/ai-skill-studio/{selectedFormat}/{selectedPreset}
-                  </Link>
-                </div>
+          <div className="bg-zinc-950 rounded-xl border border-zinc-800 overflow-hidden shadow-xl font-mono text-xs">
+            {/* Terminal Titlebar */}
+            <div className="flex items-center justify-between px-4 py-2.5 bg-zinc-900 border-b border-zinc-800 select-none">
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-full bg-rose-500/80" />
+                <div className="w-3 h-3 rounded-full bg-amber-500/80" />
+                <div className="w-3 h-3 rounded-full bg-sky-500/80" />
+                <span className="text-[11px] text-zinc-400 ml-2">bash — {selectedRuntime} devscratchpad {activeCommandTab}</span>
               </div>
-            )}
+              <span className="text-[10px] text-zinc-500">Node.js ESM · Zero Telemetry</span>
+            </div>
 
-            {activeCommandTab === "audit" && (
-              <div className="space-y-3 pt-1 text-xs">
-                <div className="text-[#38BDF8] font-medium">🔍 Scanning repository for AI rulebooks in current workspace...</div>
-                <div className="p-3 bg-zinc-900/50 rounded-lg border border-zinc-800/80 space-y-1 text-slate-200">
-                  <div><span className="font-semibold text-slate-100">File:</span> .cursor/rules/nextjs-15.mdc</div>
-                  <div><span className="font-semibold text-slate-100">Quality Score:</span> <span className="text-[#2DD4BF] font-bold">95 / 100</span></div>
-                  <div className="text-[#2DD4BF] flex items-center gap-1">
+            {/* Terminal Body */}
+            <div className="p-4 sm:p-5 space-y-3 leading-relaxed text-zinc-300">
+              {/* Syntax Highlighted Command Line */}
+              <div className="flex flex-wrap items-center gap-2 text-xs sm:text-[13px] font-mono pb-2 border-b border-zinc-800/80">
+                <span className="text-[#94A3B8] select-none">$</span>
+                <span className="text-[#A855F7] font-semibold">{selectedRuntime}</span>
+                <span className="text-[#38BDF8] font-semibold">devscratchpad</span>
+                {activeCommandTab === "add" && (
+                  <>
+                    <span className="text-[#F8FAFC] font-semibold">add</span>
+                    <span className="text-[#F8FAFC] font-semibold">{selectedFormat}/{selectedPreset}</span>
+                  </>
+                )}
+                {activeCommandTab === "audit" && (
+                  <span className="text-[#F8FAFC] font-semibold">audit</span>
+                )}
+                {activeCommandTab === "list" && (
+                  <span className="text-[#F8FAFC] font-semibold">list</span>
+                )}
+                {activeCommandTab === "init" && (
+                  <span className="text-[#F8FAFC] font-semibold">init</span>
+                )}
+              </div>
+
+              {activeCommandTab === "add" && (
+                <div className="space-y-3 pt-1">
+                  <div className="text-slate-400 text-xs flex items-center gap-2">
+                    <img src="/orange-star.png" className="w-3.5 h-3.5 object-contain shrink-0" alt="DevScratchpad Star" />
+                    <span>Fetching rules for &quot;{selectedPreset}&quot; in format &quot;{selectedFormat}&quot;...</span>
+                  </div>
+                  <div className="text-[#2DD4BF] font-semibold flex items-center gap-1.5 text-xs">
                     <Check className="w-3.5 h-3.5 text-[#2DD4BF]" />
-                    <span>Passed negative constraint & glob specificity checks!</span>
+                    <span>Successfully installed!</span>
+                  </div>
+                  <div className="pl-3 border-l-2 border-zinc-800 space-y-1 text-xs text-slate-300">
+                    <div>Target:  <span className="font-mono font-medium text-white">{getTargetFilePath(selectedFormat, selectedPreset)}</span></div>
+                    <div>Format:  <span className="text-slate-200">{selectedFormat}</span></div>
+                    <div>Privacy: <span className="text-slate-200">100% Client-Side Confined</span></div>
+                  </div>
+
+                  {/* Realistic ASCII Directory Tree */}
+                  <div className="p-3 bg-zinc-900/60 rounded-lg border border-zinc-800/80 font-mono text-xs text-slate-300 space-y-1">
+                    <div className="text-zinc-500 select-none text-[11px]"># Workspace Directory Structure</div>
+                    <div className="text-sky-400 font-semibold">.</div>
+                    {selectedFormat === "cursor-rules" && (
+                      <>
+                        <div>├── <span className="text-amber-400 font-semibold">.cursor/</span></div>
+                        <div>│   └── <span className="text-amber-400 font-semibold">rules/</span></div>
+                        <div>│       └── <span className="text-white font-bold">{selectedPreset}.mdc</span> <span className="text-teal-400 text-[11px]">(Created · Cursor .mdc)</span></div>
+                        <div>└── <span className="text-zinc-400">package.json</span></div>
+                      </>
+                    )}
+                    {selectedFormat === "claude-skills" && (
+                      <>
+                        <div>├── <span className="text-amber-400 font-semibold">.claude/</span></div>
+                        <div>│   └── <span className="text-amber-400 font-semibold">skills/</span></div>
+                        <div>│       └── <span className="text-amber-400 font-semibold">{selectedPreset}/</span></div>
+                        <div>│           └── <span className="text-white font-bold">SKILL.md</span> <span className="text-teal-400 text-[11px]">(Created · Claude Code)</span></div>
+                        <div>└── <span className="text-zinc-400">pyproject.toml</span></div>
+                      </>
+                    )}
+                    {selectedFormat === "windsurf" && (
+                      <>
+                        <div>├── <span className="text-amber-400 font-semibold">.windsurf/</span></div>
+                        <div>│   └── <span className="text-amber-400 font-semibold">rules/</span></div>
+                        <div>│       └── <span className="text-white font-bold">{selectedPreset}.md</span> <span className="text-teal-400 text-[11px]">(Created · Cascade Rulebook)</span></div>
+                        <div>└── <span className="text-zinc-400">package.json</span></div>
+                      </>
+                    )}
+                    {selectedFormat === "copilot" && (
+                      <>
+                        <div>├── <span className="text-amber-400 font-semibold">.github/</span></div>
+                        <div>│   └── <span className="text-white font-bold">copilot-instructions.md</span> <span className="text-teal-400 text-[11px]">(Updated · Copilot spec)</span></div>
+                        <div>└── <span className="text-zinc-400">package.json</span></div>
+                      </>
+                    )}
+                    {selectedFormat === "openai" && (
+                      <>
+                        <div>├── <span className="text-amber-400 font-semibold">.openai/</span></div>
+                        <div>│   └── <span className="text-white font-bold">system-instructions.md</span> <span className="text-teal-400 text-[11px]">(Created · System prompt)</span></div>
+                        <div>└── <span className="text-zinc-400">package.json</span></div>
+                      </>
+                    )}
+                    {selectedFormat === "gemini" && (
+                      <>
+                        <div>├── <span className="text-amber-400 font-semibold">.gemini/</span></div>
+                        <div>│   └── <span className="text-white font-bold">{selectedPreset}.json</span> <span className="text-teal-400 text-[11px]">(Created · Structured prompt)</span></div>
+                        <div>└── <span className="text-zinc-400">package.json</span></div>
+                      </>
+                    )}
+                  </div>
+
+                  <div className="text-xs text-slate-400 pt-1">
+                    👉 Customize interactively in AI Skill Studio:{" "}
+                    <Link
+                      href={`/ai-skill-studio/${selectedFormat}/${selectedPreset}`}
+                      className="text-[#38BDF8] hover:text-[#7DD3FC] underline font-medium transition-colors focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:outline-none rounded"
+                    >
+                      https://www.devscratchpad.tech/ai-skill-studio/{selectedFormat}/{selectedPreset}
+                    </Link>
                   </div>
                 </div>
-                <div className="p-3 bg-zinc-900/50 rounded-lg border border-zinc-800/80 space-y-1 text-slate-200">
-                  <div><span className="font-semibold text-slate-100">File:</span> CLAUDE.md</div>
-                  <div><span className="font-semibold text-slate-100">Quality Score:</span> <span className="text-amber-400 font-bold">70 / 100</span></div>
-                  <div className="text-amber-400">⚠ Missing negative guardrails (&quot;never do X&quot;, &quot;avoid Y&quot;). Without negative bounds, LLMs hallucinate.</div>
-                </div>
-                <div className="pt-2 border-t border-zinc-800 text-slate-200 font-semibold">
-                  Repository AI Rule Health: <span className="text-[#38BDF8] font-bold">83 / 100</span> (2 files analyzed)
-                </div>
-                <div className="text-slate-400 pt-0.5">
-                  💡 Auto-fix and enhance your rules with zero data leakage:{" "}
-                  <Link
-                    href="/ai-skill-studio"
-                    className="text-[#38BDF8] hover:text-[#7DD3FC] underline font-medium transition-colors"
-                  >
-                    https://www.devscratchpad.tech/ai-skill-studio
-                  </Link>
-                </div>
-              </div>
-            )}
+              )}
 
-            {activeCommandTab === "list" && (
-              <div className="space-y-3 pt-1 text-xs">
-                <div className="text-[#F97316] font-semibold">Available Formats:</div>
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-1 pl-2 text-slate-300 font-mono">
-                  <div>• cursor-rules (Cursor .mdc)</div>
-                  <div>• claude-skills (Claude SKILL.md)</div>
-                  <div>• windsurf (Cascade Rules)</div>
-                  <div>• copilot (GitHub Copilot)</div>
-                  <div>• openai (Custom Instructions)</div>
-                  <div>• gemini (Structured Prompts)</div>
+              {activeCommandTab === "audit" && (
+                <div className="space-y-3 pt-1 text-xs">
+                  <div className="text-[#38BDF8] font-medium">🔍 Scanning repository for AI rulebooks in current workspace...</div>
+                  <div className="p-3 bg-zinc-900/50 rounded-lg border border-zinc-800/80 space-y-1 text-slate-200">
+                    <div><span className="font-semibold text-slate-100">File:</span> .cursor/rules/nextjs-15.mdc</div>
+                    <div><span className="font-semibold text-slate-100">Quality Score:</span> <span className="text-[#2DD4BF] font-bold">95 / 100</span></div>
+                    <div className="text-[#2DD4BF] flex items-center gap-1">
+                      <Check className="w-3.5 h-3.5 text-[#2DD4BF]" />
+                      <span>Passed negative constraint & glob specificity checks!</span>
+                    </div>
+                  </div>
+                  <div className="p-3 bg-zinc-900/50 rounded-lg border border-zinc-800/80 space-y-1 text-slate-200">
+                    <div><span className="font-semibold text-slate-100">File:</span> CLAUDE.md</div>
+                    <div><span className="font-semibold text-slate-100">Quality Score:</span> <span className="text-amber-400 font-bold">70 / 100</span></div>
+                    <div className="text-amber-400">⚠ Missing negative guardrails (&quot;never do X&quot;, &quot;avoid Y&quot;). Without negative bounds, LLMs hallucinate.</div>
+                  </div>
+                  <div className="pt-2 border-t border-zinc-800 text-slate-200 font-semibold">
+                    Repository AI Rule Health: <span className="text-[#38BDF8] font-bold">83 / 100</span> (2 files analyzed)
+                  </div>
+                  <div className="text-slate-400 pt-0.5">
+                    💡 Auto-fix and enhance your rules with zero data leakage:{" "}
+                    <Link
+                      href="/ai-skill-studio"
+                      className="text-[#38BDF8] hover:text-[#7DD3FC] underline font-medium transition-colors focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:outline-none rounded"
+                    >
+                      https://www.devscratchpad.tech/ai-skill-studio
+                    </Link>
+                  </div>
                 </div>
-                <div className="text-[#F97316] font-semibold pt-1">Available Presets:</div>
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-1 pl-2 text-slate-300 font-mono">
-                  <div>• nextjs-15 (Fullstack)</div>
-                  <div>• react-19 (Frontend)</div>
-                  <div>• tailwind-v4 (Styling)</div>
-                  <div>• fastapi (Backend)</div>
-                  <div>• typescript-strict (Quality)</div>
-                  <div>• docker-compose (DevOps)</div>
-                  <div>• codebase-auditor (Security)</div>
-                  <div>• go-standard (Backend)</div>
-                </div>
-              </div>
-            )}
+              )}
 
-            {activeCommandTab === "init" && (
-              <div className="space-y-3 pt-1 text-xs">
-                <div className="text-[#38BDF8] font-medium">🚀 Initializing DevScratchpad starter rules for repository...</div>
-                <div className="text-[#2DD4BF] font-semibold flex items-center gap-1.5">
-                  <Check className="w-3.5 h-3.5 text-[#2DD4BF]" />
-                  <span>Scaffolding universal multi-agent guidelines:</span>
+              {activeCommandTab === "list" && (
+                <div className="space-y-3 pt-1 text-xs">
+                  <div className="text-[#F97316] font-semibold">Available Formats:</div>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-1 pl-2 text-slate-300 font-mono">
+                    <div>• cursor-rules (Cursor .mdc)</div>
+                    <div>• claude-skills (Claude SKILL.md)</div>
+                    <div>• windsurf (Cascade Rules)</div>
+                    <div>• copilot (GitHub Copilot)</div>
+                    <div>• openai (Custom Instructions)</div>
+                    <div>• gemini (Structured Prompts)</div>
+                  </div>
+                  <div className="text-[#F97316] font-semibold pt-1">Available Presets:</div>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-1 pl-2 text-slate-300 font-mono">
+                    <div>• nextjs-15 (Fullstack)</div>
+                    <div>• react-19 (Frontend)</div>
+                    <div>• tailwind-v4 (Styling)</div>
+                    <div>• fastapi (Backend)</div>
+                    <div>• typescript-strict (Quality)</div>
+                    <div>• docker-compose (DevOps)</div>
+                    <div>• codebase-auditor (Security)</div>
+                    <div>• go-standard (Backend)</div>
+                  </div>
                 </div>
-                <div className="pl-3 border-l-2 border-zinc-800 space-y-1 text-slate-300 font-mono">
-                  <div>• Created .cursor/rules/cursor-rules-pro.mdc</div>
-                  <div>• Created CLAUDE.md with architectural invariants</div>
-                  <div>• Initialized negative guardrails against hallucinations</div>
+              )}
+
+              {activeCommandTab === "init" && (
+                <div className="space-y-3 pt-1 text-xs">
+                  <div className="text-[#38BDF8] font-medium">🚀 Initializing DevScratchpad starter rules for repository...</div>
+                  <div className="text-[#2DD4BF] font-semibold flex items-center gap-1.5">
+                    <Check className="w-3.5 h-3.5 text-[#2DD4BF]" />
+                    <span>Scaffolding universal multi-agent guidelines:</span>
+                  </div>
+                  <div className="pl-3 border-l-2 border-zinc-800 space-y-1 text-slate-300 font-mono">
+                    <div>• Created .cursor/rules/cursor-rules-pro.mdc</div>
+                    <div>• Created CLAUDE.md with architectural invariants</div>
+                    <div>• Initialized negative guardrails against hallucinations</div>
+                  </div>
+
+                  {/* Realistic ASCII Directory Tree for Init */}
+                  <div className="p-3 bg-zinc-900/60 rounded-lg border border-zinc-800/80 font-mono text-xs text-slate-300 space-y-1 mt-2">
+                    <div className="text-zinc-500 select-none text-[11px]"># Scaffolded Multi-Agent Structure</div>
+                    <div className="text-sky-400 font-semibold">.</div>
+                    <div>├── <span className="text-amber-400 font-semibold">.cursor/rules/</span></div>
+                    <div>│   └── <span className="text-white font-bold">cursor-rules-pro.mdc</span> <span className="text-teal-400 text-[11px]">(Created · Multi-agent core)</span></div>
+                    <div>├── <span className="text-white font-bold">CLAUDE.md</span> <span className="text-teal-400 text-[11px]">(Created · Invariant memory)</span></div>
+                    <div>└── <span className="text-zinc-400">package.json</span></div>
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
+            </div>
           </div>
         </div>
       </div>
