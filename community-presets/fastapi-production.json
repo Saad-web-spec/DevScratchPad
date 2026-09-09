@@ -1,0 +1,20 @@
+{
+  "id": "fastapi-production",
+  "name": "FastAPI Production",
+  "badge": "Backend",
+  "title": "FastAPI Production Services & Async Pydantic Rules",
+  "slug": "fastapi-production",
+  "description": "Production rules for high-throughput FastAPI microservices using Pydantic v2, asyncpg, dependency injection, and strict exception handlers.",
+  "role": "Senior Python & Systems Architect",
+  "framework": "FastAPI",
+  "language": "Python 3.12",
+  "styling": "None / Headless API",
+  "database": "PostgreSQL (asyncpg + SQLAlchemy 2.0)",
+  "philosophy": "strict",
+  "behaviors": ["inspect-first", "verification-driven", "minimal-diffs"],
+  "conventions": ["clean-layered", "typed-schemas", "guard-clauses"],
+  "procedures": "1. Context Inspection: Inspect app routers, lifespan handlers, and Alembic database migrations.\n2. Architecture: Colocate domain schemas, repositories, and API routers with dependency injection.\n3. Implementation: Leverage async def endpoints, Pydantic v2 BaseModel, and Result types.\n4. Verification: Run pytest -v with anyio and verify zero blocking I/O calls.",
+  "customDirectives": "- Banned: Never execute synchronous I/O operations (e.g. requests.get, time.sleep) inside async route handlers.\n- Dependency Rule: Use Depends() for database session lifecycle and authentication.\n- Error Handling: Raise HTTPException with structured error schemas; never expose raw tracebacks in responses.",
+  "exampleGood": "from fastapi import APIRouter, Depends, HTTPException, status\nfrom pydantic import BaseModel, Field\nfrom typing import Annotated\n\nrouter = APIRouter(prefix='/items', tags=['items'])\n\nclass ItemCreate(BaseModel):\n    title: str = Field(min_length=3, max_length=100)\n    price_cents: int = Field(gt=0)\n\n@router.post('/', status_code=status.HTTP_201_CREATED)\nasync def create_item(payload: ItemCreate, db: Annotated[AsyncSession, Depends(get_db)]):\n    return await db_create_item(db, payload)",
+  "exampleBad": "from fastapi import APIRouter\nimport time, requests\n\nrouter = APIRouter()\n\n@router.post('/bad')\ndef bad_endpoint(data: dict):\n    time.sleep(2) # BLOCKING EVENT LOOP\n    res = requests.get('https://api.example.com') # SYNC HTTP\n    return {'status': 'ok'}"
+}

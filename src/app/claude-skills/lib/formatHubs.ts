@@ -1,6 +1,8 @@
+import { OutputFormat } from "./presetRegistry";
+
 export interface FormatHubMeta {
   slug: string;
-  format: "cursor_mdc" | "skill_md" | "claude_md" | "agents_md" | "mcp_json";
+  format: OutputFormat;
   name: string;
   badge: string;
   targetFile: string;
@@ -302,6 +304,195 @@ Every agent task must be verified with:
       {
         question: "Can I use MCP servers in Cursor or Windsurf?",
         answer: "Yes! Modern versions of Cursor and Windsurf support the Model Context Protocol. You can add the same stdio server configs in their respective MCP settings panels."
+      }
+    ]
+  },
+  "windsurf-rules": {
+    slug: "windsurf-rules",
+    format: "windsurf_cascade",
+    name: "Windsurf Cascade Rules",
+    badge: "Windsurf IDE",
+    targetFile: "<rule-name>.md",
+    targetDir: ".windsurf/rules/",
+    seoTitle: "Windsurf Cascade Rules Generator | Free & Offline",
+    seoDescription: "Generate production-grade Windsurf Cascade AI rules (.windsurf/rules/*.md). Enforce multi-step execution flows, tech stack guardrails, and zero-token waste.",
+    heroHeading: "Windsurf Cascade Rules Directory & Generator",
+    heroSubheading: "Targeted workflow rules for Windsurf Cascade. Guide AI code agents through context inspection, architectural alignment, and surgical diffs.",
+    overview: "Windsurf Cascade rules (.windsurf/rules/*.md) provide structured, phase-driven instructions for Codeium's Windsurf editor. They define agent personas, execution checklists, and negative constraints to keep Cascade focused and prevent hallucinated patterns.",
+    filePlacementGuide: [
+      {
+        path: ".windsurf/rules/nextjs.md",
+        scope: "Global repository / Cascade active flows",
+        description: "Enforces React Server Components, Server Actions, and Next.js conventions in Windsurf."
+      },
+      {
+        path: ".windsurf/rules/backend.md",
+        scope: "Backend services, APIs, and database migrations",
+        description: "Enforces schema validation, parameterized queries, and defensive error propagation."
+      }
+    ],
+    syntaxHighlights: [
+      {
+        title: "Execution Workflow Directives",
+        explanation: "Windsurf Cascade thrives on explicit step-by-step checklists to guide agent reasoning across files.",
+        codeSample: `## Cascade Execution Workflow
+1. Inspect surrounding files and project manifests.
+2. Formulate surgical edits adhering to repository conventions.
+3. Run test suites and typecheck verification.`
+      }
+    ],
+    bestPractices: [
+      "Keep individual rule files focused on single concerns (e.g. styling, security, data access).",
+      "Include negative constraints (e.g. 'Never use any') to eliminate common model shortcuts.",
+      "Specify testing commands so Cascade automatically runs verification before completing flows."
+    ],
+    faqs: [
+      {
+        question: "Where are Windsurf rules stored?",
+        answer: "Save rule markdown files directly in `.windsurf/rules/` in your project root directory."
+      },
+      {
+        question: "Does Windsurf Cascade auto-load rules?",
+        answer: "Yes, Windsurf Cascade reads rules inside `.windsurf/rules/` automatically whenever interacting with matching codebase contexts."
+      }
+    ]
+  },
+  "copilot-instructions": {
+    slug: "copilot-instructions",
+    format: "copilot_instructions",
+    name: "GitHub Copilot Instructions",
+    badge: "GitHub Copilot",
+    targetFile: "copilot-instructions.md",
+    targetDir: ".github/",
+    seoTitle: "GitHub Copilot Instructions Generator (.github/copilot-instructions.md)",
+    seoDescription: "Create repository-level instructions for GitHub Copilot (.github/copilot-instructions.md). Enforce coding standards, testing rules, and architectural guidelines across pull requests.",
+    heroHeading: "GitHub Copilot Instructions Generator",
+    heroSubheading: "Standardize GitHub Copilot Chat and completions across your entire team with root repository instruction files.",
+    overview: "GitHub Copilot reads instructions from `.github/copilot-instructions.md` automatically during chat sessions and code reviews. Defining explicit tech stack conventions, banned libraries, and test requirements eliminates repetitive prompts and keeps team contributions aligned.",
+    filePlacementGuide: [
+      {
+        path: ".github/copilot-instructions.md",
+        scope: "Entire repository (Copilot Chat & Inline Completions)",
+        description: "Master instruction file parsed by GitHub Copilot across VS Code, JetBrains, and GitHub PR reviews."
+      }
+    ],
+    syntaxHighlights: [
+      {
+        title: "Team Engineering Guidelines",
+        explanation: "Use clear markdown headings to separate architectural rules, banned APIs, and testing workflows.",
+        codeSample: `# GitHub Copilot Repository Instructions
+## Tech Stack: Next.js 15, TypeScript 5.x, Tailwind CSS
+## Core Rules:
+- Always enforce strict type safety without loose 'any'.
+- Use Server Actions with Zod safeParse validation.`
+      }
+    ],
+    bestPractices: [
+      "Commit `.github/copilot-instructions.md` to your default branch so all team members inherit the same AI rules.",
+      "Keep instructions concise and action-oriented; prioritize what NOT to do to prevent anti-patterns.",
+      "Update the file whenever dependencies or major architecture conventions change."
+    ],
+    faqs: [
+      {
+        question: "Does GitHub Copilot support custom instructions?",
+        answer: "Yes! GitHub Copilot natively recognizes `.github/copilot-instructions.md` in repository roots to guide Copilot Chat and inline suggestions."
+      },
+      {
+        question: "Does this work in pull request reviews?",
+        answer: "Yes, Copilot for Pull Requests consults your repository instructions when analyzing diffs and suggesting automated reviews."
+      }
+    ]
+  },
+  "openai-instructions": {
+    slug: "openai-instructions",
+    format: "openai_instructions",
+    name: "OpenAI Custom Instructions",
+    badge: "ChatGPT & OpenAI",
+    targetFile: "openai-custom-instructions.md",
+    targetDir: "prompts/",
+    seoTitle: "OpenAI Custom Instructions & System Prompts Generator",
+    seoDescription: "Generate tailored system prompts and custom instructions for OpenAI models, ChatGPT Custom GPTs, and OpenAI Playground.",
+    heroHeading: "OpenAI Custom Instructions & System Prompts",
+    heroSubheading: "Targeted system instructions for ChatGPT, GPT-4o, and o-series reasoning models.",
+    overview: "OpenAI system instructions set the foundation for model behavior, response formatting, and technical boundaries. Crafting concise, role-anchored instructions with negative constraints produces higher-fidelity code and prevents verbose boilerplate.",
+    filePlacementGuide: [
+      {
+        path: "prompts/openai-custom-instructions.md",
+        scope: "ChatGPT Custom Instructions / Custom GPTs / Playground",
+        description: "System instruction blueprint for personal ChatGPT profiles or team Custom GPT knowledge bases."
+      }
+    ],
+    syntaxHighlights: [
+      {
+        title: "System Persona & Guardrails",
+        explanation: "Set the engineer role, technical boundaries, and brevity requirements to avoid chatty responses.",
+        codeSample: `You are a Senior TypeScript Architect.
+Philosophy: Strict type-safety, zero-any policy.
+Provide concise code diffs without boilerplate fluff.`
+      }
+    ],
+    bestPractices: [
+      "Place negative constraints ('Never do X') near the top of the system prompt for maximum compliance.",
+      "Explicitly instruct the model to provide minimal diffs preserving existing comments.",
+      "Save instructions in version control under `prompts/` to keep team prompts aligned."
+    ],
+    faqs: [
+      {
+        question: "How do I use this in ChatGPT?",
+        answer: "Open ChatGPT Settings > Personalization > Custom Instructions, and paste the generated text into 'How would you like ChatGPT to respond?'."
+      },
+      {
+        question: "Can I use this in the OpenAI API?",
+        answer: "Yes, pass the generated content as the `developer` or `system` message in Chat Completion requests."
+      }
+    ]
+  },
+  "gemini-prompts": {
+    slug: "gemini-prompts",
+    format: "gemini_prompts",
+    name: "Gemini System Instructions",
+    badge: "Google Gemini",
+    targetFile: "gemini-system-instructions.json",
+    targetDir: "prompts/",
+    seoTitle: "Gemini API System Instructions Generator (JSON)",
+    seoDescription: "Generate structured system instructions JSON for Google AI Studio, Gemini 1.5 Pro/Flash, and Gemini 2.0 SDK integrations.",
+    heroHeading: "Gemini API System Instructions Generator",
+    heroSubheading: "JSON-formatted system instruction blocks ready for Google AI Studio and Gemini Python/TypeScript SDKs.",
+    overview: "Google Gemini API supports structured systemInstruction payloads defining developer personas and verification protocols. This generator outputs valid JSON schemas configured with safety settings and temperature parameters.",
+    filePlacementGuide: [
+      {
+        path: "prompts/gemini-system-instructions.json",
+        scope: "Google AI Studio / Gemini SDK API Calls",
+        description: "Config schema with system_instruction parts, temperature, top_p, and safety parameters."
+      }
+    ],
+    syntaxHighlights: [
+      {
+        title: "Structured JSON System Instruction",
+        explanation: "Gemini API requires a JSON object with system_instruction parts for developer instructions.",
+        codeSample: `{
+  "system_instruction": {
+    "parts": [{ "text": "You are a Senior Systems Architect..." }]
+  },
+  "generation_config": {
+    "temperature": 0.2
+  }
+}`
+      }
+    ],
+    bestPractices: [
+      "Keep generation temperature low (0.1 - 0.3) for deterministic, type-safe code synthesis.",
+      "Anchor verification rules into system instruction parts so Gemini checks edge cases.",
+      "Store system instruction JSON in `prompts/` and load dynamically in backend API routes."
+    ],
+    faqs: [
+      {
+        question: "How do I load this JSON in the Google Gen AI SDK?",
+        answer: "In the Gemini Node or Python SDK, parse the JSON and pass `config.system_instruction` into `ai.models.generateContent()`."
+      },
+      {
+        question: "Can I paste this into Google AI Studio?",
+        answer: "Yes, copy the `system_instruction.parts[0].text` string into the System Instructions drawer in Google AI Studio."
       }
     ]
   }

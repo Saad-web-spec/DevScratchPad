@@ -40,23 +40,24 @@ export function SiteHeader() {
         </div>
 
         {/* Right Side Actions */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3">
           <Link
             href="/ai-skill-studio"
-            className="hidden md:flex bg-orange-50 hover:bg-orange-100 text-orange-700 border border-orange-200 text-xs px-2.5 py-1 rounded-md items-center gap-1.5 transition-colors font-semibold shadow-xs hover:shadow-sm"
+            className="flex bg-orange-50 hover:bg-orange-100 text-orange-700 border border-orange-200 text-xs px-2 sm:px-2.5 py-1 rounded-md items-center gap-1.5 transition-colors font-semibold shadow-xs hover:shadow-sm shrink-0"
             title="AI Skill Studio"
           >
-            <img src="/ai-skill-icon.png" className="w-4 h-3.5 object-contain" alt="AI Skill Studio" />
-            <span>AI Skill Studio</span>
+            <img src="/ai-skill-icon.png" className="w-3.5 h-3.5 object-contain shrink-0" alt="AI Skill Studio" />
+            <span className="hidden xs:inline sm:inline">AI Studio</span>
           </Link>
-          <div className="hidden md:flex bg-neutral-900 text-neutral-100 text-xs px-2.5 py-1 rounded-md items-center gap-1.5"><Lock className="w-3 h-3" /> 100% Local</div>
+          <div className="hidden lg:flex bg-neutral-900 text-neutral-100 text-xs px-2.5 py-1 rounded-md items-center gap-1.5"><Lock className="w-3 h-3" /> 100% Local</div>
 
           <Link
             href="/"
-            className="flex items-center gap-2 px-3.5 py-1.5 bg-zinc-900 hover:bg-zinc-800 text-white rounded-md text-xs font-medium transition-all shadow-none"
+            className="flex items-center gap-1.5 px-2.5 sm:px-3.5 py-1.5 bg-zinc-900 hover:bg-zinc-800 text-white rounded-md text-xs font-medium transition-all shadow-none shrink-0"
           >
-            <span>Open Tool Workspace</span>
-            <ArrowRight className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">Open Tool Workspace</span>
+            <span className="sm:hidden">Tools</span>
+            <ArrowRight className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
           </Link>
         </div>
       </div>

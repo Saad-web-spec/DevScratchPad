@@ -124,8 +124,67 @@ DevScratchpad (${SITE_URL}) operates entirely on client-side code execution. No 
 
 ## Primary Platforms & Root Hubs
 - [Developer Tools Directory](${SITE_URL}/developer-tools): Complete directory of 28 offline, client-side developer utilities across 5 categories.
-- [AI Skill Studio](${SITE_URL}/ai-skill-studio): Cursor Rules (.mdc), Claude Skills, CLAUDE.md, AGENTS.md & MCP Config Generator with 100% offline privacy.
+- [AI Skill Studio](${SITE_URL}/ai-skill-studio): Cursor Rules (.mdc), Claude Skills (SKILL.md), CLAUDE.md, AGENTS.md, Windsurf Cascade, GitHub Copilot, OpenAI, Gemini Prompts & MCP Config Generator with 100% offline privacy.
+- [Universal Rules Converter](${SITE_URL}/ai-skill-studio/rules-converter): Zero-telemetry client-side migration engine for legacy .cursorrules, .mdc, and prompt instructions to modern agent formats.
+- [Headless Terminal CLI](${SITE_URL}/ai-skill-studio): Zero-install command-line management tool (\`npx devscratchpad\`) for rulebook installation and repository auditing.
 - [Developer Learning Hub](${SITE_URL}/blog): In-depth technical guides, cheat sheets, and architectural references for modern engineering teams.
+
+---
+
+## Headless Terminal CLI (\`npx devscratchpad\`)
+
+The DevScratchpad CLI is a dependency-free, zero-install Node.js utility enabling developers to manage, audit, and scaffold AI rulebooks directly inside their workspace.
+
+### Core CLI Commands
+1. **Browse Presets & Formats**:
+   \`\`\`bash
+   npx devscratchpad list
+   \`\`\`
+   Outputs all 7 format categories and 23+ technology presets grouped by domain (Fullstack, Frontend, Backend, Systems, Testing, Security).
+
+2. **Install Rules Directly into Repository**:
+   \`\`\`bash
+   # Shorthand format/preset syntax:
+   npx devscratchpad add cursor-rules/nextjs-15
+   npx devscratchpad add claude-skills/fastapi
+   npx devscratchpad add windsurf/tailwind-v4
+   npx devscratchpad add copilot/typescript-strict
+
+   # Flag syntax:
+   npx devscratchpad add nextjs-15 --format cursor-rules
+   \`\`\`
+   Automatically creates the target directory structure (\`.cursor/rules/\`, \`.claude/skills/<preset>/\`, \`.windsurf/rules/\`, etc.) and downloads the production-hardened specification. If offline, the CLI falls back seamlessly to bundled local templates.
+
+3. **Static Rule Quality Audit**:
+   \`\`\`bash
+   npx devscratchpad audit [dir]
+   \`\`\`
+   Scans repository rulebooks (\`.cursorrules\`, \`CLAUDE.md\`, \`AGENTS.md\`, \`.windsurfrules\`, \`.github/copilot-instructions.md\`, \`.cursor/rules/*.mdc\`, \`.claude/skills/*/SKILL.md\`) and grades them on a 0–100 quality scale evaluating:
+   - **Negative Guardrails**: Detection of deterministic constraints (\`never\`, \`avoid\`, \`must not\`).
+   - **Rule Density**: Enforces concise bounds without monolithic prompt degradation (>300 lines).
+   - **Trigger & Glob Specificity**: Validates frontmatter \`globs:\` in Cursor rules.
+   - **Vague Directives**: Flags ambiguous instructions like "clean code" or "write good code".
+
+4. **Initialize Repository Starter Rules**:
+   \`\`\`bash
+   npx devscratchpad init
+   \`\`\`
+   Sets up a universal multi-agent configuration in the current working directory.
+
+### CLI Security Invariants
+- **Strict Path Confinement**: Enforces target path boundary checks (\`resolvedTarget.startsWith(cwdRoot)\`) to strictly prohibit directory traversal attacks.
+- **Input Sanitization**: Slugs are sanitized against \`^[a-zA-Z0-9_-]+$\` to avoid command or script injection.
+- **Zero Runtime Dependencies**: Operates purely on native Node.js standard libraries (\`node:fs\`, \`node:path\`, \`node:https\`).
+
+---
+
+## Universal AI Rules Converter & Reverse Importer
+
+Located at [${SITE_URL}/ai-skill-studio/rules-converter](${SITE_URL}/ai-skill-studio/rules-converter), the Universal Rules Converter solves configuration lock-in across the AI developer ecosystem:
+- **Input Formats**: Legacy \`.cursorrules\`, Cursor \`.mdc\` files, \`CLAUDE.md\`, \`AGENTS.md\`, Windsurf rules, GitHub Copilot instructions, or raw system prompts.
+- **Intermediate Representation (IR)**: Client-side parser extracts metadata, target file globs, role specifications, core architectural guidelines, prohibited practices, styling rules, and database conventions.
+- **Target Export Formats**: Instant 1-click transformation into any of the 9 supported assistant formats.
+- **Seamless Studio Hand-off**: Clicking "Customize in AI Skill Studio" packs the parsed IR into a URL hash state (\`#import=...\`), launching the full interactive editor with zero server communication.
 
 ---
 

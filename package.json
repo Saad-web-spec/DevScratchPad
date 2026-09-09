@@ -3,11 +3,15 @@
   "version": "0.1.0",
   "private": true,
   "license": "BUSL-1.1",
+  "bin": {
+    "devscratchpad": "./cli/bin/devscratchpad.mjs"
+  },
   "scripts": {
     "dev": "next dev --webpack",
     "build": "next build --webpack",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "validate-presets": "node ./scripts/validate-presets.mjs"
   },
   "dependencies": {
     "@faker-js/faker": "^10.6.0",

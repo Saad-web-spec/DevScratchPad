@@ -66,8 +66,17 @@ DevScratchpad (${SITE_URL}) is an open developer utility suite built for securit
 
 ## Primary Platforms & Hubs
 - [Developer Tools Directory](${SITE_URL}/developer-tools): Complete directory of 28 offline, client-side developer utilities across 5 categories.
-- [AI Skill Studio](${SITE_URL}/ai-skill-studio): Cursor Rules (.mdc), Claude Skills, CLAUDE.md, AGENTS.md & MCP Config Generator with 100% offline privacy.
+- [AI Skill Studio](${SITE_URL}/ai-skill-studio): Cursor Rules (.mdc), Claude Skills (SKILL.md), CLAUDE.md, AGENTS.md, Windsurf Cascade, GitHub Copilot, OpenAI, Gemini Prompts & MCP Config Generator with 100% offline privacy.
+- [Universal Rules Converter](${SITE_URL}/ai-skill-studio/rules-converter): Migrate and convert legacy .cursorrules, .mdc, and prompts to Claude Code, Windsurf, Copilot, and Gemini rules client-side.
+- [Headless Terminal CLI](${SITE_URL}/ai-skill-studio): Zero-install command-line management (\`npx devscratchpad\`) for downloading, auditing, and scaffolding repository rulebooks.
 - [Developer Learning Hub](${SITE_URL}/blog): In-depth technical guides, cheat sheets, and architectural references for modern engineering teams.
+
+## Headless Terminal CLI (\`npx devscratchpad\`)
+Manage and audit repository rulebooks directly from the terminal with zero external dependencies:
+- \`npx devscratchpad list\`: Discover all supported formats (Cursor, Claude, Windsurf, Copilot, OpenAI, Gemini, MCP) and 23+ technology presets.
+- \`npx devscratchpad add <format>/<preset>\`: Download and install hardened rulebooks directly into the correct repository path (e.g. \`.cursor/rules/nextjs-15.mdc\`, \`.claude/skills/fastapi/SKILL.md\`). Also supports \`npx devscratchpad add <preset> --format <format>\`.
+- \`npx devscratchpad audit [dir]\`: Audit project rulebooks against 4 static heuristics (negative guardrails, rule density, trigger specificity, and vague directives) with quality scores out of 100.
+- \`npx devscratchpad init\`: Scaffold recommended universal multi-agent starter rules for new repositories.
 
 ## Architecture & Privacy Guarantees
 - Zero Server Data Transmission: All inputs, secret keys, passwords, JWT tokens, and payloads are processed locally via browser APIs (Web Crypto API, WebAssembly, and local DOM parsers).
@@ -82,6 +91,9 @@ ${toolsSection}
 
 ## AI Skill Studio Format Hubs
 ${formatHubsSection}
+
+## Universal AI Rules Converter & Exporter
+- [Universal AI Rules Converter](${SITE_URL}/ai-skill-studio/rules-converter): Client-side reverse importer for migrating existing rules across Cursor, Claude Code, Windsurf, GitHub Copilot, OpenAI, and Gemini.
 
 ## AI Skill Studio Presets
 ${presetsSection}

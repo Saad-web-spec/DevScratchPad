@@ -17,7 +17,7 @@ export async function GET(
 
   if (!route) {
     return new Response(
-      `Error: Preset not found for format "${formatSlug}" and slug "${presetSlug}". Available formats include: cursor-rules, claude-skills, claude-md, agents-md, mcp-config.`,
+      `Error: Preset not found for format "${formatSlug}" and slug "${presetSlug}". Available formats include: cursor-rules, claude-skills, claude-md, agents-md, mcp-config, windsurf-rules, copilot-instructions, openai-instructions, gemini-prompts.`,
       {
         status: 404,
         headers: {

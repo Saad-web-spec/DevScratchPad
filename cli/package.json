@@ -1,0 +1,37 @@
+{
+  "name": "devscratchpad",
+  "version": "2.1.0",
+  "description": "Zero-dependency, offline-first AI rulebook manager for Cursor, Claude Code, Windsurf, Copilot & Gemini",
+  "bin": {
+    "devscratchpad": "./bin/devscratchpad.mjs"
+  },
+  "type": "module",
+  "main": "./bin/devscratchpad.mjs",
+  "files": [
+    "bin",
+    "README.md"
+  ],
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "keywords": [
+    "cursorrules",
+    "cursor-rules",
+    "claude-code",
+    "claude-skills",
+    "windsurf",
+    "copilot",
+    "developer-tools",
+    "ai-agent",
+    "offline-first",
+    "privacy"
+  ],
+  "author": "DevScratchpad Team (https://www.devscratchpad.tech)",
+  "license": "MIT",
+  "homepage": "https://www.devscratchpad.tech/ai-skill-studio",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/saadashrafx/devscratchpad.tech.git",
+    "directory": "cli"
+  }
+}

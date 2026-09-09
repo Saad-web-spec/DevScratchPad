@@ -1,6 +1,15 @@
 import { ProgrammaticPresetRoute } from "./presetRegistry";
 
-export type OutputFormat = "skill_md" | "claude_md" | "cursor_mdc" | "agents_md" | "mcp_json";
+export type OutputFormat =
+  | "skill_md"
+  | "claude_md"
+  | "cursor_mdc"
+  | "agents_md"
+  | "mcp_json"
+  | "windsurf_cascade"
+  | "copilot_instructions"
+  | "openai_instructions"
+  | "gemini_prompts";
 
 export interface McpServerPreset {
   id: string;
@@ -1625,6 +1634,169 @@ ${exampleBad.trim()}
     };
 
     return JSON.stringify(mcpJson, null, 2);
+  }
+
+  if (targetFormat === "windsurf_cascade") {
+    return `# Windsurf Cascade Rules: ${skillTitle.trim() || "Project Rules"}
+
+## 1. Character & Role
+You are an expert **${role}** operating inside Windsurf Cascade.
+- **Framework**: ${framework}
+- **Language**: ${language}
+- **Philosophy**: ${philObj?.title || "Pragmatic"} — ${philObj?.desc || "High-quality engineering."}
+- **Targets**: \`${globPattern}\`
+
+## 2. Cascade Execution Workflow
+${procedures.trim() || "1. Inspect surrounding files and project structure.\n2. Generate surgical edits conforming to project standards.\n3. Run typecheck and test verification."}
+
+## 3. Mandatory Architectural Guardrails
+${selectedConventionTexts.length > 0 ? selectedConventionTexts.join("\n") : "- Follow standard idiomatic language conventions."}
+
+## 4. Negative Constraints
+${selectedBehaviorTexts.length > 0 ? selectedBehaviorTexts.join("\n") : "- Exercise standard engineering discretion."}
+
+${
+  customDirectives.trim()
+    ? `## 5. Project-Specific Directives
+${customDirectives.trim()}
+`
+    : ""
+}${
+    exampleGood.trim() || exampleBad.trim()
+      ? `## 6. Implementation Reference
+
+### Preferred Patterns
+\`\`\`${langTag}
+${exampleGood.trim()}
+\`\`\`
+
+### Discouraged Anti-Patterns
+\`\`\`${langTag}
+${exampleBad.trim()}
+\`\`\`
+`
+      : ""
+}## 7. Cascade Quality Gates
+1. Keep diffs surgical and minimal; never reformat unrelated code.
+2. Confirm all modified files compile without type errors.
+3. Preserve all existing docstrings, tests, and comments.
+`;
+  }
+
+  if (targetFormat === "copilot_instructions") {
+    return `# GitHub Copilot Repository Instructions
+
+## Project Context
+${description.trim() || "Repository architectural guidelines and coding standards."}
+
+- **Role**: ${role}
+- **Tech Stack**: ${framework} • ${language} • ${styling} • ${database}
+- **Philosophy**: ${philObj?.title || "Pragmatic"} (${philObj?.desc || "Clean standards."})
+
+## Instructions for Copilot
+When generating completions, chat responses, or pull request suggestions:
+1. Always follow ${framework} and ${language} idioms.
+2. Maintain strict type safety across all function signatures and public APIs.
+${procedures.trim() ? `3. Execution Procedures:\n${procedures.trim()}` : ""}
+
+## Code Conventions
+${selectedConventionTexts.length > 0 ? selectedConventionTexts.join("\n") : "- Use strict typing and maintain modular structure."}
+
+## Prohibited Patterns & Guardrails
+${selectedBehaviorTexts.length > 0 ? selectedBehaviorTexts.join("\n") : "- Do not use deprecated APIs or loose types."}
+
+${
+  customDirectives.trim()
+    ? `## Custom Rules
+${customDirectives.trim()}
+`
+    : ""
+}${
+    exampleGood.trim() || exampleBad.trim()
+      ? `## Reference Patterns
+
+### Recommended
+\`\`\`${langTag}
+${exampleGood.trim()}
+\`\`\`
+
+### Prohibited
+\`\`\`${langTag}
+${exampleBad.trim()}
+\`\`\`
+`
+      : ""
+}`;
+  }
+
+  if (targetFormat === "openai_instructions") {
+    return `# OpenAI Custom Instructions & System Prompt
+
+## What would you like ChatGPT / OpenAI to know about you to provide better responses?
+I am building a ${framework} application in ${language}.
+Stack context: ${styling} for styles, ${database} for persistence.
+Our architectural philosophy is ${philObj?.title || "Pragmatic"}: ${philObj?.desc || "High-quality engineering."}.
+
+## How would you like ChatGPT / OpenAI to respond?
+You are acting as a **${role}**.
+
+Core Engineering Standards:
+${selectedConventionTexts.length > 0 ? selectedConventionTexts.join("\n") : "- Write clean, idiomatic, fully-typed code."}
+
+Operational Guardrails & Prohibitions:
+${selectedBehaviorTexts.length > 0 ? selectedBehaviorTexts.join("\n") : "- Avoid hallucinations, deprecated APIs, and unnecessary dependencies."}
+
+${
+  customDirectives.trim()
+    ? `Specific Project Requirements:
+${customDirectives.trim()}
+`
+    : ""
+}${
+  procedures.trim()
+    ? `Workflow Checklist:
+${procedures.trim()}
+`
+    : ""
+}Verification Rules:
+1. Verify type safety and defensive error handling on every suggested change.
+2. Provide concise, focused code solutions without unnecessary fluff.
+`;
+  }
+
+  if (targetFormat === "gemini_prompts") {
+    const instructionLines = [
+      `You are a ${role} specializing in ${framework} and ${language}.`,
+      `Philosophy: ${philObj?.title || "Pragmatic"} — ${philObj?.desc || "Production engineering standards."}.`,
+      "",
+      "Core Guidelines:",
+      ...(selectedConventionTexts.length > 0 ? selectedConventionTexts.map((c) => `- ${c}`) : ["- Follow idiomatic project conventions."]),
+      "",
+      "Negative Constraints & Guardrails:",
+      ...(selectedBehaviorTexts.length > 0 ? selectedBehaviorTexts.map((b) => `- ${b}`) : ["- Exercise standard engineering discretion."]),
+      ...(customDirectives.trim() ? ["", "Mandatory Project Directives:", customDirectives.trim()] : []),
+      ...(procedures.trim() ? ["", "Workflow Procedures:", procedures.trim()] : []),
+      "",
+      "Verification Protocol:",
+      "Ensure all answers adhere to strict type-safety, zero-trust security, and surgical minimal edits.",
+    ];
+
+    const promptObj = {
+      system_instruction: {
+        parts: [
+          {
+            text: instructionLines.join("\n"),
+          },
+        ],
+      },
+      generation_config: {
+        temperature: 0.2,
+        top_p: 0.95,
+        top_k: 40,
+        max_output_tokens: 8192,
+      },
+    };
+    return JSON.stringify(promptObj, null, 2);
   }
 
   // AGENTS.md format

@@ -1,6 +1,15 @@
 import { Metadata } from "next";
 
-export type OutputFormat = "skill_md" | "claude_md" | "cursor_mdc" | "agents_md" | "mcp_json";
+export type OutputFormat =
+  | "skill_md"
+  | "claude_md"
+  | "cursor_mdc"
+  | "agents_md"
+  | "mcp_json"
+  | "windsurf_cascade"
+  | "copilot_instructions"
+  | "openai_instructions"
+  | "gemini_prompts";
 
 export interface ProgrammaticPresetRoute {
   formatSlug: string;
@@ -1870,6 +1879,26 @@ function synthesizeRouteForFormat(
     targetFile = "AGENTS.md";
     title = `${baseRoute.techName} AGENTS.md Protocol`;
     desc = `Generate an AGENTS.md multi-agent specification for ${baseRoute.techName}.`;
+  } else if (formatSlug === "windsurf-rules" || formatSlug === "windsurf") {
+    format = "windsurf_cascade";
+    targetFile = `.windsurf/rules/${normalizedPreset}.md`;
+    title = `${baseRoute.techName} Windsurf Cascade Rules`;
+    desc = `Generate production Windsurf Cascade rules for ${baseRoute.techName}.`;
+  } else if (formatSlug === "copilot-instructions" || formatSlug === "copilot") {
+    format = "copilot_instructions";
+    targetFile = ".github/copilot-instructions.md";
+    title = `${baseRoute.techName} GitHub Copilot Instructions`;
+    desc = `Generate .github/copilot-instructions.md rules for ${baseRoute.techName}.`;
+  } else if (formatSlug === "openai-instructions" || formatSlug === "openai") {
+    format = "openai_instructions";
+    targetFile = "prompts/openai-custom-instructions.md";
+    title = `${baseRoute.techName} OpenAI Custom Instructions`;
+    desc = `Generate OpenAI ChatGPT and Playground custom instructions for ${baseRoute.techName}.`;
+  } else if (formatSlug === "gemini-prompts" || formatSlug === "gemini") {
+    format = "gemini_prompts";
+    targetFile = "prompts/gemini-system-instructions.json";
+    title = `${baseRoute.techName} Gemini System Prompt`;
+    desc = `Generate Google AI Studio and Gemini SDK system instructions for ${baseRoute.techName}.`;
   }
 
   return {
@@ -1900,7 +1929,16 @@ export function getAllDynamicPresetRoutes(): { formatSlug: string; presetSlug: s
     addRoute(r.formatSlug, r.presetSlug);
   }
 
-  const codeFormats = ["cursor-rules", "claude-skills", "claude-md", "agents-md"];
+  const codeFormats = [
+    "cursor-rules",
+    "claude-skills",
+    "claude-md",
+    "agents-md",
+    "windsurf-rules",
+    "copilot-instructions",
+    "openai-instructions",
+    "gemini-prompts",
+  ];
   for (const fmt of codeFormats) {
     for (const slug of BASE_CODE_SLUGS) {
       addRoute(fmt, slug);
@@ -1926,6 +1964,10 @@ export function getPresetRouteMetadata(formatSlug: string, presetSlug: string): 
   else if (formatSlug === "claude-md") formatSuffix = "CLAUDE.md Guide";
   else if (formatSlug === "agents-md") formatSuffix = "AGENTS.md Rules";
   else if (formatSlug === "mcp-config") formatSuffix = "MCP Config";
+  else if (formatSlug === "windsurf-rules" || formatSlug === "windsurf") formatSuffix = "Windsurf Rules";
+  else if (formatSlug === "copilot-instructions" || formatSlug === "copilot") formatSuffix = "Copilot Instructions";
+  else if (formatSlug === "openai-instructions" || formatSlug === "openai") formatSuffix = "OpenAI Instructions";
+  else if (formatSlug === "gemini-prompts" || formatSlug === "gemini") formatSuffix = "Gemini Prompt";
 
   // Clean and simplify tech name for crisp, predictable SERP title
   const cleanTech = route.techName

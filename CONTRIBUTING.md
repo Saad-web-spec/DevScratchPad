@@ -40,6 +40,45 @@ Adding a new tool to DevScratchpad is simple and structured:
 
 ---
 
+## 🤖 How to Contribute a Community AI Preset
+
+You can add new AI assistant presets (Cursor Rules, Claude Skills, CLAUDE.md, AGENTS.md, Windsurf, Copilot, etc.) to the community registry:
+
+1. **Create Preset JSON**:
+   - Create a JSON file in `community-presets/<preset-slug>.json`.
+   - Adhere strictly to the JSON Schema at `schemas/preset-schema.json`.
+   - Ensure the preset includes:
+     - Clear persona/role definition.
+     - Concrete, numbered procedure steps.
+     - Negative guardrails (`Never...`, `Do not...`, `Banned:...`).
+     - Both `exampleGood` (idiomatic code) and `exampleBad` (anti-pattern) snippets.
+
+2. **Run Quality & Schema Gate**:
+   ```bash
+   npm run validate-presets
+   ```
+   Presets must achieve a Static Rule Quality Score $\ge 80/100$ and pass schema validation to be accepted.
+
+---
+
+## 💻 Headless Terminal CLI (`devscratchpad`)
+
+DevScratchpad includes an offline-first terminal CLI for inspecting and installing rules:
+```bash
+# List all available presets
+node ./cli/bin/devscratchpad.mjs list
+
+# Audit repository rule hygiene
+node ./cli/bin/devscratchpad.mjs audit
+
+# Generate rules directly into your project (supports format/preset or --format flag)
+node ./cli/bin/devscratchpad.mjs add cursor-rules/nextjs-15
+node ./cli/bin/devscratchpad.mjs add nextjs-15 --format windsurf
+```
+Contributions to the CLI should maintain zero external runtime dependencies (`npm` free execution).
+
+---
+
 ## 📜 Development Guidelines
 
 - **Zero-Server Rule**: Under no circumstances should any user payload, code, or secret be transmitted to an external server or telemetry endpoint.

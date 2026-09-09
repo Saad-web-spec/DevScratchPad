@@ -30,13 +30,22 @@ import {
   Sparkles,
   X,
   Info,
+  Compass,
+  Bot,
+  Brain,
+  FileText,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { downloadAiKitZip } from "./lib/zipExporter";
 import { ParsedManifestResult } from "./lib/manifestParser";
+import { ConvertedRulesIR } from "./lib/rulesConverter";
 
 const ManifestImportModal = dynamic(
   () => import("./components/ManifestImportModal").then((m) => m.ManifestImportModal),
+  { ssr: false }
+);
+const RulesConverterModal = dynamic(
+  () => import("./components/RulesConverterModal").then((m) => m.RulesConverterModal),
   { ssr: false }
 );
 import { generateSafeSlug, validateTriggerPhrase } from "./lib/slugUtils";
@@ -136,6 +145,7 @@ export function ClaudeSkillsClient({
   const [lastAutoSaved, setLastAutoSaved] = useState<string | null>(null);
   const [quotaError, setQuotaError] = useState<string | null>(null);
   const [isManifestModalOpen, setIsManifestModalOpen] = useState(false);
+  const [isConverterModalOpen, setIsConverterModalOpen] = useState(false);
   const [isExportingZip, setIsExportingZip] = useState(false);
   const [mobileTab, setMobileTab] = useState<"form" | "editor">("form");
 
@@ -630,6 +640,38 @@ export function ClaudeSkillsClient({
     setIsManuallyEdited(false);
   };
 
+  // Apply reverse converted legacy rules to studio
+  const handleApplyConvertedRules = (ir: ConvertedRulesIR) => {
+    if (ir.skillName) {
+      setSkillName(generateSafeSlug(ir.skillName));
+      setIsSlugLocked(true);
+    }
+    if (ir.skillTitle) setSkillTitle(ir.skillTitle);
+    if (ir.description) setDescription(ir.description);
+    if (ir.role) setRole(ir.role);
+    if (ir.framework) setFramework(ir.framework);
+    if (ir.language) setLanguage(ir.language);
+    if (ir.styling) setStyling(ir.styling);
+    if (ir.database) setDatabase(ir.database);
+    if (ir.philosophy) setPhilosophy(ir.philosophy);
+    if (ir.behaviors && ir.behaviors.length > 0) {
+      setBehaviors(ir.behaviors);
+    }
+    if (ir.conventions && ir.conventions.length > 0) {
+      setConventions(ir.conventions);
+    }
+    if (ir.procedures) setProcedures(ir.procedures);
+    if (ir.customDirectives) setCustomDirectives(ir.customDirectives);
+    if (ir.exampleGood) setExampleGood(ir.exampleGood);
+    if (ir.exampleBad) setExampleBad(ir.exampleBad);
+    if (ir.globPattern) setGlobPattern(ir.globPattern);
+    if (ir.alwaysApply !== undefined) setAlwaysApply(ir.alwaysApply);
+    if (ir.triggers && ir.triggers.length > 0) {
+      setTriggerTags(ir.triggers);
+    }
+    setIsManuallyEdited(false);
+  };
+
   // Toggle checkbox helper
   const toggleItem = (list: string[], setList: React.Dispatch<React.SetStateAction<string[]>>, id: string) => {
     setList((prev) => (prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]));
@@ -1078,6 +1120,10 @@ export function ClaudeSkillsClient({
         claudeMdContent: format === "claude_md" && isManuallyEdited ? editorContent : buildContent("claude_md"),
         agentsMdContent: format === "agents_md" && isManuallyEdited ? editorContent : buildContent("agents_md"),
         mcpJsonContent: format === "mcp_json" && isManuallyEdited ? editorContent : buildContent("mcp_json"),
+        windsurfContent: format === "windsurf_cascade" && isManuallyEdited ? editorContent : buildContent("windsurf_cascade"),
+        copilotContent: format === "copilot_instructions" && isManuallyEdited ? editorContent : buildContent("copilot_instructions"),
+        openaiContent: format === "openai_instructions" && isManuallyEdited ? editorContent : buildContent("openai_instructions"),
+        geminiContent: format === "gemini_prompts" && isManuallyEdited ? editorContent : buildContent("gemini_prompts"),
         framework,
         language,
       });
@@ -1143,6 +1189,10 @@ export function ClaudeSkillsClient({
       claude_md: "claude-md",
       agents_md: "agents-md",
       mcp_json: "mcp-config",
+      windsurf_cascade: "windsurf-rules",
+      copilot_instructions: "copilot-instructions",
+      openai_instructions: "openai-instructions",
+      gemini_prompts: "gemini-prompts",
     };
     return formatSlugMap[format] || "cursor-rules";
   }, [format]);
@@ -1179,6 +1229,11 @@ export function ClaudeSkillsClient({
     if (format === "claude_md") return "CLAUDE.md";
     if (format === "cursor_mdc") return `.cursor/rules/${safeSkill}.mdc`;
     if (format === "mcp_json") return "claude_desktop_config.json";
+    if (format === "agents_md") return "AGENTS.md";
+    if (format === "windsurf_cascade") return `.windsurf/rules/${safeSkill}.md`;
+    if (format === "copilot_instructions") return ".github/copilot-instructions.md";
+    if (format === "openai_instructions") return "prompts/openai-custom-instructions.md";
+    if (format === "gemini_prompts") return "prompts/gemini-system-instructions.json";
     return "AGENTS.md";
   }, [activePresetSlug, selectedPresetId, activeFormatSlug, isManuallyEdited, format, skillName]);
 
@@ -1556,7 +1611,7 @@ export function ClaudeSkillsClient({
               <span>Target Standard & File Format</span>
               <span className="text-[10px] text-zinc-400 font-normal">Select AI runtime</span>
             </label>
-            <div suppressHydrationWarning className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
+            <div suppressHydrationWarning className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-5 gap-2">
               <button
                 suppressHydrationWarning
                 onClick={() => setFormat("cursor_mdc")}
@@ -1642,6 +1697,74 @@ export function ClaudeSkillsClient({
                   <span className="truncate">claude.json</span>
                 </div>
                 <span className="text-[10px] text-zinc-500 leading-tight truncate">MCP Servers</span>
+              </button>
+
+              <button
+                suppressHydrationWarning
+                onClick={() => setFormat("windsurf_cascade")}
+                className={cn(
+                  "p-2 sm:p-2.5 rounded-lg border text-left transition-all flex flex-col gap-1 overflow-hidden",
+                  format === "windsurf_cascade"
+                    ? "border-teal-500 bg-teal-50/60 text-teal-950 shadow-xs ring-1 ring-teal-500/20"
+                    : "border-zinc-200 bg-white hover:bg-zinc-50 text-zinc-700"
+                )}
+              >
+                <div className="flex items-center gap-1.5 font-semibold text-xs truncate">
+                  <Compass className="w-3.5 h-3.5 text-teal-600 shrink-0" />
+                  <span className="truncate">Windsurf</span>
+                </div>
+                <span className="text-[10px] text-zinc-500 leading-tight truncate">Cascade Rules</span>
+              </button>
+
+              <button
+                suppressHydrationWarning
+                onClick={() => setFormat("copilot_instructions")}
+                className={cn(
+                  "p-2 sm:p-2.5 rounded-lg border text-left transition-all flex flex-col gap-1 overflow-hidden",
+                  format === "copilot_instructions"
+                    ? "border-sky-500 bg-sky-50/60 text-sky-950 shadow-xs ring-1 ring-sky-500/20"
+                    : "border-zinc-200 bg-white hover:bg-zinc-50 text-zinc-700"
+                )}
+              >
+                <div className="flex items-center gap-1.5 font-semibold text-xs truncate">
+                  <Bot className="w-3.5 h-3.5 text-sky-600 shrink-0" />
+                  <span className="truncate">Copilot</span>
+                </div>
+                <span className="text-[10px] text-zinc-500 leading-tight truncate">Instructions</span>
+              </button>
+
+              <button
+                suppressHydrationWarning
+                onClick={() => setFormat("openai_instructions")}
+                className={cn(
+                  "p-2 sm:p-2.5 rounded-lg border text-left transition-all flex flex-col gap-1 overflow-hidden",
+                  format === "openai_instructions"
+                    ? "border-purple-500 bg-purple-50/60 text-purple-950 shadow-xs ring-1 ring-purple-500/20"
+                    : "border-zinc-200 bg-white hover:bg-zinc-50 text-zinc-700"
+                )}
+              >
+                <div className="flex items-center gap-1.5 font-semibold text-xs truncate">
+                  <Brain className="w-3.5 h-3.5 text-purple-600 shrink-0" />
+                  <span className="truncate">OpenAI</span>
+                </div>
+                <span className="text-[10px] text-zinc-500 leading-tight truncate">Custom System</span>
+              </button>
+
+              <button
+                suppressHydrationWarning
+                onClick={() => setFormat("gemini_prompts")}
+                className={cn(
+                  "p-2 sm:p-2.5 rounded-lg border text-left transition-all flex flex-col gap-1 overflow-hidden",
+                  format === "gemini_prompts"
+                    ? "border-indigo-500 bg-indigo-50/60 text-indigo-950 shadow-xs ring-1 ring-indigo-500/20"
+                    : "border-zinc-200 bg-white hover:bg-zinc-50 text-zinc-700"
+                )}
+              >
+                <div className="flex items-center gap-1.5 font-semibold text-xs truncate">
+                  <Sparkles className="w-3.5 h-3.5 text-indigo-600 shrink-0" />
+                  <span className="truncate">Gemini</span>
+                </div>
+                <span className="text-[10px] text-zinc-500 leading-tight truncate">System Prompts</span>
               </button>
             </div>
           </div>
@@ -2125,15 +2248,26 @@ export function ClaudeSkillsClient({
                 <Layers className="w-4 h-4 text-zinc-700 shrink-0" />
                 <h3 className="text-sm font-bold text-zinc-900">Technology Stack Context</h3>
               </div>
-              <button
-                type="button"
-                onClick={() => setIsManifestModalOpen(true)}
-                className="flex items-center justify-center gap-1.5 text-[11px] font-semibold text-zinc-700 hover:text-orange-700 bg-zinc-100 hover:bg-orange-50 border border-zinc-200 hover:border-orange-200 px-2.5 py-1.5 rounded-md transition-all active:scale-95 shadow-xs cursor-pointer w-full sm:w-auto shrink-0"
-                title="Auto-detect stack from package.json, pyproject.toml, Cargo.toml, or go.mod"
-              >
-                <UploadCloud className="w-3.5 h-3.5 text-orange-600 shrink-0" />
-                <span>Auto-Detect from Manifest</span>
-              </button>
+              <div className="flex items-center gap-1.5 w-full sm:w-auto shrink-0">
+                <button
+                  type="button"
+                  onClick={() => setIsConverterModalOpen(true)}
+                  className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 text-[11px] font-semibold text-zinc-700 hover:text-orange-700 bg-zinc-100 hover:bg-orange-50 border border-zinc-200 hover:border-orange-200 px-2.5 py-1.5 rounded-md transition-all active:scale-95 shadow-xs cursor-pointer"
+                  title="Reverse-convert existing .cursorrules, CLAUDE.md, or custom prompts into Universal Studio IR"
+                >
+                  <FileText className="w-3.5 h-3.5 text-orange-600 shrink-0" />
+                  <span>Convert Legacy Rules</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIsManifestModalOpen(true)}
+                  className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 text-[11px] font-semibold text-zinc-700 hover:text-orange-700 bg-zinc-100 hover:bg-orange-50 border border-zinc-200 hover:border-orange-200 px-2.5 py-1.5 rounded-md transition-all active:scale-95 shadow-xs cursor-pointer"
+                  title="Auto-detect stack from package.json, pyproject.toml, Cargo.toml, or go.mod"
+                >
+                  <UploadCloud className="w-3.5 h-3.5 text-orange-600 shrink-0" />
+                  <span>Auto-Detect</span>
+                </button>
+              </div>
             </div>
 
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
@@ -2629,7 +2763,7 @@ export function ClaudeSkillsClient({
             <div className="h-[430px] sm:h-[520px] lg:h-[calc(100vh-16rem)] min-h-[380px] relative overflow-hidden bg-zinc-950">
               <Editor
                 height="100%"
-                language={format === "mcp_json" ? "json" : "markdown"}
+                language={format === "mcp_json" || format === "gemini_prompts" ? "json" : "markdown"}
                 value={activeContent}
                 theme="vs-dark"
                 onMount={(editor) => {
@@ -3031,7 +3165,11 @@ export function ClaudeSkillsClient({
                 <span className="flex items-center gap-1 text-zinc-400">
                   <span className="w-1.5 h-1.5 rounded-full bg-zinc-400" />
                   <span className="text-[10px] uppercase font-semibold text-zinc-300">
-                    {format === "mcp_json" ? "JSON" : format === "cursor_mdc" ? "MDC" : "Markdown"}
+                    {format === "mcp_json" || format === "gemini_prompts"
+                      ? "JSON"
+                      : format === "cursor_mdc"
+                      ? "MDC"
+                      : "Markdown"}
                   </span>
                 </span>
                 <span className="hidden sm:inline text-zinc-700">•</span>
@@ -3072,6 +3210,12 @@ export function ClaudeSkillsClient({
                 <img src="/claude-icon.png" alt="Claude" className="w-3.5 h-3.5 object-contain" />
               ) : format === "mcp_json" ? (
                 <Server className="w-3.5 h-3.5 text-orange-600" />
+              ) : format === "windsurf_cascade" ? (
+                <Compass className="w-3.5 h-3.5 text-teal-600" />
+              ) : format === "copilot_instructions" ? (
+                <Bot className="w-3.5 h-3.5 text-sky-600" />
+              ) : format === "openai_instructions" ? (
+                <Brain className="w-3.5 h-3.5 text-purple-600" />
               ) : (
                 <FolderGit2 className={cn("w-3.5 h-3.5", format === "skill_md" ? "text-orange-500" : "text-zinc-800")} />
               )}
@@ -3100,6 +3244,26 @@ export function ClaudeSkillsClient({
             {format === "mcp_json" && (
               <p className="text-zinc-500 text-xs leading-relaxed">
                 Save as <code className="bg-zinc-100 px-1 py-0.5 rounded text-zinc-800 font-mono text-[11px]">claude.json</code> in project root or merge its <code className="bg-zinc-100 px-1 py-0.5 rounded text-zinc-800 font-mono text-[11px]">mcpServers</code> block into Claude Desktop <code className="bg-zinc-100 px-1 py-0.5 rounded text-zinc-800 font-mono text-[11px]">claude_desktop_config.json</code>.
+              </p>
+            )}
+            {format === "windsurf_cascade" && (
+              <p className="text-zinc-500 text-xs leading-relaxed">
+                Save as <code className="bg-zinc-100 px-1 py-0.5 rounded text-zinc-800 font-mono text-[11px]">.windsurf/rules/{(skillName || "rule").replace(/[^a-zA-Z0-9._-]/g, "-")}.md</code> in project root. Windsurf Cascade automatically injects this rule when executing flows.
+              </p>
+            )}
+            {format === "copilot_instructions" && (
+              <p className="text-zinc-500 text-xs leading-relaxed">
+                Save as <code className="bg-zinc-100 px-1 py-0.5 rounded text-zinc-800 font-mono text-[11px]">.github/copilot-instructions.md</code> in repository root. Read by GitHub Copilot chat and code completions.
+              </p>
+            )}
+            {format === "openai_instructions" && (
+              <p className="text-zinc-500 text-xs leading-relaxed">
+                Save in <code className="bg-zinc-100 px-1 py-0.5 rounded text-zinc-800 font-mono text-[11px]">prompts/openai-custom-instructions.md</code> or paste directly into ChatGPT Custom Instructions / OpenAI Playground System Prompt.
+              </p>
+            )}
+            {format === "gemini_prompts" && (
+              <p className="text-zinc-500 text-xs leading-relaxed">
+                Save in <code className="bg-zinc-100 px-1 py-0.5 rounded text-zinc-800 font-mono text-[11px]">prompts/gemini-system-instructions.json</code> for Google AI Studio / Gemini API SDK system instructions configuration.
               </p>
             )}
           </div>
@@ -3159,6 +3323,13 @@ export function ClaudeSkillsClient({
         isOpen={isManifestModalOpen}
         onClose={() => setIsManifestModalOpen(false)}
         onApply={handleApplyManifest}
+      />
+
+      {/* Rules Converter Modal (P3) */}
+      <RulesConverterModal
+        isOpen={isConverterModalOpen}
+        onClose={() => setIsConverterModalOpen(false)}
+        onApply={handleApplyConvertedRules}
       />
     </div>
   );
