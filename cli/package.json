@@ -2,9 +2,11 @@
   "name": "devscratchpad",
   "version": "2.1.0",
   "description": "Zero-dependency, offline-first AI rulebook manager for Cursor, Claude Code, Windsurf, Copilot & Gemini",
-  "bin": "./bin/devscratchpad.mjs",
+  "bin": {
+    "devscratchpad": "bin/devscratchpad.js"
+  },
   "type": "module",
-  "main": "./bin/devscratchpad.mjs",
+  "main": "./bin/devscratchpad.js",
   "files": [
     "bin",
     "README.md"
