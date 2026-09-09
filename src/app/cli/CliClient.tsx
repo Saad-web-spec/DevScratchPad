@@ -14,6 +14,7 @@ import {
   ExternalLink,
   Lock,
   RefreshCw,
+  BookOpen,
 } from "lucide-react";
 import {
   CursorIcon,
@@ -496,7 +497,7 @@ export function CliClient() {
       </div>
 
       {/* Reciprocal Traffic Bridge Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 pt-4">
         <Link
           href="/ai-skill-studio"
           className="group p-5 bg-gradient-to-br from-orange-50 to-amber-50 dark:from-zinc-900 dark:to-zinc-800/80 border border-orange-200 dark:border-zinc-700 rounded-2xl transition-all hover:shadow-md hover:border-orange-300 flex flex-col justify-between"
@@ -512,6 +513,25 @@ export function CliClient() {
           </div>
           <div className="flex items-center gap-1 text-xs font-bold text-orange-600 dark:text-orange-400 mt-4 group-hover:translate-x-1 transition-transform">
             <span>Open Studio</span>
+            <ArrowRight className="w-3.5 h-3.5" />
+          </div>
+        </Link>
+
+        <Link
+          href="/blog/how-to-manage-ai-rules-with-cli-guide"
+          className="group p-5 bg-gradient-to-br from-amber-50 to-orange-50 dark:from-zinc-900 dark:to-zinc-800/80 border border-amber-200 dark:border-zinc-700 rounded-2xl transition-all hover:shadow-md hover:border-amber-300 flex flex-col justify-between"
+        >
+          <div>
+            <div className="w-10 h-10 rounded-xl bg-amber-100 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-800/60 text-amber-600 dark:text-amber-400 flex items-center justify-center mb-3">
+              <BookOpen className="w-5 h-5" />
+            </div>
+            <h4 className="font-bold text-sm text-zinc-900 dark:text-zinc-100 mb-1">CLI Engineering Guide</h4>
+            <p className="text-xs text-zinc-600 dark:text-zinc-400 leading-relaxed">
+              Step-by-step tutorial on negative guardrails, multi-agent synchronization, and CI/CD audit setup.
+            </p>
+          </div>
+          <div className="flex items-center gap-1 text-xs font-bold text-amber-600 dark:text-amber-400 mt-4 group-hover:translate-x-1 transition-transform">
+            <span>Read Architecture Guide</span>
             <ArrowRight className="w-3.5 h-3.5" />
           </div>
         </Link>

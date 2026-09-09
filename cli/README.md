@@ -4,7 +4,9 @@
 
 Manage, install, and audit production-grade AI agent guidelines directly from your terminal. Built with 100% privacy and zero remote telemetry.
 
-Official Web Companion: [DevScratchpad AI Skill Studio](https://www.devscratchpad.tech/ai-skill-studio)
+- 💻 **Interactive Web CLI**: [https://www.devscratchpad.tech/cli](https://www.devscratchpad.tech/cli)
+- 📖 **In-Depth Engineering Guide**: [https://www.devscratchpad.tech/blog/how-to-manage-ai-rules-with-cli-guide](https://www.devscratchpad.tech/blog/how-to-manage-ai-rules-with-cli-guide)
+- 🎨 **Visual AI Skill Studio**: [https://www.devscratchpad.tech/ai-skill-studio](https://www.devscratchpad.tech/ai-skill-studio)
 
 ---
 
@@ -51,15 +53,17 @@ npx devscratchpad init
   - **Gemini Structured Prompts** (\`.gemini/*.json\`)
 - **23+ Technology Presets**: Next.js 15, React 19, Tailwind v4, FastAPI, Strict TypeScript, Docker, PostgreSQL, Go, Rust, and more.
 - **Rule Quality Auditor**: Static heuristics check for missing negative guardrails, trigger specificity, and monolithic prompt degradation.
-- **Offline Reliability**: Bundled local fallbacks ensure \`devscratchpad\` functions even without internet access.
+- **Offline Reliability**: Bundled local fallbacks ensure `devscratchpad` functions even without internet access.
 - **Zero Dependencies**: Pure Node.js runtime with strict workspace boundary assertions.
 
 ---
 
-## 🌐 Web Studio & Conversion Tools
+## 🌐 Web Companion, Guide & Tools
 
+- **[Interactive Web CLI & Terminal Simulator](https://www.devscratchpad.tech/cli)**: Test commands online, preview directory structures, and explore formats in your browser.
+- **[Complete CLI Engineering Guide](https://www.devscratchpad.tech/blog/how-to-manage-ai-rules-with-cli-guide)**: In-depth tutorial covering zero-install execution, negative constraint engineering, and CI/CD quality auditing.
 - **[AI Skill Studio](https://www.devscratchpad.tech/ai-skill-studio)**: Full-featured visual rule generator with live preview and quality scoring.
-- **[Universal AI Rules Converter](https://www.devscratchpad.tech/ai-skill-studio/rules-converter)**: Convert legacy \`.cursorrules\` or prompt markdown to any modern agent format with 100% client-side privacy.
+- **[Universal AI Rules Converter](https://www.devscratchpad.tech/ai-skill-studio/rules-converter)**: Convert legacy `.cursorrules` or prompt markdown to any modern agent format with 100% client-side privacy.
 - **[Developer Tools Suite](https://www.devscratchpad.tech/developer-tools)**: 28 offline utilities (Formatters, Encoders, Crypto, JWT, RegEx).
 
 ---

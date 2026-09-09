@@ -28,7 +28,7 @@
   ],
   "author": "DevScratchpad Team (https://www.devscratchpad.tech)",
   "license": "MIT",
-  "homepage": "https://www.devscratchpad.tech/ai-skill-studio",
+  "homepage": "https://www.devscratchpad.tech/cli",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/saadashrafx/devscratchpad.tech.git",

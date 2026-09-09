@@ -14,6 +14,7 @@ import {
   FileText,
   RefreshCw,
   ExternalLink,
+  BookOpen,
 } from "lucide-react";
 import { CliClient } from "./CliClient";
 
@@ -35,6 +36,14 @@ export const metadata: Metadata = {
   ],
   alternates: {
     canonical: "https://www.devscratchpad.tech/cli",
+  },
+  icons: {
+    icon: [
+      { url: "/cli-icon-32.png", sizes: "32x32", type: "image/png" },
+      { url: "/cli-icon-192.png", sizes: "192x192", type: "image/png" },
+      { url: "/cli-icon.png", sizes: "512x512", type: "image/png" },
+    ],
+    apple: "/cli-icon-192.png",
   },
   openGraph: {
     title: "DevScratchpad CLI — Offline AI Rulebook Manager (npx devscratchpad)",
@@ -150,6 +159,14 @@ const jsonLdGraph = {
             "text": "Yes! Every CLI command outputs a direct reciprocal link to the AI Skill Studio (https://www.devscratchpad.tech/ai-skill-studio) where you can visually adjust directives and test quality scores.",
           },
         },
+        {
+          "@type": "Question",
+          "name": "Where can I find a step-by-step tutorial on using the CLI?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Read our comprehensive engineering guide: 'How to Author, Audit, and Sync AI Agent Rulebooks & Claude Skills with DevScratchpad CLI' at https://www.devscratchpad.tech/blog/how-to-manage-ai-rules-with-cli-guide.",
+          },
+        },
       ],
     },
   ],
@@ -167,12 +184,22 @@ export default function CliPage() {
       <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8 sm:py-12 space-y-16">
         {/* Header Breadcrumb & Badges */}
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <Link
-            href="/ai-skill-studio"
-            className="inline-flex items-center gap-1.5 text-xs font-semibold text-zinc-500 hover:text-orange-600 transition-colors focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:outline-none rounded px-1"
-          >
-            <span>← Back to AI Skill Studio</span>
-          </Link>
+          <div className="flex items-center gap-3">
+            <Link
+              href="/ai-skill-studio"
+              className="inline-flex items-center gap-1.5 text-xs font-semibold text-zinc-500 hover:text-orange-600 transition-colors focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:outline-none rounded px-1"
+            >
+              <span>← Back to AI Skill Studio</span>
+            </Link>
+            <span className="text-zinc-300 dark:text-zinc-700">·</span>
+            <Link
+              href="/blog/how-to-manage-ai-rules-with-cli-guide"
+              className="inline-flex items-center gap-1.5 text-xs font-semibold text-orange-600 dark:text-orange-400 hover:underline transition-colors focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:outline-none rounded px-1"
+            >
+              <BookOpen className="w-3.5 h-3.5 text-orange-500" />
+              <span>CLI Guide & Architecture</span>
+            </Link>
+          </div>
 
           <div className="flex items-center gap-2 text-xs font-mono text-zinc-500">
             <a
@@ -217,6 +244,17 @@ export default function CliPage() {
             Scaffold, audit, and install production-hardened AI guidelines directly inside your project workspace.
             Built with 100% offline privacy, zero runtime dependencies, and instant multi-assistant compatibility.
           </p>
+
+          <div className="pt-1">
+            <Link
+              href="/blog/how-to-manage-ai-rules-with-cli-guide"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold bg-amber-500/10 hover:bg-amber-500/20 text-amber-800 dark:text-amber-200 border border-amber-500/30 hover:border-amber-500/50 transition-all shadow-xs group"
+            >
+              <span className="flex h-2 w-2 rounded-full bg-amber-500 animate-pulse" />
+              <span>Step-by-Step Tutorial: How to Author & Audit AI Rules with CLI</span>
+              <ArrowRight className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 group-hover:translate-x-1 transition-transform" />
+            </Link>
+          </div>
         </div>
 
         {/* Interactive CLI Client Component */}
@@ -488,26 +526,51 @@ export default function CliPage() {
                 to paste your legacy rule file and convert it into modular Cursor .mdc, Claude SKILL.md, or Windsurf rules.
               </p>
             </div>
+            <div className="p-5 bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 space-y-2">
+              <h4 className="font-bold text-sm text-zinc-900 dark:text-zinc-100">
+                Where can I read a complete guide or tutorial?
+              </h4>
+              <p className="text-xs text-zinc-600 dark:text-zinc-400 leading-relaxed">
+                Check out our in-depth engineering post:{" "}
+                <Link
+                  href="/blog/how-to-manage-ai-rules-with-cli-guide"
+                  className="text-orange-600 dark:text-orange-400 underline font-semibold hover:text-orange-500"
+                >
+                  How to Author, Audit, and Sync AI Rules with DevScratchpad CLI
+                </Link>
+                . It covers negative guardrails, multi-agent synchronization, and CI/CD audit setup.
+              </p>
+            </div>
           </div>
         </div>
 
         {/* Global Traffic Bridge Banner */}
         <div className="p-8 rounded-2xl bg-gradient-to-r from-orange-600 via-amber-600 to-orange-500 text-white shadow-xl flex flex-col sm:flex-row items-center justify-between gap-6">
           <div className="space-y-2 text-center sm:text-left">
-            <h3 className="text-xl font-bold">Prefer a Visual Interface?</h3>
+            <h3 className="text-xl font-bold">Prefer a Visual Interface or Step-by-Step Guide?</h3>
             <p className="text-xs sm:text-sm text-orange-100 max-w-xl leading-relaxed">
-              Explore the DevScratchpad AI Skill Studio to design, customize, and test your AI rulebooks with
+              Read our complete architecture guide or explore the DevScratchpad AI Skill Studio to design, customize, and test your AI rulebooks with
               real-time preview and 100% offline security.
             </p>
           </div>
 
-          <Link
-            href="/ai-skill-studio"
-            className="px-6 py-3 bg-white text-orange-700 hover:bg-orange-50 rounded-xl text-xs font-bold transition-all shadow-md shrink-0 flex items-center gap-2 group"
-          >
-            <span>Launch AI Skill Studio</span>
-            <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-          </Link>
+          <div className="flex flex-wrap items-center gap-3 shrink-0">
+            <Link
+              href="/blog/how-to-manage-ai-rules-with-cli-guide"
+              className="px-5 py-3 bg-black/20 hover:bg-black/30 border border-white/20 text-white rounded-xl text-xs font-bold transition-all shadow-md flex items-center gap-2 group"
+            >
+              <BookOpen className="w-4 h-4" />
+              <span>Read CLI Guide</span>
+            </Link>
+
+            <Link
+              href="/ai-skill-studio"
+              className="px-6 py-3 bg-white text-orange-700 hover:bg-orange-50 rounded-xl text-xs font-bold transition-all shadow-md flex items-center gap-2 group"
+            >
+              <span>Launch AI Skill Studio</span>
+              <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+            </Link>
+          </div>
         </div>
       </div>
     </div>

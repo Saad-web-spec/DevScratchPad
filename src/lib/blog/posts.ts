@@ -2171,6 +2171,230 @@ Stop copy-pasting unformatted prompts between chat windows. Standardize your tea
 👉 **[Launch AI Skill Studio on DevScratchpad](/ai-skill-studio)** — 100% Free, Private, and Client-Side.
 `,
   },
+  {
+    slug: "how-to-manage-ai-rules-with-cli-guide",
+    title: "How to Scaffold, Audit & Manage AI Agent Rulebooks from the Terminal (npx devscratchpad)",
+    seoTitle: "Scaffold & Audit AI Rules with npx devscratchpad (Cursor, Claude, Copilot)",
+    description: "A hands-on engineering guide to automating AI IDE rulebooks (.mdc, SKILL.md, CLAUDE.md) across repositories using the zero-install devscratchpad CLI. Learn multi-runtime execution, negative constraint authoring, and rule quality audits.",
+    seoDescription: "Learn how to manage, audit, and scaffold Cursor rules (.mdc), Claude Code skills (SKILL.md), and CLAUDE.md from your terminal using npx devscratchpad. 100% offline, zero dependencies.",
+    publishedAt: "2026-09-09T00:00:00Z",
+    updatedAt: "2026-09-09T00:00:00Z",
+    category: "API & Automation",
+    type: "guide",
+    difficulty: "Intermediate",
+    readTime: "8 min read",
+    tags: ["CLI", "Cursor Rules", "Claude Code", "AI Agent Skills", "SKILL.md", "CLAUDE.md", "DevOps", "Terminal", "Developer Tools"],
+    relatedToolSlug: "ai-skill-studio",
+    relatedGuideSlugs: ["claude-code-skills-cursor-rules-guide", "cron-expression-cheat-sheet"],
+    faqs: [
+      {
+        question: "Do I need to run 'npm install -g devscratchpad' to use the CLI?",
+        answer: "No global installation is required. You can execute commands directly with 'npx devscratchpad <command>'. It is also fully compatible with 'pnpm dlx devscratchpad <command>' and 'bunx devscratchpad <command>'."
+      },
+      {
+        question: "How does 'npx devscratchpad audit' detect AI rule hallucinations?",
+        answer: "The audit command runs a local static analysis linter evaluating your rules against five core heuristics: Glob Precision (avoiding catch-all wildcards), Negative Guardrail Density (ensuring strict boundary constraints like 'never do X'), Token Density, Format Compliance, and Architectural Isolation. Missing negative constraints receive immediate warning notifications."
+      },
+      {
+        question: "Does the CLI upload my codebase or prompts to remote servers?",
+        answer: "Never. DevScratchpad CLI operates with 100% client-side confinement and zero remote telemetry. It only fetches static public presets with automatic local offline fallback, and all filesystem operations are strictly confined within current repository boundaries."
+      },
+      {
+        question: "Where does the CLI place rule files in my project?",
+        answer: "It writes files directly into standard locations expected by each IDE: '.cursor/rules/<preset>.mdc' for Cursor, '.claude/skills/<preset>/SKILL.md' for Claude Code, '.windsurf/rules/<preset>.md' for Windsurf, '.github/copilot-instructions.md' for Copilot, and 'CLAUDE.md' at the repository root."
+      },
+      {
+        question: "How do I visually customize generated rules after installing them?",
+        answer: "Every CLI command outputs an interactive link back to DevScratchpad AI Skill Studio (https://www.devscratchpad.tech/ai-skill-studio) where you can visually tweak parameters, toggle framework libraries, and test live quality scores."
+      }
+    ],
+    content: `
+Managing AI steering guidelines across multiple repositories is fast becoming a major operational challenge for engineering teams. Every AI assistant uses a different standard:
+
+- **Cursor IDE** requires frontmatter-scoped \`.cursor/rules/*.mdc\` files.
+- **Claude Code** expects procedural capability packages in \`.claude/skills/*/SKILL.md\`.
+- **Repository-wide steering** uses root \`CLAUDE.md\` and \`AGENTS.md\`.
+- **Windsurf** and **GitHub Copilot** have their own designated instruction paths.
+
+When teams copy-paste prompts from outdated gists or chat sessions, rules rapidly drift, globs pollute context windows, and assistants start hallucinating deprecated APIs.
+
+The **DevScratchpad CLI (\`npx devscratchpad\`)** eliminates manual prompt management with zero installation, zero npm dependencies, and 100% offline privacy.
+
+---
+
+<div class="my-8 p-6 rounded-2xl border border-orange-300 bg-gradient-to-r from-orange-50/90 via-amber-50/50 to-white shadow-xs">
+  <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-5">
+    <div class="space-y-2">
+      <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-orange-600 text-white shadow-xs">
+        <img src="/orange-star.png" class="w-4 h-4 inline-block object-contain" alt="DevScratchpad Star" />
+        <span>INTERACTIVE TERMINAL SIMULATOR</span>
+        <span class="text-orange-200">|</span>
+        <span>Live Web Companion</span>
+      </div>
+      <h3 class="text-lg sm:text-xl font-bold text-zinc-900 m-0 tracking-tight">
+        Try the Headless Terminal AI Engine in Your Browser
+      </h3>
+      <p class="text-xs sm:text-sm text-zinc-600 m-0 leading-relaxed max-w-xl">
+        Explore command execution, switch between 6 assistant formats and 8 technology presets, and test live terminal outputs directly on our dedicated CLI page.
+      </p>
+    </div>
+    <a href="/cli" class="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-orange-600 hover:bg-orange-500 text-white text-xs font-bold tracking-wide transition-all shrink-0 no-underline shadow-sm hover:shadow-md">
+      <span>Open CLI Terminal Simulator →</span>
+    </a>
+  </div>
+</div>
+
+---
+
+## 1. Quick Start: Zero-Install Terminal Execution
+
+The \`devscratchpad\` CLI requires no global installation. You can run it instantly using your preferred package runner:
+
+### Installing Production Rulebooks
+
+\`\`\`bash
+# Install Next.js 15 App Router rules for Cursor (.cursor/rules/nextjs-15.mdc)
+npx devscratchpad add cursor-rules/nextjs-15
+
+# Install FastAPI & Pydantic v2 skill for Claude Code (.claude/skills/fastapi/SKILL.md)
+npx devscratchpad add fastapi -f claude-skills
+
+# Install Tailwind CSS v4 rules for Windsurf
+npx devscratchpad add tailwind-v4 -f windsurf
+
+# Install strict TypeScript rules for GitHub Copilot
+npx devscratchpad add typescript-strict -f copilot
+\`\`\`
+
+### Alternative Modern Runtimes
+If your project uses \`pnpm\` or \`bun\`, \`devscratchpad\` works natively without extra configuration:
+
+\`\`\`bash
+# Run with pnpm dlx
+pnpm dlx devscratchpad add cursor-rules/react-19
+
+# Run with bunx
+bunx devscratchpad add docker-compose -f cursor-rules
+\`\`\`
+
+---
+
+## 2. Supported Formats and Directory Standards
+
+DevScratchpad maps rules directly to standard repository paths:
+
+| Format Name | Target Platform | Filesystem Destination | Flag Value |
+| :--- | :--- | :--- | :--- |
+| **Cursor Rules** | Cursor IDE | \`.cursor/rules/<preset>.mdc\` | \`cursor-rules\` |
+| **Claude Skill** | Claude Code CLI | \`.claude/skills/<preset>/SKILL.md\` | \`claude-skills\` |
+| **Windsurf Cascade** | Windsurf Editor | \`.windsurf/rules/<preset>.md\` | \`windsurf\` |
+| **GitHub Copilot** | Copilot Chat | \`.github/copilot-instructions.md\` | \`copilot\` |
+| **OpenAI Instructions** | ChatGPT / Codex | \`.openai/system-instructions.md\` | \`openai\` |
+| **Google Gemini** | Gemini Structured Specs | \`.gemini/<preset>.json\` | \`gemini\` |
+
+---
+
+## 3. Auditing Repository Rule Health (\`npx devscratchpad audit\`)
+
+Writing rules is only half the battle; maintaining their quality is what prevents hallucinations. 
+
+Run the audit command in any project directory:
+
+\`\`\`bash
+npx devscratchpad audit
+\`\`\`
+
+The auditor inspects existing rule files and outputs a 0–100 health score evaluating:
+
+1. **Negative Boundary Guardrails**: Does the rule state what the AI must *never* do? Without negative bounds (*"Never use \`any\`"*, *"Do not mutate props"*), LLMs drift toward generic solutions.
+2. **Glob Precision**: Are file attachments scoped (e.g. \`src/features/**/*.tsx\`) or broad catch-alls (\`**/*\`) that pollute token budgets?
+3. **Format Schema Compliance**: Are required YAML frontmatter tags properly formatted and valid?
+
+---
+
+## 4. Scaffolding New Repositories (\`npx devscratchpad init\`)
+
+When starting a fresh project, run:
+
+\`\`\`bash
+npx devscratchpad init
+\`\`\`
+
+This command scaffolds universal multi-agent starter guidelines:
+- \`.cursor/rules/cursor-rules-pro.mdc\`: Scoped engineering principles and testing requirements.
+- \`CLAUDE.md\`: Root invariant memory preventing hallucinations across Claude Code sessions.
+
+---
+
+## 5. How to Author Custom \`.md\` & \`SKILL.md\` Files
+
+When creating custom rule files for proprietary tech stacks, follow these structural templates:
+
+### A. Cursor Rules (\`.cursor/rules/my-feature.mdc\`)
+
+\`\`\`markdown
+---
+description: Coding standards and state management rules for User Authentication
+globs: ["src/features/auth/**/*.ts", "src/features/auth/**/*.tsx"]
+alwaysApply: false
+---
+
+# Authentication Architecture Rules
+
+## Core Directives
+- Use Zod schemas for all form validations.
+- Store session tokens strictly in HttpOnly cookies.
+
+## Critical Negative Guardrails
+- NEVER store raw JWT tokens in browser localStorage or sessionStorage.
+- NEVER export unvalidated auth state outside the AuthProvider context.
+\`\`\`
+
+### B. Claude Code Skill (\`.claude/skills/code-review/SKILL.md\`)
+
+\`\`\`markdown
+---
+name: security-reviewer
+description: Performs static security and dependency audits before creating pull requests.
+---
+
+# Security Review Protocol
+
+## Trigger Procedures
+When the user executes \`/security-review\` or asks for a security audit:
+1. Scan git diff for exposed secrets, hardcoded API keys, and insecure endpoints.
+2. Verify all database queries use parameterized SQL.
+3. Check that input parameters pass strict boundary validation.
+\`\`\`
+
+---
+
+## 6. Under the Hood: 100% Local & Auditable Privacy
+
+Most developer CLI tools secretly phone home with usage telemetry, machine IDs, and prompt contents. 
+
+**DevScratchpad takes the opposite approach:**
+- **Zero Runtime Dependencies**: The package has 0 dependencies in \`package.json\`. It operates purely on native Node.js standard modules (\`node:fs\`, \`node:path\`, \`node:https\`).
+- **Zero Telemetry**: No analytics, no prompt logging, no network transmission of your project code.
+- **Path Confinement**: All file writes are strictly sandboxed within your project root to prevent path traversal.
+- **Dry-Run Inspection**: Run with \`--dry-run\` to preview exact file writes before anything is touched on disk:
+
+\`\`\`bash
+npx devscratchpad add cursor-rules/nextjs-15 --dry-run
+\`\`\`
+
+---
+
+## Summary & Next Steps
+
+Ready to test and configure your repository's AI rulebooks?
+
+- 💻 **Live Terminal Simulator**: Visit [devscratchpad.tech/cli](/cli) to preview commands and directory structures.
+- 🎨 **Visual AI Skill Studio**: Use the [AI Skill Studio](/ai-skill-studio) to visually customize rules, import manifests, and run one-click auto-fix linters.
+- 📦 **NPM Registry**: Inspect the package at [npmjs.com/package/devscratchpad](https://www.npmjs.com/package/devscratchpad).
+- ⭐ **GitHub Repository**: Star and audit the open-source runner at [github.com/Saad-web-spec/DevScratchPad](https://github.com/Saad-web-spec/DevScratchPad).
+`,
+  },
 ];
 
 export function getBlogPost(slug: string): BlogPost | undefined {

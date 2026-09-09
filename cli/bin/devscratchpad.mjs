@@ -527,9 +527,11 @@ function printHelp() {
   cursor-rules, claude-skills, claude-md, agents-md, windsurf, copilot, mcp-config, openai, gemini
 
 \x1b[1mWEBSITE & TOOLS:\x1b[0m
-  Visual Studio:   ${SITE_URL}/ai-skill-studio
-  Rules Converter: ${SITE_URL}/ai-skill-studio/rules-converter
-  Developer Tools: ${SITE_URL}/developer-tools
+  Web Terminal:      ${SITE_URL}/cli
+  Engineering Guide: ${SITE_URL}/blog/how-to-manage-ai-rules-with-cli-guide
+  Visual Studio:     ${SITE_URL}/ai-skill-studio
+  Rules Converter:   ${SITE_URL}/ai-skill-studio/rules-converter
+  Developer Tools:   ${SITE_URL}/developer-tools
 `);
 }
 
