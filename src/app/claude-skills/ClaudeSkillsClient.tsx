@@ -39,6 +39,7 @@ import { cn } from "@/lib/utils";
 import { downloadAiKitZip } from "./lib/zipExporter";
 import { ParsedManifestResult } from "./lib/manifestParser";
 import { ConvertedRulesIR } from "./lib/rulesConverter";
+import { WindsurfIcon, OpenAIIcon, GeminiIcon, CopilotIcon } from "@/components/icons/AssistantBrandIcons";
 
 const ManifestImportModal = dynamic(
   () => import("./components/ManifestImportModal").then((m) => m.ManifestImportModal),
@@ -1710,7 +1711,7 @@ export function ClaudeSkillsClient({
                 )}
               >
                 <div className="flex items-center gap-1.5 font-semibold text-xs truncate">
-                  <Compass className="w-3.5 h-3.5 text-teal-600 shrink-0" />
+                  <WindsurfIcon className="w-3.5 h-3.5 text-teal-700 shrink-0" />
                   <span className="truncate">Windsurf</span>
                 </div>
                 <span className="text-[10px] text-zinc-500 leading-tight truncate">Cascade Rules</span>
@@ -1727,7 +1728,7 @@ export function ClaudeSkillsClient({
                 )}
               >
                 <div className="flex items-center gap-1.5 font-semibold text-xs truncate">
-                  <Bot className="w-3.5 h-3.5 text-sky-600 shrink-0" />
+                  <CopilotIcon className="w-3.5 h-3.5 text-sky-600 shrink-0" />
                   <span className="truncate">Copilot</span>
                 </div>
                 <span className="text-[10px] text-zinc-500 leading-tight truncate">Instructions</span>
@@ -1744,7 +1745,7 @@ export function ClaudeSkillsClient({
                 )}
               >
                 <div className="flex items-center gap-1.5 font-semibold text-xs truncate">
-                  <Brain className="w-3.5 h-3.5 text-purple-600 shrink-0" />
+                  <OpenAIIcon className="w-3.5 h-3.5 text-purple-700 dark:text-purple-300 shrink-0" />
                   <span className="truncate">OpenAI</span>
                 </div>
                 <span className="text-[10px] text-zinc-500 leading-tight truncate">Custom System</span>
@@ -1761,7 +1762,7 @@ export function ClaudeSkillsClient({
                 )}
               >
                 <div className="flex items-center gap-1.5 font-semibold text-xs truncate">
-                  <Sparkles className="w-3.5 h-3.5 text-indigo-600 shrink-0" />
+                  <GeminiIcon className="w-3.5 h-3.5 shrink-0" />
                   <span className="truncate">Gemini</span>
                 </div>
                 <span className="text-[10px] text-zinc-500 leading-tight truncate">System Prompts</span>
@@ -3211,11 +3212,13 @@ export function ClaudeSkillsClient({
               ) : format === "mcp_json" ? (
                 <Server className="w-3.5 h-3.5 text-orange-600" />
               ) : format === "windsurf_cascade" ? (
-                <Compass className="w-3.5 h-3.5 text-teal-600" />
+                <WindsurfIcon className="w-3.5 h-3.5 text-teal-700" />
               ) : format === "copilot_instructions" ? (
-                <Bot className="w-3.5 h-3.5 text-sky-600" />
+                <CopilotIcon className="w-3.5 h-3.5 text-sky-600" />
               ) : format === "openai_instructions" ? (
-                <Brain className="w-3.5 h-3.5 text-purple-600" />
+                <OpenAIIcon className="w-3.5 h-3.5 text-purple-700 dark:text-purple-300" />
+              ) : format === "gemini_prompts" ? (
+                <GeminiIcon className="w-3.5 h-3.5" />
               ) : (
                 <FolderGit2 className={cn("w-3.5 h-3.5", format === "skill_md" ? "text-orange-500" : "text-zinc-800")} />
               )}

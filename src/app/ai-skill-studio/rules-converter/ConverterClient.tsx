@@ -20,6 +20,7 @@ import {
 import { convertRawRulesToIR, ParsedRulesIR } from "@/app/claude-skills/lib/rulesConverter";
 import { encodeStudioState } from "@/app/claude-skills/lib/stateSharing";
 import { buildRuleContent, OutputFormat } from "@/app/claude-skills/lib/ruleGenerator";
+import { WindsurfIcon, OpenAIIcon, GeminiIcon, CopilotIcon } from "@/components/icons/AssistantBrandIcons";
 
 export function ConverterClient() {
   const [inputText, setInputText] = useState("");
@@ -269,26 +270,29 @@ export async function createItem(data: FormData) {
                 <label className="text-[11px] font-bold text-zinc-600 dark:text-zinc-400 uppercase tracking-wider block mb-1.5">
                   Convert & Export Into Target Format:
                 </label>
-                <div className="grid grid-cols-3 gap-1.5">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
                   {[
                     { id: "cursor_mdc", label: "Cursor .mdc" },
                     { id: "skill_md", label: "Claude SKILL.md" },
                     { id: "claude_md", label: "CLAUDE.md" },
-                    { id: "windsurf_cascade", label: "Windsurf Cascade" },
-                    { id: "copilot_instructions", label: "GitHub Copilot" },
+                    { id: "windsurf_cascade", label: "Windsurf", icon: <WindsurfIcon className="w-3 h-3 text-teal-600 shrink-0" /> },
+                    { id: "copilot_instructions", label: "Copilot", icon: <CopilotIcon className="w-3 h-3 text-sky-600 shrink-0" /> },
+                    { id: "openai_instructions", label: "OpenAI", icon: <OpenAIIcon className="w-3 h-3 text-purple-600 shrink-0" /> },
+                    { id: "gemini_prompts", label: "Gemini", icon: <GeminiIcon className="w-3 h-3 shrink-0" /> },
                     { id: "agents_md", label: "AGENTS.md" },
                   ].map((fmt) => (
                     <button
                       key={fmt.id}
                       type="button"
                       onClick={() => setTargetFormat(fmt.id as OutputFormat)}
-                      className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold text-center transition-all cursor-pointer truncate ${
+                      className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer truncate ${
                         targetFormat === fmt.id
                           ? "bg-orange-600 text-white shadow-xs"
                           : "bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700"
                       }`}
                     >
-                      {fmt.label}
+                      {fmt.icon}
+                      <span className="truncate">{fmt.label}</span>
                     </button>
                   ))}
                 </div>
