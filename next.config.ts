@@ -92,6 +92,30 @@ const nextConfig: NextConfig = {
       },
     ];
   },
+  async rewrites() {
+    return {
+      beforeFiles: [
+        { source: "/tools/base64-decode", destination: "/tools/base64-inspector" },
+        { source: "/tools/base64-decoder", destination: "/tools/base64-inspector" },
+        { source: "/tools/base64-encode", destination: "/tools/base64-inspector" },
+        { source: "/tools/base64-encoder", destination: "/tools/base64-inspector" },
+        { source: "/tools/jwt-decode", destination: "/tools/jwt" },
+        { source: "/tools/jwt-decoder", destination: "/tools/jwt" },
+        { source: "/tools/bcrypt-generator", destination: "/tools/password-hash" },
+        { source: "/tools/argon2-hash", destination: "/tools/password-hash" },
+        { source: "/tools/sha256-hash", destination: "/tools/hash" },
+        { source: "/tools/md5-hash", destination: "/tools/hash" },
+        { source: "/tools/sha1-hash", destination: "/tools/hash" },
+        { source: "/tools/regex-tester", destination: "/tools/regex" },
+        { source: "/tools/regex-checker", destination: "/tools/regex" },
+        { source: "/tools/unix-timestamp-converter", destination: "/tools/epoch-converter" },
+        { source: "/tools/timestamp-converter", destination: "/tools/epoch-converter" },
+        { source: "/tools/text-diff", destination: "/tools/diff" },
+        { source: "/tools/code-diff", destination: "/tools/diff" },
+        { source: "/tools/diff-checker", destination: "/tools/diff" },
+      ],
+    };
+  },
   async headers() {
     const commonCspDirectives = [
       "default-src 'self'",

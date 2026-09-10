@@ -7,7 +7,7 @@ import {
   getPresetBySlug,
   getPresetRouteMetadata,
 } from "../../../claude-skills/lib/presetRegistry";
-import { getFormatHub } from "../../../claude-skills/lib/formatHubs";
+import { getFormatHub, getAllFormatHubs } from "../../../claude-skills/lib/formatHubs";
 import { ClaudeSkillsClient } from "../../../claude-skills/ClaudeSkillsClient";
 import { ProgrammaticSpokeSeoContent } from "../../components/ProgrammaticSpokeSeoContent";
 
@@ -207,6 +207,29 @@ export default async function ProgrammaticPresetPage({
             <ArrowLeft className="w-3.5 h-3.5 mr-1" />
             {hub?.badge || "Hub"} Directory
           </Link>
+        </div>
+      </div>
+
+      {/* Cross-Format Switcher */}
+      <div className="bg-white border-b border-zinc-200 px-4 py-2.5 sm:px-6">
+        <div className="max-w-7xl mx-auto flex flex-wrap items-center gap-2">
+          <span className="text-xs font-medium text-zinc-500 mr-1">Also available for:</span>
+          {getAllFormatHubs().map(h => {
+            const isCurrent = h.slug === formatSlug;
+            return (
+              <Link 
+                key={h.slug}
+                href={`/ai-skill-studio/${h.slug}/${route.presetSlug}`}
+                className={`text-xs px-2.5 py-1 rounded-full border transition-colors ${
+                  isCurrent 
+                    ? "bg-zinc-100 border-zinc-200 text-zinc-400 cursor-default pointer-events-none" 
+                    : "bg-white border-zinc-200 text-zinc-600 hover:border-orange-300 hover:text-orange-700 shadow-[0_1px_2px_rgba(0,0,0,0.02)] hover:shadow-sm"
+                }`}
+              >
+                {h.badge}
+              </Link>
+            );
+          })}
         </div>
       </div>
 

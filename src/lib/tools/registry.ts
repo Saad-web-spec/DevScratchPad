@@ -9,6 +9,7 @@ export interface ToolMeta {
   howToUse: string[];
   edgeCases?: string[];
   shortcuts: string[];
+  relatedBlogSlug?: string;
 }
 
 export const TOOLS_REGISTRY: Record<string, ToolMeta> = {
@@ -29,7 +30,8 @@ export const TOOLS_REGISTRY: Record<string, ToolMeta> = {
       "Extremely large JSON payloads (50MB+) are supported via Monaco Editor.",
       "Handles deeply nested structures and displays precise line-number validation errors."
     ],
-    shortcuts: ["Ctrl/Cmd + V — Smart Magic Paste", "Ctrl/Cmd + K — Open Command Palette"]
+    shortcuts: ["Ctrl/Cmd + V — Smart Magic Paste", "Ctrl/Cmd + K — Open Command Palette"],
+    relatedBlogSlug: "json-formatter-privacy-backed-developer-tools"
   },
   "json-schema-validator": {
     slug: "json-schema-validator",
@@ -134,7 +136,8 @@ export const TOOLS_REGISTRY: Record<string, ToolMeta> = {
       "Specify the quantity to generate (up to 10,000 at once).",
       "Click Generate and copy the list."
     ],
-    shortcuts: []
+    shortcuts: [],
+    relatedBlogSlug: "uuid-v4-v5-v7-explained"
   },
   "jwt": {
     slug: "jwt",
@@ -150,7 +153,8 @@ export const TOOLS_REGISTRY: Record<string, ToolMeta> = {
       "Verify expiration dates (exp, iat, nbf) automatically converted to local time."
     ],
     edgeCases: ["Malformed tokens or invalid base64 padding."],
-    shortcuts: []
+    shortcuts: [],
+    relatedBlogSlug: "jwt-token-decode-guide"
   },
   "base64-inspector": {
     slug: "base64-inspector",
@@ -167,7 +171,8 @@ export const TOOLS_REGISTRY: Record<string, ToolMeta> = {
       "If an image Data URL is detected, view the live high-contrast preview canvas and download the file."
     ],
     edgeCases: ["URL-safe unpadded Base64 strings (- and _).", "Embedded PNG/JPEG/WEBP magic bytes in raw Base64."],
-    shortcuts: ["Ctrl/Cmd + K — Open Command Palette"]
+    shortcuts: ["Ctrl/Cmd + K — Open Command Palette"],
+    relatedBlogSlug: "base64-inspector-guide"
   },
   "hash": {
     slug: "hash",
@@ -183,7 +188,8 @@ export const TOOLS_REGISTRY: Record<string, ToolMeta> = {
       "Copy required hash output with one click."
     ],
     edgeCases: ["Unicode character normalization in hashing."],
-    shortcuts: []
+    shortcuts: [],
+    relatedBlogSlug: "openssl-certificate-decode-guide"
   },
   "hmac-generator": {
     slug: "hmac-generator",
@@ -214,7 +220,8 @@ export const TOOLS_REGISTRY: Record<string, ToolMeta> = {
       "In Verify mode: Paste an existing hash ($2b$10$...) and candidate password to receive an instant match verification badge."
     ],
     edgeCases: ["Bcrypt 72-byte string truncation limits.", "Support for $2a$, $2b$, and $2y$ hash dialect prefixes."],
-    shortcuts: ["Ctrl/Cmd + K — Open Command Palette"]
+    shortcuts: ["Ctrl/Cmd + K — Open Command Palette"],
+    relatedBlogSlug: "password-hashing-bcrypt-argon2"
   },
   "cert-decoder": {
     slug: "cert-decoder",
@@ -230,7 +237,8 @@ export const TOOLS_REGISTRY: Record<string, ToolMeta> = {
       "Review Subject Alternative Names (SANs) and Cryptographic Properties (Key size, algorithm, SHA-256 fingerprint)."
     ],
     edgeCases: ["Expired or not-yet-valid certificates.", "Wildcard DNS and multi-SAN SSL certificates."],
-    shortcuts: ["Ctrl/Cmd + K — Open Command Palette"]
+    shortcuts: ["Ctrl/Cmd + K — Open Command Palette"],
+    relatedBlogSlug: "x509-certificate-decoder-guide"
   },
   "ssh-key-generator": {
     slug: "ssh-key-generator",
@@ -247,7 +255,8 @@ export const TOOLS_REGISTRY: Record<string, ToolMeta> = {
       "View the iconic OpenSSH Drunken Bishop Randomart ASCII art visualizer."
     ],
     edgeCases: ["Zero server transmission ensures private keys never leave your machine memory.", "OpenSSH wire format binary serialization done completely client-side."],
-    shortcuts: ["Ctrl/Cmd + K — Open Command Palette"]
+    shortcuts: ["Ctrl/Cmd + K — Open Command Palette"],
+    relatedBlogSlug: "ssh-key-generator-guide"
   },
   "json-to-ts": {
     slug: "json-to-ts",
@@ -262,7 +271,8 @@ export const TOOLS_REGISTRY: Record<string, ToolMeta> = {
       "The engine infers arrays, nested objects, and primitives.",
       "Copy the exported TypeScript interfaces from the right editor."
     ],
-    shortcuts: []
+    shortcuts: [],
+    relatedBlogSlug: "json-to-typescript-zod-schema-guide"
   },
   "json-to-zod": {
     slug: "json-to-zod",
@@ -304,7 +314,8 @@ export const TOOLS_REGISTRY: Record<string, ToolMeta> = {
       "Paste YAML or JSON into the left pane.",
       "The tool auto-detects the format and converts it to the counterpart on the right."
     ],
-    shortcuts: []
+    shortcuts: [],
+    relatedBlogSlug: "yaml-to-json-conversion-developers"
   },
   "curl-to-fetch": {
     slug: "curl-to-fetch",
@@ -318,7 +329,8 @@ export const TOOLS_REGISTRY: Record<string, ToolMeta> = {
       "Paste a bash `curl` command into the input.",
       "Copy the ready-to-use JavaScript `fetch()` syntax."
     ],
-    shortcuts: []
+    shortcuts: [],
+    relatedBlogSlug: "convert-curl-to-fetch-axios"
   },
   "curl-to-python": {
     slug: "curl-to-python",
@@ -391,7 +403,8 @@ export const TOOLS_REGISTRY: Record<string, ToolMeta> = {
       "Inspect matched groups and highlighted ranges in real-time."
     ],
     edgeCases: ["Catastrophic backtracking prevention and lookbehinds."],
-    shortcuts: []
+    shortcuts: [],
+    relatedBlogSlug: "regex-cheat-sheet-recipes"
   },
   "diff": {
     slug: "diff",
@@ -423,7 +436,8 @@ export const TOOLS_REGISTRY: Record<string, ToolMeta> = {
       "View next scheduled execution timestamps."
     ],
     edgeCases: ["Non-standard day of week numbering (0 vs 7)."],
-    shortcuts: []
+    shortcuts: [],
+    relatedBlogSlug: "cron-expression-cheat-sheet"
   },
   "cidr-calculator": {
     slug: "cidr-calculator",

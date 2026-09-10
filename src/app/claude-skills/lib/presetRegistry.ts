@@ -1994,10 +1994,10 @@ export function getPresetRouteMetadata(formatSlug: string, presetSlug: string): 
     .trim();
 
   let cleanTitle = `${cleanTech} ${formatSuffix}`;
-  if (cleanTitle.length > 38) {
-    const sub = cleanTitle.slice(0, 38);
+  if (cleanTitle.length > 58) {
+    const sub = cleanTitle.slice(0, 58);
     const lastSpace = sub.lastIndexOf(" ");
-    cleanTitle = lastSpace > 20 ? sub.slice(0, lastSpace) : sub;
+    cleanTitle = lastSpace > 40 ? sub.slice(0, lastSpace) : sub;
   }
 
   return {
