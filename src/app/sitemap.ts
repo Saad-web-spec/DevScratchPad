@@ -75,20 +75,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
     }
   }
 
-  const aliasRoutes = [
-    "base64-decoder",
-    "jwt-decoder",
-    "bcrypt-generator",
-    "sha256-hash",
-    "regex-tester",
-    "unix-timestamp-converter",
-  ].map((slug) => ({
-    url: `${SITE_URL}/tools/${slug}`,
-    lastModified: new Date(),
-    changeFrequency: "weekly" as const,
-    priority: 0.8,
-  }));
-
   return [
     {
       url: SITE_URL,
@@ -132,6 +118,5 @@ export default function sitemap(): MetadataRoute.Sitemap {
     ...routes,
     ...blogRoutes,
     ...presetRoutes,
-    ...aliasRoutes,
   ];
 }

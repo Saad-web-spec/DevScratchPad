@@ -313,7 +313,7 @@ Quantifiers control how many times a character or group may repeat. By default, 
   {
     slug: "modern-http-status-codes-reference",
     title: "Modern HTTP Status Codes & Response Headers Guide",
-    seoTitle: "HTTP Status Codes & Response Headers Cheat Sheet 2026",
+    seoTitle: "HTTP Status Codes Cheat Sheet 2026",
     description: "Complete developer guide to HTTP status codes (2xx, 3xx, 4xx, 5xx) and essential security headers. Covers 401 vs 403, 429 rate limiting, and CORS headers.",
     seoDescription: "Comprehensive reference for HTTP status codes and headers. Difference between 401 Unauthorized and 403 Forbidden, 422 vs 400, idempotency, and security headers.",
     publishedAt: "2026-09-03T00:00:00Z",
@@ -1240,7 +1240,7 @@ Test your password hashing configuration with the [Password Hash & Verifier](/to
   {
     slug: "x509-certificate-decoder-guide",
     title: "How to Read X.509 PEM Certificates & CSRs",
-    seoTitle: "X.509 Certificate & CSR Decoder Guide - Read PEM Files",
+    seoTitle: "X.509 Certificate & CSR Decoder Guide",
     description: "Learn how to parse, read, and understand X.509 SSL/TLS certificates and Certificate Signing Requests (CSR). Covers PEM structure, SANs, and Cryptographic properties.",
     seoDescription: "A complete guide to decoding X.509 PEM certificates and CSRs. Learn how to extract Subject Alternative Names, validity dates, and public key signatures securely.",
     publishedAt: "2026-09-01T12:00:00Z",
@@ -1322,7 +1322,7 @@ For more command-line techniques, see our [OpenSSL Cheat Sheet](/blog/openssl-x5
   {
     slug: "ssh-key-generator-guide",
     title: "Generating Secure SSH Keys: Ed25519 vs RSA",
-    seoTitle: "Secure SSH Key Generation: Ed25519 vs RSA Guide",
+    seoTitle: "SSH Key Generation — Ed25519 vs RSA",
     description: "Understand the differences between Ed25519, RSA, and ECDSA SSH keys. Learn why Ed25519 is the modern standard and how to generate secure keypairs.",
     seoDescription: "A developer's guide to SSH key algorithms. Compare Ed25519 vs RSA 4096, understand key fingerprints, and generate offline SSH keypairs securely in-browser.",
     publishedAt: "2026-09-01T12:00:00Z",
@@ -1406,7 +1406,7 @@ To learn more about secure credential management, check out our [Password Hashin
   {
     slug: "base64-inspector-guide",
     title: "Understanding Base64: Encoding, Decoding, and Binary Data",
-    seoTitle: "Base64 Encoding & Decoding Guide - How it Works",
+    seoTitle: "Base64 Encoding & Decoding Guide",
     description: "Learn how Base64 encoding works under the hood. Understand how to safely transmit binary data (images, tokens, certs) as ASCII text over the web.",
     seoDescription: "A developer's guide to Base64 encoding. Understand how to convert binary to ASCII, inspect hex dumps, and safely transmit images, tokens, and payloads.",
     publishedAt: "2026-09-01T12:00:00Z",
@@ -1609,7 +1609,7 @@ Need to format a payload right now? Use our [JSON Formatter](/tools/json-formatt
   {
     slug: "yaml-to-json-conversion-developers",
     title: "YAML to JSON Conversion for Modern Cloud Developers",
-    seoTitle: "YAML to JSON Converter - Developer Tools & Scratch Pad",
+    seoTitle: "YAML to JSON Converter Guide",
     description: "Deep dive into YAML and JSON data structures, and how developers can securely convert between them using a zero server transmission scratch pad.",
     seoDescription: "Convert YAML to JSON securely with our 100% offline developer tools. DevScratchpad provides privacy backed converters for Kubernetes and Cloud engineers.",
     publishedAt: "2026-09-02T13:00:00Z",
@@ -1772,7 +1772,7 @@ console.log(JSON.stringify(doc, null, 2));
   {
     slug: "curl-to-go-javascript-python-code-generators",
     title: "Translating cURL to Go, Fetch, and Python Requests",
-    seoTitle: "cURL to Go & Python - 100% Client-Side Developer Tools",
+    seoTitle: "cURL to Go, Fetch & Python Guide",
     description: "Learn how to instantly translate bash cURL commands into production-ready Go, JavaScript, and Python code using offline developer tools.",
     seoDescription: "Translate cURL to Go, Fetch, and Python instantly. 100% offline, privacy backed code generation developer tools by DevScratchpad.",
     publishedAt: "2026-09-02T14:00:00Z",

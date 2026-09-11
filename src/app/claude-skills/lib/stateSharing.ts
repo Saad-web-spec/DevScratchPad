@@ -1,4 +1,3 @@
-import LZString from "lz-string";
 import { PRESET_ROUTES } from "./presetRegistry";
 
 export interface StudioWorkspaceState {

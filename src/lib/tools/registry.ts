@@ -39,7 +39,7 @@ export const TOOLS_REGISTRY: Record<string, ToolMeta> = {
     name: "JSON Schema Validator",
     shortName: "JSON Schema Validator",
     description: "Validate JSON data against draft-07/2020-12 schemas with real-time error highlighting.",
-    seoTitle: "JSON Schema Validator Online — AJV Secure & Offline",
+    seoTitle: "JSON Schema Validator — AJV Offline",
     seoDescription: "Validate JSON data against JSON Schema specs entirely in your browser using AJV. Free, private, and fast.",
     howToUse: [
       "Paste your JSON data in the left editor.",
@@ -55,7 +55,7 @@ export const TOOLS_REGISTRY: Record<string, ToolMeta> = {
     name: "XML Formatter",
     shortName: "XML Formatter",
     description: "Pretty print and format XML documents.",
-    seoTitle: "XML Formatter Online — Format & Indent XML Documents",
+    seoTitle: "XML Formatter — Indent & Beautify",
     seoDescription: "Format and pretty-print XML documents entirely in your browser.",
     howToUse: [
       "Paste raw XML into the editor.",
@@ -98,7 +98,7 @@ export const TOOLS_REGISTRY: Record<string, ToolMeta> = {
     name: "CSS / SVG / HTML Minifier",
     shortName: "Minifier",
     description: "Minify and compress CSS stylesheets, SVG graphics, and HTML documents.",
-    seoTitle: "CSS/SVG/HTML Minifier Online — Compress Web Code",
+    seoTitle: "CSS, SVG & HTML Minifier Online",
     seoDescription: "Minify CSS, SVG, and HTML online instantly. Reduce file sizes securely in your browser.",
     howToUse: [
       "Select the input type (CSS, SVG, HTML).",
@@ -145,7 +145,7 @@ export const TOOLS_REGISTRY: Record<string, ToolMeta> = {
     name: "JWT Decoder & Inspector",
     shortName: "JWT Decoder",
     description: "Decode JSON Web Tokens securely. Inspect claims, header, and signature status locally.",
-    seoTitle: "JWT Decoder Online — Secure JSON Web Token Inspector",
+    seoTitle: "JWT Decoder & Token Inspector",
     seoDescription: "Decode and inspect JWTs (JSON Web Tokens) locally in your browser. We never log or transmit your tokens to a server.",
     howToUse: [
       "Paste your base64-encoded JWT into the input field.",
@@ -180,7 +180,7 @@ export const TOOLS_REGISTRY: Record<string, ToolMeta> = {
     name: "Hash Generator (MD5, SHA256, SHA512)",
     shortName: "Hash Generator",
     description: "Computes MD5, SHA-1, SHA-256, and SHA-512 in parallel client-side in your browser.",
-    seoTitle: "Hash Generator Online (MD5, SHA-1, SHA-256, SHA-512)",
+    seoTitle: "Hash Generator — MD5, SHA256 & SHA512",
     seoDescription: "Generate MD5, SHA-1, SHA-256, and SHA-512 hashes online in parallel without uploading data to servers.",
     howToUse: [
       "Type or paste any input text or file hash data.",
@@ -189,7 +189,7 @@ export const TOOLS_REGISTRY: Record<string, ToolMeta> = {
     ],
     edgeCases: ["Unicode character normalization in hashing."],
     shortcuts: [],
-    relatedBlogSlug: "openssl-certificate-decode-guide"
+    relatedBlogSlug: "openssl-x509-devops-cheat-sheet"
   },
   "hmac-generator": {
     slug: "hmac-generator",
@@ -212,7 +212,7 @@ export const TOOLS_REGISTRY: Record<string, ToolMeta> = {
     name: "Bcrypt / Argon2 / PBKDF2 Password Hash Verifier & Generator",
     shortName: "Password Hash & Verifier",
     description: "Generate and verify passwords against Bcrypt ($2a/$2b), Argon2id, and PBKDF2 hashes with cost factor controls.",
-    seoTitle: "Bcrypt & Argon2 Hash Generator & Verifier Online",
+    seoTitle: "Bcrypt & Argon2 Hash Generator",
     seoDescription: "Generate Bcrypt, Argon2id, and PBKDF2 password hashes and verify candidate passwords against existing hashes entirely in your browser.",
     howToUse: [
       "Toggle between 'Generate Hash' and 'Verify Password Against Hash' modes.",
@@ -352,7 +352,7 @@ export const TOOLS_REGISTRY: Record<string, ToolMeta> = {
     name: "cURL to Go HTTP Request",
     shortName: "cURL to Go",
     description: "Translate bash cURL commands into Go `net/http` client code.",
-    seoTitle: "cURL to Go & Python - 100% Client-Side Developer Tools",
+    seoTitle: "cURL to Go HTTP Request Converter",
     seoDescription: "Translate cURL to Go, Fetch, and Python instantly. 100% offline, privacy backed code generation developer tools by DevScratchpad.",
     howToUse: [
       "Paste a bash `curl` command.",
@@ -412,7 +412,7 @@ export const TOOLS_REGISTRY: Record<string, ToolMeta> = {
     name: "Diff Checker & Text Compare",
     shortName: "Diff Checker",
     description: "Monaco side-by-side or inline code diffing with character-level additions and deletions.",
-    seoTitle: "Diff Checker Online — Side-by-Side Code Compare",
+    seoTitle: "Diff Checker — Side-by-Side Code Compare",
     seoDescription: "Compare text and code side-by-side online. Highlights character-level differences and additions.",
     howToUse: [
       "Paste original text in left pane and modified text in right pane.",
@@ -445,7 +445,7 @@ export const TOOLS_REGISTRY: Record<string, ToolMeta> = {
     name: "CIDR Calculator & Subnet Inspector",
     shortName: "CIDR Calculator",
     description: "Calculate IPv4 and IPv6 subnet masks, broadcast addresses, and usable ranges.",
-    seoTitle: "CIDR & Subnet Calculator Online — IP Range Inspector",
+    seoTitle: "CIDR & Subnet Calculator Online",
     seoDescription: "Calculate IPv4/IPv6 subnets, view CIDR notation, netmasks, broadcast IP, and usable host ranges.",
     howToUse: [
       "Enter an IP address and CIDR suffix (e.g. 192.168.1.0/24).",

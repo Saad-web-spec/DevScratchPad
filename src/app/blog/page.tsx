@@ -9,13 +9,13 @@ import { HubSearchAndFilter } from "@/components/blog/HubSearchAndFilter";
 const SITE_URL = "https://www.devscratchpad.tech";
 
 export const metadata: Metadata = {
-  title: "Developer Learning Hub, Cheat Sheets & Engineering Guides",
+  title: "Developer Learning Hub & Guides",
   description: "Exhaustive technical guides, cheat sheets, and practical reference architectures for developers. Cron syntax, JWT RFC standards, cURL conversions, and offline cryptography.",
   alternates: {
     canonical: `${SITE_URL}/blog`,
   },
   openGraph: {
-    title: "Developer Learning Hub, Cheat Sheets & Engineering Guides | DevScratchpad",
+    title: "Developer Learning Hub & Guides | DevScratchpad",
     description: "Exhaustive technical guides, cheat sheets, and practical reference architectures for developers.",
     url: `${SITE_URL}/blog`,
     type: "website",
@@ -31,7 +31,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Developer Learning Hub, Cheat Sheets & Engineering Guides | DevScratchpad",
+    title: "Developer Learning Hub & Guides | DevScratchpad",
     description: "Exhaustive technical guides, cheat sheets, and practical reference architectures for developers.",
     images: [
       {

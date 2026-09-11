@@ -1862,6 +1862,10 @@ function synthesizeRouteForFormat(
     return null;
   }
 
+  if (baseRoute.format === "mcp_json") {
+    return null;
+  }
+
   // Synthesis for code rule formats: cursor-rules, claude-skills, claude-md, agents-md
   let format: OutputFormat = "cursor_mdc";
   let targetFile = `.cursor/rules/${normalizedPreset}.mdc`;
@@ -2026,10 +2030,10 @@ export function getPresetRouteMetadata(formatSlug: string, presetSlug: string): 
     .trim();
 
   let cleanTitle = `${cleanTech} ${formatSuffix}`;
-  if (cleanTitle.length > 58) {
-    const sub = cleanTitle.slice(0, 58);
+  if (cleanTitle.length > 44) {
+    const sub = cleanTitle.slice(0, 44);
     const lastSpace = sub.lastIndexOf(" ");
-    cleanTitle = lastSpace > 40 ? sub.slice(0, lastSpace) : sub;
+    cleanTitle = lastSpace > 28 ? sub.slice(0, lastSpace) : sub;
   }
 
   return {

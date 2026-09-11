@@ -4,7 +4,7 @@ import { ClaudeSkillsClient } from "../claude-skills/ClaudeSkillsClient";
 import { AiSkillStudioSeoContent } from "./AiSkillStudioSeoContent";
 
 export const metadata: Metadata = {
-  title: "AI Skill Studio — 5-Layer AI Agent Suite & Rules",
+  title: "AI Skill Studio — Agent Rules Suite",
   description:
     "AI Skill Studio: Free online generator for Cursor Rules (.mdc), Claude Skills (SKILL.md), Context Shields (.cursorignore, .claudeignore), llms.txt, and ARCHITECTURE.md specs. 100% offline privacy.",
   alternates: {
@@ -37,7 +37,7 @@ export const metadata: Metadata = {
     "offline cursor rules generator",
   ],
   openGraph: {
-    title: "AI Skill Studio — 5-Layer AI Agent Suite & Rules | DevScratchpad",
+    title: "AI Skill Studio — Agent Rules Suite | DevScratchpad",
     description:
       "AI Skill Studio: Free online generator for Cursor Rules (.mdc), Claude Skills (SKILL.md), Context Shields (.cursorignore, .claudeignore), llms.txt, and ARCHITECTURE.md specs. 100% offline privacy.",
     url: "https://www.devscratchpad.tech/ai-skill-studio",
@@ -57,7 +57,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "AI Skill Studio — 5-Layer AI Agent Suite & Rules | DevScratchpad",
+    title: "AI Skill Studio — Agent Rules Suite | DevScratchpad",
     description:
       "AI Skill Studio: Free online generator for Cursor Rules (.mdc), Claude Skills (SKILL.md), Context Shields (.cursorignore, .claudeignore), llms.txt, and ARCHITECTURE.md specs. 100% offline privacy.",
     images: [

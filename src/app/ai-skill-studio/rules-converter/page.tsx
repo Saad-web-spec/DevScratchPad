@@ -4,7 +4,7 @@ import { ArrowLeft, ArrowRight, Sparkles, ShieldCheck, CheckCircle2, HelpCircle,
 import { ConverterClient } from "./ConverterClient";
 
 export const metadata: Metadata = {
-  title: "Convert Cursor Rules to Claude Code, Windsurf & Copilot | Free & Offline",
+  title: "Universal AI Rules Converter",
   description:
     "Free, 100% offline AI rules converter. Deconstruct legacy .cursorrules and CLAUDE.md into modular Cursor .mdc, Claude SKILL.md, Windsurf Cascade, and GitHub Copilot instructions.",
   keywords: [
@@ -23,7 +23,7 @@ export const metadata: Metadata = {
     canonical: "https://www.devscratchpad.tech/ai-skill-studio/rules-converter",
   },
   openGraph: {
-    title: "Convert Cursor Rules to Claude Code, Windsurf & Copilot | DevScratchpad",
+    title: "Universal AI Rules Converter | DevScratchpad",
     description:
       "Deconstruct monolithic .cursorrules or CLAUDE.md into modular Cursor .mdc, Claude SKILL.md, Windsurf Cascade, and GitHub Copilot instructions 100% offline.",
     url: "https://www.devscratchpad.tech/ai-skill-studio/rules-converter",
@@ -40,7 +40,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Convert Cursor Rules to Claude Code, Windsurf & Copilot | DevScratchpad",
+    title: "Universal AI Rules Converter | DevScratchpad",
     description:
       "Free offline converter: .cursorrules to Claude SKILL.md, Windsurf Cascade, and GitHub Copilot instructions.",
     images: [

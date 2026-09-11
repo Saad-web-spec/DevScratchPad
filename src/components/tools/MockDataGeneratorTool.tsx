@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
-import Editor from "@monaco-editor/react";
+import { MonacoEditor } from "@/components/MonacoEditor";
 import { Play, Copy, Check, Download, ListOrdered } from "lucide-react";
-import { faker } from "@faker-js/faker";
 
 interface MockDataGeneratorToolProps {
   onValidationChange?: (isValid: boolean) => void;
@@ -31,11 +30,12 @@ export function MockDataGeneratorTool({ restoredInput, onStatsChange }: MockData
   const [copied, setCopied] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const generateData = () => {
+  const generateData = async () => {
     setError(null);
     try {
       // We parse the schema structure
       let schemaObj = JSON.parse(schemaText);
+      const { faker } = await import("@faker-js/faker");
       
       const results: any[] = [];
       for (let i = 0; i < rows; i++) {
@@ -88,7 +88,7 @@ export function MockDataGeneratorTool({ restoredInput, onStatsChange }: MockData
 
   // Generate initially
   useEffect(() => {
-    generateData();
+    void generateData();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -137,7 +137,7 @@ export function MockDataGeneratorTool({ restoredInput, onStatsChange }: MockData
             </select>
           </div>
           <button
-            onClick={generateData}
+            onClick={() => void generateData()}
             className="flex items-center gap-1.5 px-3 py-1.5 bg-zinc-900 text-white hover:bg-zinc-800 text-xs font-medium rounded-md transition-colors"
           >
             <Play className="w-3.5 h-3.5" />
@@ -170,12 +170,11 @@ export function MockDataGeneratorTool({ restoredInput, onStatsChange }: MockData
             <span className="text-[10px] text-zinc-400">Uses mustache syntax: {'{{faker.method}}'}</span>
           </div>
           <div className="flex-1 relative">
-            <Editor
+            <MonacoEditor
               height="100%"
               language="json"
               value={schemaText}
               onChange={(val) => setSchemaText(val || "")}
-              theme="light"
               options={{ minimap: { enabled: false }, tabSize: 2, wordWrap: "on" }}
             />
           </div>
@@ -188,11 +187,10 @@ export function MockDataGeneratorTool({ restoredInput, onStatsChange }: MockData
             {error ? (
               <div className="p-4 text-sm text-red-600 font-mono bg-red-50 h-full">{error}</div>
             ) : (
-              <Editor
+              <MonacoEditor
                 height="100%"
                 language={format === "sql" ? "sql" : format === "json" ? "json" : "plaintext"}
                 value={output}
-                theme="light"
                 options={{ readOnly: true, minimap: { enabled: false }, tabSize: 2, wordWrap: "on" }}
               />
             )}

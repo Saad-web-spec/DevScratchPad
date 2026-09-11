@@ -34,11 +34,11 @@ export async function generateMetadata({
  title: `${tool.seoTitle} | DevScratchpad`,
  description: tool.seoDescription,
  url: `${SITE_URL}/tools/${slug}`,
- type:"website",
- siteName:"DevScratchpad",
+ type: "website",
+ siteName: "DevScratchpad",
  images: [
  {
- url: "https://www.devscratchpad.tech/og-ai-skill-studio.png",
+ url: `${SITE_URL}/tools/${slug}/opengraph-image`,
  width: 1200,
  height: 630,
  alt: tool.name,
@@ -46,12 +46,12 @@ export async function generateMetadata({
  ],
  },
  twitter: {
- card:"summary_large_image",
+ card: "summary_large_image",
  title: `${tool.seoTitle} | DevScratchpad`,
  description: tool.seoDescription,
  images: [
  {
- url: "https://www.devscratchpad.tech/og-ai-skill-studio.png",
+ url: `${SITE_URL}/tools/${slug}/opengraph-image`,
  width: 1200,
  height: 630,
  alt: tool.name,

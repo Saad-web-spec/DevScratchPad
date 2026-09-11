@@ -19,7 +19,7 @@ import {
 import { CliClient } from "./CliClient";
 
 export const metadata: Metadata = {
-  title: "DevScratchpad CLI — Offline AI Rulebook Manager (npx devscratchpad)",
+  title: "Offline AI Rulebook CLI",
   description:
     "Zero-dependency, 100% offline terminal CLI (npx devscratchpad) to scaffold, audit, and install AI agent guidelines for Cursor (.mdc), Claude Code, Windsurf, Copilot, and Gemini.",
   keywords: [
@@ -46,7 +46,7 @@ export const metadata: Metadata = {
     apple: "/cli-icon-192.png",
   },
   openGraph: {
-    title: "DevScratchpad CLI — Offline AI Rulebook Manager (npx devscratchpad)",
+    title: "Offline AI Rulebook CLI | DevScratchpad",
     description:
       "Zero-dependency, offline-first terminal CLI to scaffold, audit, and install AI agent rules into your repository with 100% client-side privacy.",
     url: "https://www.devscratchpad.tech/cli",
@@ -63,7 +63,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "DevScratchpad CLI — Offline AI Rulebook Manager (npx devscratchpad)",
+    title: "Offline AI Rulebook CLI | DevScratchpad",
     description:
       "Install and audit Cursor (.mdc), Claude SKILL.md, Windsurf, Copilot, and Gemini rules directly from your terminal. Zero dependencies, 100% offline.",
     images: [
