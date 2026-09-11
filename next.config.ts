@@ -12,6 +12,9 @@ const withSerwist = withSerwistInit({
 });
 
 const nextConfig: NextConfig = {
+  experimental: {
+    optimizePackageImports: ["lucide-react", "date-fns", "lz-string", "highlight.js", "marked", "@monaco-editor/react", "jszip"],
+  },
   devIndicators: false,
   async redirects() {
     return [

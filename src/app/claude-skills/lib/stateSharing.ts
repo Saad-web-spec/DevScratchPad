@@ -65,7 +65,8 @@ const KEY_MAP: Record<keyof StudioWorkspaceState, string> = {
 
 const REVERSE_MAP = Object.fromEntries(Object.entries(KEY_MAP).map(([k, v]) => [v, k]));
 
-export function encodeStudioState(state: Partial<StudioWorkspaceState>): string {
+export async function encodeStudioState(state: Partial<StudioWorkspaceState>): Promise<string> {
+  const LZString = (await import("lz-string")).default;
   const minified: any = {};
   for (const [key, value] of Object.entries(state)) {
     // SECURITY: Never leak sensitive MCP environment values or API keys into shared URLs
@@ -81,7 +82,8 @@ export function encodeStudioState(state: Partial<StudioWorkspaceState>): string 
   return LZString.compressToEncodedURIComponent(jsonStr);
 }
 
-export function decodeStudioState(hashStr: string): Partial<StudioWorkspaceState> | null {
+export async function decodeStudioState(hashStr: string): Promise<Partial<StudioWorkspaceState> | null> {
+  const LZString = (await import("lz-string")).default;
   try {
     const raw = hashStr.startsWith("#") ? hashStr.slice(1) : hashStr;
     if (!raw) return null;
@@ -123,7 +125,7 @@ export function decodeStudioState(hashStr: string): Partial<StudioWorkspaceState
   }
 }
 
-export function createShareableUrl(state: Partial<StudioWorkspaceState>): string {
+export async function createShareableUrl(state: Partial<StudioWorkspaceState>): Promise<string> {
   // Option 1: Clean Canonical Preset URL if no custom content was modified
   const keys = Object.keys(state).filter(
     (k) => (state as any)[k] !== undefined && (state as any)[k] !== null && (state as any)[k] !== ""
@@ -179,6 +181,6 @@ export function createShareableUrl(state: Partial<StudioWorkspaceState>): string
   }
 
   // Option 3: LZ-compressed payload for rich custom configurations
-  const compressed = encodeStudioState(state);
+  const compressed = await encodeStudioState(state);
   return `${baseUrl}#share=${compressed}`;
 }

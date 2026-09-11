@@ -10,8 +10,9 @@ declare global {
 
 declare const self: WorkerGlobalScope & typeof globalThis;
 
+const manifest = self.__SW_MANIFEST;
 const serwist = new Serwist({
-  precacheEntries: self.__SW_MANIFEST,
+  precacheEntries: [],
   skipWaiting: true,
   clientsClaim: true,
   navigationPreload: true,

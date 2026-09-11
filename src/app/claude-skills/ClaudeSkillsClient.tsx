@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import dynamic from "next/dynamic";
 import {
   ArrowLeft,
@@ -149,6 +150,24 @@ export function ClaudeSkillsClient({
   const [isConverterModalOpen, setIsConverterModalOpen] = useState(false);
   const [isExportingZip, setIsExportingZip] = useState(false);
   const [mobileTab, setMobileTab] = useState<"form" | "editor">("form");
+  const [shouldLoadEditor, setShouldLoadEditor] = useState(false);
+
+  useEffect(() => {
+    const checkViewport = () => {
+      if (window.innerWidth >= 1024) {
+        setShouldLoadEditor(true);
+      }
+    };
+    checkViewport();
+    window.addEventListener("resize", checkViewport);
+    return () => window.removeEventListener("resize", checkViewport);
+  }, []);
+
+  useEffect(() => {
+    if (mobileTab === "editor") {
+      setShouldLoadEditor(true);
+    }
+  }, [mobileTab]);
 
   // Slug lock & Static Analysis Audit Panel State
   const [isSlugLocked, setIsSlugLocked] = useState(false);
@@ -360,127 +379,135 @@ export function ClaudeSkillsClient({
 
   // Storage envelope state restore on mount (with automatic v1 legacy migration)
   useEffect(() => {
-    let hashState = null;
-    try {
-      const hash = window.location.hash;
-      if (hash && hash.length > 1) {
-        hashState = decodeStudioState(hash);
-        if (hashState) {
-          console.log("[AI Skill Studio] Restored shared configuration from URL hash");
-        }
-      }
-    } catch (err) {
-      console.error("Failed to parse share hash:", err);
-    }
-
-    try {
-      let s: any = null;
-
-      if (hashState) {
-        s = hashState;
-        if (s.selectedPresetId) {
-          const preset = PRESETS.find(p => p.id === s.selectedPresetId);
-          if (preset) {
-            if (s.skillName === undefined) s.skillName = preset.slug;
-            if (s.skillTitle === undefined) s.skillTitle = preset.title;
-            if (s.description === undefined) s.description = preset.description;
-            if (s.role === undefined) s.role = preset.role;
-            if (s.framework === undefined) s.framework = preset.framework;
-            if (s.language === undefined) s.language = preset.language;
-            if (s.styling === undefined) s.styling = preset.styling;
-            if (s.database === undefined) s.database = preset.database;
-            if (s.philosophy === undefined) s.philosophy = preset.philosophy;
-            if (s.behaviors === undefined) s.behaviors = preset.behaviors;
-            if (s.conventions === undefined) s.conventions = preset.conventions;
-            if (s.procedures === undefined) s.procedures = preset.procedures;
-            if (s.customDirectives === undefined) s.customDirectives = preset.customDirectives;
-            if (s.exampleGood === undefined) s.exampleGood = preset.exampleGood;
-            if (s.exampleBad === undefined) s.exampleBad = preset.exampleBad;
+    async function loadState() {
+      let hashState: any = null;
+      try {
+        const hash = window.location.hash;
+        if (hash && hash.length > 1) {
+          hashState = await decodeStudioState(hash);
+          if (hashState) {
+            console.log("[AI Skill Studio] Restored shared configuration from URL hash");
           }
         }
-      } else if (initialFormat && initialPresetId) {
-        // Hydrate from programmatic route props
-        if (initialFormat === "mcp_json") {
-          const mcp = MCP_PRESETS.find((p) => p.id === initialPresetId) || MCP_PRESETS[0];
-          s = {
-            format: "mcp_json",
-            mcpPresetId: mcp.id,
-            mcpServerName: mcp.name,
-            mcpCommand: mcp.command,
-            mcpArgs: mcp.args.join("\n"),
-            mcpEnvKey: Object.keys(mcp.env)[0] || "",
-            mcpEnvValue: Object.values(mcp.env)[0] || "",
-          };
-        } else {
-          const preset = PRESETS.find((p) => p.id === initialPresetId) || PRESETS[0];
-          s = {
-            format: initialFormat,
-            skillName: preset.slug,
-            skillTitle: preset.title,
-            description: preset.description,
-            role: preset.role,
-            framework: preset.framework,
-            language: preset.language,
-            styling: preset.styling,
-            database: preset.database,
-            philosophy: preset.philosophy,
-            behaviors: preset.behaviors,
-            conventions: preset.conventions,
-            procedures: preset.procedures,
-            customDirectives: preset.customDirectives,
-            exampleGood: preset.exampleGood,
-            exampleBad: preset.exampleBad,
-          };
-        }
-        // Remove hash so it doesn't stay in URL if it was invalid? No need.
-      } else {
-        // Fallback to local storage envelope
-        s = loadFromStorageEnvelope<any>();
+      } catch (err) {
+        console.error("Failed to parse share hash:", err);
       }
 
-      if (s) {
-        if (s.selectedPresetId) {
-          setSelectedPresetId(s.selectedPresetId);
-        } else if (s.skillName) {
-          const matched = PRESETS.find((p) => p.slug === s.skillName);
-          if (matched) setSelectedPresetId(matched.id);
+      try {
+        let s: any = null;
+
+        if (hashState) {
+          s = hashState;
+          if (s.selectedPresetId) {
+            const preset = PRESETS.find(p => p.id === s.selectedPresetId);
+            if (preset) {
+              if (s.skillName === undefined) s.skillName = preset.slug;
+              if (s.skillTitle === undefined) s.skillTitle = preset.title;
+              if (s.description === undefined) s.description = preset.description;
+              if (s.role === undefined) s.role = preset.role;
+              if (s.framework === undefined) s.framework = preset.framework;
+              if (s.language === undefined) s.language = preset.language;
+              if (s.styling === undefined) s.styling = preset.styling;
+              if (s.database === undefined) s.database = preset.database;
+              if (s.philosophy === undefined) s.philosophy = preset.philosophy;
+              if (s.behaviors === undefined) s.behaviors = preset.behaviors;
+              if (s.conventions === undefined) s.conventions = preset.conventions;
+              if (s.procedures === undefined) s.procedures = preset.procedures;
+              if (s.customDirectives === undefined) s.customDirectives = preset.customDirectives;
+              if (s.exampleGood === undefined) s.exampleGood = preset.exampleGood;
+              if (s.exampleBad === undefined) s.exampleBad = preset.exampleBad;
+            }
+          }
+        } else if (initialFormat && initialPresetId) {
+          // Hydrate from programmatic route props
+          if (initialFormat === "mcp_json") {
+            const mcp = MCP_PRESETS.find((p) => p.id === initialPresetId) || MCP_PRESETS[0];
+            s = {
+              format: "mcp_json",
+              mcpPresetId: mcp.id,
+              mcpServerName: mcp.name,
+              mcpCommand: mcp.command,
+              mcpArgs: mcp.args.join("\n"),
+              mcpEnvKey: Object.keys(mcp.env)[0] || "",
+              mcpEnvValue: Object.values(mcp.env)[0] || "",
+            };
+          } else {
+            const preset = PRESETS.find((p) => p.id === initialPresetId) || PRESETS[0];
+            s = {
+              format: initialFormat,
+              skillName: preset.slug,
+              skillTitle: preset.title,
+              description: preset.description,
+              role: preset.role,
+              framework: preset.framework,
+              language: preset.language,
+              styling: preset.styling,
+              database: preset.database,
+              philosophy: preset.philosophy,
+              behaviors: preset.behaviors,
+              conventions: preset.conventions,
+              procedures: preset.procedures,
+              customDirectives: preset.customDirectives,
+              exampleGood: preset.exampleGood,
+              exampleBad: preset.exampleBad,
+            };
+          }
+          // Remove hash so it doesn't stay in URL if it was invalid? No need.
+        } else {
+          // Fallback to local storage envelope
+          s = loadFromStorageEnvelope<any>();
         }
-        if (s.skillName) setSkillName(s.skillName);
-        if (s.skillTitle) setSkillTitle(s.skillTitle);
-        if (typeof s.isSlugLocked === "boolean") setIsSlugLocked(s.isSlugLocked);
-        if (s.description) setDescription(s.description);
-        if (s.role) setRole(s.role);
-        if (s.framework) setFramework(s.framework);
-        if (s.language) setLanguage(s.language);
-        if (s.styling) setStyling(s.styling);
-        if (s.database) setDatabase(s.database);
-        if (s.philosophy) setPhilosophy(s.philosophy);
-        if (Array.isArray(s.behaviors)) setBehaviors(s.behaviors);
-        if (Array.isArray(s.conventions)) setConventions(s.conventions);
-        if (s.procedures) setProcedures(s.procedures);
-        if (s.customDirectives) setCustomDirectives(s.customDirectives);
-        if (s.exampleGood) setExampleGood(s.exampleGood);
-        if (s.exampleBad) setExampleBad(s.exampleBad);
-        if (s.format && s.format !== "subagent_json") setFormat(s.format);
-        if (s.globPattern) setGlobPattern(s.globPattern);
-        if (typeof s.alwaysApply === "boolean") setAlwaysApply(s.alwaysApply);
-        if (s.mcpPresetId) {
-          setMcpPresetId(s.mcpPresetId);
-          const matchedMcp = MCP_PRESETS.find((p) => p.id === s.mcpPresetId);
-          if (matchedMcp) {
-            setMcpServerName(s.mcpServerName ?? matchedMcp.name);
-            setMcpCommand(s.mcpCommand ?? matchedMcp.command);
-            setMcpArgs(s.mcpArgs ?? matchedMcp.args.join("\n"));
-            const defaultEnvKeys = Object.keys(matchedMcp.env);
-            if (s.mcpEnvKey !== undefined) {
-              setMcpEnvKey(s.mcpEnvKey);
-              setMcpEnvValue(s.mcpEnvValue ?? "");
-            } else if (defaultEnvKeys.length > 0) {
-              setMcpEnvKey(defaultEnvKeys[0]);
-              setMcpEnvValue(matchedMcp.env[defaultEnvKeys[0]] || "");
+
+        if (s) {
+          if (s.selectedPresetId) {
+            setSelectedPresetId(s.selectedPresetId);
+          } else if (s.skillName) {
+            const matched = PRESETS.find((p) => p.slug === s.skillName);
+            if (matched) setSelectedPresetId(matched.id);
+          }
+          if (s.skillName) setSkillName(s.skillName);
+          if (s.skillTitle) setSkillTitle(s.skillTitle);
+          if (typeof s.isSlugLocked === "boolean") setIsSlugLocked(s.isSlugLocked);
+          if (s.description) setDescription(s.description);
+          if (s.role) setRole(s.role);
+          if (s.framework) setFramework(s.framework);
+          if (s.language) setLanguage(s.language);
+          if (s.styling) setStyling(s.styling);
+          if (s.database) setDatabase(s.database);
+          if (s.philosophy) setPhilosophy(s.philosophy);
+          if (Array.isArray(s.behaviors)) setBehaviors(s.behaviors);
+          if (Array.isArray(s.conventions)) setConventions(s.conventions);
+          if (s.procedures) setProcedures(s.procedures);
+          if (s.customDirectives) setCustomDirectives(s.customDirectives);
+          if (s.exampleGood) setExampleGood(s.exampleGood);
+          if (s.exampleBad) setExampleBad(s.exampleBad);
+          if (s.format && s.format !== "subagent_json") setFormat(s.format);
+          if (s.globPattern) setGlobPattern(s.globPattern);
+          if (typeof s.alwaysApply === "boolean") setAlwaysApply(s.alwaysApply);
+          if (s.mcpPresetId) {
+            setMcpPresetId(s.mcpPresetId);
+            const matchedMcp = MCP_PRESETS.find((p) => p.id === s.mcpPresetId);
+            if (matchedMcp) {
+              setMcpServerName(s.mcpServerName ?? matchedMcp.name);
+              setMcpCommand(s.mcpCommand ?? matchedMcp.command);
+              setMcpArgs(s.mcpArgs ?? matchedMcp.args.join("\n"));
+              const defaultEnvKeys = Object.keys(matchedMcp.env);
+              if (s.mcpEnvKey !== undefined) {
+                setMcpEnvKey(s.mcpEnvKey);
+                setMcpEnvValue(s.mcpEnvValue ?? "");
+              } else if (defaultEnvKeys.length > 0) {
+                setMcpEnvKey(defaultEnvKeys[0]);
+                setMcpEnvValue(matchedMcp.env[defaultEnvKeys[0]] || "");
+              } else {
+                setMcpEnvKey("");
+                setMcpEnvValue("");
+              }
             } else {
-              setMcpEnvKey("");
-              setMcpEnvValue("");
+              if (s.mcpServerName) setMcpServerName(s.mcpServerName);
+              if (s.mcpCommand) setMcpCommand(s.mcpCommand);
+              if (s.mcpArgs) setMcpArgs(s.mcpArgs);
+              if (s.mcpEnvKey !== undefined) setMcpEnvKey(s.mcpEnvKey);
+              if (s.mcpEnvValue !== undefined) setMcpEnvValue(s.mcpEnvValue);
             }
           } else {
             if (s.mcpServerName) setMcpServerName(s.mcpServerName);
@@ -489,22 +516,17 @@ export function ClaudeSkillsClient({
             if (s.mcpEnvKey !== undefined) setMcpEnvKey(s.mcpEnvKey);
             if (s.mcpEnvValue !== undefined) setMcpEnvValue(s.mcpEnvValue);
           }
-        } else {
-          if (s.mcpServerName) setMcpServerName(s.mcpServerName);
-          if (s.mcpCommand) setMcpCommand(s.mcpCommand);
-          if (s.mcpArgs) setMcpArgs(s.mcpArgs);
-          if (s.mcpEnvKey !== undefined) setMcpEnvKey(s.mcpEnvKey);
-          if (s.mcpEnvValue !== undefined) setMcpEnvValue(s.mcpEnvValue);
+          if (s.editorContent && s.isManuallyEdited) {
+            setEditorContent(s.editorContent);
+            setIsManuallyEdited(true);
+          }
         }
-        if (s.editorContent && s.isManuallyEdited) {
-          setEditorContent(s.editorContent);
-          setIsManuallyEdited(true);
-        }
+      } catch (e) {
+        console.error(e);
       }
-    } catch (e) {
-      console.error(e);
+      setIsMounted(true);
     }
-    setIsMounted(true);
+    loadState();
   }, [initialFormat, initialPresetId]);
 
   // Debounced Versioned Envelope Auto-Save
@@ -1435,7 +1457,7 @@ export function ClaudeSkillsClient({
         stateToShare.editorContent = editorContent;
       }
 
-      const url = createShareableUrl(stateToShare);
+      const url = await createShareableUrl(stateToShare);
       await navigator.clipboard.writeText(url);
       setShareCopied(true);
       setTimeout(() => setShareCopied(false), 2000);
@@ -1520,7 +1542,7 @@ export function ClaudeSkillsClient({
             <div className="h-4 w-px bg-zinc-200 shrink-0 hidden sm:block" />
 
             <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
-              <img src="/ai-skill-icon.png" alt="AI Skill Studio" className="w-5 h-4 sm:w-6 sm:h-5 object-contain shrink-0" />
+              <Image src="/ai-skill-icon.png" width={24} height={20} priority  alt="AI Skill Studio" className="w-5 h-4 sm:w-6 sm:h-5 object-contain shrink-0" />
               <span className="text-xs sm:text-base font-bold text-zinc-900 tracking-tight truncate">
                 AI Skill Studio
               </span>
@@ -1563,7 +1585,7 @@ export function ClaudeSkillsClient({
                         : "bg-white text-zinc-600 border-zinc-200 hover:border-zinc-300 hover:text-zinc-900"
                     )}
                   >
-                    {isCursorPreset && <img src="/cursor-icon.png" className="w-3 h-3 object-contain shrink-0" alt="Cursor" />}
+                    {isCursorPreset && <Image src="/cursor-icon.png" width={12} height={12}  className="w-3 h-3 object-contain shrink-0" alt="Cursor" />}
                     <span>{preset.name}</span>
                     <span
                       className={cn(
@@ -1663,7 +1685,7 @@ export function ClaudeSkillsClient({
                   )}
                 >
                   <div className="flex items-center gap-1.5 font-semibold text-xs truncate">
-                    <img src="/cursor-icon.png" alt="Cursor" className="w-3.5 h-3.5 object-contain shrink-0" />
+                    <Image src="/cursor-icon.png" width={14} height={14}  alt="Cursor" className="w-3.5 h-3.5 object-contain shrink-0" />
                     <span className="truncate">.cursorrules</span>
                   </div>
                   <span className={cn("text-[10px] leading-tight truncate", format === "cursor_mdc" ? "text-zinc-400" : "text-zinc-500")}>
@@ -1682,7 +1704,7 @@ export function ClaudeSkillsClient({
                   )}
                 >
                   <div className="flex items-center gap-1.5 font-semibold text-xs truncate">
-                    <img src="/ai-skill-icon.png" alt="Claude" className="w-3.5 h-3.5 object-contain shrink-0" />
+                    <Image src="/ai-skill-icon.png" width={14} height={14}  alt="Claude" className="w-3.5 h-3.5 object-contain shrink-0" />
                     <span className="truncate">SKILL.md</span>
                   </div>
                   <span className="text-[10px] text-zinc-500 leading-tight truncate">Claude Code / Skill</span>
@@ -1699,7 +1721,7 @@ export function ClaudeSkillsClient({
                   )}
                 >
                   <div className="flex items-center gap-1.5 font-semibold text-xs truncate">
-                    <img src="/claude-icon.png" alt="Claude" className="w-3.5 h-3.5 object-contain shrink-0" />
+                    <Image src="/claude-icon.png" width={14} height={14}  alt="Claude" className="w-3.5 h-3.5 object-contain shrink-0" />
                     <span className="truncate">CLAUDE.md</span>
                   </div>
                   <span className="text-[10px] text-zinc-500 leading-tight truncate">Root Guidelines</span>
@@ -2888,54 +2910,60 @@ export function ClaudeSkillsClient({
 
             {/* Editor Container — Always full height */}
             <div className="h-[430px] sm:h-[520px] lg:h-[calc(100vh-16rem)] min-h-[380px] relative overflow-hidden bg-zinc-950">
-              <Editor
-                height="100%"
-                language={format === "mcp_json" || format === "gemini_prompts" ? "json" : "markdown"}
-                value={activeContent}
-                theme="vs-dark"
-                onMount={(editor) => {
-                  editorRef.current = editor;
-                  editor.setScrollTop(0);
-                }}
-                onChange={(val) => {
-                  if (val !== undefined) {
-                    setEditorContent(val);
-                    setIsManuallyEdited(true);
+              {shouldLoadEditor ? (
+                <Editor
+                  height="100%"
+                  language={format === "mcp_json" || format === "gemini_prompts" ? "json" : "markdown"}
+                  value={activeContent}
+                  theme="vs-dark"
+                  onMount={(editor) => {
+                    editorRef.current = editor;
+                    editor.setScrollTop(0);
+                  }}
+                  onChange={(val) => {
+                    if (val !== undefined) {
+                      setEditorContent(val);
+                      setIsManuallyEdited(true);
+                    }
+                  }}
+                  loading={
+                    <pre className="p-4 font-mono text-xs text-zinc-300 whitespace-pre-wrap overflow-y-auto h-full select-text bg-zinc-950">
+                      {activeContent}
+                    </pre>
                   }
-                }}
-                loading={
-                  <pre className="p-4 font-mono text-xs text-zinc-300 whitespace-pre-wrap overflow-y-auto h-full select-text bg-zinc-950">
-                    {activeContent}
-                  </pre>
-                }
-                options={{
-                  readOnly: false,
-                  minimap: { enabled: false },
-                  fontSize: 12,
-                  lineHeight: 20,
-                  fontFamily: "'JetBrains Mono', 'Fira Code', Menlo, Consolas, monospace",
-                  wordWrap: "on",
-                  lineNumbers: "on",
-                  lineNumbersMinChars: 3,
-                  glyphMargin: false,
-                  scrollBeyondLastLine: false,
-                  smoothScrolling: true,
-                  automaticLayout: true,
-                  maxTokenizationLineLength: 20000,
-                  unicodeHighlight: { ambiguousCharacters: false },
-                  renderLineHighlight: "none",
-                  folding: false,
-                  quickSuggestions: false,
-                  fixedOverflowWidgets: true,
-                  padding: { top: 10, bottom: 10 },
-                  scrollbar: {
-                    vertical: "visible",
-                    horizontal: "auto",
-                    verticalScrollbarSize: 8,
-                    horizontalScrollbarSize: 8,
-                  },
-                }}
-              />
+                  options={{
+                    readOnly: false,
+                    minimap: { enabled: false },
+                    fontSize: 12,
+                    lineHeight: 20,
+                    fontFamily: "'JetBrains Mono', 'Fira Code', Menlo, Consolas, monospace",
+                    wordWrap: "on",
+                    lineNumbers: "on",
+                    lineNumbersMinChars: 3,
+                    glyphMargin: false,
+                    scrollBeyondLastLine: false,
+                    smoothScrolling: true,
+                    automaticLayout: true,
+                    maxTokenizationLineLength: 20000,
+                    unicodeHighlight: { ambiguousCharacters: false },
+                    renderLineHighlight: "none",
+                    folding: false,
+                    quickSuggestions: false,
+                    fixedOverflowWidgets: true,
+                    padding: { top: 10, bottom: 10 },
+                    scrollbar: {
+                      vertical: "visible",
+                      horizontal: "auto",
+                      verticalScrollbarSize: 8,
+                      horizontalScrollbarSize: 8,
+                    },
+                  }}
+                />
+              ) : (
+                <pre className="p-4 font-mono text-xs text-zinc-300 whitespace-pre-wrap overflow-y-auto h-full select-text bg-zinc-950">
+                  {activeContent}
+                </pre>
+              )}
 
               {/* Rule Quality Audit — Professional Dark Floating Panel (Anchored above status bar) */}
               {showAuditPanel && (
@@ -2944,7 +2972,7 @@ export function ClaudeSkillsClient({
                   <div className="flex items-center justify-between gap-2 px-3.5 py-2.5 border-b border-zinc-800/80 bg-[#121316] shrink-0">
                     <div className="flex items-center gap-2 min-w-0">
                       <span className="font-mono text-xs font-bold text-zinc-200 tracking-wider flex items-center gap-1.5 shrink-0">
-                        <img src="/orange-star.png" className="w-4 h-4 object-contain shrink-0" alt="Star" />
+                        <Image src="/orange-star.png" width={16} height={16}  className="w-4 h-4 object-contain shrink-0" alt="Star" />
                         <span>RULE AUDIT</span>
                       </span>
 
@@ -3130,7 +3158,7 @@ export function ClaudeSkillsClient({
 
                         {filteredIssues.length === 0 ? (
                           <div className="flex items-center gap-2.5 p-2.5 rounded-lg bg-zinc-900/90 border border-zinc-800 text-zinc-300 text-[11px] font-sans">
-                            <img src="/orange-star.png" className="w-3.5 h-3.5 object-contain shrink-0" alt="Star" />
+                            <Image src="/orange-star.png" width={14} height={14}  className="w-3.5 h-3.5 object-contain shrink-0" alt="Star" />
                             <div className="space-y-0.5">
                               <div className="font-semibold text-zinc-200">Zero Deficiencies Detected</div>
                               <div className="text-[10px] text-zinc-400">
@@ -3321,7 +3349,7 @@ export function ClaudeSkillsClient({
                 )}
                 title="Toggle Rule Quality & Security Audit"
               >
-                <img src="/orange-star.png" className="w-3.5 h-3.5 object-contain shrink-0" alt="Star" />
+                <Image src="/orange-star.png" width={14} height={14}  className="w-3.5 h-3.5 object-contain shrink-0" alt="Star" />
                 <span className="font-semibold text-zinc-100">{auditReport.overallScore}/100</span>
                 <span className="text-zinc-600">·</span>
                 <span className="text-[10px] text-zinc-400 uppercase tracking-wider">{auditReport.gradeLabel}</span>
@@ -3334,9 +3362,9 @@ export function ClaudeSkillsClient({
           <div suppressHydrationWarning className="bg-white rounded-xl border border-zinc-200 p-3 shadow-xs text-xs space-y-1.5 shrink-0">
             <div className="flex items-center gap-1.5 font-semibold text-zinc-900">
               {format === "cursor_mdc" ? (
-                <img src="/cursor-icon.png" alt="Cursor" className="w-3.5 h-3.5 object-contain" />
+                <Image src="/cursor-icon.png" width={14} height={14}  alt="Cursor" className="w-3.5 h-3.5 object-contain" />
               ) : format === "claude_md" ? (
-                <img src="/claude-icon.png" alt="Claude" className="w-3.5 h-3.5 object-contain" />
+                <Image src="/claude-icon.png" width={14} height={14}  alt="Claude" className="w-3.5 h-3.5 object-contain" />
               ) : format === "mcp_json" ? (
                 <Server className="w-3.5 h-3.5 text-orange-600" />
               ) : format === "windsurf_cascade" ? (

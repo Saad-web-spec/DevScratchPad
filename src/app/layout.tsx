@@ -5,7 +5,7 @@ import { ThemeProvider } from "@/lib/theme";
 import { Inter } from "next/font/google";
 import "./globals.css";
 
-const inter = Inter({ subsets: ["latin"] });
+const inter = Inter({ subsets: ["latin"], display: "swap", preload: true });
 
 const SITE_URL = "https://www.devscratchpad.tech";
 
