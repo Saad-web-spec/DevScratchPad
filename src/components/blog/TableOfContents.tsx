@@ -71,7 +71,7 @@ export function TableOfContents({ isMobile = false }: TableOfContentsProps) {
           for (const item of items) {
             const el = document.getElementById(item.id);
             if (el) {
-              const top = el.offsetTop;
+              const top = el.getBoundingClientRect().top + window.scrollY;
               if (scrollPosition >= top) {
                 current = item.id;
               } else {

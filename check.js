@@ -1,0 +1,1 @@
+const fs = require('fs'); const content = fs.readFileSync('src/lib/blog/posts.ts', 'utf8'); const regex = /seoTitle:\s*['"]([^'"]+)['"]/g; let count=0; let m; while(m = regex.exec(content)) { count++; const t = m[1]; console.log(t.length + ' - ' + t); } console.log('Total:', count);

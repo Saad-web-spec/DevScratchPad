@@ -364,7 +364,7 @@ Every agent task must be verified with:
     badge: "Copilot",
     targetFile: "copilot-instructions.md",
     targetDir: ".github/",
-    seoTitle: "GitHub Copilot Instructions Generator (.github/copilot-instructions.md)",
+    seoTitle: "GitHub Copilot Instructions Generator",
     seoDescription: "Create repository-level instructions for GitHub Copilot (.github/copilot-instructions.md). Enforce coding standards, testing rules, and architectural guidelines across pull requests.",
     heroHeading: "GitHub Copilot Instructions Generator",
     heroSubheading: "Standardize GitHub Copilot Chat and completions across your entire team with root repository instruction files.",

@@ -19,7 +19,7 @@ export const TOOLS_REGISTRY: Record<string, ToolMeta> = {
     name: "JSON Formatter & Validator",
     shortName: "JSON Formatter",
     description: "Format, validate, and minify JSON with interactive syntax highlighting and sorting.",
-    seoTitle: "JSON Formatter - Privacy Backed & 100% Client-Side Developer Tools",
+    seoTitle: "JSON Formatter — 100% Client-Side Private",
     seoDescription: "Free online JSON formatter and validator. Format, minify, and lint JSON data locally in your browser. No server uploads.",
     howToUse: [
       "Paste your unformatted JSON data into the editor.",
@@ -69,7 +69,7 @@ export const TOOLS_REGISTRY: Record<string, ToolMeta> = {
     name: "SQL Formatter",
     shortName: "SQL Formatter",
     description: "Format SQL queries (PostgreSQL, MySQL, SQLite, standard SQL) with proper indentation.",
-    seoTitle: "SQL Formatter Online — Format Postgres, MySQL & SQLite Queries",
+    seoTitle: "SQL Formatter — Postgres, MySQL & SQLite",
     seoDescription: "Format SQL queries online. Supports PostgreSQL, MySQL, and generic SQL dialects.",
     howToUse: [
       "Paste your unformatted SQL query.",
@@ -84,7 +84,7 @@ export const TOOLS_REGISTRY: Record<string, ToolMeta> = {
     name: "GraphQL Formatter",
     shortName: "GraphQL Formatter",
     description: "Format GraphQL queries, mutations, and schema definitions.",
-    seoTitle: "GraphQL Formatter Online — Pretty Print Queries & Schemas",
+    seoTitle: "GraphQL Formatter — Pretty Print Queries",
     seoDescription: "Format and pretty-print GraphQL queries and schemas.",
     howToUse: [
       "Paste your GraphQL query or schema.",
@@ -113,7 +113,7 @@ export const TOOLS_REGISTRY: Record<string, ToolMeta> = {
     name: "Mock Data Generator",
     shortName: "Mock Generator",
     description: "Generate thousands of rows of realistic dummy data (JSON, CSV, SQL) using Faker.js.",
-    seoTitle: "Mock Data Generator Online — Generate JSON, CSV & SQL Test Data",
+    seoTitle: "Mock Data Generator — JSON, CSV, SQL",
     seoDescription: "Generate massive amounts of realistic mock data in JSON, CSV, or SQL formats entirely in your browser using Faker.js.",
     howToUse: [
       "Define your schema using Faker template fields (e.g. {{person.firstName}}).",
@@ -129,7 +129,7 @@ export const TOOLS_REGISTRY: Record<string, ToolMeta> = {
     name: "UUID / ULID / NanoID Generator",
     shortName: "UUID Generator",
     description: "Generate cryptographically secure UUIDv4, ULID, and NanoID strings in bulk.",
-    seoTitle: "UUID & ULID Generator - Developer Tools for Privacy Backed Bulk IDs",
+    seoTitle: "UUID & ULID Generator — Privacy Bulk IDs",
     seoDescription: "Generate secure UUIDs (v4), ULIDs, and NanoIDs in bulk directly in your browser. 100% private.",
     howToUse: [
       "Select the ID format (UUIDv4, ULID, or NanoID).",
@@ -162,7 +162,7 @@ export const TOOLS_REGISTRY: Record<string, ToolMeta> = {
     name: "Base64 / Hex / Binary Multi-Inspector & Image Previewer",
     shortName: "Base64 & Hex Inspector",
     description: "Auto-detects and converts between Base64, URL-Safe Base64, Hexadecimal streams, Canonical Hex Dumps, Binary octets, and Data URL images.",
-    seoTitle: "Base64 & Hex Inspector Online — Multi-Format Converter & Hex Dump",
+    seoTitle: "Base64 & Hex Inspector — Converter & Dump",
     seoDescription: "Free, 100% private Base64, Hex, Binary, and Data URL inspector. Convert encodings, view canonical hex dumps, and preview data URL images directly in your browser.",
     howToUse: [
       "Paste any string, Base64 payload, Hex stream, Binary bits, or Data URL image into the editor.",
@@ -197,7 +197,7 @@ export const TOOLS_REGISTRY: Record<string, ToolMeta> = {
     name: "HMAC Generator",
     shortName: "HMAC Generator",
     description: "Compute Hash-based Message Authentication Codes (HMAC) using SHA256, SHA512, etc.",
-    seoTitle: "HMAC Generator Online — SHA256, SHA512 Mac Authentication",
+    seoTitle: "HMAC Generator — SHA256 & SHA512 Auth",
     seoDescription: "Generate HMAC signatures securely in your browser using a secret key and payload.",
     howToUse: [
       "Enter your secret key.",
@@ -229,7 +229,7 @@ export const TOOLS_REGISTRY: Record<string, ToolMeta> = {
     name: "X.509 Certificate & CSR Decoder",
     shortName: "Certificate Decoder",
     description: "Decode X.509 PEM certificates and PKCS#10 CSRs in your browser. Inspect Subject, Issuer, SANs, Validity countdown, and fingerprints.",
-    seoTitle: "X.509 Certificate & CSR Decoder Online — 100% Private SSL Inspector",
+    seoTitle: "X.509 & CSR Decoder — Private SSL Tool",
     seoDescription: "Decode and inspect X.509 SSL/TLS certificates and CSR requests in your browser. View Subject Alternative Names (SANs), expiry dates, fingerprints, and key usages.",
     howToUse: [
       "Paste a PEM certificate (-----BEGIN CERTIFICATE-----) or CSR (-----BEGIN CERTIFICATE REQUEST-----), or upload a .crt/.pem file.",
@@ -246,7 +246,7 @@ export const TOOLS_REGISTRY: Record<string, ToolMeta> = {
     name: "SSH Keypair Generator & Randomart Visualizer",
     shortName: "SSH Key Generator",
     description: "Generate cryptographically secure Ed25519, RSA (2048/4096), and ECDSA SSH key pairs directly in your browser with OpenSSH Randomart.",
-    seoTitle: "SSH Key Generator Online (Ed25519, RSA, ECDSA) — OpenSSH Randomart",
+    seoTitle: "SSH Key Generator — Ed25519, RSA, ECDSA",
     seoDescription: "Generate secure SSH key pairs (Ed25519, RSA 4096, ECDSA) in your browser using WebCrypto API. Download .pub and .pem keys with OpenSSH Randomart visualizer.",
     howToUse: [
       "Select your desired algorithm (Ed25519 is recommended for modern servers).",
@@ -264,7 +264,7 @@ export const TOOLS_REGISTRY: Record<string, ToolMeta> = {
     name: "JSON to TypeScript Interfaces",
     shortName: "JSON to TS",
     description: "Instantly infer TypeScript interfaces and types from a JSON payload.",
-    seoTitle: "JSON to TypeScript Converter - Privacy Backed Developer Scratchpad",
+    seoTitle: "JSON to TypeScript — Private Scratchpad",
     seoDescription: "Convert JSON payloads into strict TypeScript interfaces instantly in your browser.",
     howToUse: [
       "Paste your JSON payload into the left editor.",
@@ -308,7 +308,7 @@ export const TOOLS_REGISTRY: Record<string, ToolMeta> = {
     name: "YAML to JSON / JSON to YAML Converter",
     shortName: "YAML / JSON",
     description: "Bidirectional YAML and JSON conversion with syntax validation.",
-    seoTitle: "YAML to JSON Converter - 100% Client-Side Developer Scratchpad",
+    seoTitle: "YAML to JSON — 100% Client-Side Tool",
     seoDescription: "Convert YAML to JSON and JSON to YAML securely with our 100% offline, zero server transmission developer tools and scratch pad.",
     howToUse: [
       "Paste YAML or JSON into the left pane.",
@@ -395,7 +395,7 @@ export const TOOLS_REGISTRY: Record<string, ToolMeta> = {
     name: "Regex Tester & Matcher",
     shortName: "Regex Tester",
     description: "Real-time RegExp testing with flags (g, i, m, s), match lists, and substitution preview.",
-    seoTitle: "Regex Tester Online — Real-Time Regular Expression Testing",
+    seoTitle: "Regex Tester — Real-Time RegEx Testing",
     seoDescription: "Test regular expressions in real-time with regex flag controls, group matches, and string replacement preview.",
     howToUse: [
       "Enter your regular expression pattern and flags.",

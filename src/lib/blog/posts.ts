@@ -7,7 +7,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "cron-expression-cheat-sheet",
     title: "Cron Expression Cheat Sheet — Complete Syntax, Examples & Schedule Guide",
-    seoTitle: "Cron Expression Cheat Sheet 2026 — Syntax, Examples & Visualizer",
+    seoTitle: "Cron Cheat Sheet 2026 — Syntax & Examples",
     description: "The ultimate reference guide to cron expression syntax. Covers 5-field & 6-field formats, special characters (*, /, -, ,), common schedules, and real-world examples.",
     seoDescription: "Learn how to write, debug, and test cron expressions with our complete cheat sheet. Syntax breakdown, special characters, copy-paste examples, and free visualizer.",
     publishedAt: "2026-08-28T00:00:00Z",
@@ -179,7 +179,7 @@ Trigger an internal API health ping every 5 minutes:
   {
     slug: "regex-cheat-sheet-recipes",
     title: "Regular Expressions (Regex) Developer Cheat Sheet & Quick Recipes",
-    seoTitle: "Regex Cheat Sheet 2026 — Syntax, Flags & Copy-Paste Patterns",
+    seoTitle: "Regex Cheat Sheet 2026 — Syntax & Patterns",
     description: "Complete modern regular expression cheat sheet. Master character classes, quantifiers, lookahead, lookbehind, capturing groups, and copy-paste production recipes.",
     seoDescription: "Exhaustive developer regex cheat sheet. Syntax reference for lookaheads, non-capturing groups, flags, plus copy-paste patterns for emails, URLs, IPs, and dates.",
     publishedAt: "2026-09-03T00:00:00Z",
@@ -429,7 +429,7 @@ Content-Security-Policy: default-src 'self'; img-src 'self' data: https:;
   {
     slug: "convert-curl-to-fetch-axios",
     title: "Convert cURL to JavaScript — Fetch, Axios & Node.js Guide with Code",
-    seoTitle: "Convert cURL to Fetch & Axios (JavaScript) — Complete Guide 2026",
+    seoTitle: "cURL to Fetch & Axios — JS Guide 2026",
     description: "Learn how to convert any cURL command to native JavaScript fetch() and Axios. Covers headers, JSON bodies, bearer auth, query parameters, and error handling.",
     seoDescription: "Step-by-step developer guide to converting cURL commands to modern JavaScript fetch and Axios. Flag mappings, async/await patterns, TypeScript types, and live converter.",
     publishedAt: "2026-09-03T00:00:00Z",
@@ -578,7 +578,7 @@ try {
   {
     slug: "uuid-v4-v5-v7-explained",
     title: "UUID v4, v5, and v7 Guide: Performance, Collisions & Database Indexing",
-    seoTitle: "UUID v4 vs v5 vs v7 Explained — Performance & Database Guide 2026",
+    seoTitle: "UUID v4 vs v5 vs v7 — Database Guide 2026",
     description: "Deep dive into UUID versions (v4, v5, and the new RFC 9562 v7). Learn why UUID v7 is replacing v4 for database primary keys and B-Tree indexing.",
     seoDescription: "Comprehensive developer guide to UUID versions. Compare UUID v4 random generation vs UUID v7 time-ordered IDs for PostgreSQL, MySQL, and MongoDB performance.",
     publishedAt: "2026-09-03T00:00:00Z",
@@ -661,7 +661,7 @@ Because the timestamp comes first, UUID v7 rows are inserted monotonically at th
   {
     slug: "json-to-typescript-zod-schema-guide",
     title: "How to Auto-Generate TypeScript Types & Zod Schemas from JSON",
-    seoTitle: "Generate TypeScript Interfaces & Zod Schemas from JSON 2026",
+    seoTitle: "TS Interfaces & Zod Schemas from JSON",
     description: "Learn how to instantly convert raw JSON API payloads into strict TypeScript interfaces and runtime Zod validation schemas with zero server transmission.",
     seoDescription: "Step-by-step developer guide to converting JSON to TypeScript types and Zod schemas. Covers nested objects, array unions, optional fields, and runtime validation.",
     publishedAt: "2026-09-03T00:00:00Z",
@@ -785,7 +785,7 @@ export async function POST(request: Request) {
   {
     slug: "openssl-x509-devops-cheat-sheet",
     title: "OpenSSL Command Cheat Sheet: Generating Keys, CSRs & Inspecting Certificates",
-    seoTitle: "OpenSSL Commands Cheat Sheet 2026 — Keys, CSRs & Certificates",
+    seoTitle: "OpenSSL Cheat Sheet 2026 — Keys & Certs",
     description: "Complete OpenSSL CLI cheat sheet for DevOps and Sysadmins. Generate private keys, create Certificate Signing Requests (CSRs), verify SSL handshakes, and convert PEM to DER.",
     seoDescription: "Exhaustive OpenSSL command cheat sheet. Copy-paste terminal commands to generate RSA/Ed25519 keys, inspect certificates, check SSL expiry, and verify CA chains.",
     publishedAt: "2026-09-03T00:00:00Z",
@@ -885,7 +885,7 @@ echo | openssl s_client -servername example.com -connect example.com:443 2>/dev/
   {
     slug: "convert-curl-to-python",
     title: "How to Convert cURL Commands to Python requests — Complete Guide with Code",
-    seoTitle: "Convert cURL to Python requests — Complete Guide & Examples 2026",
+    seoTitle: "cURL to Python requests — Guide 2026",
     description: "Step-by-step guide to converting cURL commands into clean, production-ready Python requests code. Covers GET, POST, JSON, custom headers, auth, and error handling.",
     seoDescription: "Learn how to convert any cURL command into Python requests code. Step-by-step flag mapping for headers, JSON body, Basic/Bearer auth, multipart uploads, and SSL.",
     publishedAt: "2026-08-28T00:00:00Z",
@@ -986,7 +986,7 @@ print(response.status_code)
   {
     slug: "jwt-token-decode-guide",
     title: "How to Decode JWT Tokens — Complete Developer Guide & Security Reference",
-    seoTitle: "How to Decode JWT Tokens Online & Offline — Complete Guide 2026",
+    seoTitle: "Decode JWT Tokens Online & Offline 2026",
     description: "Understand the internal structure of JSON Web Tokens (JWT). Learn how to decode headers, payloads, and signatures in JavaScript, Python, and Go without external servers.",
     seoDescription: "Complete guide to JSON Web Tokens (JWT). Learn header and payload decoding, Base64URL vs Base64, standard claims (iss, exp, sub), and common security vulnerabilities.",
     publishedAt: "2026-08-28T00:00:00Z",
@@ -1045,7 +1045,7 @@ Generated by taking the encoded header, payload, and secret key to prevent tampe
   {
     slug: "password-hashing-bcrypt-argon2",
     title: "Password Hashing Guide: Bcrypt, Argon2 & PBKDF2 Explained",
-    seoTitle: "Password Hashing Guide: Bcrypt, Argon2id & PBKDF2 Explained",
+    seoTitle: "Password Hashing Guide — Bcrypt & Argon2id",
     description: "A complete developer's guide to modern password hashing. Learn the differences between Bcrypt, Argon2id, and PBKDF2, and how to choose the right cost factors.",
     seoDescription: "Learn modern password hashing best practices. Compare Bcrypt, Argon2id, and PBKDF2, understand cost factors, and test hashes with our free offline verifier.",
     publishedAt: "2026-09-01T12:00:00Z",
@@ -1908,7 +1908,7 @@ Explore more in our specific language guides: [cURL to Python Deep Dive](/blog/c
   {
     slug: "claude-code-skills-cursor-rules-guide",
     title: "The Complete Guide to Claude Code Skills (SKILL.md), Cursor Rules (.mdc), CLAUDE.md, and MCP (2026)",
-    seoTitle: "Claude Code Skills (SKILL.md), Cursor Rules (.mdc) & MCP Guide 2026",
+    seoTitle: "Claude Skills & Cursor Rules Guide 2026",
     description: "An exhaustive technical guide to modern AI agent steering: Claude Code skills (SKILL.md), Cursor modular rules (.mdc), project-root CLAUDE.md, multi-agent AGENTS.md, and Model Context Protocol (claude.json) with real-time GitHub token validation.",
     seoDescription: "Master Claude Code skills (SKILL.md), Cursor .mdc rules, CLAUDE.md, and Claude MCP server configs. Learn YAML frontmatter specs, glob scoping, GitHub PAT validation, and 100% private rule generation.",
     publishedAt: "2026-09-04T00:00:00Z",
@@ -2174,7 +2174,7 @@ Stop copy-pasting unformatted prompts between chat windows. Standardize your tea
   {
     slug: "how-to-manage-ai-rules-with-cli-guide",
     title: "How to Scaffold, Audit & Manage AI Agent Rulebooks from the Terminal (npx devscratchpad)",
-    seoTitle: "Scaffold & Audit AI Rules with npx devscratchpad (Cursor, Claude, Copilot)",
+    seoTitle: "Audit AI Rules with npx devscratchpad",
     description: "A hands-on engineering guide to automating AI IDE rulebooks (.mdc, SKILL.md, CLAUDE.md) across repositories using the zero-install devscratchpad CLI. Learn multi-runtime execution, negative constraint authoring, and rule quality audits.",
     seoDescription: "Learn how to manage, audit, and scaffold Cursor rules (.mdc), Claude Code skills (SKILL.md), and CLAUDE.md from your terminal using npx devscratchpad. 100% offline, zero dependencies.",
     publishedAt: "2026-09-09T00:00:00Z",
