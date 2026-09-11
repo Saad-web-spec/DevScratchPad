@@ -2048,11 +2048,11 @@ export function getPresetRouteMetadata(formatSlug: string, presetSlug: string): 
       url: `https://www.devscratchpad.tech/ai-skill-studio/${formatSlug}/${canonicalPresetSlug}`,
       images: [
         {
-          url: "https://www.devscratchpad.tech/og-ai-skill-studio.png",
-          secureUrl: "https://www.devscratchpad.tech/og-ai-skill-studio.png",
+          url: "https://www.devscratchpad.tech/ai-skill-studio/opengraph-image",
+          secureUrl: "https://www.devscratchpad.tech/ai-skill-studio/opengraph-image",
           width: 1200,
           height: 630,
-          alt: `${cleanTitle} — DevScratchpad`,
+          alt: `${cleanTitle} — 13 Formats & 5-Layer AI Agent Suite — DevScratchpad`,
           type: "image/png",
         },
       ],
@@ -2063,10 +2063,10 @@ export function getPresetRouteMetadata(formatSlug: string, presetSlug: string): 
       description: route.description,
       images: [
         {
-          url: "https://www.devscratchpad.tech/og-ai-skill-studio.png",
+          url: "https://www.devscratchpad.tech/ai-skill-studio/opengraph-image",
           width: 1200,
           height: 630,
-          alt: `${cleanTitle} — DevScratchpad`,
+          alt: `${cleanTitle} — 13 Formats & 5-Layer AI Agent Suite — DevScratchpad`,
         },
       ],
     },

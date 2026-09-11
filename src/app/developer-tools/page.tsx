@@ -7,34 +7,34 @@ import { SiteHeader } from "@/components/layout/SiteHeader";
 import { SiteFooter } from "@/components/layout/SiteFooter";
 
 export const metadata: Metadata = {
-  title: "Offline Developer Tools Directory",
-  description: "Explore the complete directory of 100% offline, privacy-first developer utilities. JSON formatters, cURL converters, JWT decoders, and regex testers.",
+  title: "28 Offline Developer Tools Directory",
+  description: "Explore the complete directory of 28 free offline, privacy-first developer utilities across 5 categories with bidirectional technical guides. Zero server transmission.",
   alternates: {
     canonical: "https://www.devscratchpad.tech/developer-tools",
   },
   openGraph: {
-    title: "Offline Developer Tools Directory | DevScratchpad",
-    description: "Explore the complete directory of 100% offline, privacy-first developer utilities. JSON formatters, cURL converters, JWT decoders, and regex testers.",
+    title: "28 Offline Developer Tools Directory | DevScratchpad",
+    description: "Explore the complete directory of 28 free offline, privacy-first developer utilities across 5 categories with bidirectional technical guides.",
     url: "https://www.devscratchpad.tech/developer-tools",
     images: [
       {
-        url: "https://www.devscratchpad.tech/og-ai-skill-studio.png",
+        url: "https://www.devscratchpad.tech/opengraph-image",
         width: 1200,
         height: 630,
-        alt: "Offline Developer Tools Directory — DevScratchpad",
+        alt: "28 Offline Developer Tools Directory across 5 Categories — DevScratchpad",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Offline Developer Tools Directory | DevScratchpad",
-    description: "Explore the complete directory of 100% offline, privacy-first developer utilities. JSON formatters, cURL converters, JWT decoders, and regex testers.",
+    title: "28 Offline Developer Tools Directory | DevScratchpad",
+    description: "Explore the complete directory of 28 free offline, privacy-first developer utilities across 5 categories with bidirectional technical guides.",
     images: [
       {
-        url: "https://www.devscratchpad.tech/og-ai-skill-studio.png",
+        url: "https://www.devscratchpad.tech/opengraph-image",
         width: 1200,
         height: 630,
-        alt: "Offline Developer Tools Directory — DevScratchpad",
+        alt: "28 Offline Developer Tools Directory across 5 Categories — DevScratchpad",
       },
     ],
   },

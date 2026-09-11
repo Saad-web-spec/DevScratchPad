@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowRight, BookOpen, Clock, Calendar, ChevronRight, Terminal, ArrowUpRight } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { BLOG_POSTS, LEARNING_TRACKS, QUICK_CHEATS } from "@/lib/blog/posts";
 import { SiteHeader } from "@/components/layout/SiteHeader";
 import { SiteFooter } from "@/components/layout/SiteFooter";
@@ -16,29 +16,29 @@ export const metadata: Metadata = {
   },
   openGraph: {
     title: "Developer Learning Hub & Guides | DevScratchpad",
-    description: "Exhaustive technical guides, cheat sheets, and practical reference architectures for developers.",
+    description: "Exhaustive technical guides, cheat sheets, and practical reference architectures for developers. Bidirectionally linked with 28 offline developer tools.",
     url: `${SITE_URL}/blog`,
     type: "website",
     siteName: "DevScratchpad",
     images: [
       {
-        url: "https://www.devscratchpad.tech/og-ai-skill-studio.png",
+        url: `${SITE_URL}/opengraph-image`,
         width: 1200,
         height: 630,
-        alt: "Developer Learning Hub & Engineering Guides",
+        alt: "Developer Learning Hub & Technical Guides — DevScratchpad",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
     title: "Developer Learning Hub & Guides | DevScratchpad",
-    description: "Exhaustive technical guides, cheat sheets, and practical reference architectures for developers.",
+    description: "Exhaustive technical guides, cheat sheets, and practical reference architectures for developers bidirectionally linked with 28 developer tools.",
     images: [
       {
-        url: "https://www.devscratchpad.tech/og-ai-skill-studio.png",
+        url: `${SITE_URL}/opengraph-image`,
         width: 1200,
         height: 630,
-        alt: "Developer Learning Hub & Engineering Guides",
+        alt: "Developer Learning Hub & Technical Guides — DevScratchpad",
       },
     ],
   },

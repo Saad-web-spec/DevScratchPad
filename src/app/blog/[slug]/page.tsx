@@ -66,10 +66,10 @@ export async function generateMetadata({
       tags: post.tags,
       images: [
         {
-          url: "https://www.devscratchpad.tech/og-ai-skill-studio.png",
+          url: `${SITE_URL}/opengraph-image`,
           width: 1200,
           height: 630,
-          alt: post.title,
+          alt: `${post.title} — DevScratchpad Technical Guide`,
         },
       ],
     },
@@ -79,10 +79,10 @@ export async function generateMetadata({
       description: post.seoDescription,
       images: [
         {
-          url: "https://www.devscratchpad.tech/og-ai-skill-studio.png",
+          url: `${SITE_URL}/opengraph-image`,
           width: 1200,
           height: 630,
-          alt: post.title,
+          alt: `${post.title} — DevScratchpad Technical Guide`,
         },
       ],
     },

@@ -20,10 +20,10 @@ export const metadata: Metadata = {
     url: `${SITE_URL}/about`,
     images: [
       {
-        url: "https://www.devscratchpad.tech/og-ai-skill-studio.png",
+        url: `${SITE_URL}/opengraph-image`,
         width: 1200,
         height: 630,
-        alt: "About DevScratchpad",
+        alt: "About DevScratchpad — Free Offline Developer Tools & AI Skill Studio",
       },
     ],
   },
@@ -34,10 +34,10 @@ export const metadata: Metadata = {
       "DevScratchpad is a source-available developer platform built for speed and security. Free online tools that execute 100% in-browser.",
     images: [
       {
-        url: "https://www.devscratchpad.tech/og-ai-skill-studio.png",
+        url: `${SITE_URL}/opengraph-image`,
         width: 1200,
         height: 630,
-        alt: "About DevScratchpad",
+        alt: "About DevScratchpad — Free Offline Developer Tools & AI Skill Studio",
       },
     ],
   },

@@ -63,10 +63,10 @@ export async function generateMetadata({
       siteName: "DevScratchpad",
       images: [
         {
-          url: "https://www.devscratchpad.tech/og-ai-skill-studio.png",
+          url: "https://www.devscratchpad.tech/opengraph-image",
           width: 1200,
           height: 630,
-          alt: category.name,
+          alt: `${category.name} — Free Offline Developer Tools | DevScratchpad`,
         },
       ],
     },
@@ -76,10 +76,10 @@ export async function generateMetadata({
       description: category.seoDescription,
       images: [
         {
-          url: "https://www.devscratchpad.tech/og-ai-skill-studio.png",
+          url: "https://www.devscratchpad.tech/opengraph-image",
           width: 1200,
           height: 630,
-          alt: category.name,
+          alt: `${category.name} — Free Offline Developer Tools | DevScratchpad`,
         },
       ],
     },

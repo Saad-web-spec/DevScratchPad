@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowLeft, ArrowRight, Sparkles, ShieldCheck, CheckCircle2, HelpCircle, Code, Cpu, RefreshCw, Terminal, Layers } from "lucide-react";
+import { ArrowLeft, Sparkles, HelpCircle, RefreshCw, Terminal, Layers } from "lucide-react";
 import { ConverterClient } from "./ConverterClient";
 
 export const metadata: Metadata = {
@@ -31,10 +31,10 @@ export const metadata: Metadata = {
     type: "website",
     images: [
       {
-        url: "https://www.devscratchpad.tech/og-ai-skill-studio.png",
+        url: "https://www.devscratchpad.tech/ai-skill-studio/opengraph-image",
         width: 1200,
         height: 630,
-        alt: "Universal AI Rules Converter — DevScratchpad",
+        alt: "Universal AI Rules Converter (13 Formats) — DevScratchpad",
       },
     ],
   },
@@ -45,10 +45,10 @@ export const metadata: Metadata = {
       "Free offline converter: .cursorrules to Claude SKILL.md, Windsurf Cascade, and GitHub Copilot instructions.",
     images: [
       {
-        url: "https://www.devscratchpad.tech/og-ai-skill-studio.png",
+        url: "https://www.devscratchpad.tech/ai-skill-studio/opengraph-image",
         width: 1200,
         height: 630,
-        alt: "Universal AI Rules Converter — DevScratchpad",
+        alt: "Universal AI Rules Converter (13 Formats) — DevScratchpad",
       },
     ],
   },

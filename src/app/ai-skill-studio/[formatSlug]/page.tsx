@@ -41,11 +41,11 @@ export async function generateMetadata({
       url: `https://www.devscratchpad.tech/ai-skill-studio/${hub.slug}`,
       images: [
         {
-          url: "https://www.devscratchpad.tech/og-ai-skill-studio.png",
-          secureUrl: "https://www.devscratchpad.tech/og-ai-skill-studio.png",
+          url: "https://www.devscratchpad.tech/ai-skill-studio/opengraph-image",
+          secureUrl: "https://www.devscratchpad.tech/ai-skill-studio/opengraph-image",
           width: 1200,
           height: 630,
-          alt: `${hub.seoTitle} — DevScratchpad`,
+          alt: `${hub.seoTitle} — 13 Formats & 5-Layer AI Agent Suite — DevScratchpad`,
           type: "image/png",
         },
       ],
@@ -56,10 +56,10 @@ export async function generateMetadata({
       description: hub.seoDescription,
       images: [
         {
-          url: "https://www.devscratchpad.tech/og-ai-skill-studio.png",
+          url: "https://www.devscratchpad.tech/ai-skill-studio/opengraph-image",
           width: 1200,
           height: 630,
-          alt: `${hub.seoTitle} — DevScratchpad`,
+          alt: `${hub.seoTitle} — 13 Formats & 5-Layer AI Agent Suite — DevScratchpad`,
         },
       ],
     },
@@ -309,7 +309,7 @@ export default async function FormatHubPage({
                   <div className="pt-3 border-t border-zinc-100 space-y-1.5">
                     <span className="text-[10px] font-mono uppercase tracking-wider text-zinc-500 font-medium">Enforced Invariant:</span>
                     <p className="text-[11px] text-zinc-700 line-clamp-1 italic font-medium">
-                      "{preset.keyRules[0]}"
+                      &ldquo;{preset.keyRules[0]}&rdquo;
                     </p>
                   </div>
                 )}

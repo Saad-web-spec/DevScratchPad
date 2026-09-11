@@ -1,6 +1,6 @@
 import { ImageResponse } from 'next/og'
 
-export const alt = 'DevScratchpad — Free Offline Developer Tools & AI Skill Studio (13 Formats, 5-Layer Agent Suite, 28 Tools)'
+export const alt = 'AI Skill Studio — 13 Formats & 5-Layer AI Agent Suite | DevScratchpad'
 export const size = { width: 1200, height: 630 }
 export const contentType = 'image/png'
 
@@ -29,7 +29,7 @@ export default function Image() {
             width: '100%',
           }}
         >
-          {/* Brand Logo & Name */}
+          {/* Brand Logo & Studio Name */}
           <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'center' }}>
             <div
               style={{
@@ -48,16 +48,16 @@ export default function Image() {
               </svg>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column' }}>
-              <div style={{ display: 'flex', fontSize: 32, fontWeight: 800, color: '#ffffff', letterSpacing: '-0.03em' }}>
+              <div style={{ display: 'flex', fontSize: 30, fontWeight: 800, color: '#ffffff', letterSpacing: '-0.03em' }}>
                 DevScratchpad
               </div>
               <div style={{ display: 'flex', fontSize: 13, fontWeight: 600, color: '#ea580c', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
-                devscratchpad.tech
+                devscratchpad.tech/ai-skill-studio
               </div>
             </div>
           </div>
 
-          {/* Offline Privacy Badge */}
+          {/* 100% Client-Side Privacy Pill */}
           <div
             style={{
               display: 'flex',
@@ -99,36 +99,36 @@ export default function Image() {
           style={{
             display: 'flex',
             flexDirection: 'column',
-            marginTop: 12,
-            marginBottom: 12,
+            marginTop: 10,
+            marginBottom: 10,
           }}
         >
           <div
             style={{
               display: 'flex',
-              fontSize: 48,
-              fontWeight: 800,
-              color: '#ffffff',
-              letterSpacing: '-0.03em',
-              lineHeight: 1.15,
+              fontSize: 14,
+              fontWeight: 700,
+              color: '#f97316',
+              letterSpacing: '0.08em',
+              textTransform: 'uppercase',
+              marginBottom: 8,
             }}
           >
-            Free Offline Developer Workbench
+            Universal AI Agent Spec & Context Studio
           </div>
           <div
             style={{
               display: 'flex',
-              fontSize: 48,
+              fontSize: 50,
               fontWeight: 800,
-              color: '#ea580c',
+              color: '#ffffff',
               letterSpacing: '-0.03em',
               lineHeight: 1.15,
-              marginBottom: 14,
+              marginBottom: 12,
             }}
           >
-            & Universal AI Skill Studio
+            AI Skill Studio
           </div>
-
           <div
             style={{
               display: 'flex',
@@ -139,7 +139,7 @@ export default function Image() {
               maxWidth: 980,
             }}
           >
-            Privacy-first toolkit for modern engineering teams. Generate 5-layer AI agent suites, convert rules across 13 formats, and use 28 offline developer tools.
+            Generate, validate, and convert production-grade agent configurations across 13 formats and full 5-layer agent context suites with zero server uploads.
           </div>
         </div>
 
@@ -165,13 +165,13 @@ export default function Image() {
             }}
           >
             <div style={{ display: 'flex', fontSize: 12, fontWeight: 700, color: '#f97316', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>
-              13 AI Agent Formats
+              13 AI Formats
             </div>
             <div style={{ display: 'flex', fontSize: 17, fontWeight: 700, color: '#ffffff', marginBottom: 4 }}>
-              Cursor .mdc & Claude SKILL.md
+              Cross-IDE Rule Generator
             </div>
             <div style={{ display: 'flex', fontSize: 13, color: '#a1a1aa', lineHeight: 1.3 }}>
-              CLAUDE.md, AGENTS.md, MCP, Windsurf, Copilot, Gemini & OpenAI
+              Cursor .mdc, Claude SKILL.md, CLAUDE.md, AGENTS.md, MCP JSON, Windsurf, Copilot, Gemini & OpenAI
             </div>
           </div>
 
@@ -195,11 +195,11 @@ export default function Image() {
               Context Shields & Specs
             </div>
             <div style={{ display: 'flex', fontSize: 13, color: '#a1a1aa', lineHeight: 1.3 }}>
-              .cursorignore, .claudeignore, llms.txt, ARCHITECTURE.md & rules
+              .cursorignore, .claudeignore, llms.txt, ARCHITECTURE.md & Universal Rules Converter
             </div>
           </div>
 
-          {/* Card 3: 28 Tools & CLI */}
+          {/* Card 3: 333+ Presets & CLI */}
           <div
             style={{
               flex: 1,
@@ -212,13 +212,13 @@ export default function Image() {
             }}
           >
             <div style={{ display: 'flex', fontSize: 12, fontWeight: 700, color: '#d4d4d8', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>
-              28 Tools • 5 Categories
+              333+ Presets & CLI
             </div>
             <div style={{ display: 'flex', fontSize: 17, fontWeight: 700, color: '#ffffff', marginBottom: 4 }}>
               CLI: npx devscratchpad
             </div>
             <div style={{ display: 'flex', fontSize: 13, color: '#a1a1aa', lineHeight: 1.3 }}>
-              Formatters, converters, crypto, JWT decoders & blog guides
+              Next.js 15, React 19, Tailwind v4, Python, Go, Rust, TypeScript & Fullstack recipes
             </div>
           </div>
         </div>
