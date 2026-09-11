@@ -32,6 +32,7 @@
     color: #09090b;
     border-bottom: 1px solid #f4f4f5;
     padding-bottom: 0.4em;
+    scroll-margin-top: 5.5rem;
   }
   .prose h3 {
     font-size: 1.125rem;
@@ -41,6 +42,7 @@
     font-weight: 600;
     letter-spacing: -0.015em;
     color: #18181b;
+    scroll-margin-top: 5.5rem;
   }
   .prose h4 {
     font-size: 1rem;
@@ -48,6 +50,7 @@
     margin-bottom: 0.4em;
     font-weight: 600;
     color: #18181b;
+    scroll-margin-top: 5.5rem;
   }
   .prose ul {
     margin-top: 0.8em;

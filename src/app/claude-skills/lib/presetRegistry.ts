@@ -9,7 +9,11 @@ export type OutputFormat =
   | "windsurf_cascade"
   | "copilot_instructions"
   | "openai_instructions"
-  | "gemini_prompts";
+  | "gemini_prompts"
+  | "cursorignore"
+  | "claudeignore"
+  | "llms_txt"
+  | "architecture_md";
 
 export interface ProgrammaticPresetRoute {
   formatSlug: string;
@@ -1899,6 +1903,26 @@ function synthesizeRouteForFormat(
     targetFile = "prompts/gemini-system-instructions.json";
     title = `${baseRoute.techName} Gemini System Prompt`;
     desc = `Generate Google AI Studio and Gemini SDK system instructions for ${baseRoute.techName}.`;
+  } else if (formatSlug === "cursorignore") {
+    format = "cursorignore";
+    targetFile = ".cursorignore";
+    title = `${baseRoute.techName} .cursorignore Shield`;
+    desc = `Generate an optimized .cursorignore for ${baseRoute.techName} to mask secrets and stop token bloat.`;
+  } else if (formatSlug === "claudeignore") {
+    format = "claudeignore";
+    targetFile = ".claudeignore";
+    title = `${baseRoute.techName} .claudeignore Shield`;
+    desc = `Generate a .claudeignore boundary configuration for ${baseRoute.techName} in Claude Code CLI.`;
+  } else if (formatSlug === "llms-txt") {
+    format = "llms_txt";
+    targetFile = "llms.txt";
+    title = `${baseRoute.techName} llms.txt Roadmap`;
+    desc = `Generate a standardized machine-readable llms.txt codebase index for ${baseRoute.techName}.`;
+  } else if (formatSlug === "architecture-md") {
+    format = "architecture_md";
+    targetFile = "ARCHITECTURE.md";
+    title = `${baseRoute.techName} ARCHITECTURE.md Specification`;
+    desc = `Generate an AI-optimized ARCHITECTURE.md invariant specification for ${baseRoute.techName}.`;
   }
 
   return {
@@ -1938,6 +1962,10 @@ export function getAllDynamicPresetRoutes(): { formatSlug: string; presetSlug: s
     "copilot-instructions",
     "openai-instructions",
     "gemini-prompts",
+    "cursorignore",
+    "claudeignore",
+    "llms-txt",
+    "architecture-md",
   ];
   for (const fmt of codeFormats) {
     for (const slug of BASE_CODE_SLUGS) {
@@ -1968,6 +1996,10 @@ export function getPresetRouteMetadata(formatSlug: string, presetSlug: string): 
   else if (formatSlug === "copilot-instructions" || formatSlug === "copilot") formatSuffix = "Copilot Instructions";
   else if (formatSlug === "openai-instructions" || formatSlug === "openai") formatSuffix = "OpenAI Instructions";
   else if (formatSlug === "gemini-prompts" || formatSlug === "gemini") formatSuffix = "Gemini Prompt";
+  else if (formatSlug === "cursorignore") formatSuffix = ".cursorignore Shield";
+  else if (formatSlug === "claudeignore") formatSuffix = ".claudeignore Shield";
+  else if (formatSlug === "llms-txt") formatSuffix = "llms.txt Map";
+  else if (formatSlug === "architecture-md") formatSuffix = "ARCHITECTURE.md Spec";
 
   // Clean and simplify tech name for crisp, predictable SERP title
   const cleanTech = route.techName

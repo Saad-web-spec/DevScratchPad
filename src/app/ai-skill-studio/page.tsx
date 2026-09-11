@@ -4,9 +4,9 @@ import { ClaudeSkillsClient } from "../claude-skills/ClaudeSkillsClient";
 import { AiSkillStudioSeoContent } from "./AiSkillStudioSeoContent";
 
 export const metadata: Metadata = {
-  title: "AI Skill Studio — Cursor & Claude Rules",
+  title: "AI Skill Studio — 5-Layer AI Agent Suite & Rules",
   description:
-    "AI Skill Studio: Free online generator for Cursor Rules (.mdc), Claude Code Skills (SKILL.md), CLAUDE.md, AGENTS.md, and MCP configs. Enforce architectural guardrails with 100% offline privacy.",
+    "AI Skill Studio: Free online generator for Cursor Rules (.mdc), Claude Skills (SKILL.md), Context Shields (.cursorignore, .claudeignore), llms.txt, and ARCHITECTURE.md specs. 100% offline privacy.",
   alternates: {
     canonical: "https://www.devscratchpad.tech/ai-skill-studio",
   },
@@ -25,6 +25,10 @@ export const metadata: Metadata = {
     "CLAUDE.md generator",
     "AGENTS.md builder",
     "cursor mdc rules",
+    "cursorignore generator",
+    "claudeignore generator",
+    "llms.txt generator",
+    "ARCHITECTURE.md generator",
     "MCP config generator",
     "model context protocol generator",
     "claude code skill template",
@@ -33,9 +37,9 @@ export const metadata: Metadata = {
     "offline cursor rules generator",
   ],
   openGraph: {
-    title: "AI Skill Studio — Cursor & Claude Rules | DevScratchpad",
+    title: "AI Skill Studio — 5-Layer AI Agent Suite & Rules | DevScratchpad",
     description:
-      "AI Skill Studio: Free online generator for Cursor Rules (.mdc), Claude Code Skills (SKILL.md), CLAUDE.md, AGENTS.md, and MCP configs. Enforce architectural guardrails with 100% offline privacy.",
+      "AI Skill Studio: Free online generator for Cursor Rules (.mdc), Claude Skills (SKILL.md), Context Shields (.cursorignore, .claudeignore), llms.txt, and ARCHITECTURE.md specs. 100% offline privacy.",
     url: "https://www.devscratchpad.tech/ai-skill-studio",
     siteName: "DevScratchpad",
     locale: "en_US",
@@ -53,9 +57,9 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "AI Skill Studio — Cursor & Claude Rules | DevScratchpad",
+    title: "AI Skill Studio — 5-Layer AI Agent Suite & Rules | DevScratchpad",
     description:
-      "AI Skill Studio: Free online generator for Cursor Rules (.mdc), Claude Code Skills (SKILL.md), CLAUDE.md, AGENTS.md, and MCP configs. Enforce architectural guardrails with 100% offline privacy.",
+      "AI Skill Studio: Free online generator for Cursor Rules (.mdc), Claude Skills (SKILL.md), Context Shields (.cursorignore, .claudeignore), llms.txt, and ARCHITECTURE.md specs. 100% offline privacy.",
     images: [
       {
         url: "https://www.devscratchpad.tech/og-ai-skill-studio.png",
@@ -75,7 +79,7 @@ const jsonLdGraph = {
       "@id": "https://www.devscratchpad.tech/ai-skill-studio#webapp",
       name: "AI Skill Studio",
       description:
-        "Generate production-grade AI agent configuration files for Claude Code (SKILL.md), Cursor IDE (.cursor/rules/*.mdc), Anthropic CLAUDE.md, and AGENTS.md multi-agent systems.",
+        "Generate production-grade AI agent configuration files for Claude Code (SKILL.md), Cursor IDE (.cursor/rules/*.mdc), Anthropic CLAUDE.md, AGENTS.md, .cursorignore, .claudeignore, llms.txt, and ARCHITECTURE.md.",
       url: "https://www.devscratchpad.tech/ai-skill-studio",
       applicationCategory: "DeveloperApplication",
       operatingSystem: "Any",
@@ -90,9 +94,11 @@ const jsonLdGraph = {
         "Cursor IDE .cursor/rules/*.mdc modular rulebook builder",
         "Anthropic project root CLAUDE.md generator",
         "Multi-agent protocol AGENTS.md generator",
+        ".cursorignore & .claudeignore context shields to mask secrets and eliminate token bloat",
+        "llms.txt and ARCHITECTURE.md machine documentation blueprints",
         "100% client-side privacy with zero server uploads",
         "Package manifest ingestion for package.json, Cargo.toml, pyproject.toml, and go.mod",
-        "Unified AI suite ZIP archive exporter",
+        "Unified 5-layer AI suite ZIP archive exporter and terminal CLI",
       ],
     },
     {

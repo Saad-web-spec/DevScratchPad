@@ -1957,7 +1957,7 @@ This comprehensive guide breaks down modern AI agent steering architecture in 20
 
 ---
 
-<div class="my-8 p-6 rounded-2xl border border-orange-300 bg-gradient-to-r from-orange-50/90 via-amber-50/50 to-white shadow-xs">
+<div class="my-8 p-6 rounded-2xl border border-orange-300 bg-gradient-to-r from-orange-50/90 via-amber-50/50 to-white shadow-xs" data-toc-ignore>
   <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-5">
     <div class="space-y-2">
       <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-orange-600 text-white shadow-xs">
@@ -1966,9 +1966,9 @@ This comprehensive guide breaks down modern AI agent steering architecture in 20
         <span class="text-orange-200">|</span>
         <span>How to Use on Our AI Skill Studio Site</span>
       </div>
-      <h3 class="text-lg sm:text-xl font-bold text-zinc-900 m-0 tracking-tight">
+      <p class="text-lg sm:text-xl font-bold text-zinc-900 m-0 tracking-tight" data-toc-ignore>
         Build Your Production AI Agent Configuration in 60 Seconds
-      </h3>
+      </p>
       <p class="text-xs sm:text-sm text-zinc-600 m-0 leading-relaxed max-w-xl">
         Generate production-grade <code>SKILL.md</code>, <code>CLAUDE.md</code>, Cursor <code>.mdc</code>, and <code>AGENTS.md</code> files with 100% client-side privacy. Zero server transmission. Zero API keys required.
       </p>
@@ -2222,7 +2222,7 @@ The **DevScratchpad CLI (\`npx devscratchpad\`)** eliminates manual prompt manag
 
 ---
 
-<div class="my-8 p-6 rounded-2xl border border-orange-300 bg-gradient-to-r from-orange-50/90 via-amber-50/50 to-white shadow-xs">
+<div class="my-8 p-6 rounded-2xl border border-orange-300 bg-gradient-to-r from-orange-50/90 via-amber-50/50 to-white shadow-xs" data-toc-ignore>
   <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-5">
     <div class="space-y-2">
       <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-orange-600 text-white shadow-xs">
@@ -2231,9 +2231,9 @@ The **DevScratchpad CLI (\`npx devscratchpad\`)** eliminates manual prompt manag
         <span class="text-orange-200">|</span>
         <span>Live Web Companion</span>
       </div>
-      <h3 class="text-lg sm:text-xl font-bold text-zinc-900 m-0 tracking-tight">
+      <p class="text-lg sm:text-xl font-bold text-zinc-900 m-0 tracking-tight" data-toc-ignore>
         Try the Headless Terminal AI Engine in Your Browser
-      </h3>
+      </p>
       <p class="text-xs sm:text-sm text-zinc-600 m-0 leading-relaxed max-w-xl">
         Explore command execution, switch between 6 assistant formats and 8 technology presets, and test live terminal outputs directly on our dedicated CLI page.
       </p>

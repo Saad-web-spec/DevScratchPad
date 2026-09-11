@@ -288,7 +288,7 @@ export default async function BlogPostPage({
 
               {/* Mobile Table of Contents */}
               <div className="block lg:hidden">
-                <TableOfContents />
+                <TableOfContents isMobile />
               </div>
 
           {/* Interactive Preset Sandbox (if provided) */}
@@ -410,7 +410,7 @@ export default async function BlogPostPage({
           </div> {/* End Left Column */}
 
           {/* Right Column: Sticky Sidebar TOC */}
-          <div className="hidden lg:block w-72 shrink-0 sticky top-24">
+          <div className="hidden lg:block w-72 shrink-0 sticky top-20 self-start">
             <TableOfContents />
           </div>
 

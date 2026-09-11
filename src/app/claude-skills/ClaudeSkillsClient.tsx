@@ -1125,6 +1125,10 @@ export function ClaudeSkillsClient({
         copilotContent: format === "copilot_instructions" && isManuallyEdited ? editorContent : buildContent("copilot_instructions"),
         openaiContent: format === "openai_instructions" && isManuallyEdited ? editorContent : buildContent("openai_instructions"),
         geminiContent: format === "gemini_prompts" && isManuallyEdited ? editorContent : buildContent("gemini_prompts"),
+        cursorignoreContent: format === "cursorignore" && isManuallyEdited ? editorContent : buildContent("cursorignore"),
+        claudeignoreContent: format === "claudeignore" && isManuallyEdited ? editorContent : buildContent("claudeignore"),
+        llmsTxtContent: format === "llms_txt" && isManuallyEdited ? editorContent : buildContent("llms_txt"),
+        architectureMdContent: format === "architecture_md" && isManuallyEdited ? editorContent : buildContent("architecture_md"),
         framework,
         language,
       });
@@ -1194,6 +1198,10 @@ export function ClaudeSkillsClient({
       copilot_instructions: "copilot-instructions",
       openai_instructions: "openai-instructions",
       gemini_prompts: "gemini-prompts",
+      cursorignore: "cursorignore",
+      claudeignore: "claudeignore",
+      llms_txt: "llms-txt",
+      architecture_md: "architecture-md",
     };
     return formatSlugMap[format] || "cursor-rules";
   }, [format]);
@@ -1235,6 +1243,10 @@ export function ClaudeSkillsClient({
     if (format === "copilot_instructions") return ".github/copilot-instructions.md";
     if (format === "openai_instructions") return "prompts/openai-custom-instructions.md";
     if (format === "gemini_prompts") return "prompts/gemini-system-instructions.json";
+    if (format === "cursorignore") return ".cursorignore";
+    if (format === "claudeignore") return ".claudeignore";
+    if (format === "llms_txt") return "llms.txt";
+    if (format === "architecture_md") return "ARCHITECTURE.md";
     return "AGENTS.md";
   }, [activePresetSlug, selectedPresetId, activeFormatSlug, isManuallyEdited, format, skillName]);
 
@@ -1444,6 +1456,22 @@ export function ClaudeSkillsClient({
       filename = "claude.json";
       mimeType = "application/json;charset=utf-8;";
     }
+    if (format === "cursorignore") {
+      filename = ".cursorignore";
+      mimeType = "text/plain;charset=utf-8;";
+    }
+    if (format === "claudeignore") {
+      filename = ".claudeignore";
+      mimeType = "text/plain;charset=utf-8;";
+    }
+    if (format === "llms_txt") {
+      filename = "llms.txt";
+      mimeType = "text/plain;charset=utf-8;";
+    }
+    if (format === "architecture_md") {
+      filename = "ARCHITECTURE.md";
+      mimeType = "text/markdown;charset=utf-8;";
+    }
 
     const blob = new Blob([activeContent], { type: mimeType });
     const url = URL.createObjectURL(blob);
@@ -1463,6 +1491,10 @@ export function ClaudeSkillsClient({
     if (format === "claude_md") return "CLAUDE.md";
     if (format === "cursor_mdc") return `.cursor/rules/${safeSkill}.mdc`;
     if (format === "mcp_json") return "claude.json (mcpServers)";
+    if (format === "cursorignore") return ".cursorignore";
+    if (format === "claudeignore") return ".claudeignore";
+    if (format === "llms_txt") return "llms.txt";
+    if (format === "architecture_md") return "ARCHITECTURE.md";
     return "AGENTS.md";
   }, [format, skillName]);
 
@@ -1607,166 +1639,260 @@ export function ClaudeSkillsClient({
           mobileTab === "editor" ? "hidden lg:block" : "block"
         )}>
           {/* Format Selector Card */}
-          <div className="bg-white rounded-xl border border-zinc-200 p-3.5 sm:p-4 shadow-xs">
-            <label className="text-xs font-bold uppercase tracking-wider text-zinc-500 mb-2.5 flex flex-col sm:flex-row sm:items-center justify-between gap-0.5">
-              <span>Target Standard & File Format</span>
-              <span className="text-[10px] text-zinc-400 font-normal">Select AI runtime</span>
-            </label>
-            <div suppressHydrationWarning className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-5 gap-2">
-              <button
-                suppressHydrationWarning
-                onClick={() => setFormat("cursor_mdc")}
-                className={cn(
-                  "p-2 sm:p-2.5 rounded-lg border text-left transition-all flex flex-col gap-1 overflow-hidden",
-                  format === "cursor_mdc"
-                    ? "border-black bg-zinc-950 text-white shadow-sm ring-1 ring-black"
-                    : "border-zinc-200 bg-white hover:bg-zinc-50 text-zinc-700"
-                )}
-              >
-                <div className="flex items-center gap-1.5 font-semibold text-xs truncate">
-                  <img src="/cursor-icon.png" alt="Cursor" className="w-3.5 h-3.5 object-contain shrink-0" />
-                  <span className="truncate">.cursorrules</span>
-                </div>
-                <span className={cn("text-[10px] leading-tight truncate", format === "cursor_mdc" ? "text-zinc-400" : "text-zinc-500")}>
-                  Cursor .mdc Rules
-                </span>
-              </button>
+          <div className="bg-white rounded-xl border border-zinc-200 p-3.5 sm:p-4 shadow-xs space-y-3.5">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-0.5 border-b border-zinc-100 pb-2">
+              <span className="text-xs font-bold uppercase tracking-wider text-zinc-600">Target Standard & File Format</span>
+              <span className="text-[10px] text-zinc-400 font-normal">Select runtime specification</span>
+            </div>
 
-              <button
-                suppressHydrationWarning
-                onClick={() => setFormat("skill_md")}
-                className={cn(
-                  "p-2 sm:p-2.5 rounded-lg border text-left transition-all flex flex-col gap-1 overflow-hidden",
-                  format === "skill_md"
-                    ? "border-orange-500 bg-orange-50/60 text-orange-950 shadow-xs ring-1 ring-orange-500/20"
-                    : "border-zinc-200 bg-white hover:bg-zinc-50 text-zinc-700"
-                )}
-              >
-                <div className="flex items-center gap-1.5 font-semibold text-xs truncate">
-                  <img src="/ai-skill-icon.png" alt="Claude" className="w-3.5 h-3.5 object-contain shrink-0" />
-                  <span className="truncate">SKILL.md</span>
-                </div>
-                <span className="text-[10px] text-zinc-500 leading-tight truncate">Claude Code / Skill</span>
-              </button>
+            {/* Group 1: AI Agent Rules & Skills */}
+            <div className="space-y-1.5">
+              <div className="text-[10px] font-semibold tracking-wider uppercase text-zinc-400 flex items-center gap-1.5">
+                <Bot className="w-3 h-3 text-orange-500" />
+                <span>AI Agent Rules & Skills</span>
+              </div>
+              <div suppressHydrationWarning className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                <button
+                  suppressHydrationWarning
+                  onClick={() => setFormat("cursor_mdc")}
+                  className={cn(
+                    "p-2 rounded-lg border text-left transition-all flex flex-col gap-1 overflow-hidden",
+                    format === "cursor_mdc"
+                      ? "border-black bg-zinc-950 text-white shadow-sm ring-1 ring-black"
+                      : "border-zinc-200 bg-white hover:bg-zinc-50 text-zinc-700"
+                  )}
+                >
+                  <div className="flex items-center gap-1.5 font-semibold text-xs truncate">
+                    <img src="/cursor-icon.png" alt="Cursor" className="w-3.5 h-3.5 object-contain shrink-0" />
+                    <span className="truncate">.cursorrules</span>
+                  </div>
+                  <span className={cn("text-[10px] leading-tight truncate", format === "cursor_mdc" ? "text-zinc-400" : "text-zinc-500")}>
+                    Cursor .mdc Rules
+                  </span>
+                </button>
 
-              <button
-                suppressHydrationWarning
-                onClick={() => setFormat("claude_md")}
-                className={cn(
-                  "p-2 sm:p-2.5 rounded-lg border text-left transition-all flex flex-col gap-1 overflow-hidden",
-                  format === "claude_md"
-                    ? "border-amber-500 bg-amber-50/60 text-amber-950 shadow-xs ring-1 ring-amber-500/20"
-                    : "border-zinc-200 bg-white hover:bg-zinc-50 text-zinc-700"
-                )}
-              >
-                <div className="flex items-center gap-1.5 font-semibold text-xs truncate">
-                  <img src="/claude-icon.png" alt="Claude" className="w-3.5 h-3.5 object-contain shrink-0" />
-                  <span className="truncate">CLAUDE.md</span>
-                </div>
-                <span className="text-[10px] text-zinc-500 leading-tight truncate">Root Guidelines</span>
-              </button>
+                <button
+                  suppressHydrationWarning
+                  onClick={() => setFormat("skill_md")}
+                  className={cn(
+                    "p-2 rounded-lg border text-left transition-all flex flex-col gap-1 overflow-hidden",
+                    format === "skill_md"
+                      ? "border-orange-500 bg-orange-50/60 text-orange-950 shadow-xs ring-1 ring-orange-500/20"
+                      : "border-zinc-200 bg-white hover:bg-zinc-50 text-zinc-700"
+                  )}
+                >
+                  <div className="flex items-center gap-1.5 font-semibold text-xs truncate">
+                    <img src="/ai-skill-icon.png" alt="Claude" className="w-3.5 h-3.5 object-contain shrink-0" />
+                    <span className="truncate">SKILL.md</span>
+                  </div>
+                  <span className="text-[10px] text-zinc-500 leading-tight truncate">Claude Code / Skill</span>
+                </button>
 
-              <button
-                suppressHydrationWarning
-                onClick={() => setFormat("agents_md")}
-                className={cn(
-                  "p-2 sm:p-2.5 rounded-lg border text-left transition-all flex flex-col gap-1 overflow-hidden",
-                  format === "agents_md"
-                    ? "border-emerald-600 bg-emerald-50/60 text-emerald-950 shadow-xs ring-1 ring-emerald-600/20"
-                    : "border-zinc-200 bg-white hover:bg-zinc-50 text-zinc-700"
-                )}
-              >
-                <div className="flex items-center gap-1.5 font-semibold text-xs truncate">
-                  <Cpu className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                  <span className="truncate">AGENTS.md</span>
-                </div>
-                <span className="text-[10px] text-zinc-500 leading-tight truncate">Multi-Agent</span>
-              </button>
+                <button
+                  suppressHydrationWarning
+                  onClick={() => setFormat("claude_md")}
+                  className={cn(
+                    "p-2 rounded-lg border text-left transition-all flex flex-col gap-1 overflow-hidden",
+                    format === "claude_md"
+                      ? "border-amber-500 bg-amber-50/60 text-amber-950 shadow-xs ring-1 ring-amber-500/20"
+                      : "border-zinc-200 bg-white hover:bg-zinc-50 text-zinc-700"
+                  )}
+                >
+                  <div className="flex items-center gap-1.5 font-semibold text-xs truncate">
+                    <img src="/claude-icon.png" alt="Claude" className="w-3.5 h-3.5 object-contain shrink-0" />
+                    <span className="truncate">CLAUDE.md</span>
+                  </div>
+                  <span className="text-[10px] text-zinc-500 leading-tight truncate">Root Guidelines</span>
+                </button>
 
-              <button
-                suppressHydrationWarning
-                onClick={() => setFormat("mcp_json")}
-                className={cn(
-                  "p-2 sm:p-2.5 rounded-lg border text-left transition-all flex flex-col gap-1 overflow-hidden",
-                  format === "mcp_json"
-                    ? "border-blue-500 bg-blue-50/60 text-blue-950 shadow-xs ring-1 ring-blue-500/20"
-                    : "border-zinc-200 bg-white hover:bg-zinc-50 text-zinc-700"
-                )}
-              >
-                <div className="flex items-center gap-1.5 font-semibold text-xs truncate">
-                  <Server className="w-3.5 h-3.5 text-blue-600 shrink-0" />
-                  <span className="truncate">claude.json</span>
-                </div>
-                <span className="text-[10px] text-zinc-500 leading-tight truncate">MCP Servers</span>
-              </button>
+                <button
+                  suppressHydrationWarning
+                  onClick={() => setFormat("agents_md")}
+                  className={cn(
+                    "p-2 rounded-lg border text-left transition-all flex flex-col gap-1 overflow-hidden",
+                    format === "agents_md"
+                      ? "border-emerald-600 bg-emerald-50/60 text-emerald-950 shadow-xs ring-1 ring-emerald-600/20"
+                      : "border-zinc-200 bg-white hover:bg-zinc-50 text-zinc-700"
+                  )}
+                >
+                  <div className="flex items-center gap-1.5 font-semibold text-xs truncate">
+                    <Cpu className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                    <span className="truncate">AGENTS.md</span>
+                  </div>
+                  <span className="text-[10px] text-zinc-500 leading-tight truncate">Multi-Agent</span>
+                </button>
 
-              <button
-                suppressHydrationWarning
-                onClick={() => setFormat("windsurf_cascade")}
-                className={cn(
-                  "p-2 sm:p-2.5 rounded-lg border text-left transition-all flex flex-col gap-1 overflow-hidden",
-                  format === "windsurf_cascade"
-                    ? "border-teal-500 bg-teal-50/60 text-teal-950 shadow-xs ring-1 ring-teal-500/20"
-                    : "border-zinc-200 bg-white hover:bg-zinc-50 text-zinc-700"
-                )}
-              >
-                <div className="flex items-center gap-1.5 font-semibold text-xs truncate">
-                  <WindsurfIcon className="w-3.5 h-3.5 text-teal-700 shrink-0" />
-                  <span className="truncate">Windsurf</span>
-                </div>
-                <span className="text-[10px] text-zinc-500 leading-tight truncate">Cascade Rules</span>
-              </button>
+                <button
+                  suppressHydrationWarning
+                  onClick={() => setFormat("windsurf_cascade")}
+                  className={cn(
+                    "p-2 rounded-lg border text-left transition-all flex flex-col gap-1 overflow-hidden",
+                    format === "windsurf_cascade"
+                      ? "border-teal-500 bg-teal-50/60 text-teal-950 shadow-xs ring-1 ring-teal-500/20"
+                      : "border-zinc-200 bg-white hover:bg-zinc-50 text-zinc-700"
+                  )}
+                >
+                  <div className="flex items-center gap-1.5 font-semibold text-xs truncate">
+                    <WindsurfIcon className="w-3.5 h-3.5 text-teal-700 shrink-0" />
+                    <span className="truncate">Windsurf</span>
+                  </div>
+                  <span className="text-[10px] text-zinc-500 leading-tight truncate">Cascade Rules</span>
+                </button>
 
-              <button
-                suppressHydrationWarning
-                onClick={() => setFormat("copilot_instructions")}
-                className={cn(
-                  "p-2 sm:p-2.5 rounded-lg border text-left transition-all flex flex-col gap-1 overflow-hidden",
-                  format === "copilot_instructions"
-                    ? "border-sky-500 bg-sky-50/60 text-sky-950 shadow-xs ring-1 ring-sky-500/20"
-                    : "border-zinc-200 bg-white hover:bg-zinc-50 text-zinc-700"
-                )}
-              >
-                <div className="flex items-center gap-1.5 font-semibold text-xs truncate">
-                  <CopilotIcon className="w-3.5 h-3.5 text-sky-600 shrink-0" />
-                  <span className="truncate">Copilot</span>
-                </div>
-                <span className="text-[10px] text-zinc-500 leading-tight truncate">Instructions</span>
-              </button>
+                <button
+                  suppressHydrationWarning
+                  onClick={() => setFormat("copilot_instructions")}
+                  className={cn(
+                    "p-2 rounded-lg border text-left transition-all flex flex-col gap-1 overflow-hidden",
+                    format === "copilot_instructions"
+                      ? "border-sky-500 bg-sky-50/60 text-sky-950 shadow-xs ring-1 ring-sky-500/20"
+                      : "border-zinc-200 bg-white hover:bg-zinc-50 text-zinc-700"
+                  )}
+                >
+                  <div className="flex items-center gap-1.5 font-semibold text-xs truncate">
+                    <CopilotIcon className="w-3.5 h-3.5 text-sky-600 shrink-0" />
+                    <span className="truncate">Copilot</span>
+                  </div>
+                  <span className="text-[10px] text-zinc-500 leading-tight truncate">Instructions</span>
+                </button>
 
-              <button
-                suppressHydrationWarning
-                onClick={() => setFormat("openai_instructions")}
-                className={cn(
-                  "p-2 sm:p-2.5 rounded-lg border text-left transition-all flex flex-col gap-1 overflow-hidden",
-                  format === "openai_instructions"
-                    ? "border-purple-500 bg-purple-50/60 text-purple-950 shadow-xs ring-1 ring-purple-500/20"
-                    : "border-zinc-200 bg-white hover:bg-zinc-50 text-zinc-700"
-                )}
-              >
-                <div className="flex items-center gap-1.5 font-semibold text-xs truncate">
-                  <OpenAIIcon className="w-3.5 h-3.5 text-purple-700 dark:text-purple-300 shrink-0" />
-                  <span className="truncate">OpenAI</span>
-                </div>
-                <span className="text-[10px] text-zinc-500 leading-tight truncate">Custom System</span>
-              </button>
+                <button
+                  suppressHydrationWarning
+                  onClick={() => setFormat("openai_instructions")}
+                  className={cn(
+                    "p-2 rounded-lg border text-left transition-all flex flex-col gap-1 overflow-hidden",
+                    format === "openai_instructions"
+                      ? "border-purple-500 bg-purple-50/60 text-purple-950 shadow-xs ring-1 ring-purple-500/20"
+                      : "border-zinc-200 bg-white hover:bg-zinc-50 text-zinc-700"
+                  )}
+                >
+                  <div className="flex items-center gap-1.5 font-semibold text-xs truncate">
+                    <OpenAIIcon className="w-3.5 h-3.5 text-purple-700 dark:text-purple-300 shrink-0" />
+                    <span className="truncate">OpenAI</span>
+                  </div>
+                  <span className="text-[10px] text-zinc-500 leading-tight truncate">Custom System</span>
+                </button>
 
-              <button
-                suppressHydrationWarning
-                onClick={() => setFormat("gemini_prompts")}
-                className={cn(
-                  "p-2 sm:p-2.5 rounded-lg border text-left transition-all flex flex-col gap-1 overflow-hidden",
-                  format === "gemini_prompts"
-                    ? "border-indigo-500 bg-indigo-50/60 text-indigo-950 shadow-xs ring-1 ring-indigo-500/20"
-                    : "border-zinc-200 bg-white hover:bg-zinc-50 text-zinc-700"
-                )}
-              >
-                <div className="flex items-center gap-1.5 font-semibold text-xs truncate">
-                  <GeminiIcon className="w-3.5 h-3.5 shrink-0" />
-                  <span className="truncate">Gemini</span>
-                </div>
-                <span className="text-[10px] text-zinc-500 leading-tight truncate">System Prompts</span>
-              </button>
+                <button
+                  suppressHydrationWarning
+                  onClick={() => setFormat("gemini_prompts")}
+                  className={cn(
+                    "p-2 rounded-lg border text-left transition-all flex flex-col gap-1 overflow-hidden",
+                    format === "gemini_prompts"
+                      ? "border-indigo-500 bg-indigo-50/60 text-indigo-950 shadow-xs ring-1 ring-indigo-500/20"
+                      : "border-zinc-200 bg-white hover:bg-zinc-50 text-zinc-700"
+                  )}
+                >
+                  <div className="flex items-center gap-1.5 font-semibold text-xs truncate">
+                    <GeminiIcon className="w-3.5 h-3.5 shrink-0" />
+                    <span className="truncate">Gemini</span>
+                  </div>
+                  <span className="text-[10px] text-zinc-500 leading-tight truncate">System Prompts</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Group 2: Context Shields & Privacy (Ignore Files) */}
+            <div className="space-y-1.5 pt-2 border-t border-zinc-100">
+              <div className="text-[10px] font-semibold tracking-wider uppercase text-zinc-400 flex items-center gap-1.5">
+                <ShieldCheck className="w-3 h-3 text-emerald-600" />
+                <span>Context Shields & Privacy (Ignore Files)</span>
+              </div>
+              <div suppressHydrationWarning className="grid grid-cols-2 gap-2">
+                <button
+                  suppressHydrationWarning
+                  onClick={() => setFormat("cursorignore")}
+                  className={cn(
+                    "p-2 rounded-lg border text-left transition-all flex flex-col gap-1 overflow-hidden",
+                    format === "cursorignore"
+                      ? "border-emerald-600 bg-emerald-50/60 text-emerald-950 shadow-xs ring-1 ring-emerald-600/20"
+                      : "border-zinc-200 bg-white hover:bg-zinc-50 text-zinc-700"
+                  )}
+                >
+                  <div className="flex items-center gap-1.5 font-semibold text-xs truncate">
+                    <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                    <span className="truncate">.cursorignore</span>
+                  </div>
+                  <span className="text-[10px] text-zinc-500 leading-tight truncate">Token & Secret Shield</span>
+                </button>
+
+                <button
+                  suppressHydrationWarning
+                  onClick={() => setFormat("claudeignore")}
+                  className={cn(
+                    "p-2 rounded-lg border text-left transition-all flex flex-col gap-1 overflow-hidden",
+                    format === "claudeignore"
+                      ? "border-amber-600 bg-amber-50/60 text-amber-950 shadow-xs ring-1 ring-amber-600/20"
+                      : "border-zinc-200 bg-white hover:bg-zinc-50 text-zinc-700"
+                  )}
+                >
+                  <div className="flex items-center gap-1.5 font-semibold text-xs truncate">
+                    <ShieldCheck className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                    <span className="truncate">.claudeignore</span>
+                  </div>
+                  <span className="text-[10px] text-zinc-500 leading-tight truncate">CLI Boundary Shield</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Group 3: Integrations & Machine Documentation */}
+            <div className="space-y-1.5 pt-2 border-t border-zinc-100">
+              <div className="text-[10px] font-semibold tracking-wider uppercase text-zinc-400 flex items-center gap-1.5">
+                <FileText className="w-3 h-3 text-blue-600" />
+                <span>Integrations & Machine Documentation</span>
+              </div>
+              <div suppressHydrationWarning className="grid grid-cols-3 gap-2">
+                <button
+                  suppressHydrationWarning
+                  onClick={() => setFormat("mcp_json")}
+                  className={cn(
+                    "p-2 rounded-lg border text-left transition-all flex flex-col gap-1 overflow-hidden",
+                    format === "mcp_json"
+                      ? "border-blue-500 bg-blue-50/60 text-blue-950 shadow-xs ring-1 ring-blue-500/20"
+                      : "border-zinc-200 bg-white hover:bg-zinc-50 text-zinc-700"
+                  )}
+                >
+                  <div className="flex items-center gap-1.5 font-semibold text-xs truncate">
+                    <Server className="w-3.5 h-3.5 text-blue-600 shrink-0" />
+                    <span className="truncate">claude.json</span>
+                  </div>
+                  <span className="text-[10px] text-zinc-500 leading-tight truncate">MCP Servers</span>
+                </button>
+
+                <button
+                  suppressHydrationWarning
+                  onClick={() => setFormat("llms_txt")}
+                  className={cn(
+                    "p-2 rounded-lg border text-left transition-all flex flex-col gap-1 overflow-hidden",
+                    format === "llms_txt"
+                      ? "border-indigo-500 bg-indigo-50/60 text-indigo-950 shadow-xs ring-1 ring-indigo-500/20"
+                      : "border-zinc-200 bg-white hover:bg-zinc-50 text-zinc-700"
+                  )}
+                >
+                  <div className="flex items-center gap-1.5 font-semibold text-xs truncate">
+                    <FileText className="w-3.5 h-3.5 text-indigo-600 shrink-0" />
+                    <span className="truncate">llms.txt</span>
+                  </div>
+                  <span className="text-[10px] text-zinc-500 leading-tight truncate">Codebase Roadmap</span>
+                </button>
+
+                <button
+                  suppressHydrationWarning
+                  onClick={() => setFormat("architecture_md")}
+                  className={cn(
+                    "p-2 rounded-lg border text-left transition-all flex flex-col gap-1 overflow-hidden",
+                    format === "architecture_md"
+                      ? "border-purple-500 bg-purple-50/60 text-purple-950 shadow-xs ring-1 ring-purple-500/20"
+                      : "border-zinc-200 bg-white hover:bg-zinc-50 text-zinc-700"
+                  )}
+                >
+                  <div className="flex items-center gap-1.5 font-semibold text-xs truncate">
+                    <Layers className="w-3.5 h-3.5 text-purple-600 shrink-0" />
+                    <span className="truncate">ARCHITECTURE.md</span>
+                  </div>
+                  <span className="text-[10px] text-zinc-500 leading-tight truncate">System Invariants</span>
+                </button>
+              </div>
             </div>
           </div>
 
@@ -3170,6 +3296,8 @@ export function ClaudeSkillsClient({
                       ? "JSON"
                       : format === "cursor_mdc"
                       ? "MDC"
+                      : format === "cursorignore" || format === "claudeignore"
+                      ? "IGNORE"
                       : "Markdown"}
                   </span>
                 </span>
@@ -3219,6 +3347,14 @@ export function ClaudeSkillsClient({
                 <OpenAIIcon className="w-3.5 h-3.5 text-purple-700 dark:text-purple-300" />
               ) : format === "gemini_prompts" ? (
                 <GeminiIcon className="w-3.5 h-3.5" />
+              ) : format === "cursorignore" ? (
+                <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+              ) : format === "claudeignore" ? (
+                <ShieldCheck className="w-3.5 h-3.5 text-amber-600" />
+              ) : format === "llms_txt" ? (
+                <FileText className="w-3.5 h-3.5 text-indigo-600" />
+              ) : format === "architecture_md" ? (
+                <Layers className="w-3.5 h-3.5 text-purple-600" />
               ) : (
                 <FolderGit2 className={cn("w-3.5 h-3.5", format === "skill_md" ? "text-orange-500" : "text-zinc-800")} />
               )}
@@ -3267,6 +3403,26 @@ export function ClaudeSkillsClient({
             {format === "gemini_prompts" && (
               <p className="text-zinc-500 text-xs leading-relaxed">
                 Save in <code className="bg-zinc-100 px-1 py-0.5 rounded text-zinc-800 font-mono text-[11px]">prompts/gemini-system-instructions.json</code> for Google AI Studio / Gemini API SDK system instructions configuration.
+              </p>
+            )}
+            {format === "cursorignore" && (
+              <p className="text-zinc-500 text-xs leading-relaxed">
+                Save as <code className="bg-zinc-100 px-1 py-0.5 rounded text-zinc-800 font-mono text-[11px]">.cursorignore</code> in project root. Masks credentials and excludes build caches and bulky lockfiles to save 50k+ tokens.
+              </p>
+            )}
+            {format === "claudeignore" && (
+              <p className="text-zinc-500 text-xs leading-relaxed">
+                Save as <code className="bg-zinc-100 px-1 py-0.5 rounded text-zinc-800 font-mono text-[11px]">.claudeignore</code> in project root. Prevents Claude Code CLI from reading or modifying restricted directories.
+              </p>
+            )}
+            {format === "llms_txt" && (
+              <p className="text-zinc-500 text-xs leading-relaxed">
+                Save as <code className="bg-zinc-100 px-1 py-0.5 rounded text-zinc-800 font-mono text-[11px]">llms.txt</code> in project root or domain root. Standardized machine-readable orientation for LLMs and autonomous agents.
+              </p>
+            )}
+            {format === "architecture_md" && (
+              <p className="text-zinc-500 text-xs leading-relaxed">
+                Save as <code className="bg-zinc-100 px-1 py-0.5 rounded text-zinc-800 font-mono text-[11px]">ARCHITECTURE.md</code> in repository root. Establishes non-negotiable data flow and system state invariants.
               </p>
             )}
           </div>

@@ -23,7 +23,7 @@ export const FORMAT_HUBS: Record<string, FormatHubMeta> = {
     slug: "cursor-rules",
     format: "cursor_mdc",
     name: "Cursor Rules (.mdc)",
-    badge: "Cursor IDE",
+    badge: "Cursor Rules",
     targetFile: "<rule-name>.mdc",
     targetDir: ".cursor/rules/",
     seoTitle: "Cursor Rules (.mdc) Generator",
@@ -93,7 +93,7 @@ alwaysApply: false
     slug: "claude-skills",
     format: "skill_md",
     name: "Claude Code Skills (SKILL.md)",
-    badge: "Claude Code CLI",
+    badge: "Claude Skill",
     targetFile: "SKILL.md",
     targetDir: ".claude/skills/<skill-name>/",
     seoTitle: "Claude Skills (SKILL.md) Generator",
@@ -152,7 +152,7 @@ description: Audit codebases for security vulnerabilities, dead code, and archit
     slug: "claude-md",
     format: "claude_md",
     name: "CLAUDE.md Repository Guidelines",
-    badge: "Claude CLI & Desktop",
+    badge: "CLAUDE.md",
     targetFile: "CLAUDE.md",
     targetDir: "./ (Repository Root)",
     seoTitle: "CLAUDE.md Guide & Generator",
@@ -207,7 +207,7 @@ description: Audit codebases for security vulnerabilities, dead code, and archit
     slug: "agents-md",
     format: "agents_md",
     name: "AGENTS.md Multi-Agent Rules",
-    badge: "Autonomous Agents",
+    badge: "AGENTS.md",
     targetFile: "AGENTS.md",
     targetDir: "./ (Repository Root)",
     seoTitle: "AGENTS.md Multi-Agent Rules",
@@ -249,7 +249,7 @@ Every agent task must be verified with:
     slug: "mcp-config",
     format: "mcp_json",
     name: "Model Context Protocol (MCP)",
-    badge: "MCP Servers",
+    badge: "MCP Config",
     targetFile: "claude_desktop_config.json",
     targetDir: "~/Library/Application Support/Claude/ or %APPDATA%/Claude/",
     seoTitle: "MCP Server Config Generator",
@@ -311,7 +311,7 @@ Every agent task must be verified with:
     slug: "windsurf-rules",
     format: "windsurf_cascade",
     name: "Windsurf Cascade Rules",
-    badge: "Windsurf IDE",
+    badge: "Windsurf",
     targetFile: "<rule-name>.md",
     targetDir: ".windsurf/rules/",
     seoTitle: "Windsurf Cascade Rules Generator | Free & Offline",
@@ -361,7 +361,7 @@ Every agent task must be verified with:
     slug: "copilot-instructions",
     format: "copilot_instructions",
     name: "GitHub Copilot Instructions",
-    badge: "GitHub Copilot",
+    badge: "Copilot",
     targetFile: "copilot-instructions.md",
     targetDir: ".github/",
     seoTitle: "GitHub Copilot Instructions Generator (.github/copilot-instructions.md)",
@@ -407,7 +407,7 @@ Every agent task must be verified with:
     slug: "openai-instructions",
     format: "openai_instructions",
     name: "OpenAI Custom Instructions",
-    badge: "ChatGPT & OpenAI",
+    badge: "OpenAI",
     targetFile: "openai-custom-instructions.md",
     targetDir: "prompts/",
     seoTitle: "OpenAI Custom Instructions & System Prompts Generator",
@@ -451,7 +451,7 @@ Provide concise code diffs without boilerplate fluff.`
     slug: "gemini-prompts",
     format: "gemini_prompts",
     name: "Gemini System Instructions",
-    badge: "Google Gemini",
+    badge: "Gemini",
     targetFile: "gemini-system-instructions.json",
     targetDir: "prompts/",
     seoTitle: "Gemini API System Instructions Generator (JSON)",
@@ -468,31 +468,212 @@ Provide concise code diffs without boilerplate fluff.`
     ],
     syntaxHighlights: [
       {
-        title: "Structured JSON System Instruction",
-        explanation: "Gemini API requires a JSON object with system_instruction parts for developer instructions.",
+        title: "Standardized Gemini JSON Schema",
+        explanation: "Configure model behavior and system_instruction parts directly.",
         codeSample: `{
   "system_instruction": {
-    "parts": [{ "text": "You are a Senior Systems Architect..." }]
-  },
-  "generation_config": {
-    "temperature": 0.2
+    "parts": [{ "text": "You are a Senior Systems Engineer..." }]
   }
 }`
       }
     ],
     bestPractices: [
-      "Keep generation temperature low (0.1 - 0.3) for deterministic, type-safe code synthesis.",
-      "Anchor verification rules into system instruction parts so Gemini checks edge cases.",
-      "Store system instruction JSON in `prompts/` and load dynamically in backend API routes."
+      "Keep system_instruction parts declarative and concise.",
+      "Specify deterministic guidelines to reduce sampling variance.",
+      "Store schemas in `prompts/` alongside your application source code."
     ],
     faqs: [
       {
-        question: "How do I load this JSON in the Google Gen AI SDK?",
-        answer: "In the Gemini Node or Python SDK, parse the JSON and pass `config.system_instruction` into `ai.models.generateContent()`."
+        question: "How do I use this with Gemini SDK?",
+        answer: "Import the generated JSON and pass it directly to `systemInstruction` when calling `googleAI.getGenerativeModel()`."
+      }
+    ]
+  },
+  "cursorignore": {
+    slug: "cursorignore",
+    format: "cursorignore",
+    name: ".cursorignore Shield",
+    badge: ".cursorignore",
+    targetFile: ".cursorignore",
+    targetDir: "./ (Repository Root)",
+    seoTitle: ".cursorignore Generator — Mask Secrets & Stop Token Bloat",
+    seoDescription: "Generate production-grade .cursorignore files. Prevent Cursor from indexing secrets, build caches, and bulky lockfiles to optimize AI context window tokens.",
+    heroHeading: ".cursorignore Context Shield Generator",
+    heroSubheading: "Mask credentials, filter build artifacts, and save 50,000+ context tokens per prompt in Cursor IDE.",
+    overview: ".cursorignore functions like a .gitignore exclusively for Cursor's AI indexing engine. By excluding build outputs (.next, dist, target), lockfiles (package-lock.json), test fixtures, and secret files (.env, *.pem), you prevent sensitive credentials from leaking into prompts while dramatically reducing context window bloat and improving model reasoning speed.",
+    filePlacementGuide: [
+      {
+        path: "./.cursorignore",
+        scope: "Repository Root",
+        description: "Excludes paths from codebase indexing, codebase chat search, and background agent context scanning."
+      }
+    ],
+    syntaxHighlights: [
+      {
+        title: "Credential & Secret Masking",
+        explanation: "Keep private keys and API tokens out of LLM prompts.",
+        codeSample: `# Secrets & Credentials
+.env*
+!.env.example
+*.pem
+*.key
+service-account*.json`
       },
       {
-        question: "Can I paste this into Google AI Studio?",
-        answer: "Yes, copy the `system_instruction.parts[0].text` string into the System Instructions drawer in Google AI Studio."
+        title: "Lockfile & Build Cache Suppression",
+        explanation: "Lockfiles alone can consume 40,000+ context tokens, degrading reasoning.",
+        codeSample: `# Dependency Bloat
+node_modules/
+package-lock.json
+pnpm-lock.yaml
+yarn.lock`
+      }
+    ],
+    bestPractices: [
+      "Always place .cursorignore in your repository root next to .gitignore.",
+      "Mask all .env files and service account JSON credentials to eliminate data leakage.",
+      "Exclude massive lockfiles (package-lock.json, Cargo.lock) to keep context tokens reserved for code.",
+      "Ignore coverage reports, build artifacts, and source maps."
+    ],
+    faqs: [
+      {
+        question: "Does .cursorignore replace .gitignore?",
+        answer: "No. .gitignore controls what git tracks in version control, while .cursorignore specifically controls what Cursor's AI indexes and reads for context."
+      },
+      {
+        question: "Why should I ignore lockfiles in .cursorignore?",
+        answer: "Lockfiles often contain tens of thousands of lines of package hashes. If indexed by the AI, they exhaust context window limits and cause the model to hallucinate or miss relevant application code."
+      }
+    ]
+  },
+  "claudeignore": {
+    slug: "claudeignore",
+    format: "claudeignore",
+    name: ".claudeignore Shield",
+    badge: ".claudeignore",
+    targetFile: ".claudeignore",
+    targetDir: "./ (Repository Root)",
+    seoTitle: ".claudeignore Generator — Claude Code CLI Privacy Shield",
+    seoDescription: "Generate tailored .claudeignore files for Claude Code CLI. Prevent terminal AI agents from reading private credentials, build artifacts, and vendor files.",
+    heroHeading: ".claudeignore Privacy & Boundary Generator",
+    heroSubheading: "Establish strict inspection and modification boundaries for Anthropic's Claude Code terminal agent.",
+    overview: "Claude Code automatically respects .claudeignore at your project root. When running autonomous workflows or codebase refactors, .claudeignore ensures Claude Code never inspects, greps, or modifies restricted directories, local secrets, or compiled artifacts.",
+    filePlacementGuide: [
+      {
+        path: "./.claudeignore",
+        scope: "Repository Root",
+        description: "Specifies directory and file patterns that Claude Code CLI will never read, search, or edit."
+      }
+    ],
+    syntaxHighlights: [
+      {
+        title: "Terminal Agent Boundary Control",
+        explanation: "Restricts Claude Code from touching sensitive configuration or temporary data.",
+        codeSample: `# Claude Code CLI Boundaries
+.env*
+secrets/
+coverage/
+*.log`
+      }
+    ],
+    bestPractices: [
+      "Add .claudeignore to project root before launching Claude Code terminal sessions.",
+      "Ignore large generated databases (sqlite.db) and test fixtures to keep agent searches fast.",
+      "Combine with CLAUDE.md for comprehensive guidance and boundary enforcement."
+    ],
+    faqs: [
+      {
+        question: "How does Claude Code detect .claudeignore?",
+        answer: "Claude Code automatically searches for .claudeignore in the current working directory upon initialization."
+      }
+    ]
+  },
+  "llms-txt": {
+    slug: "llms-txt",
+    format: "llms_txt",
+    name: "llms.txt Codebase Roadmap",
+    badge: "llms.txt",
+    targetFile: "llms.txt",
+    targetDir: "./ (Repository Root / Domain Root)",
+    seoTitle: "llms.txt Generator — Machine-Readable Codebase Roadmaps",
+    seoDescription: "Generate standardized llms.txt and llms-full.txt files. Provide clean, concise markdown roadmaps optimized for LLM ingestion and autonomous agents.",
+    heroHeading: "llms.txt Codebase Roadmap Generator",
+    heroSubheading: "Provide AI coding assistants with a clean, concise, machine-readable index of your architecture, rules, and APIs.",
+    overview: "The llms.txt specification is an open standard designed to make websites and repositories easily ingestible by Large Language Models. Placing an llms.txt file in your repository or web root provides a curated index of documentation, architectural patterns, and core constraints formatted in concise Markdown without unnecessary HTML or UI fluff.",
+    filePlacementGuide: [
+      {
+        path: "./llms.txt",
+        scope: "Repository Root or Domain Root (https://example.com/llms.txt)",
+        description: "Primary orientation index read by agents, search engines, and web-crawling LLMs."
+      }
+    ],
+    syntaxHighlights: [
+      {
+        title: "Standardized llms.txt Markdown Format",
+        explanation: "H1 Title, blockquote summary, and structured sections with bullet points.",
+        codeSample: `# Project Name
+
+> Brief machine-readable orientation for LLMs.
+
+## Core Invariants
+- Enforce strict typing with zero runtime any.
+- All mutations flow through Server Actions.`
+      }
+    ],
+    bestPractices: [
+      "Keep llms.txt brief and high-density (under 200 lines) so it consumes minimal prompt tokens.",
+      "Link to deeper specification files like ARCHITECTURE.md or AGENTS.md for complex submodules.",
+      "Update llms.txt whenever major framework versions or API contracts change."
+    ],
+    faqs: [
+      {
+        question: "What is llms.txt?",
+        answer: "llms.txt is a standardized proposal created to provide LLMs with concise, markdown-formatted information about a project or website, eliminating HTML scraping overhead."
+      },
+      {
+        question: "Can I serve llms.txt on my website?",
+        answer: "Yes! Serving https://yourdomain.com/llms.txt allows AI assistants (like Perplexity, Cursor, or ChatGPT) to quickly understand your developer documentation."
+      }
+    ]
+  },
+  "architecture-md": {
+    slug: "architecture-md",
+    format: "architecture_md",
+    name: "ARCHITECTURE.md Specification",
+    badge: "ARCHITECTURE.md",
+    targetFile: "ARCHITECTURE.md",
+    targetDir: "./ (Repository Root)",
+    seoTitle: "ARCHITECTURE.md Generator for AI Coding Agents",
+    seoDescription: "Generate production-grade ARCHITECTURE.md documents. Define data flows, state invariants, and negative architectural guardrails for AI coding assistants.",
+    heroHeading: "ARCHITECTURE.md System Spec Generator",
+    heroSubheading: "Teach AI agents your system architecture, unidirectional data flows, and non-negotiable boundaries.",
+    overview: "AI coding agents frequently propose solutions that work in isolation but violate broader architectural patterns. ARCHITECTURE.md establishes high-level invariants: state management boundaries, data mutation rules, service contracts, and forbidden anti-patterns that every AI agent must obey before proposing code changes.",
+    filePlacementGuide: [
+      {
+        path: "./ARCHITECTURE.md",
+        scope: "Repository Root",
+        description: "Authoritative architectural blueprint read by AI pair programmers and human engineers alike."
+      }
+    ],
+    syntaxHighlights: [
+      {
+        title: "State Flow & Boundary Directives",
+        explanation: "Defines unidirectional data flows and schema validation gates.",
+        codeSample: `## Data Flow & State Management
+1. Unidirectional flow: state flows top-down.
+2. Boundary validation: all inputs validated with Zod.
+3. Surgical edits: preserve surrounding code.`
+      }
+    ],
+    bestPractices: [
+      "Document architectural invariants rather than fleeting implementation details.",
+      "Explicitly list anti-patterns that AI models commonly attempt to introduce.",
+      "Keep the document updated during major architectural refactors."
+    ],
+    faqs: [
+      {
+        question: "How is ARCHITECTURE.md different from CLAUDE.md or .cursorrules?",
+        answer: "CLAUDE.md and .cursorrules contain editor-specific triggers and commands. ARCHITECTURE.md provides deep architectural principles, data flows, and invariant contracts that apply across all tools."
       }
     ]
   }

@@ -9,7 +9,11 @@ export type OutputFormat =
   | "windsurf_cascade"
   | "copilot_instructions"
   | "openai_instructions"
-  | "gemini_prompts";
+  | "gemini_prompts"
+  | "cursorignore"
+  | "claudeignore"
+  | "llms_txt"
+  | "architecture_md";
 
 export interface McpServerPreset {
   id: string;
@@ -1375,6 +1379,222 @@ export function deduceLangTag(language?: string): string {
   return "ts";
 }
 
+export function buildCursorIgnoreContent(framework: string, language: string): string {
+  const fw = (framework || "").toLowerCase();
+  const lang = (language || "").toLowerCase();
+
+  const specificIgnores: string[] = [];
+
+  if (
+    fw.includes("next") ||
+    fw.includes("react") ||
+    fw.includes("vue") ||
+    fw.includes("nuxt") ||
+    fw.includes("svelte") ||
+    fw.includes("hono") ||
+    fw.includes("express") ||
+    lang.includes("typescript") ||
+    lang.includes("javascript")
+  ) {
+    specificIgnores.push(
+      "# --- Web Bundler, Framework & TypeScript Caches ---",
+      ".next/",
+      ".turbo/",
+      "out/",
+      "dist/",
+      "build/",
+      ".vercel/",
+      "coverage/",
+      "*.tsbuildinfo"
+    );
+  }
+
+  if (
+    fw.includes("python") ||
+    fw.includes("fastapi") ||
+    fw.includes("django") ||
+    lang.includes("python")
+  ) {
+    specificIgnores.push(
+      "# --- Python Bytecode & Virtual Environments ---",
+      "__pycache__/",
+      "*.py[cod]",
+      "*$py.class",
+      ".venv/",
+      "venv/",
+      "env/",
+      ".pytest_cache/",
+      ".mypy_cache/",
+      ".ruff_cache/",
+      "*.egg-info/",
+      "dist/",
+      "build/"
+    );
+  }
+
+  if (fw.includes("rust") || lang.includes("rust")) {
+    specificIgnores.push(
+      "# --- Rust Cargo Build Artifacts ---",
+      "target/",
+      "**/*.rs.bk"
+    );
+  }
+
+  if (fw.includes("go") || lang.includes("go")) {
+    specificIgnores.push(
+      "# --- Go Binaries & Test Artifacts ---",
+      "bin/",
+      "*.test",
+      "*.prof"
+    );
+  }
+
+  return `# .cursorignore - AI Context & Token Optimization
+# Prevents Cursor from indexing sensitive credentials, build caches, and bulky lockfiles.
+# Keeping your AI context window clean improves reasoning quality and prevents data leaks.
+
+# --- Critical: Secrets & Local Credentials ---
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.cert
+*.crt
+id_rsa*
+secrets/
+credentials/
+service-account*.json
+
+${specificIgnores.length > 0 ? specificIgnores.join("\n") + "\n\n" : ""}# --- Dependency Bloat & Massive Lockfiles (Saves 50k+ tokens) ---
+node_modules/
+vendor/
+package-lock.json
+pnpm-lock.yaml
+yarn.lock
+bun.lockb
+poetry.lock
+Pipfile.lock
+Cargo.lock
+
+# --- Test Coverage & Debug Logs ---
+coverage/
+.nyc_output/
+*.log
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+
+# --- Editor Metadata & OS Caches ---
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# --- Large Binary Files & Media (Never needed by LLM) ---
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.ico
+*.mp4
+*.webm
+*.zip
+*.tar.gz
+*.pdf
+*.wasm
+`;
+}
+
+export function buildClaudeIgnoreContent(framework: string, language: string): string {
+  const base = buildCursorIgnoreContent(framework, language);
+  return base
+    .replace(
+      "# .cursorignore - AI Context & Token Optimization",
+      "# .claudeignore - Claude Code CLI Privacy & Boundary Protection"
+    )
+    .replace(
+      "Prevents Cursor from indexing",
+      "Prevents Claude Code CLI from indexing and modifying"
+    );
+}
+
+export function buildLlmsTxtContent(
+  params: RuleBuilderParams,
+  conventions: string[],
+  behaviors: string[],
+  procedures: string
+): string {
+  const { framework, language, styling, database, philosophy, skillTitle, description, customDirectives } = params;
+  return `# ${skillTitle.trim() || framework || "Project Architecture Roadmap"}
+
+> ${description.trim().replace(/\n+/g, " ") || "Standardized machine-readable codebase roadmap for AI agents, LLMs, and autonomous tools."}
+
+## Quick Reference
+- **Framework**: ${framework}
+- **Language**: ${language}
+${styling ? `- **Styling & UI**: ${styling}\n` : ""}${database ? `- **Database / Persistence**: ${database}\n` : ""}- **Architectural Philosophy**: ${philosophy}
+
+## Core Architectural Invariants
+${conventions.length > 0 ? conventions.join("\n") : "- Maintain strict typing and clear boundary contracts.\n- Prefer declarative, pure helper functions for data mutations."}
+
+## Operational Guardrails & Prohibited Patterns
+${behaviors.length > 0 ? behaviors.join("\n") : "- Provide surgical, focused diffs; never reformat unrelated files.\n- Never delete existing test coverage or weaken type constraints."}
+
+${customDirectives.trim() ? `## Mandatory Project Directives\n${customDirectives.trim()}\n\n` : ""}## Verification Commands & Workflows
+${procedures.trim() || "- Run automated test suite and linter before declaring any task complete."}
+
+## Context Documents & Specs
+- [System Architecture](ARCHITECTURE.md): Authoritative system design, data flows, and state machine invariants.
+- [AI Multi-Agent Spec](AGENTS.md): Universal specification for autonomous coding agent operations.
+`;
+}
+
+export function buildArchitectureMdContent(
+  params: RuleBuilderParams,
+  conventions: string[],
+  behaviors: string[],
+  procedures: string
+): string {
+  const { framework, language, styling, database, philosophy, skillTitle, description, customDirectives, exampleGood, exampleBad } = params;
+  const langTag = deduceLangTag(language);
+  return `# System Architecture & Invariants: ${skillTitle.trim() || framework}
+
+## 1. System Overview
+${description.trim() || `Authoritative architectural blueprint for ${framework} application developed with AI pair programming.`}
+All AI agents operating within this repository must adhere strictly to these architectural boundaries.
+
+### Technology Stack
+- **Framework**: ${framework}
+- **Language Standard**: ${language}
+- **UI & Styling**: ${styling}
+- **Data Persistence**: ${database}
+- **Engineering Philosophy**: ${philosophy}
+
+## 2. Core Architectural Invariants
+${conventions.length > 0 ? conventions.join("\n") : "- Enforce strict type checking and zero runtime `any` types.\n- Keep business logic cleanly isolated from UI presentation layers."}
+
+## 3. Data Flow & State Management Principles
+1. **Unidirectional Data Flow**: State flows top-down; mutations flow through explicit, typed handlers.
+2. **Boundary Validation**: External inputs (API payloads, query parameters, environment variables) must be parsed with strict schemas before reaching domain logic.
+3. **Surgical Precision**: Diffs must remain minimal and scoped exclusively to the objective. Do not reformat unrelated code.
+
+## 4. Forbidden Anti-Patterns & Operational Guardrails
+${behaviors.length > 0 ? behaviors.join("\n") : "- Never mutate state directly without action handlers.\n- Never commit credentials or modify .env files."}
+
+${customDirectives.trim() ? `## 5. Domain-Specific Invariants\n${customDirectives.trim()}\n` : ""}${
+  exampleGood.trim() || exampleBad.trim()
+    ? `\n## 6. Implementation Reference Patterns\n\n### Preferred Pattern\n\`\`\`${langTag}\n${exampleGood.trim()}\n\`\`\`\n\n### Forbidden Anti-Pattern\n\`\`\`${langTag}\n${exampleBad.trim()}\n\`\`\`\n`
+    : ""
+}
+## 7. Verification Protocol
+Before finalizing any implementation:
+${procedures.trim() || "1. Run typecheck and linting.\n2. Execute automated test suite.\n3. Verify zero regressions."}
+`;
+}
+
 export interface RuleBuilderParams {
   targetFormat: OutputFormat;
   skillName: string;
@@ -1440,6 +1660,22 @@ export function buildRuleContent(params: RuleBuilderParams): string {
     .map((cId) => CONVENTION_OPTIONS.find((c) => c.id === cId))
     .filter(Boolean)
     .map((c) => `- **${c!.label}**: ${c!.desc}`);
+
+  if (targetFormat === "cursorignore") {
+    return buildCursorIgnoreContent(framework, language);
+  }
+
+  if (targetFormat === "claudeignore") {
+    return buildClaudeIgnoreContent(framework, language);
+  }
+
+  if (targetFormat === "llms_txt") {
+    return buildLlmsTxtContent(params, selectedConventionTexts, selectedBehaviorTexts, procedures);
+  }
+
+  if (targetFormat === "architecture_md") {
+    return buildArchitectureMdContent(params, selectedConventionTexts, selectedBehaviorTexts, procedures);
+  }
 
   if (targetFormat === "skill_md") {
     const safeSkillName = (skillName || "custom-skill").trim().replace(/[^a-zA-Z0-9._-]/g, "-").toLowerCase() || "custom-skill";
