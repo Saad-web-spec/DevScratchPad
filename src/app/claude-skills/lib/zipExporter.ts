@@ -24,8 +24,9 @@ export interface ZipExportOptions {
  * Builds and triggers download of a complete AI configuration kit in a single .zip archive.
  */
 export async function downloadAiKitZip(options: ZipExportOptions): Promise<void> {
-  const JSZip = (await import("jszip")).default;
-  const zip = new JSZip();
+  const jszipModule = await import("jszip");
+  const JSZip = jszipModule.default || jszipModule;
+  const zip = new (JSZip as any)();
   const rawSkillName = options.skillName || "ai-rule";
   const posixSafeSkillName = rawSkillName.replace(/[^a-zA-Z0-9._-]/g, "-");
   const slug = generateSafeSlug(posixSafeSkillName).replace(/[^a-zA-Z0-9._-]/g, "-") || "ai-rule";
