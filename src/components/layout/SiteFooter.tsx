@@ -62,6 +62,7 @@ export function SiteFooter() {
               <li><Link href="/blog/cron-expression-cheat-sheet" className="hover:text-zinc-900 transition-colors">Cron Expression Cheat Sheet</Link></li>
               <li><Link href="/blog/convert-curl-to-python" className="hover:text-zinc-900 transition-colors">cURL to Python requests</Link></li>
               <li><Link href="/blog/jwt-token-decode-guide" className="hover:text-zinc-900 transition-colors">JWT Token Security Guide</Link></li>
+              <li><Link href="/recipes" className="hover:text-zinc-900 transition-colors">Troubleshooting Recipes</Link></li>
               <li><Link href="/blog" className="font-medium text-zinc-900 hover:text-zinc-600 transition-colors">View All Guides →</Link></li>
             </ul>
           </div>

@@ -1,5 +1,6 @@
 import { MetadataRoute } from "next";
 import { TOOL_SLUGS } from "@/lib/tools/registry";
+import { RECIPE_SLUGS } from "@/lib/recipes/registry";
 import { getAllCategories } from "@/lib/tools/categories";
 import { BLOG_SLUGS } from "@/lib/blog/posts";
 import { ROUTES } from "@/lib/routes";
@@ -15,6 +16,14 @@ export default function sitemap(): MetadataRoute.Sitemap {
     changeFrequency: "weekly" as const,
     priority: 0.8,
   }));
+
+  const recipeRoutes = RECIPE_SLUGS.map((slug) => ({
+    url: `${SITE_URL}${ROUTES.recipe(slug)}`,
+    lastModified: new Date(),
+    changeFrequency: "weekly" as const,
+    priority: 0.9,
+  }));
+
 
   const blogIndex = {
     url: `${SITE_URL}/blog`,
@@ -113,10 +122,17 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: "weekly" as const,
       priority: 0.9,
     },
+    {
+      url: `${SITE_URL}/recipes`,
+      lastModified: new Date(),
+      changeFrequency: "daily" as const,
+      priority: 0.95,
+    },
     ...categoryHubRoutes,
     ...formatHubRoutes,
     ...routes,
     ...blogRoutes,
     ...presetRoutes,
+    ...recipeRoutes,
   ];
 }

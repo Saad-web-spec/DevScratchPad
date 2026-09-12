@@ -31,8 +31,14 @@ export function SiteHeader() {
               Directory
             </Link>
             <Link
+              href="/recipes"
+              className="px-3 py-1.5 font-medium text-zinc-600 hover:text-zinc-900 hover:bg-zinc-100 rounded-md transition-colors"
+            >
+              Recipes & Fixes
+            </Link>
+            <Link
               href="/blog"
-              className="px-3 py-1.5 font-medium text-zinc-900 bg-zinc-100/80 rounded-md transition-colors"
+              className="px-3 py-1.5 font-medium text-zinc-600 hover:text-zinc-900 hover:bg-zinc-100 rounded-md transition-colors"
             >
               Guides & References
             </Link>

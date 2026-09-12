@@ -1,6 +1,8 @@
 export const ROUTES = {
   home: "/",
+  recipes: "/recipes",
   tool: (slug: string) => `/tools/${slug}`,
+  recipe: (slug: string) => `/recipes/${slug}`,
 };
 
 export const SIDEBAR_TO_SLUG: Record<string, string> = {
