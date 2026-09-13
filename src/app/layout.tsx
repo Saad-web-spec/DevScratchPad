@@ -168,39 +168,28 @@ export default function RootLayout({
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(siteJsonLd).replace(/</g, "\\u003c") }}
         />
-        {process.env.NODE_ENV === "production" && (
-          <script
-            dangerouslySetInnerHTML={{
-              __html: `
-                if ('serviceWorker' in navigator) {
-                  window.addEventListener('load', function() {
-                    navigator.serviceWorker.register('/sw.js').catch(function(err) {
-                      console.error('ServiceWorker registration failed: ', err);
-                    });
-                  });
-                }
-              `,
-            }}
-          />
-        )}
-        {process.env.NODE_ENV === "development" && (
-          <script
-            dangerouslySetInnerHTML={{
-              __html: `
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              try {
                 if ('serviceWorker' in navigator) {
                   navigator.serviceWorker.getRegistrations().then(function(registrations) {
-                    for(let registration of registrations) {
-                      registration.unregister();
+                    for (var i = 0; i < registrations.length; i++) {
+                      registrations[i].unregister();
                     }
-                  });
-                  caches.keys().then(function(names) {
-                    for (let name of names) caches.delete(name);
-                  });
+                  }).catch(function() {});
                 }
-              `,
-            }}
-          />
-        )}
+                if (typeof caches !== 'undefined') {
+                  caches.keys().then(function(names) {
+                    for (var i = 0; i < names.length; i++) {
+                      caches.delete(names[i]);
+                    }
+                  }).catch(function() {});
+                }
+              } catch (e) {}
+            `,
+          }}
+        />
       </head>
       <body
         className={`antialiased min-h-screen flex flex-col bg-white text-zinc-900 ${inter.className}`}

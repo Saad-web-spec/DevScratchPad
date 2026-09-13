@@ -57,12 +57,6 @@ import { auditRuleQuality, RuleAuditReport, AuditIssue, AuditDimension } from ".
 // Dynamically import Monaco Editor to prevent SSR issues
 const Editor = dynamic(() => import("@monaco-editor/react"), {
   ssr: false,
-  loading: () => (
-    <div className="flex flex-col items-center justify-center h-full text-zinc-400 bg-zinc-900 font-mono text-xs gap-2">
-      <RefreshCw className="w-5 h-5 animate-spin text-orange-400" />
-      <span>Loading editor...</span>
-    </div>
-  ),
 });
 
 import {
@@ -151,17 +145,6 @@ export function ClaudeSkillsClient({
   const [isExportingZip, setIsExportingZip] = useState(false);
   const [mobileTab, setMobileTab] = useState<"form" | "editor">("form");
   const [shouldLoadEditor, setShouldLoadEditor] = useState(false);
-
-  useEffect(() => {
-    const checkViewport = () => {
-      if (window.innerWidth >= 1024) {
-        setShouldLoadEditor(true);
-      }
-    };
-    checkViewport();
-    window.addEventListener("resize", checkViewport);
-    return () => window.removeEventListener("resize", checkViewport);
-  }, []);
 
   useEffect(() => {
     if (mobileTab === "editor") {
@@ -2639,6 +2622,17 @@ export function ClaudeSkillsClient({
                 <span className="text-[10px] px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-400 font-mono shrink-0 hidden xl:inline-block">
                   {activeContent.split("\n").length} lines
                 </span>
+                {!shouldLoadEditor && (
+                  <button
+                    type="button"
+                    onClick={() => setShouldLoadEditor(true)}
+                    className="inline-flex items-center gap-1 text-[10px] text-zinc-400 hover:text-zinc-200 bg-zinc-800/80 hover:bg-zinc-700/80 border border-zinc-700/60 px-2 py-0.5 rounded-md transition-colors font-mono shrink-0 cursor-pointer"
+                    title="Load interactive code editor"
+                  >
+                    <FileText className="w-2.5 h-2.5" />
+                    <span>Edit</span>
+                  </button>
+                )}
 
                 {lastAutoSaved && (
                   <span className="hidden 2xl:inline-flex items-center gap-1 text-[10px] text-zinc-400 font-mono shrink-0">
@@ -2909,60 +2903,106 @@ export function ClaudeSkillsClient({
             </div>
 
             {/* Editor Container — Always full height */}
-            <div className="h-[430px] sm:h-[520px] lg:h-[calc(100vh-16rem)] min-h-[380px] relative overflow-hidden bg-zinc-950">
-              {shouldLoadEditor ? (
-                <Editor
-                  height="100%"
-                  language={format === "mcp_json" || format === "gemini_prompts" ? "json" : "markdown"}
-                  value={activeContent}
-                  theme="vs-dark"
-                  onMount={(editor) => {
-                    editorRef.current = editor;
-                    editor.setScrollTop(0);
-                  }}
-                  onChange={(val) => {
-                    if (val !== undefined) {
-                      setEditorContent(val);
-                      setIsManuallyEdited(true);
-                    }
-                  }}
-                  loading={
-                    <pre className="p-4 font-mono text-xs text-zinc-300 whitespace-pre-wrap overflow-y-auto h-full select-text bg-zinc-950">
-                      {activeContent}
-                    </pre>
+            <div
+              className="h-[430px] sm:h-[520px] lg:h-[calc(100vh-16rem)] min-h-[380px] relative overflow-hidden bg-zinc-950 group"
+              onClick={() => {
+                if (!shouldLoadEditor) setShouldLoadEditor(true);
+              }}
+            >
+              {/* Static code preview fallback / background */}
+              <div
+                tabIndex={shouldLoadEditor ? -1 : 0}
+                role={shouldLoadEditor ? undefined : "button"}
+                aria-label={shouldLoadEditor ? undefined : "Click or press enter to activate interactive code editor"}
+                onFocus={() => {
+                  if (!shouldLoadEditor) setShouldLoadEditor(true);
+                }}
+                onKeyDown={(e) => {
+                  if (!shouldLoadEditor && (e.key === "Enter" || e.key === " ")) {
+                    setShouldLoadEditor(true);
                   }
-                  options={{
-                    readOnly: false,
-                    minimap: { enabled: false },
-                    fontSize: 12,
-                    lineHeight: 20,
-                    fontFamily: "'JetBrains Mono', 'Fira Code', Menlo, Consolas, monospace",
-                    wordWrap: "on",
-                    lineNumbers: "on",
-                    lineNumbersMinChars: 3,
-                    glyphMargin: false,
-                    scrollBeyondLastLine: false,
-                    smoothScrolling: true,
-                    automaticLayout: true,
-                    maxTokenizationLineLength: 20000,
-                    unicodeHighlight: { ambiguousCharacters: false },
-                    renderLineHighlight: "none",
-                    folding: false,
-                    quickSuggestions: false,
-                    fixedOverflowWidgets: true,
-                    padding: { top: 10, bottom: 10 },
-                    scrollbar: {
-                      vertical: "visible",
-                      horizontal: "auto",
-                      verticalScrollbarSize: 8,
-                      horizontalScrollbarSize: 8,
-                    },
-                  }}
-                />
-              ) : (
+                }}
+                className={cn(
+                  "w-full h-full relative",
+                  !shouldLoadEditor ? "cursor-text focus:outline-hidden" : "pointer-events-none select-none"
+                )}
+              >
                 <pre className="p-4 font-mono text-xs text-zinc-300 whitespace-pre-wrap overflow-y-auto h-full select-text bg-zinc-950">
                   {activeContent}
                 </pre>
+                {!shouldLoadEditor && (
+                  <div className="absolute bottom-3 right-3 pointer-events-none transition-opacity duration-200 opacity-60 group-hover:opacity-100">
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded bg-zinc-800/90 text-zinc-400 text-[11px] font-mono border border-zinc-700/60 shadow-md">
+                      <span className="w-1.5 h-1.5 rounded-full bg-orange-400 animate-pulse" />
+                      Click or focus to edit
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              {/* On-demand Monaco Editor layer */}
+              {shouldLoadEditor && (
+                <div className="absolute inset-0 z-10 bg-zinc-950">
+                  <Editor
+                    height="100%"
+                    language={format === "mcp_json" || format === "gemini_prompts" ? "json" : "markdown"}
+                    value={activeContent}
+                    theme="vs-dark"
+                    onMount={(editor) => {
+                      editorRef.current = editor;
+                      editor.setScrollTop(0);
+                      if (typeof window !== "undefined" && window.innerWidth >= 768) {
+                        editor.focus();
+                      }
+                    }}
+                    onChange={(val) => {
+                      if (val !== undefined) {
+                        setEditorContent(val);
+                        setIsManuallyEdited(true);
+                      }
+                    }}
+                    loading={
+                      <div className="relative w-full h-full">
+                        <pre className="p-4 font-mono text-xs text-zinc-300 whitespace-pre-wrap overflow-y-auto h-full select-text bg-zinc-950">
+                          {activeContent}
+                        </pre>
+                        <div className="absolute bottom-3 right-3 pointer-events-none">
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded bg-zinc-800/90 text-zinc-400 text-[11px] font-mono border border-zinc-700/60 shadow-md">
+                            <RefreshCw className="w-3 h-3 animate-spin text-orange-400" />
+                            Loading editor...
+                          </span>
+                        </div>
+                      </div>
+                    }
+                    options={{
+                      readOnly: false,
+                      minimap: { enabled: false },
+                      fontSize: 12,
+                      lineHeight: 20,
+                      fontFamily: "'JetBrains Mono', 'Fira Code', Menlo, Consolas, monospace",
+                      wordWrap: "on",
+                      lineNumbers: "on",
+                      lineNumbersMinChars: 3,
+                      glyphMargin: false,
+                      scrollBeyondLastLine: false,
+                      smoothScrolling: true,
+                      automaticLayout: true,
+                      maxTokenizationLineLength: 20000,
+                      unicodeHighlight: { ambiguousCharacters: false },
+                      renderLineHighlight: "none",
+                      folding: false,
+                      quickSuggestions: false,
+                      fixedOverflowWidgets: true,
+                      padding: { top: 10, bottom: 10 },
+                      scrollbar: {
+                        vertical: "visible",
+                        horizontal: "auto",
+                        verticalScrollbarSize: 8,
+                        horizontalScrollbarSize: 8,
+                      },
+                    }}
+                  />
+                </div>
               )}
 
               {/* Rule Quality Audit — Professional Dark Floating Panel (Anchored above status bar) */}

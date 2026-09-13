@@ -8,7 +8,7 @@ const withBundleAnalyzer = require('@next/bundle-analyzer')({
 const withSerwist = withSerwistInit({
   swSrc: "src/app/sw.ts",
   swDest: "public/sw.js",
-  disable: process.env.NODE_ENV === "development",
+  disable: true,
 });
 
 const nextConfig: NextConfig = {
@@ -122,11 +122,11 @@ const nextConfig: NextConfig = {
   async headers() {
     const commonCspDirectives = [
       "default-src 'self'",
-      "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://cdn.jsdelivr.net https://va.vercel-scripts.com",
+      "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://cdn.jsdelivr.net https://va.vercel-scripts.com https://*.vercel-scripts.com",
       "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net",
       "img-src 'self' data: blob: https:",
       "font-src 'self' data: https://cdn.jsdelivr.net",
-      "connect-src 'self' https://vitals.vercel-insights.com https://cdn.jsdelivr.net",
+      "connect-src 'self' https://vitals.vercel-insights.com https://*.vercel-insights.com https://va.vercel-scripts.com https://*.vercel-scripts.com https://cdn.jsdelivr.net",
       "worker-src 'self' blob: data:",
       "object-src 'none'",
       "base-uri 'self'",
@@ -198,9 +198,23 @@ const nextConfig: NextConfig = {
           },
         ],
       },
-      // 3. All other HTML routes: prevent clickjacking with strict frame-ancestors and X-Frame-Options
+      // 3. Service worker unregistration script: ensure no caching so returning clients immediately unregister
       {
-        source: '/((?!tools/|_next/|robots\\.txt|sitemap\\.xml|llms\\.txt|llms-full\\.txt).*)',
+        source: '/sw.js',
+        headers: [
+          {
+            key: 'Content-Type',
+            value: 'application/javascript; charset=utf-8',
+          },
+          {
+            key: 'Cache-Control',
+            value: 'no-cache, no-store, must-revalidate',
+          },
+        ],
+      },
+      // 4. All other HTML routes: prevent clickjacking with strict frame-ancestors and X-Frame-Options
+      {
+        source: '/((?!tools/|_next/|_vercel/|sw\\.js|robots\\.txt|sitemap\\.xml|llms\\.txt|llms-full\\.txt).*)',
         headers: [
           {
             key: 'X-Frame-Options',
