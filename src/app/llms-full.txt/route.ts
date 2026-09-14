@@ -221,7 +221,7 @@ ${engineeringGuidesDetailed}
 ## Security & Verification Standards
 - **Zero-Trust Client Isolation**: Code execution uses Web Workers, Web Crypto API, and pure TypeScript parsers.
 - **No Third-Party Payload Logging**: Analytics capture only high-level page views (via Vercel Web Analytics); no query parameters, clipboard contents, or tool inputs are tracked.
-- **Offline Reliability**: Service Workers cache critical bundles via Serwist/PWA for uninterrupted air-gapped development.
+- **Offline Reliability**: 100% client-side memory execution without server network dependencies.
 `;
 
   return new NextResponse(content, {
