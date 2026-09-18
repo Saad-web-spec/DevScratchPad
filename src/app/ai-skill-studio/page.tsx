@@ -48,8 +48,8 @@ export const metadata: Metadata = {
     type: "website",
     images: [
       {
-        url: "https://www.devscratchpad.tech/ai-skill-studio/opengraph-image",
-        secureUrl: "https://www.devscratchpad.tech/ai-skill-studio/opengraph-image",
+        url: "https://www.devscratchpad.tech/og-ai-skill-studio.png",
+        secureUrl: "https://www.devscratchpad.tech/og-ai-skill-studio.png",
         width: 1200,
         height: 630,
         alt: "AI Skill Studio — 13 Formats & 5-Layer AI Agent Suite — DevScratchpad",
@@ -64,7 +64,7 @@ export const metadata: Metadata = {
       "Generate production-grade AI agent rules across 13 formats & 5-layer suite (.cursorignore, .claudeignore, llms.txt, ARCHITECTURE.md). 100% offline workbench.",
     images: [
       {
-        url: "https://www.devscratchpad.tech/ai-skill-studio/opengraph-image",
+        url: "https://www.devscratchpad.tech/og-ai-skill-studio.png",
         width: 1200,
         height: 630,
         alt: "AI Skill Studio — 13 Formats & 5-Layer AI Agent Suite — DevScratchpad",
