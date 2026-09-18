@@ -36,7 +36,7 @@ export default function Image() {
                 width: 44,
                 height: 44,
                 borderRadius: 12,
-                backgroundColor: '#ea580c',
+                backgroundColor: '#3B82F6',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -51,7 +51,7 @@ export default function Image() {
               <div style={{ display: 'flex', fontSize: 32, fontWeight: 800, color: '#ffffff', letterSpacing: '-0.03em' }}>
                 DevScratchpad
               </div>
-              <div style={{ display: 'flex', fontSize: 13, fontWeight: 600, color: '#ea580c', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+              <div style={{ display: 'flex', fontSize: 13, fontWeight: 600, color: '#3B82F6', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
                 devscratchpad.tech
               </div>
             </div>
@@ -63,8 +63,8 @@ export default function Image() {
               display: 'flex',
               flexDirection: 'row',
               alignItems: 'center',
-              backgroundColor: 'rgba(234, 88, 12, 0.12)',
-              border: '1px solid rgba(234, 88, 12, 0.35)',
+              backgroundColor: 'rgba(59, 130, 246, 0.12)',
+              border: '1px solid rgba(59, 130, 246, 0.35)',
               borderRadius: 9999,
               padding: '8px 20px',
             }}
@@ -84,7 +84,7 @@ export default function Image() {
                 display: 'flex',
                 fontSize: 14,
                 fontWeight: 700,
-                color: '#f97316',
+                color: '#60A5FA',
                 letterSpacing: '0.06em',
                 textTransform: 'uppercase',
               }}
@@ -120,7 +120,7 @@ export default function Image() {
               display: 'flex',
               fontSize: 48,
               fontWeight: 800,
-              color: '#ea580c',
+              color: '#3B82F6',
               letterSpacing: '-0.03em',
               lineHeight: 1.15,
               marginBottom: 14,
@@ -158,13 +158,13 @@ export default function Image() {
               display: 'flex',
               flexDirection: 'column',
               backgroundColor: 'rgba(24, 24, 27, 0.75)',
-              border: '1px solid rgba(234, 88, 12, 0.35)',
+              border: '1px solid rgba(59, 130, 246, 0.35)',
               borderRadius: 16,
               padding: '16px 20px',
               marginRight: 16,
             }}
           >
-            <div style={{ display: 'flex', fontSize: 12, fontWeight: 700, color: '#f97316', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>
+            <div style={{ display: 'flex', fontSize: 12, fontWeight: 700, color: '#60A5FA', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>
               13 AI Agent Formats
             </div>
             <div style={{ display: 'flex', fontSize: 17, fontWeight: 700, color: '#ffffff', marginBottom: 4 }}>
