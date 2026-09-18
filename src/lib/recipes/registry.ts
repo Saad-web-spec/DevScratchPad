@@ -6,6 +6,7 @@ export interface RecipeMeta {
   seoDescription: string;
   problem: string;
   solution: string;
+  solutionSteps?: string[];
   codeSnippet?: string;
   faq: { question: string; answer: string }[];
 }
@@ -19,6 +20,11 @@ export const RECIPE_REGISTRY: Record<string, RecipeMeta> = {
     "seoDescription": "Troubleshoot and fix the common TypeError reading map from undefined in React/TypeScript when working with un-typed JSON API responses.",
     "problem": "When fetching data from an API, you are mapping over an array that doesn't exist or is undefined because the API response structure doesn't match your expectations or lacks type safety.",
     "solution": "Convert your API's raw JSON response into a strict TypeScript interface. This allows you to catch missing properties at compile time rather than crashing at runtime.",
+    "solutionSteps": [
+      "Inspect the raw API response to identify missing or undefined properties before invoking array operations.",
+      "Convert your API's raw JSON response into a strict TypeScript interface to catch missing properties at compile time.",
+      "Apply defensive fallback guarding (such as (data.users || []).map(...)) or optional chaining to safeguard against empty payloads."
+    ],
     "codeSnippet": "// ❌ Bad: Untyped response\nconst data = await fetch('/api/users').then(res => res.json());\ndata.users.map(...) // Crashes if users is undefined\n\n// ✅ Good: Typed response\ninterface ApiResponse {\n  users: Array<{ id: string; name: string; }>;\n}\nconst data = await fetch('/api/users').then(res => res.json()) as ApiResponse;\n(data.users || []).map(...)",
     "faq": [
       {
@@ -39,6 +45,11 @@ export const RECIPE_REGISTRY: Record<string, RecipeMeta> = {
     "seoDescription": "Learn how to debug and fix the invalid signature error when verifying JSON Web Tokens (JWT) in your backend.",
     "problem": "Your server is rejecting a JWT with \"invalid signature\". This happens when the token was tampered with, the secret key mismatches, or the signing algorithm differs.",
     "solution": "Decode the token header and payload to verify the algorithm used (`HS256`, `RS256`). Check if the payload data matches your expectations before verifying the signature locally.",
+    "solutionSteps": [
+      "Decode the token header and payload to inspect the signing algorithm (e.g. HS256, RS256) and payload claims.",
+      "Verify that the secret key or public certificate configured in your server matches the issuer's key.",
+      "Ensure the algorithm specified in your verification library matches the token's alg header."
+    ],
     "codeSnippet": "// ❌ Bad: Blindly verifying\nconst decoded = jwt.verify(token, process.env.SECRET);\n\n// ✅ Good: Check token structure first\nconst decoded = jwt.decode(token, { complete: true });\nconsole.log(decoded.header.alg); // e.g., 'RS256'",
     "faq": [
       {
@@ -59,6 +70,11 @@ export const RECIPE_REGISTRY: Record<string, RecipeMeta> = {
     "seoDescription": "Troubleshoot curl error 52 and migrate your complex curl commands to Python requests for better error handling.",
     "problem": "You are running a curl command and receiving \"Empty reply from server\". This typically means the connection was established but the server dropped it without sending any HTTP response headers.",
     "solution": "Instead of wrestling with opaque curl network errors in bash, convert your request to a Python script using the `requests` library. Python provides detailed traceback and easier debugging for dropped connections.",
+    "solutionSteps": [
+      "Verify the target URL, port, and protocol (HTTP vs HTTPS) in your curl command.",
+      "Convert your curl request to a Python script using the requests library for detailed traceback and error handling.",
+      "Inspect network firewalls, SSL/TLS handshake requirements, or server logs for abruptly closed sockets."
+    ],
     "codeSnippet": "// ❌ Bad: Hard to debug curl error\n$ curl -X POST https://api.example.com/data -d \"foo=bar\"\ncurl: (52) Empty reply from server\n\n// ✅ Good: Python equivalent with error handling\nimport requests\ntry:\n    response = requests.post('https://api.example.com/data', data={'foo': 'bar'})\n    response.raise_for_status()\nexcept requests.exceptions.ConnectionError as e:\n    print(f\"Connection dropped: {e}\")",
     "faq": [
       {
@@ -79,6 +95,11 @@ export const RECIPE_REGISTRY: Record<string, RecipeMeta> = {
     "seoDescription": "Understand and fix the common JavaScript error when calling JSON.parse() on an object instead of a string.",
     "problem": "You are seeing `SyntaxError: Unexpected token o in JSON at position 1`. This happens when you call `JSON.parse()` on something that is already a JavaScript object (which gets coerced to the string `\"[object Object]\"`).",
     "solution": "Check if your data is already parsed. If you are using `axios` or `fetch` with `.json()`, the response is already an object. Only use `JSON.parse()` on raw string data.",
+    "solutionSteps": [
+      "Check whether the response data is already a parsed JavaScript object before calling JSON.parse().",
+      "If using fetch with res.json() or axios, access the properties directly without re-parsing.",
+      "Validate raw string inputs using a JSON formatter to ensure valid JSON syntax before parsing."
+    ],
     "codeSnippet": "// ❌ Bad: Parsing an already parsed object\nconst data = { name: \"John\" };\nconst parsed = JSON.parse(data); // Unexpected token o\n\n// ✅ Good: Check type or rely on fetch's built-in parsing\nconst res = await fetch('/api/data');\nconst json = await res.json(); // json is already an object!",
     "faq": [
       {
@@ -99,6 +120,11 @@ export const RECIPE_REGISTRY: Record<string, RecipeMeta> = {
     "seoDescription": "Solve YAML indentation and syntax errors causing the mapping values are not allowed here exception.",
     "problem": "Your CI/CD pipeline or Docker Compose is failing with `mapping values are not allowed here`. This usually means a colon `:` is missing a space after it, or your indentation is incorrect.",
     "solution": "YAML is strictly whitespace dependent. Ensure that every key-value pair has a space after the colon, and that block sequences use consistent spaces (not tabs). Converting your YAML to JSON can highlight structural flaws.",
+    "solutionSteps": [
+      "Verify that every key-value pair in your YAML file has a space immediately following the colon (key: value).",
+      "Replace any tab characters with consistent 2-space indentation across all mapping blocks.",
+      "Convert your YAML to JSON to highlight structural flaws and nesting hierarchy errors."
+    ],
     "codeSnippet": "// ❌ Bad: Missing space after colon\nservices:\n  web:\n    image:nginx\n    ports:\n      - 80:80\n\n// ✅ Good: Correct spacing and indentation\nservices:\n  web:\n    image: nginx\n    ports:\n      - \"80:80\"",
     "faq": [
       {
@@ -119,6 +145,11 @@ export const RECIPE_REGISTRY: Record<string, RecipeMeta> = {
     "seoDescription": "Figure out why your cron expression is firing at the wrong time or not firing at all using visual cron schedule parsing.",
     "problem": "You set up a background task, but it triggers at midnight instead of noon, or runs every minute instead of once an hour. Cron syntax (`* * * * *`) is notoriously easy to misconfigure.",
     "solution": "Visualize your cron expression to see the exact upcoming run times. A common mistake is using `*` for minutes when you meant `0` (e.g., `* 12 * * *` runs every minute of the 12th hour, while `0 12 * * *` runs exactly at noon).",
+    "solutionSteps": [
+      "Visualize your cron expression to inspect upcoming execution times across all 5 schedule fields.",
+      "Replace minute wildcards (*) with exact minute values (e.g. 0 12 * * * instead of * 12 * * *) to avoid running every minute.",
+      "Verify that the host server or container environment timezone matches your expected schedule timezone."
+    ],
     "codeSnippet": "// ❌ Bad: Runs every minute during 12 PM\n* 12 * * * /path/to/script.sh\n\n// ✅ Good: Runs exactly once at 12:00 PM\n0 12 * * * /path/to/script.sh",
     "faq": [
       {
@@ -139,6 +170,11 @@ export const RECIPE_REGISTRY: Record<string, RecipeMeta> = {
     "seoDescription": "Solve runtime Zod schema validation errors when parsing API payloads that contain unexpected types.",
     "problem": "Your application crashes at runtime when calling `schema.parse()` because an API returned a number (like `123`) instead of a string (like `\"123\"`), breaking your strict Zod schema.",
     "solution": "If the API is inconsistent, update your Zod schema to coerce the type using `z.coerce.string()` or strictly match the API's actual JSON structure by regenerating your schema directly from the API response payload.",
+    "solutionSteps": [
+      "Inspect the incoming API payload to check for fields where numeric values are returned instead of strings.",
+      "Use z.coerce.string() in your Zod schema to automatically coerce incoming numbers to strings.",
+      "Regenerate your Zod validation schemas directly from sample API responses to match real payload structures."
+    ],
     "codeSnippet": "// ❌ Bad: Strict schema crashes on number\nconst schema = z.object({ id: z.string() });\nschema.parse({ id: 123 }); // Throws ZodError\n\n// ✅ Good: Coerce types or use accurate schemas\nconst schema = z.object({ id: z.coerce.string() });\nschema.parse({ id: 123 }); // Returns { id: \"123\" }",
     "faq": [
       {
@@ -159,6 +195,11 @@ export const RECIPE_REGISTRY: Record<string, RecipeMeta> = {
     "seoDescription": "Solve curl syntax issues with quotes and slashes, and migrate to JavaScript fetch for better API integration.",
     "problem": "When pasting a curl command into Windows CMD or PowerShell, you get an illegal format error. This happens because Windows handles quotes (' vs \"\") and escaping differently than Unix shells.",
     "solution": "Instead of struggling with cross-platform shell escaping, convert the curl command directly into a JavaScript `fetch()` call. This allows you to run it natively in Node.js or the browser without worrying about bash syntax.",
+    "solutionSteps": [
+      "Locate invalid characters, mismatched quotes, or backslashes in your command-line curl invocation.",
+      "Convert the curl command directly into a JavaScript fetch() snippet to eliminate shell quoting issues.",
+      "Test and execute the converted fetch request directly within your Node.js or browser application."
+    ],
     "codeSnippet": "// ❌ Bad: Fails in Windows PowerShell\ncurl -X POST 'https://api.com/data' -H 'Content-Type: application/json' -d '{\"key\":\"value\"}'\n\n// ✅ Good: Converted to JS fetch\nfetch('https://api.com/data', {\n  method: 'POST',\n  headers: { 'Content-Type': 'application/json' },\n  body: JSON.stringify({ key: \"value\" })\n});",
     "faq": [
       {
@@ -179,6 +220,11 @@ export const RECIPE_REGISTRY: Record<string, RecipeMeta> = {
     "seoDescription": "Resolve React console warnings when pasting raw SVG code directly into your JSX components.",
     "problem": "You copied an SVG from Figma or Illustrator and pasted it into a React component. The console is filled with warnings about `class`, `stroke-width`, and `fill-rule` being invalid DOM properties.",
     "solution": "React requires camelCase property names for DOM elements (e.g., `strokeWidth` instead of `stroke-width`). You must convert raw HTML/SVG attributes into valid JSX syntax.",
+    "solutionSteps": [
+      "Identify raw HTML/SVG code pasted directly into React or Next.js JSX files.",
+      "Convert HTML attributes to camelCase React properties (such as class to className and stroke-width to strokeWidth).",
+      "Ensure all self-closing SVG tags (e.g. <path />, <circle />) have explicit closing slashes."
+    ],
     "codeSnippet": "// ❌ Bad: Raw SVG in React\n<svg class=\"icon\" stroke-width=\"2\" fill-rule=\"evenodd\" />\n\n// ✅ Good: Converted to JSX\n<svg className=\"icon\" strokeWidth={2} fillRule=\"evenodd\" />",
     "faq": [
       {
@@ -199,6 +245,11 @@ export const RECIPE_REGISTRY: Record<string, RecipeMeta> = {
     "seoDescription": "Learn how to correctly calculate and verify HMAC SHA-256 signatures for Stripe, GitHub, or Shopify webhooks.",
     "problem": "Your server is rejecting legitimate incoming webhooks because the computed HMAC signature doesn't match the one sent in the headers (e.g., `x-hub-signature-256`).",
     "solution": "This usually occurs because the request body was parsed or modified (like `JSON.parse()`) before hashing. HMAC must be calculated against the raw, unmodified byte stream of the request body.",
+    "solutionSteps": [
+      "Capture the raw, unparsed byte stream of the webhook payload before any body parser middleware runs.",
+      "Verify that the shared secret in your environment configuration exactly matches the provider's webhook secret.",
+      "Calculate the HMAC SHA-256 digest on the raw byte buffer and compare using timing-safe equal comparison."
+    ],
     "codeSnippet": "// ❌ Bad: Hashing parsed JSON\nconst hash = crypto.createHmac('sha256', secret).update(JSON.stringify(req.body)).digest('hex');\n\n// ✅ Good: Hashing the raw body buffer\nconst hash = crypto.createHmac('sha256', secret).update(req.rawBody).digest('hex');",
     "faq": [
       {
@@ -219,6 +270,11 @@ export const RECIPE_REGISTRY: Record<string, RecipeMeta> = {
     "seoDescription": "Learn how to resolve strict validation errors in JSON Schema when payloads contain undocumented fields.",
     "problem": "Your payload validation fails with \"data must NOT have additional properties\". Your schema enforces `additionalProperties: false`, but the JSON being sent contains extra fields.",
     "solution": "Either remove the extra fields from your JSON payload or set `additionalProperties: true` in your schema definition to allow fields that aren't explicitly defined.",
+    "solutionSteps": [
+      "Compare your JSON payload fields against the properties defined in the JSON schema.",
+      "Remove unrecognized fields from your payload or set additionalProperties: true in the schema definition.",
+      "Validate the updated payload against the schema using a client-side JSON Schema validator."
+    ],
     "codeSnippet": "// ❌ Bad: Strict schema rejects extra field\n\"additionalProperties\": false\n{ \"name\": \"John\", \"extra\": \"data\" } // Fails validation\n\n// ✅ Good: Allow extra fields\n\"additionalProperties\": true",
     "faq": [
       {
@@ -239,6 +295,11 @@ export const RECIPE_REGISTRY: Record<string, RecipeMeta> = {
     "seoDescription": "Resolve type mismatch errors in JSON Schema where an object is provided instead of an array.",
     "problem": "You are encountering a validation error stating \"data must be array\". Your JSON data is structured as an object `{}` when the schema expects a list `[]`.",
     "solution": "Wrap your object in an array or modify the schema to accept both types if single items are permitted.",
+    "solutionSteps": [
+      "Check the expected root type in your JSON schema definition (e.g. type: 'array').",
+      "Wrap individual object payloads in array brackets [ ... ] if sending a single item.",
+      "Alternatively, adjust the schema definition to accept both types using anyOf: [{type: 'array'}, {type: 'object'}]."
+    ],
     "codeSnippet": "// ❌ Bad: Sending object when array expected\n{ \"item\": 1 } \n\n// ✅ Good: Sending an array\n[ { \"item\": 1 } ]",
     "faq": [
       {
@@ -259,6 +320,11 @@ export const RECIPE_REGISTRY: Record<string, RecipeMeta> = {
     "seoDescription": "Solve XML parsing crashes caused by unescaped ampersands or invalid entity references.",
     "problem": "Your XML parser crashes with `EntityRef: expecting ';'`. This happens when you have an unescaped ampersand `&` in your XML data, confusing the parser into thinking it's an HTML entity like `&amp;`.",
     "solution": "Replace all raw `&` characters in text nodes or attributes with `&amp;`, or wrap the text data in a `<![CDATA[ ... ]]>` block.",
+    "solutionSteps": [
+      "Search for raw, unescaped ampersands (&) within XML text nodes or attribute values.",
+      "Replace all raw ampersands with the XML entity &amp; or enclose unparsed text in a <![CDATA[ ... ]]> block.",
+      "Validate and format the XML document to verify that all entity references parse cleanly."
+    ],
     "codeSnippet": "<!-- ❌ Bad: Unescaped ampersand -->\n<company>Smith & Sons</company>\n\n<!-- ✅ Good: Escaped entity -->\n<company>Smith &amp; Sons</company>",
     "faq": [
       {
@@ -279,6 +345,11 @@ export const RECIPE_REGISTRY: Record<string, RecipeMeta> = {
     "seoDescription": "Troubleshoot missing semicolons and formatting issues in chained SQL queries.",
     "problem": "You are executing a script with multiple SQL statements and getting a syntax error near a keyword like `SELECT` or `INSERT`.",
     "solution": "This usually means you forgot to terminate the previous statement with a semicolon `;`. The database engine thinks the new query is part of the old one.",
+    "solutionSteps": [
+      "Check the query line immediately preceding the reported error for a missing terminating semicolon (;).",
+      "Ensure all SQL keywords are properly spaced and reserved table or column names are quoted appropriately.",
+      "Format the SQL query with clean indentation to visually verify clause structure and commas."
+    ],
     "codeSnippet": "-- ❌ Bad: Missing semicolon\nUPDATE users SET active = true\nSELECT * FROM users\n\n-- ✅ Good: Properly terminated\nUPDATE users SET active = true;\nSELECT * FROM users;",
     "faq": [
       {
@@ -299,6 +370,11 @@ export const RECIPE_REGISTRY: Record<string, RecipeMeta> = {
     "seoDescription": "Resolve premature ends of GraphQL queries and missing closing braces.",
     "problem": "Your GraphQL query fails with `Expected Name, found <EOF>`. This means the query string ended unexpectedly, usually due to a missing closing brace `}`.",
     "solution": "Ensure that every opened selection set `{` has a corresponding closing brace `}`. Formatting the query properly helps visualize nested levels.",
+    "solutionSteps": [
+      "Trace opening braces ({) in your GraphQL query and verify each has a matching closing brace (}).",
+      "Remove trailing commas and incomplete selection field names from the end of the query.",
+      "Format the GraphQL query with a formatter to align nested selection sets and confirm valid closure."
+    ],
     "codeSnippet": "# ❌ Bad: Missing closing brace\nquery { user { id name \n\n# ✅ Good: Properly closed\nquery { user { id name } }",
     "faq": [
       {
@@ -319,6 +395,11 @@ export const RECIPE_REGISTRY: Record<string, RecipeMeta> = {
     "seoDescription": "Learn why your CSS fails to minify and how to fix syntax errors before compression.",
     "problem": "When running a CSS minifier or build process, it fails with \"Unexpected token\". Your CSS has a syntax error (like a missing closing brace or invalid character) that the minifier cannot parse.",
     "solution": "Minifiers require strictly valid CSS. Find the unclosed rule, missing semicolon, or typo. Formatting the CSS can help expose the issue.",
+    "solutionSteps": [
+      "Locate the unclosed rule, missing semicolon, or typo in your source stylesheet.",
+      "Format and lint the CSS to expose invalid syntax before running minification.",
+      "Run the minifier tool on the cleaned stylesheet to produce optimized, production-ready CSS."
+    ],
     "codeSnippet": "/* ❌ Bad: Missing closing brace for media query */\n@media (max-width: 600px) {\n  .card { padding: 10px; }\n\n/* ✅ Good: Closed properly */\n@media (max-width: 600px) {\n  .card { padding: 10px; }\n}",
     "faq": [
       {
@@ -339,6 +420,11 @@ export const RECIPE_REGISTRY: Record<string, RecipeMeta> = {
     "seoDescription": "Solve JavaScript infinite recursion loops and stack overflows when generating mock data.",
     "problem": "Your browser or Node script crashes with `Maximum call stack size exceeded`. This happens during deep recursion, often when mock data schemas reference each other circularly.",
     "solution": "Break the circular dependency. Ensure that nested schema definitions do not infinitely call each other, or limit the recursion depth.",
+    "solutionSteps": [
+      "Trace recursive relations or nested references in your data generator to find circular self-references.",
+      "Introduce a recursion depth limit or decouple circular links using unique ID references.",
+      "Validate mock data generation logic to ensure all base termination cases are reached."
+    ],
     "codeSnippet": "// ❌ Bad: Infinite recursion\nfunction getParent() { return { child: getParent() }; }\n\n// ✅ Good: Limited recursion\nfunction getParent(depth = 0) {\n  if (depth > 2) return null;\n  return { child: getParent(depth + 1) };\n}",
     "faq": [
       {
@@ -359,6 +445,11 @@ export const RECIPE_REGISTRY: Record<string, RecipeMeta> = {
     "seoDescription": "Solve database insert failures caused by colliding primary keys or reused UUIDs.",
     "problem": "Your database INSERT fails with `duplicate key value violates unique constraint`. You are trying to insert a row using an ID or column value that already exists in the table.",
     "solution": "If you are using sequential IDs, ensure your sequence is updated. If you are generating IDs client-side, use cryptographically secure UUIDv4 to guarantee global uniqueness without collisions.",
+    "solutionSteps": [
+      "Inspect the collision details in your database exception to determine the conflicting unique key.",
+      "If using auto-incrementing serial IDs, synchronize your database sequence with the current table maximum.",
+      "For distributed or client-generated records, switch to cryptographically secure UUIDv4 identifiers."
+    ],
     "codeSnippet": "-- ❌ Bad: Hardcoded or repeating ID\nINSERT INTO users (id) VALUES (1);\n\n-- ✅ Good: Using UUIDv4\nINSERT INTO users (id) VALUES ('550e8400-e29b-41d4-a716-446655440000');",
     "faq": [
       {
@@ -379,6 +470,11 @@ export const RECIPE_REGISTRY: Record<string, RecipeMeta> = {
     "seoDescription": "Solve atob() crashes in JavaScript when decoding invalid or unpadded Base64 strings.",
     "problem": "Calling `atob()` in JavaScript throws a DOMException. This occurs when the string contains characters outside the base64 alphabet, or if the padding `=` is missing/incorrect.",
     "solution": "Ensure your string length is a multiple of 4 by adding `=` padding, and remove URL-safe characters (`-` and `_`) by replacing them with `+` and `/`.",
+    "solutionSteps": [
+      "Check your Base64 string length and add '=' padding characters until the total length is a multiple of 4.",
+      "Replace URL-safe characters '-' and '_' with standard Base64 characters '+' and '/'.",
+      "Inspect the sanitized Base64 string in an inspector tool to verify valid decoding."
+    ],
     "codeSnippet": "// ❌ Bad: URL-safe unpadded base64\nconst decoded = atob(\"eyJhbGciOiJIUzI1NiJ\"); \n\n// ✅ Good: Padded and standard base64\nlet b64 = \"eyJhbGciOiJIUzI1NiJ\".replace(/-/g, '+').replace(/_/g, '/');\nwhile (b64.length % 4) b64 += '=';\nconst decoded = atob(b64);",
     "faq": [
       {
@@ -399,6 +495,11 @@ export const RECIPE_REGISTRY: Record<string, RecipeMeta> = {
     "seoDescription": "Troubleshoot Base64 parsing errors caused by whitespace, line breaks, or URL encoding.",
     "problem": "Your backend framework throws an \"Invalid character in base64 string\" error. This usually happens when copying Base64 certificates or tokens that contain newlines `\\n` or when the string was URL-encoded (e.g., `%3D` instead of `=`).",
     "solution": "Strip all whitespace and newlines from the string before decoding, and ensure it has been URL-decoded if it came from a query parameter.",
+    "solutionSteps": [
+      "Strip all whitespace, carriage returns, and newline characters from the Base64 input string.",
+      "Ensure URL-encoded characters (like %20 or %2B) have been decoded back to raw characters.",
+      "Verify that only characters from the standard Base64 alphabet ([A-Za-z0-9+/=]) are present."
+    ],
     "codeSnippet": "// ❌ Bad: Contains newlines\nconst raw = \"base64\\nstring\\n\";\n\n// ✅ Good: Clean string\nconst clean = raw.replace(/\\s+/g, '');\nconst decoded = Buffer.from(clean, 'base64');",
     "faq": [
       {
@@ -419,6 +520,11 @@ export const RECIPE_REGISTRY: Record<string, RecipeMeta> = {
     "seoDescription": "Solve Node.js crypto module errors when running code in the browser or Edge runtime.",
     "problem": "You are trying to calculate an MD5 or SHA256 hash in a React or Next.js app, and you get `crypto.createHash is not a function`. The Node.js `crypto` module is not available in the browser.",
     "solution": "Use the browser native `crypto.subtle.digest()` API (WebCrypto API) or a lightweight client-side library instead of relying on Node's built-in crypto module.",
+    "solutionSteps": [
+      "Identify server-only Node.js crypto imports bundled into client-side browser code.",
+      "Replace Node's crypto.createHash() with the browser-native crypto.subtle.digest() Web Crypto API.",
+      "Verify hash generation using client-side cryptographic utilities with 100% in-browser privacy."
+    ],
     "codeSnippet": "// ❌ Bad: Node.js specific code in browser\nimport crypto from 'crypto';\nconst hash = crypto.createHash('sha256').update('msg').digest('hex');\n\n// ✅ Good: WebCrypto API\nconst msgBuffer = new TextEncoder().encode('msg');\nconst hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);",
     "faq": [
       {
@@ -439,6 +545,11 @@ export const RECIPE_REGISTRY: Record<string, RecipeMeta> = {
     "seoDescription": "Resolve hashing crashes when passing objects or numbers into crypto update functions.",
     "problem": "When calling `hash.update(data)`, you receive a TypeError. This occurs because hashing algorithms only operate on raw bytes (strings or buffers), but you passed an object, array, or number.",
     "solution": "Stringify the object or cast the number to a string before hashing it.",
+    "solutionSteps": [
+      "Inspect the data type of the input passed to the hashing or cryptographic function.",
+      "Serialize objects with JSON.stringify() or convert numeric values using String(value) before hashing.",
+      "Pass the string or Uint8Array buffer into your cryptographic hash function."
+    ],
     "codeSnippet": "// ❌ Bad: Passing an object\nconst data = { id: 1 };\ncrypto.createHash('sha256').update(data);\n\n// ✅ Good: Stringify first\nconst data = { id: 1 };\ncrypto.createHash('sha256').update(JSON.stringify(data));",
     "faq": [
       {
@@ -459,6 +570,11 @@ export const RECIPE_REGISTRY: Record<string, RecipeMeta> = {
     "seoDescription": "Troubleshoot bcrypt password verification failures caused by character encoding or truncation.",
     "problem": "A user is trying to log in with the correct password, but `bcrypt.compare()` always returns false. This often happens if the password exceeds 72 bytes, or if it was accidentally hashed twice during registration.",
     "solution": "Bcrypt truncates passwords at 72 bytes. Ensure you are not hashing a hex string that exceeds this limit. Also verify that your registration flow does not hash the password on the frontend AND the backend.",
+    "solutionSteps": [
+      "Ensure input passwords do not exceed bcrypt's 72-byte maximum truncation limit.",
+      "Verify that password hashing occurs strictly once on the backend, avoiding accidental double-hashing.",
+      "Compare passwords against stored hashes using bcrypt.compare() or bcrypt.compareSync()."
+    ],
     "codeSnippet": "// ❌ Bad: Hashing the hash\nconst hash = await bcrypt.hash(req.body.password, 10);\n// Later saving `await bcrypt.hash(hash, 10)` by accident\n\n// ✅ Good: Verify plain text against original hash\nconst match = await bcrypt.compare(req.body.password, storedHash);",
     "faq": [
       {
@@ -479,6 +595,11 @@ export const RECIPE_REGISTRY: Record<string, RecipeMeta> = {
     "seoDescription": "Solve UNABLE_TO_GET_ISSUER_CERT_LOCALLY errors when making requests to HTTPS endpoints.",
     "problem": "Your HTTP request fails with `UNABLE_TO_GET_ISSUER_CERT_LOCALLY`. Node.js cannot verify the server's SSL certificate because it lacks the root CA or the server didn't send the intermediate certificates.",
     "solution": "Avoid setting `NODE_TLS_REJECT_UNAUTHORIZED=0`. Instead, fix the server's certificate chain (include the intermediate certs), or manually supply the custom root CA to your Node.js HTTPS agent.",
+    "solutionSteps": [
+      "Inspect the remote SSL certificate chain using a certificate decoder to identify missing intermediate CA certs.",
+      "Update your web server configuration to include the complete intermediate CA certificate bundle.",
+      "For enterprise proxies or local dev, provide the custom Root CA via NODE_EXTRA_CA_CERTS rather than disabling TLS."
+    ],
     "codeSnippet": "// ❌ Bad: Disabling TLS verification globally\nprocess.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';\n\n// ✅ Good: Passing the custom CA\nconst agent = new https.Agent({ ca: fs.readFileSync('custom-ca.pem') });\naxios.get('https://internal.api', { httpsAgent: agent });",
     "faq": [
       {
@@ -499,6 +620,11 @@ export const RECIPE_REGISTRY: Record<string, RecipeMeta> = {
     "seoDescription": "Troubleshoot SSH connection failures to GitHub or remote servers due to incorrect key permissions or missing keys.",
     "problem": "When running `ssh user@host` or `git push`, you receive `Permission denied (publickey)`. The remote server rejected your connection because it doesn't recognize your key or the SSH agent isn't offering the right one.",
     "solution": "Ensure the public key is correctly added to the server's `~/.ssh/authorized_keys`, your private key file has strict `600` permissions (`chmod 600 id_ed25519`), and the key is added to your ssh-agent.",
+    "solutionSteps": [
+      "Confirm that your public SSH key (e.g. id_ed25519.pub) is added to ~/.ssh/authorized_keys on the target server.",
+      "Set strict permissions on your local private key file using chmod 600 ~/.ssh/id_ed25519.",
+      "Add the private key to your active SSH agent with ssh-add and test the connection using ssh -v."
+    ],
     "codeSnippet": "# ❌ Bad: Too open permissions on private key\n$ chmod 644 ~/.ssh/id_ed25519\n\n# ✅ Good: Strict permissions and adding to agent\n$ chmod 600 ~/.ssh/id_ed25519\n$ ssh-add ~/.ssh/id_ed25519",
     "faq": [
       {
@@ -519,6 +645,11 @@ export const RECIPE_REGISTRY: Record<string, RecipeMeta> = {
     "seoDescription": "Solve Go json.Unmarshal errors when JSON types do not match your struct definitions.",
     "problem": "Your Go application panics with `json: cannot unmarshal string into Go struct field...`. The API returned a string (e.g., `\"123\"`) but your Go struct defined the field as an `int`.",
     "solution": "You can fix this by changing the struct field to `string` and parsing it manually, or by adding the `,string` tag to the struct field so `json.Unmarshal` parses the string into an integer automatically.",
+    "solutionSteps": [
+      "Inspect the JSON payload for fields where numbers are transmitted inside string quotes.",
+      "Add the ,string option to the Go struct field's json tag (e.g. `json:\"amount,string\"`).",
+      "Alternatively, parse the field as a string and convert it explicitly using strconv.Atoi()."
+    ],
     "codeSnippet": "// ❌ Bad: Strict integer type crashes on string data\ntype User struct {\n    Age int `json:\"age\"`\n}\n\n// ✅ Good: Using the string tag for automatic coercion\ntype User struct {\n    Age int `json:\"age,string\"`\n}",
     "faq": [
       {
@@ -539,6 +670,11 @@ export const RECIPE_REGISTRY: Record<string, RecipeMeta> = {
     "seoDescription": "Troubleshoot Go HTTP client timeouts and context cancellations during slow API calls.",
     "problem": "Your Go HTTP request fails with `Client.Timeout exceeded while awaiting headers`. The remote server took longer to respond than the `Timeout` specified in your `http.Client`.",
     "solution": "Increase the `Timeout` duration in your HTTP client, or verify if the server is actually deadlocking. If using a `Context`, ensure the context deadline is generous enough for the payload size.",
+    "solutionSteps": [
+      "Inspect the Timeout setting in your Go http.Client or the deadline of your context.Context.",
+      "Increase the client timeout duration to allow adequate time for large payloads or slow responses.",
+      "Ensure connection handles and response bodies are closed using defer resp.Body.Close()."
+    ],
     "codeSnippet": "// ❌ Bad: Too short timeout for a slow API\nclient := &http.Client{ Timeout: 1 * time.Second }\n\n// ✅ Good: Appropriate timeout\nclient := &http.Client{ Timeout: 10 * time.Second }",
     "faq": [
       {
@@ -559,6 +695,11 @@ export const RECIPE_REGISTRY: Record<string, RecipeMeta> = {
     "seoDescription": "Understand why new Date() returns Invalid Date and how to correctly parse timestamps.",
     "problem": "You pass a string or timestamp into `new Date()` and it evaluates to `Invalid Date`. This frequently happens when passing Unix epochs in seconds instead of milliseconds, or parsing non-ISO 8601 strings (like `YYYY-DD-MM`).",
     "solution": "JavaScript requires epoch timestamps to be in milliseconds. Multiply seconds by 1000 before passing them to the Date constructor. For strings, stick to ISO format `YYYY-MM-DDTHH:mm:ss.sssZ`.",
+    "solutionSteps": [
+      "Check timestamp units: JavaScript Date constructors expect milliseconds (13 digits), not seconds (10 digits).",
+      "Multiply Unix second timestamps by 1,000 before passing them to new Date(timestamp * 1000).",
+      "Format date strings using ISO 8601 (YYYY-MM-DDTHH:mm:ss.sssZ) for consistent cross-browser parsing."
+    ],
     "codeSnippet": "// ❌ Bad: Passing seconds\nconst date = new Date(1672531200); // Year 1970\n\n// ✅ Good: Passing milliseconds\nconst date = new Date(1672531200 * 1000); // Year 2023",
     "faq": [
       {
@@ -579,6 +720,11 @@ export const RECIPE_REGISTRY: Record<string, RecipeMeta> = {
     "seoDescription": "Solve bizarre dates in the far future caused by timestamp unit confusion (milliseconds vs nanoseconds).",
     "problem": "Your parsed dates are showing up as the year 54,000 or you receive a \"time out of range\" exception in your language of choice. This happens when you pass nanoseconds or microseconds into a function expecting milliseconds.",
     "solution": "Determine the length of your epoch integer. 10 digits = seconds. 13 digits = milliseconds. 16 digits = microseconds. 19 digits = nanoseconds. Divide accordingly before parsing.",
+    "solutionSteps": [
+      "Count the digits of your epoch integer to determine its precision (10s, 13ms, 16µs, 19ns).",
+      "Divide microseconds or nanoseconds to convert the timestamp to a 13-digit millisecond value.",
+      "Pass the normalized millisecond timestamp to an epoch converter or Date constructor."
+    ],
     "codeSnippet": "// ❌ Bad: Passing nanoseconds to JS\nconst date = new Date(1672531200000000000); \n\n// ✅ Good: Truncating to milliseconds\nconst date = new Date(1672531200000000000 / 1000000);",
     "faq": [
       {
@@ -599,6 +745,11 @@ export const RECIPE_REGISTRY: Record<string, RecipeMeta> = {
     "seoDescription": "Solve JavaScript regex compilation crashes caused by unescaped special characters.",
     "problem": "Creating a RegExp object throws `SyntaxError: Invalid regular expression`. This occurs when you dynamically pass user input into `new RegExp()` without escaping special regex characters (like `[`, `(`, `*`, `?`).",
     "solution": "Always escape dynamic strings before passing them into `new RegExp()`. A simple replace function can escape all reserved characters.",
+    "solutionSteps": [
+      "Identify dynamic user input containing unescaped regex characters (. * + ? ^ $ { } ( ) [ ] | \\).",
+      "Escape dynamic strings with a helper function before constructing a RegExp instance.",
+      "Pass the safely escaped string into new RegExp() to prevent syntax errors and regex injection."
+    ],
     "codeSnippet": "// ❌ Bad: User input containing a '+' crashes the regex\nconst search = \"C++\";\nconst regex = new RegExp(search); // Crashes\n\n// ✅ Good: Escaped input\nconst escapeRegExp = (str) => str.replace(/[.*+?^$\\{\\}()|[\\]\\\\]/g, '\\\\$&');\nconst regex = new RegExp(escapeRegExp(\"C++\"));",
     "faq": [
       {
@@ -619,6 +770,11 @@ export const RECIPE_REGISTRY: Record<string, RecipeMeta> = {
     "seoDescription": "Understand and resolve Git merge conflict headers like <<<<<<< HEAD.",
     "problem": "Your build fails or your IDE shows syntax errors because your file contains `<<<<<<< HEAD` and `======`. This happens when a git merge or rebase fails automatically and requires manual intervention.",
     "solution": "You must manually edit the file to choose the correct code. Remove the conflict markers (`<<<<<<<`, `======`, `>>>>>>>`) and keep the lines you want.",
+    "solutionSteps": [
+      "Search your codebase for leftover Git conflict markers (<<<<<<<, =======, >>>>>>>).",
+      "Compare the conflicting sections using a visual diff tool to verify both versions.",
+      "Manually edit the file to preserve the desired code, remove all marker lines, and commit the resolved file."
+    ],
     "codeSnippet": "// ❌ Bad: Code containing markers\n<<<<<<< HEAD\nconst url = 'localhost';\n=======\nconst url = 'api.com';\n>>>>>>> feature-branch\n\n// ✅ Good: Resolved code\nconst url = process.env.NODE_ENV === 'prod' ? 'api.com' : 'localhost';",
     "faq": [
       {
@@ -639,6 +795,11 @@ export const RECIPE_REGISTRY: Record<string, RecipeMeta> = {
     "seoDescription": "Troubleshoot network configuration errors caused by out-of-bounds CIDR block definitions.",
     "problem": "Your cloud provider (AWS, GCP) or network script rejects your IP range with \"Invalid CIDR notation\". This happens when the routing prefix exceeds /32 for IPv4, or if the base IP address is not the actual network address for the given mask.",
     "solution": "Ensure your suffix is between /0 and /32. Also ensure that the host bits are zeroed out. For example, `192.168.1.5/24` is technically invalid as a network definition; it should be `192.168.1.0/24`.",
+    "solutionSteps": [
+      "Verify that the CIDR prefix length is a valid integer between /0 and /32.",
+      "Zero out host bits so the IP represents the network base address (e.g. 192.168.1.0/24 instead of 192.168.1.5/24).",
+      "Validate subnet masks, broadcast addresses, and usable host ranges using a CIDR calculator."
+    ],
     "codeSnippet": "# ❌ Bad: Base IP has host bits set\nallow_ip = \"10.0.0.5/24\"\n\n# ✅ Good: Base IP is the network boundary\nallow_ip = \"10.0.0.0/24\"",
     "faq": [
       {
@@ -659,6 +820,11 @@ export const RECIPE_REGISTRY: Record<string, RecipeMeta> = {
     "seoDescription": "Solve strict JSON parsing errors caused by trailing commas, single quotes, or unquoted keys.",
     "problem": "Your JSON parser throws \"Expected double-quoted property name\". You are likely using JavaScript object literal syntax (like single quotes or unquoted keys) which is strictly forbidden in the JSON spec.",
     "solution": "Wrap all keys in double quotes `\"\"`. Change all string values to double quotes. Remove trailing commas from the last item in objects or arrays.",
+    "solutionSteps": [
+      "Replace single quotes (') around object keys and string values with RFC 8259 double quotes (\").",
+      "Remove trailing commas from the final item in objects and arrays.",
+      "Format and validate the JSON string using a JSON formatter before sending or parsing."
+    ],
     "codeSnippet": "// ❌ Bad: JS object syntax (invalid JSON)\n{ name: 'John', age: 30, }\n\n// ✅ Good: Valid strict JSON\n{ \"name\": \"John\", \"age\": 30 }",
     "faq": [
       {
@@ -679,6 +845,11 @@ export const RECIPE_REGISTRY: Record<string, RecipeMeta> = {
     "seoDescription": "Troubleshoot YAML parser errors caused by misaligned indentation or hidden tab characters.",
     "problem": "Your YAML parser crashes with `did not find expected key`. This almost always means your indentation levels are mixed up. A child element is indented less than or equal to its parent, breaking the block mapping.",
     "solution": "Check your indentation. YAML requires exact spaces. A common mistake is indenting a list item `-` without indenting its contents correctly.",
+    "solutionSteps": [
+      "Check the indentation of parent keys and nested mapping elements in your YAML configuration.",
+      "Ensure consistent 2-space indentation and verify that list items (-) are indented correctly relative to keys.",
+      "Convert the YAML document to JSON to inspect structural hierarchy and detect misaligned keys."
+    ],
     "codeSnippet": "# ❌ Bad: Misaligned list\nsteps:\n- name: Build\n script: make build\n\n# ✅ Good: Correct alignment\nsteps:\n  - name: Build\n    script: make build",
     "faq": [
       {
@@ -699,6 +870,11 @@ export const RECIPE_REGISTRY: Record<string, RecipeMeta> = {
     "seoDescription": "Handle JWT expiration gracefully on the frontend using refresh tokens.",
     "problem": "Your API calls are failing with a 401 Unauthorized and `TokenExpiredError: jwt expired`. The `exp` claim in the JSON Web Token is in the past.",
     "solution": "You must handle this gracefully on the client by intercepting the 401 response and using a Refresh Token to obtain a new JWT, or by redirecting the user to the login screen.",
+    "solutionSteps": [
+      "Decode the JWT payload to inspect the exp timestamp and determine how long ago the token expired.",
+      "Implement automatic token refresh using a refresh token endpoint upon receiving a 401 Unauthorized response.",
+      "Redirect unauthenticated users to the login flow if both access and refresh tokens are expired."
+    ],
     "codeSnippet": "// ✅ Good: Axios interceptor for refresh\naxios.interceptors.response.use(res => res, async error => {\n  if (error.response.status === 401) {\n    await refreshTokens();\n    return axios.request(error.config);\n  }\n  return Promise.reject(error);\n});",
     "faq": [
       {
@@ -719,6 +895,11 @@ export const RECIPE_REGISTRY: Record<string, RecipeMeta> = {
     "seoDescription": "Understand the difference between standard UNIX cron and extended Quartz/Spring cron syntax.",
     "problem": "Your cron parser throws an error because you provided 6 fields (e.g., `* * * * * *`) instead of 5. You are likely trying to schedule at the \"seconds\" level, but standard UNIX cron only goes down to the \"minute\" level.",
     "solution": "If your runtime environment (like standard crontab) only supports 5 fields, remove the first \"seconds\" field. If you absolutely need sub-minute execution, use a systemd timer, a background worker, or a parser that supports 6-field Quartz syntax (like AWS EventBridge).",
+    "solutionSteps": [
+      "Count the fields in your cron expression to identify whether a 6th seconds field was included.",
+      "Remove the leading seconds field if scheduling within standard 5-part Linux crontab environments.",
+      "Use a cron visualizer to verify that the remaining 5 fields fire at your expected intervals."
+    ],
     "codeSnippet": "// ❌ Bad: 6 fields in standard crontab (fails)\n* * * * * * /script.sh\n\n// ✅ Good: 5 fields (runs every minute)\n* * * * * /script.sh",
     "faq": [
       {
@@ -739,6 +920,11 @@ export const RECIPE_REGISTRY: Record<string, RecipeMeta> = {
     "seoDescription": "Solve strict TypeScript compiler errors when accessing undocumented API fields.",
     "problem": "TypeScript throws `Property 'x' does not exist on type 'Y'`. You are trying to access a field from an API response, but your TypeScript interface doesn't define that field.",
     "solution": "Update your interface to include the missing property. If the property is optional (sometimes the API doesn't send it), mark it with a question mark `?`.",
+    "solutionSteps": [
+      "Compare your TypeScript interface declaration with the actual API response data.",
+      "Add the missing property to the interface, marking it with '?' if the field is optional.",
+      "Regenerate complete TypeScript interfaces directly from JSON API payloads using a JSON-to-TS tool."
+    ],
     "codeSnippet": "// ❌ Bad: Interface missing the property\ninterface User { name: string; }\nconst user = data as User;\nconsole.log(user.age); // Error!\n\n// ✅ Good: Updated interface\ninterface User { name: string; age?: number; }\nconsole.log(user.age);",
     "faq": [
       {
@@ -759,6 +945,11 @@ export const RECIPE_REGISTRY: Record<string, RecipeMeta> = {
     "seoDescription": "Solve React JSX compilation errors caused by unclosed HTML or SVG tags.",
     "problem": "React fails to compile with `Expected corresponding JSX closing tag for <path>`. HTML/SVG allows self-closing tags without a trailing slash (like `<path d=\"...\">`), but JSX strictly requires all tags to be closed (e.g., `<path d=\"...\" />`).",
     "solution": "Add a trailing slash to all self-closing SVG tags like `<path>`, `<circle>`, and `<rect>`.",
+    "solutionSteps": [
+      "Locate void SVG elements (like <path>, <circle>, <rect>) that lack trailing slashes.",
+      "Add a trailing slash before the closing bracket to make each tag self-closing (<path />, <circle />).",
+      "Convert raw SVG files into valid React JSX components with an SVG-to-JSX converter."
+    ],
     "codeSnippet": "// ❌ Bad: Unclosed path tag\n<svg><path d=\"M10 10\"></svg>\n\n// ✅ Good: Self-closing slash\n<svg><path d=\"M10 10\" /></svg>",
     "faq": [
       {
@@ -779,6 +970,11 @@ export const RECIPE_REGISTRY: Record<string, RecipeMeta> = {
     "seoDescription": "Troubleshoot HMAC generation crashes in Node.js caused by missing or undefined secret keys.",
     "problem": "When calling `crypto.createHmac()`, Node.js throws `TypeError: Key must be a buffer`. This happens because the secret key you passed is `undefined`, usually due to a missing environment variable.",
     "solution": "Ensure your `.env` file is loaded correctly and that the secret key exists before attempting to generate the HMAC.",
+    "solutionSteps": [
+      "Verify that your secret key environment variable is properly loaded and not undefined or empty.",
+      "Ensure the secret is passed as a valid string or Buffer into the HMAC generator.",
+      "Test signature generation with known test vectors to ensure deterministic hash results."
+    ],
     "codeSnippet": "// ❌ Bad: Secret is undefined\nconst secret = process.env.WEBHOOK_SECRET; // Missing!\ncrypto.createHmac('sha256', secret);\n\n// ✅ Good: Fail fast if missing\nif (!process.env.WEBHOOK_SECRET) throw new Error(\"Missing secret\");\ncrypto.createHmac('sha256', process.env.WEBHOOK_SECRET);",
     "faq": [
       {
@@ -799,6 +995,11 @@ export const RECIPE_REGISTRY: Record<string, RecipeMeta> = {
     "seoDescription": "Resolve Node.js SSL handshake failures when connecting to internal corporate networks.",
     "problem": "Your app throws `self signed certificate in certificate chain`. This happens frequently in corporate networks that use SSL interception proxies, or when testing against local dev servers with self-signed certs.",
     "solution": "For development, you can bypass this via an environment variable. For production, you must obtain the corporate Root CA certificate and tell Node.js to trust it.",
+    "solutionSteps": [
+      "Decode the self-signed certificate using a certificate decoder to inspect the Subject and Issuer DN.",
+      "Export the corporate or self-signed Root CA certificate in PEM format.",
+      "Configure Node.js with NODE_EXTRA_CA_CERTS pointing to the CA certificate file for secure enterprise communication."
+    ],
     "codeSnippet": "// ❌ Bad: Insecure bypass (Dev only)\nprocess.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';\n\n// ✅ Good: Add corporate CA to global agent\nrequire('https').globalAgent.options.ca = fs.readFileSync('corp-ca.crt');",
     "faq": [
       {

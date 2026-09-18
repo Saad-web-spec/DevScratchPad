@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { getRecipeMeta, RECIPE_SLUGS, RECIPE_REGISTRY } from "@/lib/recipes/registry";
@@ -117,6 +118,40 @@ export default async function RecipePage({
     }))
   };
 
+  const solutionSteps = (recipe.solutionSteps && recipe.solutionSteps.length > 0)
+    ? recipe.solutionSteps
+    : [
+        recipe.solution,
+        ...(recipe.codeSnippet ? ["Apply the verified code pattern to eliminate the runtime error."] : []),
+        ...(targetTool ? [`Verify your fix offline using the ${targetTool.name} tool.`] : [])
+      ];
+
+  const howToSchema = {
+    "@context": "https://schema.org",
+    "@type": "HowTo",
+    "@id": `${SITE_URL}/recipes/${slug}#howto`,
+    "name": recipe.title,
+    "description": recipe.seoDescription,
+    "image": `${SITE_URL}/recipes/${slug}/opengraph-image`,
+    "totalTime": "PT5M",
+    ...(targetTool ? {
+      "tool": [
+        {
+          "@type": "HowToTool",
+          "name": targetTool.name,
+          "url": `${SITE_URL}/tools/${targetTool.slug}`
+        }
+      ]
+    } : {}),
+    "step": solutionSteps.map((step, idx) => ({
+      "@type": "HowToStep",
+      "position": idx + 1,
+      "name": step.includes(":") ? step.split(":")[0].trim() : step.replace(/\.$/, ""),
+      "text": step,
+      "url": `${SITE_URL}/recipes/${slug}#step-${idx + 1}`
+    }))
+  };
+
   return (
     <div className="min-h-screen bg-zinc-50/50 text-zinc-900 flex flex-col font-sans">
       <SiteHeader />
@@ -149,7 +184,7 @@ export default async function RecipePage({
         <header className="space-y-4">
           <div className="flex flex-wrap items-center gap-2">
             <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full text-xs font-mono font-medium bg-orange-50 text-orange-800 border border-orange-200">
-              <img src="/orange-star.png" className="w-3.5 h-3.5 object-contain shrink-0" alt="Star" />
+              <Image src="/orange-star.png" width={14} height={14} className="w-3.5 h-3.5 object-contain shrink-0" alt="Star" />
               <span>Verified Developer Solution • 100% Offline</span>
             </div>
             {targetTool && (
@@ -210,6 +245,23 @@ export default async function RecipePage({
               <p className="text-sm text-zinc-700 leading-relaxed font-sans">
                 {recipe.solution}
               </p>
+              {solutionSteps && solutionSteps.length > 0 && (
+                <div className="pt-3 border-t border-orange-200/70">
+                  <span className="text-xs font-mono font-semibold text-orange-950 uppercase tracking-wide block mb-2">
+                    Action Steps:
+                  </span>
+                  <ol className="space-y-2 text-xs text-zinc-700 font-sans list-none pl-0">
+                    {solutionSteps.map((step, idx) => (
+                      <li key={idx} id={`step-${idx + 1}`} className="flex items-start gap-2">
+                        <span className="shrink-0 flex items-center justify-center w-4 h-4 rounded-full bg-orange-200/80 text-orange-950 font-mono text-[10px] font-bold mt-0.5">
+                          {idx + 1}
+                        </span>
+                        <span className="leading-relaxed">{step}</span>
+                      </li>
+                    ))}
+                  </ol>
+                </div>
+              )}
             </div>
             <div className="pt-3 border-t border-orange-200 text-[11px] font-mono text-orange-800 flex items-center gap-1.5">
               <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
@@ -323,6 +375,12 @@ export default async function RecipePage({
           type="application/ld+json"
           dangerouslySetInnerHTML={{
             __html: JSON.stringify(faqSchema).replace(/</g, "\\u003c"),
+          }}
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify(howToSchema).replace(/</g, "\\u003c"),
           }}
         />
       </main>

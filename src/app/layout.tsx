@@ -15,7 +15,7 @@ export const metadata: Metadata = {
     default: "DevScratchpad — Free Offline Developer Tools",
   },
   description:
-    "Massive collection of free online developer tools that work 100% offline. JSON formatter, YAML to JSON, cURL to Go, JWT decoder, Base64 encoder, SSH key generator, Password hashing, and more. Zero server transmission, 100% client-side privacy backed scratch pad for developers.",
+    "28 free offline developer tools with 100% client-side privacy. Format JSON, convert code, decode JWTs, and generate keys locally with zero server transmission.",
   keywords: [
     "developer tools",
     "developers",

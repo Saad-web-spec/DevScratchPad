@@ -7,7 +7,7 @@ export const metadata: Metadata = {
     absolute: "DevScratchpad — Free Offline Developer Tools & AI Skill Studio",
   },
   description:
-    "DevScratchpad is a free, 100% offline, privacy-first developer utility suite. 28 tools across 5 categories, AI Skill Studio supporting 13 formats & 5-layer agent suite, and CLI with zero server transmission.",
+    "28 free offline developer tools with 100% client-side privacy. Format JSON, convert code, decode JWTs, and generate keys locally with zero server transmission.",
   keywords: [
     "DevScratchpad",
     "Dev Scratchpad",

@@ -1,89 +1,67 @@
 import Link from"next/link";
-import { ShieldCheck, ArrowRight, HelpCircle, Sparkles, Zap } from"lucide-react";
+import { ShieldCheck, ArrowRight, HelpCircle, Sparkles } from "lucide-react";
 import { TOOLS_REGISTRY } from"@/lib/tools/registry";
 
 const CATEGORIES = [
   {
-  name:"Code Formatting",
-  tools: ["json-formatter", "json-validator", "xml-formatter", "sql-formatter", "graphql-formatter"],
+    name: "Code Formatting",
+    tools: ["json-formatter", "json-schema-validator", "xml-formatter", "sql-formatter", "graphql-formatter"],
   },
   {
-  name:"Security & Identifiers",
-  tools: ["uuid-generator", "jwt", "hash", "hmac-generator", "base64-inspector", "cert-decoder", "ssh-key-generator", "password-hash"],
+    name: "Security & Identifiers",
+    tools: ["uuid-generator", "jwt", "hash", "hmac-generator", "base64-inspector", "cert-decoder", "ssh-key-generator", "password-hash", "mock-data-generator"],
   },
   {
-  name:"Networking & Time",
-  tools: ["cron", "cidr-calculator"],
+    name: "Networking & Time",
+    tools: ["cron", "cidr-calculator", "epoch-converter"],
   },
   {
-  name:"Code Converters",
-  tools: ["json-to-ts", "json-to-zod", "json-to-go", "svg-to-jsx", "curl-to-javascript", "curl-to-python", "curl-to-fetch", "curl-to-go", "yaml", "yaml-to-json", "json-to-yaml"],
+    name: "Code Converters",
+    tools: ["json-to-ts", "json-to-zod", "json-to-go", "svg-to-jsx", "curl-to-python", "curl-to-fetch", "curl-to-go", "yaml"],
   },
   {
-  name:"Diff & Text Optimization",
-  tools: ["diff", "minifier", "regex"],
+    name: "Diff & Text Optimization",
+    tools: ["diff", "minifier", "regex"],
   },
 ];
 
 export function HomeSeoContent() {
  const allTools = Object.values(TOOLS_REGISTRY);
 
- const jsonLdGraph = {
-"@context":"https://schema.org",
-"@graph": [
- {
-"@type":"SoftwareApplication",
-"@id":"https://www.devscratchpad.tech/#webapp",
-"name":"DevScratchpad",
-"url":"https://www.devscratchpad.tech",
-"applicationCategory":"DeveloperApplication",
-"operatingSystem":"All",
-"browserRequirements":"Requires JavaScript",
-"offers": {
-"@type":"Offer",
-"price":"0",
-"priceCurrency":"USD"
- },
-"description":"Free online developer tools. 100% client-side and private.",
- },
- {
-"@type":"WebSite",
-"@id":"https://www.devscratchpad.tech/#website",
-"url":"https://www.devscratchpad.tech",
-"name":"DevScratchpad",
-"description":"28 Free offline developer tools for formatting, converting, and analyzing data securely.",
- },
- {
-"@type":"ItemList",
-"@id":"https://www.devscratchpad.tech/#tools",
-"name":"DevScratchpad Tools",
-"itemListElement": [
- {
-"@type":"ListItem",
-"position": 1,
-"url":"https://www.devscratchpad.tech/ai-skill-studio",
-"name":"AI Skill Studio"
- },
- ...allTools.map((tool, idx) => ({
-"@type":"ListItem",
-"position": idx + 2,
-"url": `https://www.devscratchpad.tech/tools/${tool.slug}`,
-"name": tool.name
- }))
- ]
- },
- {
-"@type":"FAQPage",
-"@id":"https://www.devscratchpad.tech/#faq",
-"mainEntity": [
- {
-"@type":"Question",
-"name":"What tools does DevScratchpad offer?",
-"acceptedAnswer": {
-"@type":"Answer",
-"text":"DevScratchpad provides over 22 developer tools including JSON/XML/SQL/GraphQL formatters, JWT decoders, UUID/ULID generators, SVG to JSX converter, string case converter, Hash/HMAC generators, Base64/URL encoders, timestamp converters, CIDR calculators, diff checkers, and more."
- }
- },
+  const jsonLdGraph = {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "ItemList",
+        "@id": "https://www.devscratchpad.tech/#tools",
+        "name": "DevScratchpad Tools",
+        "itemListElement": [
+          {
+            "@type": "ListItem",
+            "position": 1,
+            "url": "https://www.devscratchpad.tech/ai-skill-studio",
+            "name": "AI Skill Studio"
+          },
+          ...allTools.map((tool, idx) => ({
+            "@type": "ListItem",
+            "position": idx + 2,
+            "url": `https://www.devscratchpad.tech/tools/${tool.slug}`,
+            "name": tool.name
+          }))
+        ]
+      },
+      {
+        "@type": "FAQPage",
+        "@id": "https://www.devscratchpad.tech/#faq",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "What tools does DevScratchpad offer?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "DevScratchpad provides 28 offline developer tools including SVG to JSX, JSON/XML/SQL formatters, JWT decoders, Hash/HMAC generators, Base64/URL encoders, timestamp converters, CIDR calculators, diff checkers, and more."
+            }
+          },
  {
 "@type":"Question",
 "name":"Is DevScratchpad really free?",
@@ -114,7 +92,7 @@ export function HomeSeoContent() {
  };
 
  return (
- <div className="mt-12 pt-8 border-t border-zinc-200 ] max-w-4xl pb-24 mx-auto px-4 w-full">
+ <div className="mt-12 pt-8 border-t border-zinc-200 max-w-4xl pb-24 mx-auto px-4 w-full">
  <script
  type="application/ld+json"
  dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLdGraph).replace(/</g, "\\u003c") }}
@@ -212,7 +190,7 @@ export function HomeSeoContent() {
  <Link
  key={tool.slug}
  href={`/tools/${tool.slug}`}
- className="group flex items-center justify-between p-3.5 bg-zinc-50 ] hover:bg-zinc-100 border border-zinc-200 ] rounded-xl transition-all"
+ className="group flex items-center justify-between p-3.5 bg-zinc-50 hover:bg-zinc-100 border border-zinc-200 rounded-xl transition-all"
  >
  <div>
  <h3 className="text-sm font-medium text-zinc-900 group-hover:text-blue-500 transition-colors">
@@ -288,7 +266,7 @@ export function HomeSeoContent() {
   </div>
   </div>
 
- <div className="mt-8 flex items-start gap-3 p-4 bg-zinc-50 ] border border-zinc-200 ] rounded-xl mb-10">
+ <div className="mt-8 flex items-start gap-3 p-4 bg-zinc-50 border border-zinc-200 rounded-xl mb-10">
  <ShieldCheck className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5"/>
  <div>
  <p className="text-sm font-bold text-zinc-900 mb-1">
