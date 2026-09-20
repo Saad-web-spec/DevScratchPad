@@ -1,18 +1,13 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Link from "next/link";
-import { Search, Sparkles, ArrowRight, Wrench, ShieldCheck } from "lucide-react";
+import { Search, ArrowRight, ShieldCheck } from "lucide-react";
 import { RecipeMeta } from "@/lib/recipes/registry";
 
 export function RecipeDirectory({ recipes }: { recipes: RecipeMeta[] }) {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedTool, setSelectedTool] = useState<string>("all");
-  const [isMounted, setIsMounted] = useState(false);
-
-  useEffect(() => {
-    setIsMounted(true);
-  }, []);
 
   // Extract unique tool slugs for quick filter pills
   const availableTools = Array.from(new Set(recipes.map((r) => r.targetToolSlug))).sort();

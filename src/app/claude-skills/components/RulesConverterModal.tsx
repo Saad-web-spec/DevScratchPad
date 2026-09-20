@@ -3,14 +3,10 @@
 import React, { useState, useRef } from "react";
 import {
   UploadCloud,
-  FileCode2,
   CheckCircle2,
   X,
-  Sparkles,
   ArrowRight,
   ShieldCheck,
-  AlertCircle,
-  FileText,
   RefreshCw,
 } from "lucide-react";
 import { convertRawRulesToIR, ParsedRulesIR } from "../lib/rulesConverter";

@@ -14,18 +14,11 @@ import { ShareButton } from "@/components/ShareButton";
 import { EmbedButton } from "@/components/EmbedButton";
 import { ExportImageButton } from "@/components/ExportImageButton";
 import {
-  Lock,
-  ShieldCheck,
-  ShieldAlert,
   Copy,
   Check,
   RefreshCw,
   Eye,
   EyeOff,
-  Sliders,
-  CheckCircle2,
-  XCircle,
-  Sparkles,
   X,
   AlertCircle,
 } from "lucide-react";
@@ -77,7 +70,6 @@ export function PasswordHashTool({
   onValidationChange,
   onStatsChange,
   onLogHistory,
-  restoredInput,
 }: PasswordHashToolProps) {
   const [mode, setMode] = useState<"generate" | "verify">("generate");
 
@@ -89,7 +81,7 @@ export function PasswordHashTool({
   const [pbkdf2Iterations, setPbkdf2Iterations] = useState(100000);
   const [salt, setSalt] = useState<string>(() => generateRandomSalt(16));
   const [genResult, setGenResult] = useState<HashGenerationResult | null>(null);
-  const [isGenerating, setIsGenerating] = useState(false);
+  const [, setIsGenerating] = useState(false);
 
   // Verifier State
   const [verifyHash, setVerifyHash] = useState<string>(
@@ -126,8 +118,10 @@ export function PasswordHashTool({
 
   useEffect(() => {
     if (mode === "generate") {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       handleGenerate();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [algo, password, bcryptRounds, pbkdf2Iterations, salt, mode]);
 
   // Verify Hash
@@ -141,6 +135,7 @@ export function PasswordHashTool({
         onStatsChange(verifyHash.length, Math.round((end - start) * 10) / 10);
       });
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [verifyHash, verifyPassword, mode]);
 
   // Save workspace snapshot

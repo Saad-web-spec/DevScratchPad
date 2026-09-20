@@ -4,16 +4,9 @@ import {
   Terminal,
   ShieldCheck,
   ArrowRight,
-  Sparkles,
   Lock,
   Cpu,
-  Layers,
-  CheckCircle2,
   HelpCircle,
-  Code,
-  FileText,
-  RefreshCw,
-  ExternalLink,
   BookOpen,
 } from "lucide-react";
 import { CliClient } from "./CliClient";

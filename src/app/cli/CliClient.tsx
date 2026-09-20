@@ -8,8 +8,6 @@ import {
   Check,
   ShieldCheck,
   ArrowRight,
-  Cpu,
-  Layers,
   FileCode2,
   ExternalLink,
   Lock,

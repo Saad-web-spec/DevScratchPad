@@ -9,6 +9,7 @@ import {
   FileCode,
   ShieldAlert,
   FileText,
+  Cpu,
 } from "lucide-react";
 
 export function AiSkillStudioSeoContent() {
@@ -20,25 +21,25 @@ export function AiSkillStudioSeoContent() {
         <section className="space-y-4 border-b border-zinc-200 pb-10">
           <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full text-xs font-mono font-medium bg-orange-50 text-orange-800 border border-orange-200">
             <img src="/orange-star.png" className="w-3.5 h-3.5 object-contain shrink-0" alt="Star" />
-            <span>Developer Reference &amp; 5-Layer AI Architecture</span>
+            <span>Developer Reference &amp; 4-Layer Multi-Agent Architecture</span>
           </div>
           <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-zinc-900">
-            AI Skill Studio — 5-Layer AI Agent Suite &amp; Rulebook Manager
+            AI Skill Studio — 17 Formats &amp; 4-Layer AI Agent Operating Suite
           </h1>
           <p className="text-sm sm:text-base text-zinc-600 max-w-4xl leading-relaxed">
-            Autonomous coding assistants (Cursor IDE, Claude Code, Windsurf, Copilot) are only as dependable as their operational boundaries. <strong>AI Skill Studio</strong> is a 100% client-side workbench that generates, validates, and exports every critical artifact an AI agent requires: IDE rulebooks, privacy-first context shields, and machine-readable architectural blueprints. Zero telemetry, zero server uploads, completely private.
+            Autonomous coding assistants (Cursor IDE, Claude Code, Windsurf, Copilot, Antigravity, Devin) are only as dependable as their operational boundaries. <strong>AI Skill Studio</strong> is a 100% client-side workbench that generates, validates, and exports every critical artifact an AI agent requires: IDE rulebooks, privacy-first context shields, machine-readable architectural blueprints, and multi-agent governance documents (<strong>PRD.md</strong>, <strong>DESIGN.md</strong>, <strong>TASK.md</strong>, and <strong>MEMORY.md</strong>). Zero telemetry, zero server uploads, completely private.
           </p>
         </section>
 
-        {/* 2. 5-Layer System Architecture Matrix */}
+        {/* 2. 4-Layer System Architecture Matrix */}
         <section className="space-y-10">
           <div className="space-y-2">
             <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-zinc-900 flex items-center gap-2">
               <Layers className="w-5 h-5 text-orange-600" />
-              The 5-Layer AI Agent Operating Suite
+              The 4-Layer AI Agent Operating Suite
             </h2>
             <p className="text-xs sm:text-sm text-zinc-600">
-              Modern AI pair programming requires more than raw prompts. DevScratchpad organizes agent steering into 3 coordinated layers covering 13 distinct formats:
+              Modern AI pair programming requires more than raw prompts. DevScratchpad organizes agent steering into 4 coordinated layers covering 17 distinct formats:
             </p>
           </div>
 
@@ -299,6 +300,105 @@ export function AiSkillStudioSeoContent() {
               </Link>
             </div>
           </div>
+
+          {/* Group 4: AI Governance & Multi-Agent Planning Suite */}
+          <div className="space-y-4">
+            <div className="flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-blue-500"></span>
+              <h3 className="text-sm font-bold uppercase tracking-wider text-zinc-700 font-mono">
+                Layer 4: AI Governance &amp; Multi-Agent Planning Suite (New Editions)
+              </h3>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              {/* PRD.md */}
+              <div className="flex flex-col justify-between border border-zinc-200/90 rounded-xl p-4 bg-white shadow-2xs hover:shadow-xs hover:border-zinc-300 transition-all text-inherit group">
+                <div className="space-y-2.5">
+                  <div className="flex items-center justify-between">
+                    <span className="font-mono text-xs font-bold text-blue-600 bg-blue-50 border border-blue-200/80 px-2 py-0.5 rounded-md">
+                      PRD.md
+                    </span>
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">Governance</span>
+                  </div>
+                  <h4 className="font-semibold text-zinc-900 text-sm group-hover:text-blue-600 transition-colors">
+                    Product Requirements
+                  </h4>
+                  <p className="text-xs text-zinc-600 leading-relaxed">
+                    Product vision, user personas, functional matrix, and milestone roadmap. Defines explicit success criteria so agents never build out of scope.
+                  </p>
+                </div>
+                <div className="mt-3 pt-2.5 border-t border-zinc-100 flex items-center gap-1.5 text-[11px] font-mono text-zinc-500">
+                  <FileText className="w-3.5 h-3.5 text-blue-500 shrink-0" />
+                  <span className="truncate">/PRD.md (Repository Root)</span>
+                </div>
+              </div>
+
+              {/* DESIGN.md */}
+              <div className="flex flex-col justify-between border border-zinc-200/90 rounded-xl p-4 bg-white shadow-2xs hover:shadow-xs hover:border-zinc-300 transition-all text-inherit group">
+                <div className="space-y-2.5">
+                  <div className="flex items-center justify-between">
+                    <span className="font-mono text-xs font-bold text-indigo-600 bg-indigo-50 border border-indigo-200/80 px-2 py-0.5 rounded-md">
+                      DESIGN.md
+                    </span>
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">Design System</span>
+                  </div>
+                  <h4 className="font-semibold text-zinc-900 text-sm group-hover:text-indigo-600 transition-colors">
+                    UI Design System &amp; Tokens
+                  </h4>
+                  <p className="text-xs text-zinc-600 leading-relaxed">
+                    Color tokens, typography scales, single-canvas layout constraints, and negative UI guardrails. Prevents arbitrary styling and nested card traps.
+                  </p>
+                </div>
+                <div className="mt-3 pt-2.5 border-t border-zinc-100 flex items-center gap-1.5 text-[11px] font-mono text-zinc-500">
+                  <Layers className="w-3.5 h-3.5 text-indigo-500 shrink-0" />
+                  <span className="truncate">/DESIGN.md (Repository Root)</span>
+                </div>
+              </div>
+
+              {/* TASK.md */}
+              <div className="flex flex-col justify-between border border-zinc-200/90 rounded-xl p-4 bg-white shadow-2xs hover:shadow-xs hover:border-zinc-300 transition-all text-inherit group">
+                <div className="space-y-2.5">
+                  <div className="flex items-center justify-between">
+                    <span className="font-mono text-xs font-bold text-emerald-600 bg-emerald-50 border border-emerald-200/80 px-2 py-0.5 rounded-md">
+                      TASK.md
+                    </span>
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">Sprint Engine</span>
+                  </div>
+                  <h4 className="font-semibold text-zinc-900 text-sm group-hover:text-emerald-600 transition-colors">
+                    Sprint Tracker &amp; Quality Gates
+                  </h4>
+                  <p className="text-xs text-zinc-600 leading-relaxed">
+                    Tracks active sprints, task checklists, mandatory verification commands (<code className="font-mono text-[11px]">npm run lint && npm run build</code>), and agent session logs.
+                  </p>
+                </div>
+                <div className="mt-3 pt-2.5 border-t border-zinc-100 flex items-center gap-1.5 text-[11px] font-mono text-zinc-500">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+                  <span className="truncate">/TASK.md (Repository Root)</span>
+                </div>
+              </div>
+
+              {/* MEMORY.md */}
+              <div className="flex flex-col justify-between border border-zinc-200/90 rounded-xl p-4 bg-white shadow-2xs hover:shadow-xs hover:border-zinc-300 transition-all text-inherit group">
+                <div className="space-y-2.5">
+                  <div className="flex items-center justify-between">
+                    <span className="font-mono text-xs font-bold text-amber-600 bg-amber-50 border border-amber-200/80 px-2 py-0.5 rounded-md">
+                      MEMORY.md
+                    </span>
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">Agent Brain</span>
+                  </div>
+                  <h4 className="font-semibold text-zinc-900 text-sm group-hover:text-amber-600 transition-colors">
+                    Persistent Brain &amp; ADRs
+                  </h4>
+                  <p className="text-xs text-zinc-600 leading-relaxed">
+                    Persistent memory for autonomous agents: technical context, architectural decision records (ADRs), operational gotchas, and the 5-step loop.
+                  </p>
+                </div>
+                <div className="mt-3 pt-2.5 border-t border-zinc-100 flex items-center gap-1.5 text-[11px] font-mono text-zinc-500">
+                  <Cpu className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                  <span className="truncate">/MEMORY.md (Repository Root)</span>
+                </div>
+              </div>
+            </div>
+          </div>
         </section>
 
         {/* 3. How to Generate in 3 Steps */}
@@ -309,7 +409,7 @@ export function AiSkillStudioSeoContent() {
               How to Generate &amp; Scaffold the Complete AI Suite
             </h2>
             <p className="text-xs sm:text-sm text-zinc-600">
-              Streamline your prompt engineering, context shield setup, and architecture specs:
+              Streamline your prompt engineering, context shield setup, architecture specs, and governance documents:
             </p>
           </div>
 
@@ -323,16 +423,16 @@ export function AiSkillStudioSeoContent() {
             </div>
             <div className="border border-zinc-200 p-5 rounded-lg bg-white space-y-2 shadow-2xs">
               <span className="font-mono text-xs font-bold text-zinc-400">STEP 02</span>
-              <h3 className="font-semibold text-zinc-900 text-sm">Configure Guardrails &amp; Invariants</h3>
+              <h3 className="font-semibold text-zinc-900 text-sm">Customize with Guided Cards &amp; Info Tooltips</h3>
               <p className="text-xs text-zinc-600 leading-relaxed">
-                Customize negative bounds (&quot;Never do X&quot;), directory exclusions for <code className="font-mono text-[11px]">.cursorignore</code>, and architectural invariants in the Monaco editor.
+                Customize rules, negative bounds (&quot;Never do X&quot;), and governance specs (<code className="font-mono text-[11px]">PRD.md</code>, <code className="font-mono text-[11px]">DESIGN.md</code>, <code className="font-mono text-[11px]">TASK.md</code>, <code className="font-mono text-[11px]">MEMORY.md</code>). Hover or tap the small circular info <span className="inline-flex items-center justify-center w-3.5 h-3.5 rounded-full bg-zinc-100 text-zinc-600 font-mono text-[9px] font-bold border border-zinc-300">i</span> badges beside any section for instant editing instructions and syntax examples.
               </p>
             </div>
             <div className="border border-zinc-200 p-5 rounded-lg bg-white space-y-2 shadow-2xs">
               <span className="font-mono text-xs font-bold text-zinc-400">STEP 03</span>
               <h3 className="font-semibold text-zinc-900 text-sm">Export ZIP or Scaffold with CLI</h3>
               <p className="text-xs text-zinc-600 leading-relaxed">
-                Click <strong>Export All as AI Agent Kit (.zip)</strong> or run <code className="font-mono text-[11px] bg-zinc-100 px-1 py-0.5 rounded text-zinc-800">npx devscratchpad init</code> to scaffold all 5 layers directly into your repository.
+                Click <strong>Export All as AI Agent Kit (.zip)</strong> or run <code className="font-mono text-[11px] bg-zinc-100 px-1 py-0.5 rounded text-zinc-800">npx devscratchpad init</code> to scaffold all 17 files across 4 layers directly into your repository with pre-structured folder paths.
               </p>
             </div>
           </div>
@@ -360,11 +460,35 @@ export function AiSkillStudioSeoContent() {
               Frequently Asked Questions (FAQ)
             </h2>
             <p className="text-xs sm:text-sm text-zinc-600">
-              Everything you need to know about the 5-layer AI agent suite and rules management.
+              Everything you need to know about the 17 formats, 4-layer AI agent operating suite, and multi-agent governance.
             </p>
           </div>
 
           <div className="space-y-3">
+            <details className="group border border-zinc-200 rounded-lg bg-white p-4 open:bg-zinc-50/50 transition-colors">
+              <summary className="font-medium text-sm text-zinc-900 cursor-pointer list-none flex items-center justify-between">
+                <span>How do PRD.md, DESIGN.md, TASK.md, and MEMORY.md govern autonomous agent teams?</span>
+                <span className="text-xs font-mono text-zinc-400 group-open:rotate-90 transition-transform">▸</span>
+              </summary>
+              <p className="mt-3 text-xs text-zinc-600 leading-relaxed">
+                These four documents form a complete autonomous multi-agent governance loop:
+                <br />• <strong>PRD.md</strong>: Authoritative product requirements, user personas, non-functional requirements, and roadmap milestones so agents build only what was specified.
+                <br />• <strong>DESIGN.md</strong>: Design system tokens, color palettes, single-canvas layout hierarchy, and negative UI guardrails preventing arbitrary styles or nested card traps.
+                <br />• <strong>TASK.md</strong>: Active sprint engine with task statuses, execution phases, mandatory test verification quality gates (<code className="font-mono">npm run validate-presets && npm run lint && npm run build</code>), and chronological agent session logs.
+                <br />• <strong>MEMORY.md</strong>: Persistent agent brain storing architectural decision records (ADRs), operational gotchas, and the mandatory 5-step execution loop across multi-agent sessions.
+              </p>
+            </details>
+
+            <details className="group border border-zinc-200 rounded-lg bg-white p-4 open:bg-zinc-50/50 transition-colors">
+              <summary className="font-medium text-sm text-zinc-900 cursor-pointer list-none flex items-center justify-between">
+                <span>How do the circular info (i) badges explain how to edit each section?</span>
+                <span className="text-xs font-mono text-zinc-400 group-open:rotate-90 transition-transform">▸</span>
+              </summary>
+              <p className="mt-3 text-xs text-zinc-600 leading-relaxed">
+                Every section card and input field across all 17 formats features a small circular info <span className="inline-flex items-center justify-center w-3.5 h-3.5 rounded-full bg-zinc-100 text-zinc-600 font-mono text-[9px] font-bold border border-zinc-300">i</span> badge. Hovering or clicking reveals an interactive guidance popover with a concise explanation of what the section controls, step-by-step editing instructions, and practical copy-pasteable syntax examples. This eliminates confusing colored tags and makes customizing any rulebook effortless.
+              </p>
+            </details>
+
             <details className="group border border-zinc-200 rounded-lg bg-white p-4 open:bg-zinc-50/50 transition-colors">
               <summary className="font-medium text-sm text-zinc-900 cursor-pointer list-none flex items-center justify-between">
                 <span>Why do AI agents need .cursorignore and .claudeignore alongside rules?</span>
@@ -397,7 +521,7 @@ export function AiSkillStudioSeoContent() {
 
             <details className="group border border-zinc-200 rounded-lg bg-white p-4 open:bg-zinc-50/50 transition-colors">
               <summary className="font-medium text-sm text-zinc-900 cursor-pointer list-none flex items-center justify-between">
-                <span>Where should the 5-layer files be placed in my repository?</span>
+                <span>Where should the 17-format files be placed in my repository?</span>
                 <span className="text-xs font-mono text-zinc-400 group-open:rotate-90 transition-transform">▸</span>
               </summary>
               <p className="mt-3 text-xs text-zinc-600 leading-relaxed">
@@ -405,18 +529,21 @@ export function AiSkillStudioSeoContent() {
                 <br />• Cursor rules: <code className="font-mono">.cursor/rules/&lt;name&gt;.mdc</code>
                 <br />• Claude skills: <code className="font-mono">.claude/skills/&lt;name&gt;/SKILL.md</code>
                 <br />• Project rules: <code className="font-mono">CLAUDE.md</code> and <code className="font-mono">AGENTS.md</code> at repo root
+                <br />• Governance suite: <code className="font-mono">PRD.md</code>, <code className="font-mono">DESIGN.md</code>, <code className="font-mono">TASK.md</code>, and <code className="font-mono">MEMORY.md</code> at repo root
                 <br />• Context shields: <code className="font-mono">.cursorignore</code> and <code className="font-mono">.claudeignore</code> at repo root
                 <br />• Specifications: <code className="font-mono">llms.txt</code> and <code className="font-mono">ARCHITECTURE.md</code> at repo root
+                <br />• Runtime MCP config: <code className="font-mono">claude.json</code> at repo root or merged into Claude Desktop config
+                <br />• Alternate IDEs: Windsurf (<code className="font-mono">.windsurf/rules/</code>), Copilot (<code className="font-mono">.github/copilot-instructions.md</code>), OpenAI &amp; Gemini (<code className="font-mono">prompts/</code>)
               </p>
             </details>
 
             <details className="group border border-zinc-200 rounded-lg bg-white p-4 open:bg-zinc-50/50 transition-colors">
               <summary className="font-medium text-sm text-zinc-900 cursor-pointer list-none flex items-center justify-between">
-                <span>How can I scaffold all these files using the CLI?</span>
+                <span>How can I scaffold all 17 files using the CLI?</span>
                 <span className="text-xs font-mono text-zinc-400 group-open:rotate-90 transition-transform">▸</span>
               </summary>
               <p className="mt-3 text-xs text-zinc-600 leading-relaxed">
-                Run <code className="font-mono bg-zinc-100 px-1 py-0.5 rounded text-zinc-800">npx devscratchpad init</code> in your terminal. It installs the universal 5-layer suite into your repository with zero setup, completely offline.
+                Run <code className="font-mono bg-zinc-100 px-1 py-0.5 rounded text-zinc-800">npx devscratchpad init</code> in your terminal. It installs the universal 17-file 4-layer suite into your repository with zero setup, completely offline.
               </p>
             </details>
           </div>

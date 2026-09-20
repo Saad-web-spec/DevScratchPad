@@ -9,7 +9,7 @@ import { ExportImageButton } from"@/components/ExportImageButton";
 import { Play, Copy, Trash2, Check , Database } from"lucide-react";
 import { cn } from"@/lib/utils";
 import { addSnapshot } from"@/lib/storage";
-import { StatusBar, ValidationBadge, EditorPanelFooter } from '@/components/layout/StatusBar';
+import { EditorPanelFooter } from '@/components/layout/StatusBar';
 
 interface SqlFormatterToolProps {
  onValidationChange: (isValid: boolean, error?: string, line?: number) => void;
@@ -55,7 +55,6 @@ export function SqlFormatterTool({
  const [isValid, setIsValid] = useState(true);
  const [errorMsg, setErrorMsg] = useState<string | undefined>();
  const [errorLine, setErrorLine] = useState<number | undefined>();
- const [execMs, setExecMs] = useState(0);
 
  // Save workspace snapshot
  useEffect(() => {
@@ -85,7 +84,6 @@ export function SqlFormatterTool({
  setIsValid(valid);
  setErrorMsg(error);
  setErrorLine(undefined);
- setExecMs(ms);
  onValidationChange(valid, error);
  onStatsChange(input.length, ms);
  }, [input, dialect, indent, keywordCase, onValidationChange, onStatsChange]);
@@ -107,7 +105,6 @@ export function SqlFormatterTool({
  }
  const end = performance.now();
  const ms = end - start;
- setExecMs(ms);
  onStatsChange(input.length, ms);
  };
 

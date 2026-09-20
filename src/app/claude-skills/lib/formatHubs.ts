@@ -676,6 +676,170 @@ coverage/
         answer: "CLAUDE.md and .cursorrules contain editor-specific triggers and commands. ARCHITECTURE.md provides deep architectural principles, data flows, and invariant contracts that apply across all tools."
       }
     ]
+  },
+  "prd-md": {
+    slug: "prd-md",
+    format: "prd_md",
+    name: "PRD.md",
+    badge: "Product Requirements",
+    targetFile: "PRD.md",
+    targetDir: "./",
+    seoTitle: "PRD.md Product Requirements Document Generator",
+    seoDescription: "Generate structured Product Requirements Documents (PRD.md) for autonomous AI coding agents with user personas, functional specs, and milestones.",
+    heroHeading: "PRD.md Generator for AI Agents",
+    heroSubheading: "Turn messy user stories into precise, machine-readable specifications that align Claude Code, Cursor, and Codex on core features.",
+    overview: "PRD.md provides an unambiguous product specification at the root of your project. Autonomous agents read this document to understand feature scope, user personas, functional requirements, and milestone boundaries without hallucinating unwanted features.",
+    filePlacementGuide: [
+      {
+        path: "./PRD.md",
+        scope: "Repository Root",
+        description: "Authoritative product requirements and roadmap read by AI pair programmers."
+      }
+    ],
+    syntaxHighlights: [
+      {
+        title: "Personas & Functional Specifications",
+        explanation: "Structured tables defining user personas and numbered functional requirements.",
+        codeSample: `## 4. User Personas
+| Persona | Role | Primary Need |
+| :--- | :--- | :--- |
+| **Alex** | Full-Stack Dev | Private client-side execution |`
+      }
+    ],
+    bestPractices: [
+      "Define numbered functional requirements (FR-1, FR-2) for easy referencing.",
+      "List strict non-functional constraints including privacy and performance.",
+      "Include clear milestone phasing so agents focus on the active sprint."
+    ],
+    faqs: [
+      {
+        question: "Why should a repository have a PRD.md?",
+        answer: "Without a PRD, AI coding agents often build features based on guesswork. PRD.md acts as the product north star for both agents and engineers."
+      }
+    ]
+  },
+  "design-md": {
+    slug: "design-md",
+    format: "design_md",
+    name: "DESIGN.md",
+    badge: "Design System & Architecture",
+    targetFile: "DESIGN.md",
+    targetDir: "./",
+    seoTitle: "DESIGN.md Design System & Architecture Generator",
+    seoDescription: "Generate StitchMCP-compatible DESIGN.md files with semantic design tokens, component patterns, and negative guardrails for AI agents.",
+    heroHeading: "DESIGN.md System & UI/UX Generator",
+    heroSubheading: "Semantic color tokens, component layout hierarchies, and strict negative design guardrails compatible with StitchMCP and modern LLMs.",
+    overview: "DESIGN.md serves as the single source of truth for your user interface design system and technical layout architecture. It ensures AI coding agents maintain consistent spacing, colors, typography, and strictly avoid forbidden UI anti-patterns.",
+    filePlacementGuide: [
+      {
+        path: "./DESIGN.md",
+        scope: "Repository Root",
+        description: "UI/UX design system tokens and component layout rules."
+      }
+    ],
+    syntaxHighlights: [
+      {
+        title: "Semantic Color Tokens & Guardrails",
+        explanation: "Machine-readable color tokens and negative layout constraints.",
+        codeSample: `## Design Tokens
+- Canvas: #09090B
+- Card Surface: #18181B
+- Negative Guardrail: Never nest card containers inside another card container.`
+      }
+    ],
+    bestPractices: [
+      "Keep design tokens semantic (canvas, surface, border, accent).",
+      "List negative guardrails to prevent AI from introducing messy nested cards.",
+      "Ensure valid markdown compatible with StitchMCP and design tools."
+    ],
+    faqs: [
+      {
+        question: "Is DESIGN.md compatible with StitchMCP?",
+        answer: "Yes, our generated DESIGN.md follows the standard StitchMCP specification with semantic tokens, typography scales, and negative guardrails."
+      }
+    ]
+  },
+  "task-md": {
+    slug: "task-md",
+    format: "task_md",
+    name: "TASK.md",
+    badge: "Active Sprint Tracker",
+    targetFile: "TASK.md",
+    targetDir: "./",
+    seoTitle: "TASK.md Active Sprint & Task Tracker Generator",
+    seoDescription: "Generate machine-readable TASK.md sprint trackers with phase checklists, verification gates, and agent session logs.",
+    heroHeading: "TASK.md Sprint Tracker Generator",
+    heroSubheading: "Living sprint tracker for multi-agent workflows. Tracks task progress, verification gates, and keeps an audit log of every AI session.",
+    overview: "TASK.md is a living checklist that autonomous agents update during each coding session. It defines current milestone status, actionable task checklists, required quality gates (lint, build, test), and maintains an agent session log.",
+    filePlacementGuide: [
+      {
+        path: "./TASK.md",
+        scope: "Repository Root",
+        description: "Active sprint tracker updated dynamically by AI agents."
+      }
+    ],
+    syntaxHighlights: [
+      {
+        title: "Quality Gates & Task Checklists",
+        explanation: "Checklist states [x], [/], [ ] with mandatory verification gates.",
+        codeSample: `## Verification Commands
+npm run lint && npm run build
+
+## Agent Session Log
+| Date | Agent | Action | Result |`
+      }
+    ],
+    bestPractices: [
+      "Mark tasks as [x] completed, [/] in progress, [ ] pending.",
+      "Specify exact shell commands for quality verification gates.",
+      "Require agents to append a session log row upon completing work."
+    ],
+    faqs: [
+      {
+        question: "How do agents use TASK.md?",
+        answer: "Agents read TASK.md at session start to pick up active tasks, run verification commands after coding, and log their completed actions before ending."
+      }
+    ]
+  },
+  "memory-md": {
+    slug: "memory-md",
+    format: "memory_md",
+    name: "MEMORY.md",
+    badge: "Persistent Agent Brain",
+    targetFile: "MEMORY.md",
+    targetDir: "./",
+    seoTitle: "MEMORY.md Persistent Agent Brain & ADRs Generator",
+    seoDescription: "Generate MEMORY.md files containing Architectural Decision Records (ADRs), operational gotchas, and 5-step agent execution protocols.",
+    heroHeading: "MEMORY.md Persistent Agent Brain",
+    heroSubheading: "Persistent memory for AI coding agents. Retains ADRs, known pitfalls, and execution protocols across model context resets.",
+    overview: "MEMORY.md solves agent context amnesia. It persists architectural decisions, operational gotchas, and key codebase paths across separate agent sessions, ensuring new sessions do not repeat past mistakes.",
+    filePlacementGuide: [
+      {
+        path: "./MEMORY.md",
+        scope: "Repository Root",
+        description: "Persistent memory bank and Architectural Decision Records (ADRs)."
+      }
+    ],
+    syntaxHighlights: [
+      {
+        title: "Architectural Decision Records (ADR)",
+        explanation: "Immutable record of technical decisions and trade-offs.",
+        codeSample: `### ADR-001: Client-Side Sandbox
+- **Decision**: Execute all tools in browser runtime.
+- **Rationale**: 100% privacy, zero server latency.`
+      }
+    ],
+    bestPractices: [
+      "Document architectural decisions as immutable ADRs with numbers.",
+      "List operational gotchas that models repeatedly struggle with.",
+      "Define the agent execution loop protocol explicitly."
+    ],
+    faqs: [
+      {
+        question: "How does MEMORY.md prevent agent hallucinations?",
+        answer: "By documenting past architectural decisions and known gotchas, incoming agents immediately know what patterns are forbidden and why."
+      }
+    ]
   }
 };
 

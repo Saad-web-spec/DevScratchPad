@@ -28,19 +28,17 @@ import {
   ExternalLink,
   Lock,
   Unlock,
-  Sparkles,
   X,
-  Info,
-  Compass,
   Bot,
-  Brain,
   FileText,
+  Users,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { downloadAiKitZip } from "./lib/zipExporter";
 import { ParsedManifestResult } from "./lib/manifestParser";
 import { ConvertedRulesIR } from "./lib/rulesConverter";
 import { WindsurfIcon, OpenAIIcon, GeminiIcon, CopilotIcon } from "@/components/icons/AssistantBrandIcons";
+import { InfoTooltip } from "./components/InfoTooltip";
 
 const ManifestImportModal = dynamic(
   () => import("./components/ManifestImportModal").then((m) => m.ManifestImportModal),
@@ -52,7 +50,7 @@ const RulesConverterModal = dynamic(
 );
 import { generateSafeSlug, validateTriggerPhrase } from "./lib/slugUtils";
 import { saveToStorageEnvelope, loadFromStorageEnvelope, STORAGE_KEY_V2 } from "./lib/storageEnvelope";
-import { auditRuleQuality, RuleAuditReport, AuditIssue, AuditDimension } from "./lib/ruleAuditor";
+import { auditRuleQuality, AuditDimension } from "./lib/ruleAuditor";
 
 // Dynamically import Monaco Editor to prevent SSR issues
 const Editor = dynamic(() => import("@monaco-editor/react"), {
@@ -61,22 +59,24 @@ const Editor = dynamic(() => import("@monaco-editor/react"), {
 
 import {
   OutputFormat,
-  McpServerPreset,
   SkillPreset,
   MCP_PRESETS,
   PRESETS,
   PHILOSOPHIES,
   BEHAVIOR_OPTIONS,
   CONVENTION_OPTIONS,
-  deduceLangTag,
   buildRuleContent,
   getInstallCommands,
   getHeredocCommand,
   copyToClipboard,
+  getDefaultPrdValues,
+  getDefaultDesignValues,
+  getDefaultTaskValues,
+  getDefaultMemoryValues,
 } from "./lib/ruleGenerator";
-import { PRESET_ROUTES, getPresetBySlug, SLUG_ALIASES } from "./lib/presetRegistry";
+import { PRESET_ROUTES, SLUG_ALIASES } from "./lib/presetRegistry";
 
-import { encodeStudioState, decodeStudioState, createShareableUrl } from "./lib/stateSharing";
+import { decodeStudioState, createShareableUrl } from "./lib/stateSharing";
 
 interface ClaudeSkillsClientProps {
   initialFormat?: OutputFormat;
@@ -88,7 +88,6 @@ interface ClaudeSkillsClientProps {
 export function ClaudeSkillsClient({
   initialFormat,
   initialPresetId,
-  formatSlug: initialFormatSlug,
   presetSlug: initialPresetSlug,
 }: ClaudeSkillsClientProps = {}) {
   const [isMounted, setIsMounted] = useState(false);
@@ -132,6 +131,38 @@ export function ClaudeSkillsClient({
   const [exampleGood, setExampleGood] = useState(() => defaultPreset.exampleGood);
   const [exampleBad, setExampleBad] = useState(() => defaultPreset.exampleBad);
 
+  // Dedicated Governance Sections State
+  const initialPrd = useMemo(() => getDefaultPrdValues(defaultPreset), [defaultPreset]);
+  const [prdOverview, setPrdOverview] = useState(() => initialPrd.prdOverview);
+  const [prdProblemStatement, setPrdProblemStatement] = useState(() => initialPrd.prdProblemStatement);
+  const [prdPersonas, setPrdPersonas] = useState(() => initialPrd.prdPersonas);
+  const [prdFunctionalReqs, setPrdFunctionalReqs] = useState(() => initialPrd.prdFunctionalReqs);
+  const [prdNonFunctionalReqs, setPrdNonFunctionalReqs] = useState(() => initialPrd.prdNonFunctionalReqs);
+  const [prdMilestones, setPrdMilestones] = useState(() => initialPrd.prdMilestones);
+
+  const initialDesign = useMemo(() => getDefaultDesignValues(defaultPreset), [defaultPreset]);
+  const [designTokens, setDesignTokens] = useState(() => initialDesign.designTokens);
+  const [designLayout, setDesignLayout] = useState(() => initialDesign.designLayout);
+  const [designConventions, setDesignConventions] = useState(() => initialDesign.designConventions);
+  const [designGuardrails, setDesignGuardrails] = useState(() => initialDesign.designGuardrails);
+  const [designDirectives, setDesignDirectives] = useState(() => initialDesign.designDirectives);
+  const [designVerification, setDesignVerification] = useState(() => initialDesign.designVerification);
+
+  const initialTask = useMemo(() => getDefaultTaskValues(defaultPreset), [defaultPreset]);
+  const [taskDashboard, setTaskDashboard] = useState(() => initialTask.taskDashboard);
+  const [taskPhases, setTaskPhases] = useState(() => initialTask.taskPhases);
+  const [taskVerification, setTaskVerification] = useState(() => initialTask.taskVerification);
+  const [taskDirectives, setTaskDirectives] = useState(() => initialTask.taskDirectives);
+  const [taskSessionLog, setTaskSessionLog] = useState(() => initialTask.taskSessionLog);
+
+  const initialMemory = useMemo(() => getDefaultMemoryValues(defaultPreset), [defaultPreset]);
+  const [memoryContext, setMemoryContext] = useState(() => initialMemory.memoryContext);
+  const [memoryAdrs, setMemoryAdrs] = useState(() => initialMemory.memoryAdrs);
+  const [memoryGotchas, setMemoryGotchas] = useState(() => initialMemory.memoryGotchas);
+  const [memoryLoop, setMemoryLoop] = useState(() => initialMemory.memoryLoop);
+  const [memoryInvariants, setMemoryInvariants] = useState(() => initialMemory.memoryInvariants);
+  const [memorySessionHistory, setMemorySessionHistory] = useState(() => initialMemory.memorySessionHistory);
+
   // Advanced Runtime Controls & Direct Editor Editing
   const [globPattern, setGlobPattern] = useState("**/*");
   const [alwaysApply, setAlwaysApply] = useState(false);
@@ -148,9 +179,13 @@ export function ClaudeSkillsClient({
 
   useEffect(() => {
     if (mobileTab === "editor") {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setShouldLoadEditor(true);
     }
   }, [mobileTab]);
+
+  const isGovernanceFormat = format === "prd_md" || format === "design_md" || format === "task_md" || format === "memory_md";
+  const isMcpFormat = format === "mcp_json";
 
   // Slug lock & Static Analysis Audit Panel State
   const [isSlugLocked, setIsSlugLocked] = useState(false);
@@ -565,6 +600,7 @@ export function ClaudeSkillsClient({
       }
     }, 500);
     return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     isMounted,
     initialPresetId,
@@ -616,6 +652,38 @@ export function ClaudeSkillsClient({
     setCustomDirectives(preset.customDirectives);
     setExampleGood(preset.exampleGood);
     setExampleBad(preset.exampleBad);
+
+    // Sync governance section fields to matching preset defaults
+    const newPrd = getDefaultPrdValues(preset);
+    setPrdOverview(newPrd.prdOverview);
+    setPrdProblemStatement(newPrd.prdProblemStatement);
+    setPrdPersonas(newPrd.prdPersonas);
+    setPrdFunctionalReqs(newPrd.prdFunctionalReqs);
+    setPrdNonFunctionalReqs(newPrd.prdNonFunctionalReqs);
+    setPrdMilestones(newPrd.prdMilestones);
+
+    const newDesign = getDefaultDesignValues(preset);
+    setDesignTokens(newDesign.designTokens);
+    setDesignLayout(newDesign.designLayout);
+    setDesignConventions(newDesign.designConventions);
+    setDesignGuardrails(newDesign.designGuardrails);
+    setDesignDirectives(newDesign.designDirectives);
+    setDesignVerification(newDesign.designVerification);
+
+    const newTask = getDefaultTaskValues(preset);
+    setTaskDashboard(newTask.taskDashboard);
+    setTaskPhases(newTask.taskPhases);
+    setTaskVerification(newTask.taskVerification);
+    setTaskDirectives(newTask.taskDirectives);
+    setTaskSessionLog(newTask.taskSessionLog);
+
+    const newMemory = getDefaultMemoryValues(preset);
+    setMemoryContext(newMemory.memoryContext);
+    setMemoryAdrs(newMemory.memoryAdrs);
+    setMemoryGotchas(newMemory.memoryGotchas);
+    setMemoryLoop(newMemory.memoryLoop);
+    setMemoryInvariants(newMemory.memoryInvariants);
+    setMemorySessionHistory(newMemory.memorySessionHistory);
 
     // Auto-switch format according to preset runtime
     if (preset.id === "cursor-mdc-pro") {
@@ -685,8 +753,6 @@ export function ClaudeSkillsClient({
 
   // Context-Aware Synthesis Engine (Option 3: Reads all 12 form fields)
   const synthesizeFromContext = () => {
-    const philObj = PHILOSOPHIES.find((p) => p.id === philosophy);
-
     // 1. Philosophy Mission Matrix
     const missionByPhilosophy: Record<string, string> = {
       strict: "enforces zero-tolerance for untyped 'any', strict null-safety, defensive type boundaries, and schema validation",
@@ -823,18 +889,6 @@ export function ClaudeSkillsClient({
     setIsManuallyEdited(false);
   };
 
-  // Language tag deduction for syntax-highlighted code blocks
-  const langTag = useMemo(() => {
-    const l = (language || "").toLowerCase();
-    if (l.includes("typescript") || l.includes("tsx")) return "typescript";
-    if (l.includes("javascript") || l.includes("jsx")) return "javascript";
-    if (l.includes("python")) return "python";
-    if (l.includes("go")) return "go";
-    if (l.includes("rust")) return "rust";
-    if (l.includes("shell") || l.includes("bash")) return "bash";
-    return "ts";
-  }, [language]);
-
   // Generated Content Builder for any target runtime format
   const buildContent = useCallback(
     (targetFormat: OutputFormat) => {
@@ -862,6 +916,29 @@ export function ClaudeSkillsClient({
         mcpArgs,
         mcpEnvKey,
         mcpEnvValue,
+        prdOverview,
+        prdProblemStatement,
+        prdPersonas,
+        prdFunctionalReqs,
+        prdNonFunctionalReqs,
+        prdMilestones,
+        designTokens,
+        designLayout,
+        designConventions,
+        designGuardrails,
+        designDirectives,
+        designVerification,
+        taskDashboard,
+        taskPhases,
+        taskVerification,
+        taskDirectives,
+        taskSessionLog,
+        memoryContext,
+        memoryAdrs,
+        memoryGotchas,
+        memoryLoop,
+        memoryInvariants,
+        memorySessionHistory,
       });
     },
     [
@@ -887,6 +964,29 @@ export function ClaudeSkillsClient({
       mcpArgs,
       mcpEnvKey,
       mcpEnvValue,
+      prdOverview,
+      prdProblemStatement,
+      prdPersonas,
+      prdFunctionalReqs,
+      prdNonFunctionalReqs,
+      prdMilestones,
+      designTokens,
+      designLayout,
+      designConventions,
+      designGuardrails,
+      designDirectives,
+      designVerification,
+      taskDashboard,
+      taskPhases,
+      taskVerification,
+      taskDirectives,
+      taskSessionLog,
+      memoryContext,
+      memoryAdrs,
+      memoryGotchas,
+      memoryLoop,
+      memoryInvariants,
+      memorySessionHistory,
     ]
   );
 
@@ -896,6 +996,7 @@ export function ClaudeSkillsClient({
   // Synchronize generated content to editorContent when not manually overridden
   useEffect(() => {
     if (!isManuallyEdited) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setEditorContent(generatedContent);
       if (editorRef.current) {
         editorRef.current.setScrollTop(0);
@@ -1134,6 +1235,10 @@ export function ClaudeSkillsClient({
         claudeignoreContent: format === "claudeignore" && isManuallyEdited ? editorContent : buildContent("claudeignore"),
         llmsTxtContent: format === "llms_txt" && isManuallyEdited ? editorContent : buildContent("llms_txt"),
         architectureMdContent: format === "architecture_md" && isManuallyEdited ? editorContent : buildContent("architecture_md"),
+        prdMdContent: format === "prd_md" && isManuallyEdited ? editorContent : buildContent("prd_md"),
+        designMdContent: format === "design_md" && isManuallyEdited ? editorContent : buildContent("design_md"),
+        taskMdContent: format === "task_md" && isManuallyEdited ? editorContent : buildContent("task_md"),
+        memoryMdContent: format === "memory_md" && isManuallyEdited ? editorContent : buildContent("memory_md"),
         framework,
         language,
       });
@@ -1169,6 +1274,7 @@ export function ClaudeSkillsClient({
         window.location.hostname === "127.0.0.1" ||
         window.location.hostname.endsWith(".local");
       if (isLocal) {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setCliHost(window.location.origin);
       }
     }
@@ -1207,6 +1313,10 @@ export function ClaudeSkillsClient({
       claudeignore: "claudeignore",
       llms_txt: "llms-txt",
       architecture_md: "architecture-md",
+      prd_md: "prd-md",
+      design_md: "design-md",
+      task_md: "task-md",
+      memory_md: "memory-md",
     };
     return formatSlugMap[format] || "cursor-rules";
   }, [format]);
@@ -1252,6 +1362,10 @@ export function ClaudeSkillsClient({
     if (format === "claudeignore") return ".claudeignore";
     if (format === "llms_txt") return "llms.txt";
     if (format === "architecture_md") return "ARCHITECTURE.md";
+    if (format === "prd_md") return "PRD.md";
+    if (format === "design_md") return "DESIGN.md";
+    if (format === "task_md") return "TASK.md";
+    if (format === "memory_md") return "MEMORY.md";
     return "AGENTS.md";
   }, [activePresetSlug, selectedPresetId, activeFormatSlug, isManuallyEdited, format, skillName]);
 
@@ -1477,6 +1591,22 @@ export function ClaudeSkillsClient({
       filename = "ARCHITECTURE.md";
       mimeType = "text/markdown;charset=utf-8;";
     }
+    if (format === "prd_md") {
+      filename = "PRD.md";
+      mimeType = "text/markdown;charset=utf-8;";
+    }
+    if (format === "design_md") {
+      filename = "DESIGN.md";
+      mimeType = "text/markdown;charset=utf-8;";
+    }
+    if (format === "task_md") {
+      filename = "TASK.md";
+      mimeType = "text/markdown;charset=utf-8;";
+    }
+    if (format === "memory_md") {
+      filename = "MEMORY.md";
+      mimeType = "text/markdown;charset=utf-8;";
+    }
 
     const blob = new Blob([activeContent], { type: mimeType });
     const url = URL.createObjectURL(blob);
@@ -1500,6 +1630,10 @@ export function ClaudeSkillsClient({
     if (format === "claudeignore") return ".claudeignore";
     if (format === "llms_txt") return "llms.txt";
     if (format === "architecture_md") return "ARCHITECTURE.md";
+    if (format === "prd_md") return "PRD.md";
+    if (format === "design_md") return "DESIGN.md";
+    if (format === "task_md") return "TASK.md";
+    if (format === "memory_md") return "MEMORY.md";
     return "AGENTS.md";
   }, [format, skillName]);
 
@@ -1645,9 +1779,16 @@ export function ClaudeSkillsClient({
         )}>
           {/* Format Selector Card */}
           <div className="bg-white rounded-xl border border-zinc-200 p-3.5 sm:p-4 shadow-xs space-y-3.5">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-0.5 border-b border-zinc-100 pb-2">
-              <span className="text-xs font-bold uppercase tracking-wider text-zinc-600">Target Standard & File Format</span>
-              <span className="text-[10px] text-zinc-400 font-normal">Select runtime specification</span>
+            <div className="flex items-center justify-between gap-1 border-b border-zinc-100 pb-2">
+              <span className="text-xs font-bold uppercase tracking-wider text-zinc-600">Target Standard &amp; File Format</span>
+              <div className="flex items-center gap-1.5">
+                <span className="text-[10px] text-zinc-400 font-normal hidden sm:inline">Select runtime specification</span>
+                <InfoTooltip
+                  title="Target File Format"
+                  description="Choose from 17 supported agent formats including Cursor rules, Claude Code skills, MCP servers, and the 4-layer AI governance documents (PRD.md, DESIGN.md, TASK.md, MEMORY.md)."
+                  align="right"
+                />
+              </div>
             </div>
 
             {/* Group 1: AI Agent Rules & Skills */}
@@ -1899,7 +2040,1036 @@ export function ClaudeSkillsClient({
                 </button>
               </div>
             </div>
+
+            {/* Group 4: AI Governance & Multi-Agent Planning Suite */}
+            <div className="space-y-1.5 pt-2 border-t border-zinc-100">
+              <div className="text-[10px] font-semibold tracking-wider uppercase text-zinc-400 flex items-center gap-1.5">
+                <Layers className="w-3 h-3 text-emerald-600" />
+                <span>AI Governance & Multi-Agent Planning Suite</span>
+              </div>
+              <div suppressHydrationWarning className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                <button
+                  suppressHydrationWarning
+                  onClick={() => setFormat("prd_md")}
+                  className={cn(
+                    "p-2 rounded-lg border text-left transition-all flex flex-col gap-1 overflow-hidden",
+                    format === "prd_md"
+                      ? "border-blue-600 bg-blue-50/60 text-blue-950 shadow-xs ring-1 ring-blue-600/20"
+                      : "border-zinc-200 bg-white hover:bg-zinc-50 text-zinc-700"
+                  )}
+                >
+                  <div className="flex items-center gap-1.5 font-semibold text-xs truncate">
+                    <FileText className="w-3.5 h-3.5 text-blue-600 shrink-0" />
+                    <span className="truncate">PRD.md</span>
+                  </div>
+                  <span className="text-[10px] text-zinc-500 leading-tight truncate">Product Requirements</span>
+                </button>
+
+                <button
+                  suppressHydrationWarning
+                  onClick={() => setFormat("design_md")}
+                  className={cn(
+                    "p-2 rounded-lg border text-left transition-all flex flex-col gap-1 overflow-hidden",
+                    format === "design_md"
+                      ? "border-indigo-600 bg-indigo-50/60 text-indigo-950 shadow-xs ring-1 ring-indigo-600/20"
+                      : "border-zinc-200 bg-white hover:bg-zinc-50 text-zinc-700"
+                  )}
+                >
+                  <div className="flex items-center gap-1.5 font-semibold text-xs truncate">
+                    <Layers className="w-3.5 h-3.5 text-indigo-600 shrink-0" />
+                    <span className="truncate">DESIGN.md</span>
+                  </div>
+                  <span className="text-[10px] text-zinc-500 leading-tight truncate">Design & Invariants</span>
+                </button>
+
+                <button
+                  suppressHydrationWarning
+                  onClick={() => setFormat("task_md")}
+                  className={cn(
+                    "p-2 rounded-lg border text-left transition-all flex flex-col gap-1 overflow-hidden",
+                    format === "task_md"
+                      ? "border-emerald-600 bg-emerald-50/60 text-emerald-950 shadow-xs ring-1 ring-emerald-600/20"
+                      : "border-zinc-200 bg-white hover:bg-zinc-50 text-zinc-700"
+                  )}
+                >
+                  <div className="flex items-center gap-1.5 font-semibold text-xs truncate">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                    <span className="truncate">TASK.md</span>
+                  </div>
+                  <span className="text-[10px] text-zinc-500 leading-tight truncate">Sprint Tracker & Gates</span>
+                </button>
+
+                <button
+                  suppressHydrationWarning
+                  onClick={() => setFormat("memory_md")}
+                  className={cn(
+                    "p-2 rounded-lg border text-left transition-all flex flex-col gap-1 overflow-hidden",
+                    format === "memory_md"
+                      ? "border-amber-600 bg-amber-50/60 text-amber-950 shadow-xs ring-1 ring-amber-600/20"
+                      : "border-zinc-200 bg-white hover:bg-zinc-50 text-zinc-700"
+                  )}
+                >
+                  <div className="flex items-center gap-1.5 font-semibold text-xs truncate">
+                    <Cpu className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                    <span className="truncate">MEMORY.md</span>
+                  </div>
+                  <span className="text-[10px] text-zinc-500 leading-tight truncate">Persistent Agent Brain</span>
+                </button>
+              </div>
+            </div>
           </div>
+
+          {/* 1. PRD.md Respected Sections */}
+          {format === "prd_md" && (
+            <div className="space-y-4">
+              {/* Card 1: Executive Summary & Vision */}
+              <div className="bg-white rounded-xl border border-zinc-200 p-3.5 sm:p-4 shadow-xs space-y-2.5">
+                <div className="flex items-center justify-between border-b border-zinc-100 pb-2 gap-2">
+                  <div className="flex items-center gap-2">
+                    <FileText className="w-4 h-4 text-blue-600 shrink-0" />
+                    <h3 className="text-sm font-bold text-zinc-900">1. Executive Summary &amp; Vision</h3>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const d = getDefaultPrdValues(PRESETS.find((p) => p.id === selectedPresetId) || defaultPreset);
+                        setPrdOverview(d.prdOverview);
+                        setIsManuallyEdited(false);
+                      }}
+                      className="text-[10px] text-zinc-400 hover:text-zinc-700 transition-colors font-mono cursor-pointer"
+                      title="Reset to preset default"
+                    >
+                      Reset
+                    </button>
+                    <InfoTooltip
+                      title="Executive Summary & Vision"
+                      description="Summarize what problem your product solves, target users, and key value propositions in 2-3 sentences. Supports markdown formatting."
+                      example="DevScratchpad is an offline-first developer workbench providing privacy-first tools and agent governance."
+                      align="right"
+                    />
+                  </div>
+                </div>
+                <p className="text-xs text-zinc-500 leading-relaxed">
+                  High-level product vision, core value proposition, and executive scope:
+                </p>
+                <textarea
+                  value={prdOverview}
+                  onChange={(e) => {
+                    setPrdOverview(e.target.value);
+                    setIsManuallyEdited(false);
+                  }}
+                  rows={3}
+                  placeholder="Executive summary of the product..."
+                  className="w-full p-2.5 border border-zinc-200 rounded-lg text-xs leading-relaxed focus:outline-none focus:ring-2 focus:ring-zinc-900/10 focus:border-zinc-900 resize-y"
+                />
+              </div>
+
+              {/* Card 2: Problem Statement */}
+              <div className="bg-white rounded-xl border border-zinc-200 p-3.5 sm:p-4 shadow-xs space-y-2.5">
+                <div className="flex items-center justify-between border-b border-zinc-100 pb-2 gap-2">
+                  <div className="flex items-center gap-2">
+                    <AlertCircle className="w-4 h-4 text-blue-600 shrink-0" />
+                    <h3 className="text-sm font-bold text-zinc-900">2. Problem Statement &amp; Scope Boundaries</h3>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const d = getDefaultPrdValues(PRESETS.find((p) => p.id === selectedPresetId) || defaultPreset);
+                        setPrdProblemStatement(d.prdProblemStatement);
+                        setIsManuallyEdited(false);
+                      }}
+                      className="text-[10px] text-zinc-400 hover:text-zinc-700 transition-colors font-mono cursor-pointer"
+                      title="Reset to preset default"
+                    >
+                      Reset
+                    </button>
+                    <InfoTooltip
+                      title="Problem Statement & Scope"
+                      description="List developer pain points, market differentiation, and explicit non-goals to keep agents strictly within scope boundaries."
+                      example="- Problem: Sensitive credentials leak to remote LLMs.\n- Scope: 100% client-side execution only.\n- Non-Goal: No remote user database."
+                      align="right"
+                    />
+                  </div>
+                </div>
+                <p className="text-xs text-zinc-500 leading-relaxed">
+                  Engineering pain points, agent guardrails, and boundary definitions:
+                </p>
+                <textarea
+                  value={prdProblemStatement}
+                  onChange={(e) => {
+                    setPrdProblemStatement(e.target.value);
+                    setIsManuallyEdited(false);
+                  }}
+                  rows={3}
+                  placeholder="Specific problems this software addresses..."
+                  className="w-full p-2.5 border border-zinc-200 rounded-lg text-xs font-mono leading-relaxed focus:outline-none focus:ring-2 focus:ring-zinc-900/10 focus:border-zinc-900 resize-y"
+                />
+              </div>
+
+              {/* Card 3: User Personas */}
+              <div className="bg-white rounded-xl border border-zinc-200 p-3.5 sm:p-4 shadow-xs space-y-2.5">
+                <div className="flex items-center justify-between border-b border-zinc-100 pb-2 gap-2">
+                  <div className="flex items-center gap-2">
+                    <Users className="w-4 h-4 text-blue-600 shrink-0" />
+                    <h3 className="text-sm font-bold text-zinc-900">3. Target User Personas</h3>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const d = getDefaultPrdValues(PRESETS.find((p) => p.id === selectedPresetId) || defaultPreset);
+                        setPrdPersonas(d.prdPersonas);
+                        setIsManuallyEdited(false);
+                      }}
+                      className="text-[10px] text-zinc-400 hover:text-zinc-700 transition-colors font-mono cursor-pointer"
+                      title="Reset to preset default"
+                    >
+                      Reset
+                    </button>
+                    <InfoTooltip
+                      title="Target User Personas"
+                      description="Define primary user roles, background, workflows, and success metrics in a markdown table or bullet list."
+                      example="| Persona | Role | Key Goal |\n| :--- | :--- | :--- |\n| Alex | Senior Eng | Mask sensitive tokens |"
+                      align="right"
+                    />
+                  </div>
+                </div>
+                <p className="text-xs text-zinc-500 leading-relaxed">
+                  Target user personas, job titles, and primary pain points (Markdown table format):
+                </p>
+                <textarea
+                  value={prdPersonas}
+                  onChange={(e) => {
+                    setPrdPersonas(e.target.value);
+                    setIsManuallyEdited(false);
+                  }}
+                  rows={4}
+                  placeholder="| Persona | Role | Primary Goal & Need |"
+                  className="w-full p-2.5 border border-zinc-200 rounded-lg text-xs font-mono leading-relaxed focus:outline-none focus:ring-2 focus:ring-zinc-900/10 focus:border-zinc-900 resize-y"
+                />
+              </div>
+
+              {/* Card 4: Functional Requirements */}
+              <div className="bg-white rounded-xl border border-zinc-200 p-3.5 sm:p-4 shadow-xs space-y-2.5">
+                <div className="flex items-center justify-between border-b border-zinc-100 pb-2 gap-2">
+                  <div className="flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-blue-600 shrink-0" />
+                    <h3 className="text-sm font-bold text-zinc-900">4. Functional Requirements (FR)</h3>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const d = getDefaultPrdValues(PRESETS.find((p) => p.id === selectedPresetId) || defaultPreset);
+                        setPrdFunctionalReqs(d.prdFunctionalReqs);
+                        setIsManuallyEdited(false);
+                      }}
+                      className="text-[10px] text-zinc-400 hover:text-zinc-700 transition-colors font-mono cursor-pointer"
+                      title="Reset to preset default"
+                    >
+                      Reset
+                    </button>
+                    <InfoTooltip
+                      title="Functional Requirements"
+                      description="List features using FR-1, FR-2 format with priority tags (P0/P1/P2) and expected behavior."
+                      example="### FR-1: Client-Side Hashing (P0)\n- SHA-256 and Argon2id computed in-browser with zero network calls."
+                      align="right"
+                    />
+                  </div>
+                </div>
+                <p className="text-xs text-zinc-500 leading-relaxed">
+                  Numbered functional capabilities, domain workflows, and system behaviors:
+                </p>
+                <textarea
+                  value={prdFunctionalReqs}
+                  onChange={(e) => {
+                    setPrdFunctionalReqs(e.target.value);
+                    setIsManuallyEdited(false);
+                  }}
+                  rows={6}
+                  placeholder="### Core Capabilities (FR-1 to FR-4)..."
+                  className="w-full p-2.5 border border-zinc-200 rounded-lg text-xs font-mono leading-relaxed focus:outline-none focus:ring-2 focus:ring-zinc-900/10 focus:border-zinc-900 resize-y"
+                />
+              </div>
+
+              {/* Card 5: Non-Functional Requirements */}
+              <div className="bg-white rounded-xl border border-zinc-200 p-3.5 sm:p-4 shadow-xs space-y-2.5">
+                <div className="flex items-center justify-between border-b border-zinc-100 pb-2 gap-2">
+                  <div className="flex items-center gap-2">
+                    <ShieldCheck className="w-4 h-4 text-blue-600 shrink-0" />
+                    <h3 className="text-sm font-bold text-zinc-900">5. Non-Functional SLAs &amp; Privacy</h3>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const d = getDefaultPrdValues(PRESETS.find((p) => p.id === selectedPresetId) || defaultPreset);
+                        setPrdNonFunctionalReqs(d.prdNonFunctionalReqs);
+                        setIsManuallyEdited(false);
+                      }}
+                      className="text-[10px] text-zinc-400 hover:text-zinc-700 transition-colors font-mono cursor-pointer"
+                      title="Reset to preset default"
+                    >
+                      Reset
+                    </button>
+                    <InfoTooltip
+                      title="Non-Functional SLAs & Privacy"
+                      description="Specify privacy constraints (zero-server transmission), latency targets, and browser memory limits."
+                      example="- Zero Server Transmission: No API accepts user payloads.\n- Latency: Sub-50ms execution on local payloads."
+                      align="right"
+                    />
+                  </div>
+                </div>
+                <p className="text-xs text-zinc-500 leading-relaxed">
+                  Performance SLAs, zero-server privacy constraints, and reliability standards:
+                </p>
+                <textarea
+                  value={prdNonFunctionalReqs}
+                  onChange={(e) => {
+                    setPrdNonFunctionalReqs(e.target.value);
+                    setIsManuallyEdited(false);
+                  }}
+                  rows={4}
+                  placeholder="- Performance: Sub-50ms overhead..."
+                  className="w-full p-2.5 border border-zinc-200 rounded-lg text-xs font-mono leading-relaxed focus:outline-none focus:ring-2 focus:ring-zinc-900/10 focus:border-zinc-900 resize-y"
+                />
+              </div>
+
+              {/* Card 6: Milestone Phasing */}
+              <div className="bg-white rounded-xl border border-zinc-200 p-3.5 sm:p-4 shadow-xs space-y-2.5">
+                <div className="flex items-center justify-between border-b border-zinc-100 pb-2 gap-2">
+                  <div className="flex items-center gap-2">
+                    <Layers className="w-4 h-4 text-blue-600 shrink-0" />
+                    <h3 className="text-sm font-bold text-zinc-900">6. Milestone Phasing &amp; Roadmap</h3>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const d = getDefaultPrdValues(PRESETS.find((p) => p.id === selectedPresetId) || defaultPreset);
+                        setPrdMilestones(d.prdMilestones);
+                        setIsManuallyEdited(false);
+                      }}
+                      className="text-[10px] text-zinc-400 hover:text-zinc-700 transition-colors font-mono cursor-pointer"
+                      title="Reset to preset default"
+                    >
+                      Reset
+                    </button>
+                    <InfoTooltip
+                      title="Milestone Phasing & Roadmap"
+                      description="Define sprint milestones and delivery phases using markdown checklists."
+                      example="### Milestone 1.0 (Core)\n- [x] Baseline crypto suite\n- [ ] Multi-file bundling"
+                      align="right"
+                    />
+                  </div>
+                </div>
+                <p className="text-xs text-zinc-500 leading-relaxed">
+                  Roadmap milestones, deliverables, and release phases (Markdown table format):
+                </p>
+                <textarea
+                  value={prdMilestones}
+                  onChange={(e) => {
+                    setPrdMilestones(e.target.value);
+                    setIsManuallyEdited(false);
+                  }}
+                  rows={4}
+                  placeholder="| Milestone | Phase | Key Deliverables |"
+                  className="w-full p-2.5 border border-zinc-200 rounded-lg text-xs font-mono leading-relaxed focus:outline-none focus:ring-2 focus:ring-zinc-900/10 focus:border-zinc-900 resize-y"
+                />
+              </div>
+            </div>
+          )}
+
+          {/* 2. DESIGN.md Respected Sections */}
+          {format === "design_md" && (
+            <div className="space-y-4">
+              {/* Card 1: Design Tokens & Palette */}
+              <div className="bg-white rounded-xl border border-zinc-200 p-3.5 sm:p-4 shadow-xs space-y-2.5">
+                <div className="flex items-center justify-between border-b border-zinc-100 pb-2 gap-2">
+                  <div className="flex items-center gap-2">
+                    <Layers className="w-4 h-4 text-indigo-600 shrink-0" />
+                    <h3 className="text-sm font-bold text-zinc-900">1. Visual Language &amp; Semantic Tokens</h3>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const d = getDefaultDesignValues(PRESETS.find((p) => p.id === selectedPresetId) || defaultPreset);
+                        setDesignTokens(d.designTokens);
+                        setIsManuallyEdited(false);
+                      }}
+                      className="text-[10px] text-zinc-400 hover:text-zinc-700 transition-colors font-mono cursor-pointer"
+                      title="Reset to preset default"
+                    >
+                      Reset
+                    </button>
+                    <InfoTooltip
+                      title="Visual Language & Tokens"
+                      description="Define hex color tokens, background surfaces, font families, and border radiuses."
+                      example="- Canvas: Pitch black (#09090B)\n- Surface: Elevated dark (#18181B)\n- Typography: Monospace for data, Sans for labels"
+                      align="right"
+                    />
+                  </div>
+                </div>
+                <p className="text-xs text-zinc-500 leading-relaxed">
+                  Pitch-black canvas palette, elevated surfaces, border tokens, and monospace metrics:
+                </p>
+                <textarea
+                  value={designTokens}
+                  onChange={(e) => {
+                    setDesignTokens(e.target.value);
+                    setIsManuallyEdited(false);
+                  }}
+                  rows={5}
+                  className="w-full p-2.5 border border-zinc-200 rounded-lg text-xs font-mono leading-relaxed focus:outline-none focus:ring-2 focus:ring-zinc-900/10 focus:border-zinc-900 resize-y"
+                />
+              </div>
+
+              {/* Card 2: Single-Canvas Layout */}
+              <div className="bg-white rounded-xl border border-zinc-200 p-3.5 sm:p-4 shadow-xs space-y-2.5">
+                <div className="flex items-center justify-between border-b border-zinc-100 pb-2 gap-2">
+                  <div className="flex items-center gap-2">
+                    <Sliders className="w-4 h-4 text-indigo-600 shrink-0" />
+                    <h3 className="text-sm font-bold text-zinc-900">2. Component Hierarchy &amp; Single-Canvas Layout</h3>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const d = getDefaultDesignValues(PRESETS.find((p) => p.id === selectedPresetId) || defaultPreset);
+                        setDesignLayout(d.designLayout);
+                        setIsManuallyEdited(false);
+                      }}
+                      className="text-[10px] text-zinc-400 hover:text-zinc-700 transition-colors font-mono cursor-pointer"
+                      title="Reset to preset default"
+                    >
+                      Reset
+                    </button>
+                    <InfoTooltip
+                      title="Single-Canvas Layout"
+                      description="Specify layout rules (single canvas, no nested card-in-card containers, mobile touch targets)."
+                      example="- Single-Canvas: Keep UI depth to a single clean layer.\n- Touch Targets: Minimum 44x44px for interactive elements."
+                      align="right"
+                    />
+                  </div>
+                </div>
+                <p className="text-xs text-zinc-500 leading-relaxed">
+                  Single-canvas layout rules, anti-nested card invariant, and mobile touch targets:
+                </p>
+                <textarea
+                  value={designLayout}
+                  onChange={(e) => {
+                    setDesignLayout(e.target.value);
+                    setIsManuallyEdited(false);
+                  }}
+                  rows={4}
+                  className="w-full p-2.5 border border-zinc-200 rounded-lg text-xs font-mono leading-relaxed focus:outline-none focus:ring-2 focus:ring-zinc-900/10 focus:border-zinc-900 resize-y"
+                />
+              </div>
+
+              {/* Card 3: Conventions */}
+              <div className="bg-white rounded-xl border border-zinc-200 p-3.5 sm:p-4 shadow-xs space-y-2.5">
+                <div className="flex items-center justify-between border-b border-zinc-100 pb-2 gap-2">
+                  <div className="flex items-center gap-2">
+                    <Settings2 className="w-4 h-4 text-indigo-600 shrink-0" />
+                    <h3 className="text-sm font-bold text-zinc-900">3. Core Architectural &amp; UI Conventions</h3>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const d = getDefaultDesignValues(PRESETS.find((p) => p.id === selectedPresetId) || defaultPreset);
+                        setDesignConventions(d.designConventions);
+                        setIsManuallyEdited(false);
+                      }}
+                      className="text-[10px] text-zinc-400 hover:text-zinc-700 transition-colors font-mono cursor-pointer"
+                      title="Reset to preset default"
+                    >
+                      Reset
+                    </button>
+                    <InfoTooltip
+                      title="Architectural & UI Conventions"
+                      description="List component contracts, decoupled presentation rules, and controlled state rules."
+                      example="- Decouple UI components strictly from state mutation.\n- Controlled components with explicit TypeScript prop types."
+                      align="right"
+                    />
+                  </div>
+                </div>
+                <p className="text-xs text-zinc-500 leading-relaxed">
+                  Component decoupling, controlled state contracts, and styling conventions:
+                </p>
+                <textarea
+                  value={designConventions}
+                  onChange={(e) => {
+                    setDesignConventions(e.target.value);
+                    setIsManuallyEdited(false);
+                  }}
+                  rows={4}
+                  className="w-full p-2.5 border border-zinc-200 rounded-lg text-xs font-mono leading-relaxed focus:outline-none focus:ring-2 focus:ring-zinc-900/10 focus:border-zinc-900 resize-y"
+                />
+              </div>
+
+              {/* Card 4: Negative Guardrails */}
+              <div className="bg-white rounded-xl border border-zinc-200 p-3.5 sm:p-4 shadow-xs space-y-2.5">
+                <div className="flex items-center justify-between border-b border-zinc-100 pb-2 gap-2">
+                  <div className="flex items-center gap-2">
+                    <AlertTriangle className="w-4 h-4 text-indigo-600 shrink-0" />
+                    <h3 className="text-sm font-bold text-zinc-900">4. Negative Design Guardrails</h3>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const d = getDefaultDesignValues(PRESETS.find((p) => p.id === selectedPresetId) || defaultPreset);
+                        setDesignGuardrails(d.designGuardrails);
+                        setIsManuallyEdited(false);
+                      }}
+                      className="text-[10px] text-zinc-400 hover:text-zinc-700 transition-colors font-mono cursor-pointer"
+                      title="Reset to preset default"
+                    >
+                      Reset
+                    </button>
+                    <InfoTooltip
+                      title="Negative Design Guardrails"
+                      description="Define explicit forbidden UI anti-patterns (no arbitrary margins, no inline styles, no card nesting)."
+                      example="- Never introduce nested card-in-card containers.\n- Never apply arbitrary inline styles.\n- Never break mobile responsiveness."
+                      align="right"
+                    />
+                  </div>
+                </div>
+                <p className="text-xs text-zinc-500 leading-relaxed">
+                  Forbidden UI anti-patterns (nested cards, arbitrary margin offsets, non-standard CSS):
+                </p>
+                <textarea
+                  value={designGuardrails}
+                  onChange={(e) => {
+                    setDesignGuardrails(e.target.value);
+                    setIsManuallyEdited(false);
+                  }}
+                  rows={4}
+                  className="w-full p-2.5 border border-zinc-200 rounded-lg text-xs font-mono leading-relaxed focus:outline-none focus:ring-2 focus:ring-zinc-900/10 focus:border-zinc-900 resize-y"
+                />
+              </div>
+
+              {/* Card 5: StitchMCP & Design Verification */}
+              <div className="bg-white rounded-xl border border-zinc-200 p-3.5 sm:p-4 shadow-xs space-y-2.5">
+                <div className="flex items-center justify-between border-b border-zinc-100 pb-2 gap-2">
+                  <div className="flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-indigo-600 shrink-0" />
+                    <h3 className="text-sm font-bold text-zinc-900">5. StitchMCP Compatibility &amp; Design QA Gate</h3>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const d = getDefaultDesignValues(PRESETS.find((p) => p.id === selectedPresetId) || defaultPreset);
+                        setDesignVerification(d.designVerification);
+                        setIsManuallyEdited(false);
+                      }}
+                      className="text-[10px] text-zinc-400 hover:text-zinc-700 transition-colors font-mono cursor-pointer"
+                      title="Reset to preset default"
+                    >
+                      Reset
+                    </button>
+                    <InfoTooltip
+                      title="StitchMCP & Design QA Gate"
+                      description="Write verification commands and visual QA checks (contrast ratios, mobile breakpoints)."
+                      example="1. Check contrast ratios and accessibility.\n2. Verify responsive layout on mobile and desktop.\n3. Ensure zero visual regressions."
+                      align="right"
+                    />
+                  </div>
+                </div>
+                <p className="text-xs text-zinc-500 leading-relaxed">
+                  StitchMCP schema integration, accessibility contrast, and visual QA checklist:
+                </p>
+                <textarea
+                  value={designVerification}
+                  onChange={(e) => {
+                    setDesignVerification(e.target.value);
+                    setIsManuallyEdited(false);
+                  }}
+                  rows={4}
+                  className="w-full p-2.5 border border-zinc-200 rounded-lg text-xs font-mono leading-relaxed focus:outline-none focus:ring-2 focus:ring-zinc-900/10 focus:border-zinc-900 resize-y"
+                />
+              </div>
+            </div>
+          )}
+
+          {/* 3. TASK.md Respected Sections */}
+          {format === "task_md" && (
+            <div className="space-y-4">
+              {/* Card 1: Sprint Status Dashboard */}
+              <div className="bg-white rounded-xl border border-zinc-200 p-3.5 sm:p-4 shadow-xs space-y-2.5">
+                <div className="flex items-center justify-between border-b border-zinc-100 pb-2 gap-2">
+                  <div className="flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <h3 className="text-sm font-bold text-zinc-900">1. Sprint Dashboard &amp; Active Milestone</h3>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const d = getDefaultTaskValues(PRESETS.find((p) => p.id === selectedPresetId) || defaultPreset);
+                        setTaskDashboard(d.taskDashboard);
+                        setIsManuallyEdited(false);
+                      }}
+                      className="text-[10px] text-zinc-400 hover:text-zinc-700 transition-colors font-mono cursor-pointer"
+                      title="Reset to preset default"
+                    >
+                      Reset
+                    </button>
+                    <InfoTooltip
+                      title="Sprint Dashboard & Milestone"
+                      description="Update active milestone name, completion percentages, and sprint status summary."
+                      example="- Milestone 1.0 (Foundation): [x] 100% Completed\n- Milestone 2.0 (Features): [/] In Progress\n- Milestone 3.0 (Hardening): [ ] Planned"
+                      align="right"
+                    />
+                  </div>
+                </div>
+                <p className="text-xs text-zinc-500 leading-relaxed">
+                  Current milestone, sprint objective, target version, and overall progress:
+                </p>
+                <textarea
+                  value={taskDashboard}
+                  onChange={(e) => {
+                    setTaskDashboard(e.target.value);
+                    setIsManuallyEdited(false);
+                  }}
+                  rows={3}
+                  className="w-full p-2.5 border border-zinc-200 rounded-lg text-xs font-mono leading-relaxed focus:outline-none focus:ring-2 focus:ring-zinc-900/10 focus:border-zinc-900 resize-y"
+                />
+              </div>
+
+              {/* Card 2: Active Phase Checklists */}
+              <div className="bg-white rounded-xl border border-zinc-200 p-3.5 sm:p-4 shadow-xs space-y-2.5">
+                <div className="flex items-center justify-between border-b border-zinc-100 pb-2 gap-2">
+                  <div className="flex items-center gap-2">
+                    <Terminal className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <h3 className="text-sm font-bold text-zinc-900">2. Active Sprint Task Checklists</h3>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const d = getDefaultTaskValues(PRESETS.find((p) => p.id === selectedPresetId) || defaultPreset);
+                        setTaskPhases(d.taskPhases);
+                        setIsManuallyEdited(false);
+                      }}
+                      className="text-[10px] text-zinc-400 hover:text-zinc-700 transition-colors font-mono cursor-pointer"
+                      title="Reset to preset default"
+                    >
+                      Reset
+                    </button>
+                    <InfoTooltip
+                      title="Active Sprint Task Checklists"
+                      description="Add or check off sprint tasks using markdown checkboxes: - [x] done, - [/] in progress, - [ ] planned."
+                      example="### Phase 2: Active Tasks\n- [x] Schema validation layer\n- [/] Live reactivity sync\n- [ ] E2E smoke tests"
+                      align="right"
+                    />
+                  </div>
+                </div>
+                <p className="text-xs text-zinc-500 leading-relaxed">
+                  Manage Phase 1 Foundation, Phase 2 Active Tasks, and Phase 3 Quality checklists (- [ ] / - [x]):
+                </p>
+                <textarea
+                  value={taskPhases}
+                  onChange={(e) => {
+                    setTaskPhases(e.target.value);
+                    setIsManuallyEdited(false);
+                  }}
+                  rows={8}
+                  className="w-full p-2.5 border border-zinc-200 rounded-lg text-xs font-mono leading-relaxed focus:outline-none focus:ring-2 focus:ring-zinc-900/10 focus:border-zinc-900 resize-y"
+                />
+              </div>
+
+              {/* Card 3: Verification Commands & Quality Gates */}
+              <div className="bg-white rounded-xl border border-zinc-200 p-3.5 sm:p-4 shadow-xs space-y-2.5">
+                <div className="flex items-center justify-between border-b border-zinc-100 pb-2 gap-2">
+                  <div className="flex items-center gap-2">
+                    <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <h3 className="text-sm font-bold text-zinc-900">3. Verification Commands &amp; Quality Gates</h3>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const d = getDefaultTaskValues(PRESETS.find((p) => p.id === selectedPresetId) || defaultPreset);
+                        setTaskVerification(d.taskVerification);
+                        setIsManuallyEdited(false);
+                      }}
+                      className="text-[10px] text-zinc-400 hover:text-zinc-700 transition-colors font-mono cursor-pointer"
+                      title="Reset to preset default"
+                    >
+                      Reset
+                    </button>
+                    <InfoTooltip
+                      title="Verification Commands & Quality Gates"
+                      description="Specify shell verification commands that agents must run before finishing (lint, test, build)."
+                      example="```bash\nnpm run validate-presets\nnpm run lint\nnpm run build\n```"
+                      align="right"
+                    />
+                  </div>
+                </div>
+                <p className="text-xs text-zinc-500 leading-relaxed">
+                  Required verification shell commands that all agents and developers must execute to pass:
+                </p>
+                <textarea
+                  value={taskVerification}
+                  onChange={(e) => {
+                    setTaskVerification(e.target.value);
+                    setIsManuallyEdited(false);
+                  }}
+                  rows={5}
+                  className="w-full p-2.5 border border-zinc-200 rounded-lg text-xs font-mono leading-relaxed focus:outline-none focus:ring-2 focus:ring-zinc-900/10 focus:border-zinc-900 resize-y"
+                />
+              </div>
+
+              {/* Card 4: Agent Session Audit Log */}
+              <div className="bg-white rounded-xl border border-zinc-200 p-3.5 sm:p-4 shadow-xs space-y-2.5">
+                <div className="flex items-center justify-between border-b border-zinc-100 pb-2 gap-2">
+                  <div className="flex items-center gap-2">
+                    <FileText className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <h3 className="text-sm font-bold text-zinc-900">4. Autonomous Agent Session Audit Log</h3>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const d = getDefaultTaskValues(PRESETS.find((p) => p.id === selectedPresetId) || defaultPreset);
+                        setTaskSessionLog(d.taskSessionLog);
+                        setIsManuallyEdited(false);
+                      }}
+                      className="text-[10px] text-zinc-400 hover:text-zinc-700 transition-colors font-mono cursor-pointer"
+                      title="Reset to preset default"
+                    >
+                      Reset
+                    </button>
+                    <InfoTooltip
+                      title="Agent Session Audit Log"
+                      description="Add markdown table rows recording agent actions, dates, and verification outcomes."
+                      example="| Date | Agent | Action | Result |\n| :--- | :--- | :--- | :--- |\n| 2026-09-20 | Lead Agent | Implemented dedicated sections | ✅ Exit 0 |"
+                      align="right"
+                    />
+                  </div>
+                </div>
+                <p className="text-xs text-zinc-500 leading-relaxed">
+                  Living chronological audit table documenting agent runs, dates, and verification outcomes:
+                </p>
+                <textarea
+                  value={taskSessionLog}
+                  onChange={(e) => {
+                    setTaskSessionLog(e.target.value);
+                    setIsManuallyEdited(false);
+                  }}
+                  rows={4}
+                  className="w-full p-2.5 border border-zinc-200 rounded-lg text-xs font-mono leading-relaxed focus:outline-none focus:ring-2 focus:ring-zinc-900/10 focus:border-zinc-900 resize-y"
+                />
+              </div>
+
+              {/* Card 5: Sprint Directives */}
+              <div className="bg-white rounded-xl border border-zinc-200 p-3.5 sm:p-4 shadow-xs space-y-2.5">
+                <div className="flex items-center justify-between border-b border-zinc-100 pb-2 gap-2">
+                  <div className="flex items-center gap-2">
+                    <Zap className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <h3 className="text-sm font-bold text-zinc-900">5. Sprint Directives &amp; Scope Constraints</h3>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const d = getDefaultTaskValues(PRESETS.find((p) => p.id === selectedPresetId) || defaultPreset);
+                        setTaskDirectives(d.taskDirectives);
+                        setIsManuallyEdited(false);
+                      }}
+                      className="text-[10px] text-zinc-400 hover:text-zinc-700 transition-colors font-mono cursor-pointer"
+                      title="Reset to preset default"
+                    >
+                      Reset
+                    </button>
+                    <InfoTooltip
+                      title="Sprint Directives & Scope Constraints"
+                      description="Define sprint-specific constraints, architectural bounds, and scope directives for agents."
+                      example="- No external API dependencies.\n- Keep diffs surgical and preserve comments."
+                      align="right"
+                    />
+                  </div>
+                </div>
+                <p className="text-xs text-zinc-500 leading-relaxed">
+                  Project-specific sprint guardrails, non-negotiable scope limits, and execution boundaries:
+                </p>
+                <textarea
+                  value={taskDirectives}
+                  onChange={(e) => {
+                    setTaskDirectives(e.target.value);
+                    setIsManuallyEdited(false);
+                  }}
+                  rows={3}
+                  placeholder="- Critical SLA: Zero regression on build times..."
+                  className="w-full p-2.5 border border-zinc-200 rounded-lg text-xs font-mono leading-relaxed focus:outline-none focus:ring-2 focus:ring-zinc-900/10 focus:border-zinc-900 resize-y"
+                />
+              </div>
+            </div>
+          )}
+
+          {/* 4. MEMORY.md Respected Sections */}
+          {format === "memory_md" && (
+            <div className="space-y-4">
+              {/* Card 1: Technology Context Matrix */}
+              <div className="bg-white rounded-xl border border-zinc-200 p-3.5 sm:p-4 shadow-xs space-y-2.5">
+                <div className="flex items-center justify-between border-b border-zinc-100 pb-2 gap-2">
+                  <div className="flex items-center gap-2">
+                    <Cpu className="w-4 h-4 text-amber-600 shrink-0" />
+                    <h3 className="text-sm font-bold text-zinc-900">1. Persistent Technology Context Matrix</h3>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const d = getDefaultMemoryValues(PRESETS.find((p) => p.id === selectedPresetId) || defaultPreset);
+                        setMemoryContext(d.memoryContext);
+                        setIsManuallyEdited(false);
+                      }}
+                      className="text-[10px] text-zinc-400 hover:text-zinc-700 transition-colors font-mono cursor-pointer"
+                      title="Reset to preset default"
+                    >
+                      Reset
+                    </button>
+                    <InfoTooltip
+                      title="Technology Context Matrix"
+                      description="Document frameworks, language versions, persistence layers, and core dependencies in a markdown table."
+                      example="| Attribute | Specification | Notes |\n| :--- | :--- | :--- |\n| Framework | Next.js 16.3.3 | App Router, SSG |"
+                      align="right"
+                    />
+                  </div>
+                </div>
+                <p className="text-xs text-zinc-500 leading-relaxed">
+                  Application framework, language invariants, persistence layer, and engineering philosophy:
+                </p>
+                <textarea
+                  value={memoryContext}
+                  onChange={(e) => {
+                    setMemoryContext(e.target.value);
+                    setIsManuallyEdited(false);
+                  }}
+                  rows={4}
+                  className="w-full p-2.5 border border-zinc-200 rounded-lg text-xs font-mono leading-relaxed focus:outline-none focus:ring-2 focus:ring-zinc-900/10 focus:border-zinc-900 resize-y"
+                />
+              </div>
+
+              {/* Card 2: Architectural Decision Records (ADRs) */}
+              <div className="bg-white rounded-xl border border-zinc-200 p-3.5 sm:p-4 shadow-xs space-y-2.5">
+                <div className="flex items-center justify-between border-b border-zinc-100 pb-2 gap-2">
+                  <div className="flex items-center gap-2">
+                    <BookOpen className="w-4 h-4 text-amber-600 shrink-0" />
+                    <h3 className="text-sm font-bold text-zinc-900">2. Architectural Decision Records (ADRs)</h3>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const d = getDefaultMemoryValues(PRESETS.find((p) => p.id === selectedPresetId) || defaultPreset);
+                        setMemoryAdrs(d.memoryAdrs);
+                        setIsManuallyEdited(false);
+                      }}
+                      className="text-[10px] text-zinc-400 hover:text-zinc-700 transition-colors font-mono cursor-pointer"
+                      title="Reset to preset default"
+                    >
+                      Reset
+                    </button>
+                    <InfoTooltip
+                      title="Architectural Decision Records (ADRs)"
+                      description="Document accepted decisions using: Status, Context, Decision, and Consequences."
+                      example="### ADR-001: Separation of Concerns\n- Status: Accepted\n- Context: Blending UI with state creates fragility.\n- Decision: Decouple presentation from persistence.\n- Consequences: Cleaner testing and reusability."
+                      align="right"
+                    />
+                  </div>
+                </div>
+                <p className="text-xs text-zinc-500 leading-relaxed">
+                  Formal architectural decisions across context resets (Status, Context, Decision, Consequences):
+                </p>
+                <textarea
+                  value={memoryAdrs}
+                  onChange={(e) => {
+                    setMemoryAdrs(e.target.value);
+                    setIsManuallyEdited(false);
+                  }}
+                  rows={6}
+                  className="w-full p-2.5 border border-zinc-200 rounded-lg text-xs font-mono leading-relaxed focus:outline-none focus:ring-2 focus:ring-zinc-900/10 focus:border-zinc-900 resize-y"
+                />
+              </div>
+
+              {/* Card 3: Operational Gotchas & Pitfalls */}
+              <div className="bg-white rounded-xl border border-zinc-200 p-3.5 sm:p-4 shadow-xs space-y-2.5">
+                <div className="flex items-center justify-between border-b border-zinc-100 pb-2 gap-2">
+                  <div className="flex items-center gap-2">
+                    <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
+                    <h3 className="text-sm font-bold text-zinc-900">3. Operational Gotchas &amp; Pitfalls</h3>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const d = getDefaultMemoryValues(PRESETS.find((p) => p.id === selectedPresetId) || defaultPreset);
+                        setMemoryGotchas(d.memoryGotchas);
+                        setIsManuallyEdited(false);
+                      }}
+                      className="text-[10px] text-zinc-400 hover:text-zinc-700 transition-colors font-mono cursor-pointer"
+                      title="Reset to preset default"
+                    >
+                      Reset
+                    </button>
+                    <InfoTooltip
+                      title="Operational Gotchas & Pitfalls"
+                      description="Add known traps and gotchas prefixed with ⚠️ to steer agents away from mistakes."
+                      example="- ⚠️ Monaco Editor requires dynamic import with ssr: false.\n- ⚠️ Never run 'cd' commands in tool calls."
+                      align="right"
+                    />
+                  </div>
+                </div>
+                <p className="text-xs text-zinc-500 leading-relaxed">
+                  Critical traps, edge cases, and hard-earned learnings that all agents must heed:
+                </p>
+                <textarea
+                  value={memoryGotchas}
+                  onChange={(e) => {
+                    setMemoryGotchas(e.target.value);
+                    setIsManuallyEdited(false);
+                  }}
+                  rows={4}
+                  className="w-full p-2.5 border border-zinc-200 rounded-lg text-xs font-mono leading-relaxed focus:outline-none focus:ring-2 focus:ring-zinc-900/10 focus:border-zinc-900 resize-y"
+                />
+              </div>
+
+              {/* Card 4: 5-Step Agent Loop */}
+              <div className="bg-white rounded-xl border border-zinc-200 p-3.5 sm:p-4 shadow-xs space-y-2.5">
+                <div className="flex items-center justify-between border-b border-zinc-100 pb-2 gap-2">
+                  <div className="flex items-center gap-2">
+                    <Terminal className="w-4 h-4 text-amber-600 shrink-0" />
+                    <h3 className="text-sm font-bold text-zinc-900">4. 5-Step Agent Execution Loop Protocol</h3>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const d = getDefaultMemoryValues(PRESETS.find((p) => p.id === selectedPresetId) || defaultPreset);
+                        setMemoryLoop(d.memoryLoop);
+                        setIsManuallyEdited(false);
+                      }}
+                      className="text-[10px] text-zinc-400 hover:text-zinc-700 transition-colors font-mono cursor-pointer"
+                      title="Reset to preset default"
+                    >
+                      Reset
+                    </button>
+                    <InfoTooltip
+                      title="5-Step Agent Execution Loop"
+                      description="Define the agent operating procedure (Ingest → Plan → Execute → Verify → Update)."
+                      example="1. INGEST   → Read MEMORY.md → PRD.md → DESIGN.md\n2. PLAN     → Inspect TASK.md\n3. EXECUTE  → Apply surgical diffs\n4. VERIFY   → Run quality gates\n5. UPDATE   → Log in TASK.md & MEMORY.md"
+                      align="right"
+                    />
+                  </div>
+                </div>
+                <p className="text-xs text-zinc-500 leading-relaxed">
+                  Standard agent execution loop (Ingest → Plan → Execute → Verify → Update):
+                </p>
+                <textarea
+                  value={memoryLoop}
+                  onChange={(e) => {
+                    setMemoryLoop(e.target.value);
+                    setIsManuallyEdited(false);
+                  }}
+                  rows={5}
+                  className="w-full p-2.5 border border-zinc-200 rounded-lg text-xs font-mono leading-relaxed focus:outline-none focus:ring-2 focus:ring-zinc-900/10 focus:border-zinc-900 resize-y"
+                />
+              </div>
+
+              {/* Card 5: Domain Invariants & Anchors */}
+              <div className="bg-white rounded-xl border border-zinc-200 p-3.5 sm:p-4 shadow-xs space-y-2.5">
+                <div className="flex items-center justify-between border-b border-zinc-100 pb-2 gap-2">
+                  <div className="flex items-center gap-2">
+                    <Layers className="w-4 h-4 text-amber-600 shrink-0" />
+                    <h3 className="text-sm font-bold text-zinc-900">5. Domain Invariants &amp; Key File Anchors</h3>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const d = getDefaultMemoryValues(PRESETS.find((p) => p.id === selectedPresetId) || defaultPreset);
+                        setMemoryInvariants(d.memoryInvariants);
+                        setIsManuallyEdited(false);
+                      }}
+                      className="text-[10px] text-zinc-400 hover:text-zinc-700 transition-colors font-mono cursor-pointer"
+                      title="Reset to preset default"
+                    >
+                      Reset
+                    </button>
+                    <InfoTooltip
+                      title="Domain Invariants & Anchors"
+                      description="List key directories, system boundaries, and non-negotiable architectural invariants."
+                      example="- All utilities reside under src/lib/tools/.\n- CLI lives in cli/bin/devscratchpad.mjs."
+                      align="right"
+                    />
+                  </div>
+                </div>
+                <p className="text-xs text-zinc-500 leading-relaxed">
+                  System boundaries, core package directories, and project invariant constraints:
+                </p>
+                <textarea
+                  value={memoryInvariants}
+                  onChange={(e) => {
+                    setMemoryInvariants(e.target.value);
+                    setIsManuallyEdited(false);
+                  }}
+                  rows={3}
+                  placeholder="- Key directory anchors..."
+                  className="w-full p-2.5 border border-zinc-200 rounded-lg text-xs font-mono leading-relaxed focus:outline-none focus:ring-2 focus:ring-zinc-900/10 focus:border-zinc-900 resize-y"
+                />
+              </div>
+
+              {/* Card 6: Session History */}
+              <div className="bg-white rounded-xl border border-zinc-200 p-3.5 sm:p-4 shadow-xs space-y-2.5">
+                <div className="flex items-center justify-between border-b border-zinc-100 pb-2 gap-2">
+                  <div className="flex items-center gap-2">
+                    <FileText className="w-4 h-4 text-amber-600 shrink-0" />
+                    <h3 className="text-sm font-bold text-zinc-900">6. Session History</h3>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const d = getDefaultMemoryValues(PRESETS.find((p) => p.id === selectedPresetId) || defaultPreset);
+                        setMemorySessionHistory(d.memorySessionHistory);
+                        setIsManuallyEdited(false);
+                      }}
+                      className="text-[10px] text-zinc-400 hover:text-zinc-700 transition-colors font-mono cursor-pointer"
+                      title="Reset to preset default"
+                    >
+                      Reset
+                    </button>
+                    <InfoTooltip
+                      title="Session History"
+                      description="Append chronological changelog entries noting dates and key system modifications."
+                      example="- 2026-09-20: Initialized persistent memory bank and core ADRs."
+                      align="right"
+                    />
+                  </div>
+                </div>
+                <p className="text-xs text-zinc-500 leading-relaxed">
+                  Chronological record of memory additions and changes over time:
+                </p>
+                <textarea
+                  value={memorySessionHistory}
+                  onChange={(e) => {
+                    setMemorySessionHistory(e.target.value);
+                    setIsManuallyEdited(false);
+                  }}
+                  rows={3}
+                  className="w-full p-2.5 border border-zinc-200 rounded-lg text-xs font-mono leading-relaxed focus:outline-none focus:ring-2 focus:ring-zinc-900/10 focus:border-zinc-900 resize-y"
+                />
+              </div>
+            </div>
+          )}
 
           {/* Cursor Rule Scope Card (Visible only when format is cursor_mdc) */}
           {format === "cursor_mdc" && (
@@ -1909,11 +3079,27 @@ export function ClaudeSkillsClient({
                   <FolderGit2 className="w-4 h-4 text-zinc-900 shrink-0" />
                   <h3 className="text-sm font-bold text-zinc-900">Cursor Rule Scope</h3>
                 </div>
-                <span className="text-[10px] text-zinc-400 font-mono">.cursor/rules/*.mdc</span>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-[10px] text-zinc-400 font-mono">.cursor/rules/*.mdc</span>
+                  <InfoTooltip
+                    title="Cursor Rule Scope"
+                    description="Configure how Cursor IDE loads this .mdc rule — either scoped to specific glob matching files or injected into all model contexts."
+                    example="glob: src/app/**/*.tsx\nalwaysApply: false"
+                    align="right"
+                  />
+                </div>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="space-y-1">
-                  <label className="text-xs font-semibold text-zinc-700">File Glob Pattern</label>
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-semibold text-zinc-700">File Glob Pattern</label>
+                    <InfoTooltip
+                      title="File Glob Pattern"
+                      description="Glob pattern controlling which files trigger this rule. Use **/* for project-wide scope, or targeted paths like src/components/**/*.tsx."
+                      example="src/**/*.tsx\n**/*.py"
+                      align="right"
+                    />
+                  </div>
                   <input
                     type="text"
                     value={globPattern}
@@ -1924,7 +3110,14 @@ export function ClaudeSkillsClient({
                   <p className="text-[10px] text-zinc-400">Scopes rule to matching files. Use **/* for global workspace scope.</p>
                 </div>
                 <div className="space-y-1">
-                  <label className="text-xs font-semibold text-zinc-700">Always Apply Behavior</label>
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-semibold text-zinc-700">Always Apply Behavior</label>
+                    <InfoTooltip
+                      title="Always Apply Behavior"
+                      description="When enabled (alwaysApply: true), Cursor injects this rule into every generation and chat context, regardless of which file is open."
+                      align="right"
+                    />
+                  </div>
                   <button
                     type="button"
                     onClick={() => setAlwaysApply((prev) => !prev)}
@@ -1972,12 +3165,25 @@ export function ClaudeSkillsClient({
                     </span>
                   )}
                   <span className="text-[10px] text-zinc-400 font-mono hidden sm:inline">claude.json</span>
+                  <InfoTooltip
+                    title="Claude MCP Server"
+                    description="Model Context Protocol config for connecting Claude Code CLI or Claude Desktop to local tools, filesystems, and databases."
+                    example="claude.json -> mcpServers"
+                    align="right"
+                  />
                 </div>
               </div>
 
               {/* Quick Presets */}
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-zinc-700">Select MCP Preset Template</label>
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-semibold text-zinc-700">Select MCP Preset Template</label>
+                  <InfoTooltip
+                    title="MCP Preset Templates"
+                    description="Pre-configured Model Context Protocol server templates for common developer tools like filesystem, memory, github, and fetch."
+                    align="right"
+                  />
+                </div>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
                   {MCP_PRESETS.map((preset) => (
                     <button
@@ -2000,7 +3206,15 @@ export function ClaudeSkillsClient({
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="space-y-1">
-                  <label className="text-xs font-semibold text-zinc-700">Server Identifier Key</label>
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-semibold text-zinc-700">Server Identifier Key</label>
+                    <InfoTooltip
+                      title="Server Identifier Key"
+                      description="Unique key name for the MCP server inside the mcpServers JSON dictionary."
+                      example="filesystem, github, postgres"
+                      align="left"
+                    />
+                  </div>
                   <input
                     type="text"
                     value={mcpServerName}
@@ -2011,7 +3225,15 @@ export function ClaudeSkillsClient({
                 </div>
 
                 <div className="space-y-1">
-                  <label className="text-xs font-semibold text-zinc-700">Executable Command</label>
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-semibold text-zinc-700">Executable Command</label>
+                    <InfoTooltip
+                      title="Executable Command"
+                      description="Binary runner to launch the MCP server (npx, uvx, node, python)."
+                      example="npx, uvx"
+                      align="right"
+                    />
+                  </div>
                   <input
                     type="text"
                     value={mcpCommand}
@@ -2023,7 +3245,15 @@ export function ClaudeSkillsClient({
               </div>
 
               <div className="space-y-1">
-                <label className="text-xs font-semibold text-zinc-700">Command Arguments (One per line)</label>
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-semibold text-zinc-700">Command Arguments (One per line)</label>
+                  <InfoTooltip
+                    title="Command Arguments"
+                    description="Command line arguments passed to the MCP server process, one argument per line."
+                    example="-y\n@modelcontextprotocol/server-filesystem\n./"
+                    align="right"
+                  />
+                </div>
                 <textarea
                   rows={3}
                   value={mcpArgs}
@@ -2035,7 +3265,15 @@ export function ClaudeSkillsClient({
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="space-y-1">
-                  <label className="text-xs font-semibold text-zinc-700">Environment Variable Key (Optional)</label>
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-semibold text-zinc-700">Environment Variable Key (Optional)</label>
+                    <InfoTooltip
+                      title="Environment Variable Key"
+                      description="Secret environment variable name required by the server (e.g. API keys or tokens)."
+                      example="GITHUB_PERSONAL_ACCESS_TOKEN"
+                      align="left"
+                    />
+                  </div>
                   <input
                     type="text"
                     value={mcpEnvKey}
@@ -2148,8 +3386,10 @@ export function ClaudeSkillsClient({
             </div>
           )}
 
-          {/* Identity & Trigger Configuration */}
-          <div className="bg-white rounded-xl border border-zinc-200 p-4 sm:p-5 shadow-xs space-y-4">
+          {!isGovernanceFormat && !isMcpFormat && (
+            <>
+              {/* Identity & Trigger Configuration */}
+              <div className="bg-white rounded-xl border border-zinc-200 p-4 sm:p-5 shadow-xs space-y-4">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-zinc-100 pb-3 gap-2.5">
               <div className="flex items-center gap-2">
                 <Terminal className="w-4 h-4 text-zinc-700 shrink-0" />
@@ -2170,7 +3410,15 @@ export function ClaudeSkillsClient({
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between">
-                  <label className="text-xs font-semibold text-zinc-700">Skill Identifier (Kebab Case)</label>
+                  <div className="flex items-center gap-1.5">
+                    <label className="text-xs font-semibold text-zinc-700">Skill Identifier (Kebab Case)</label>
+                    <InfoTooltip
+                      title="Skill Identifier"
+                      description="URL-friendly kebab-case slug used for directory or rule naming (e.g. codebase-auditor). Click Auto-sync/Locked to toggle syncing with the Display Title."
+                      example="codebase-auditor"
+                      align="left"
+                    />
+                  </div>
                   <button
                     type="button"
                     onClick={toggleSlugLock}
@@ -2204,7 +3452,15 @@ export function ClaudeSkillsClient({
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-zinc-700">Display Title</label>
+                <div className="flex items-center gap-1.5">
+                  <label className="text-xs font-semibold text-zinc-700">Display Title</label>
+                  <InfoTooltip
+                    title="Display Title"
+                    description="Human-readable title displayed in rule catalogs, tab headers, and exported documentation."
+                    example="Codebase Health & Security Auditor"
+                    align="right"
+                  />
+                </div>
                 <input
                   type="text"
                   value={skillTitle}
@@ -2218,12 +3474,18 @@ export function ClaudeSkillsClient({
             {/* Interactive Trigger Tag Chips & Heuristic Validation */}
             <div className="space-y-3">
               <div className="flex flex-col sm:flex-row sm:items-baseline justify-between gap-0.5 sm:gap-2">
-                <label className="text-xs font-semibold text-zinc-700 flex items-center gap-1.5">
-                  <span>Interactive Activation Trigger Chips</span>
+                <div className="flex items-center gap-1.5">
+                  <label className="text-xs font-semibold text-zinc-700">Interactive Activation Trigger Chips</label>
+                  <InfoTooltip
+                    title="Activation Trigger Chips"
+                    description="Keywords and intent tags that activate this skill or rule. Type a keyword and press Enter or select suggested chips below."
+                    example="audit, security, review, lint"
+                    align="left"
+                  />
                   <span className="text-[10px] bg-orange-100 text-orange-800 font-mono px-1.5 py-0.2 rounded font-medium">
                     {triggerTags.length} chips
                   </span>
-                </label>
+                </div>
                 <span className="text-[10px] text-zinc-400">Scoped domain keywords evaluated in real time</span>
               </div>
 
@@ -2307,7 +3569,15 @@ export function ClaudeSkillsClient({
 
               {/* Detailed Activation Description */}
               <div className="space-y-1 pt-1">
-                <label className="text-xs font-semibold text-zinc-700">Activation Description & Conditions</label>
+                <div className="flex items-center gap-1.5">
+                  <label className="text-xs font-semibold text-zinc-700">Activation Description &amp; Conditions</label>
+                  <InfoTooltip
+                    title="Activation Description"
+                    description="Plain-English instructions telling Claude Code or Cursor exactly when this skill or rule should be invoked."
+                    example="Use when analyzing codebase security, evaluating vulnerabilities, or running pre-commit audits."
+                    align="left"
+                  />
+                </div>
                 <textarea
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
@@ -2362,7 +3632,15 @@ export function ClaudeSkillsClient({
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-zinc-700">Agent Persona / Role</label>
+              <div className="flex items-center gap-1.5">
+                <label className="text-xs font-semibold text-zinc-700">Agent Persona / Role</label>
+                <InfoTooltip
+                  title="Agent Persona & Role"
+                  description="Defines the AI agent's mindset, seniority, and technical specialization when executing this skill."
+                  example="Senior Security & Systems Auditor specializing in zero-trust architecture"
+                  align="left"
+                />
+              </div>
               <input
                 type="text"
                 value={role}
@@ -2379,6 +3657,12 @@ export function ClaudeSkillsClient({
               <div className="flex items-center gap-2">
                 <Layers className="w-4 h-4 text-zinc-700 shrink-0" />
                 <h3 className="text-sm font-bold text-zinc-900">Technology Stack Context</h3>
+                <InfoTooltip
+                  title="Technology Stack Context"
+                  description="Specifies your project's framework, language, UI library, and database so the AI writes syntactically accurate, modern idiomatic code."
+                  example="Framework: Next.js 15 | Language: TypeScript | UI: Tailwind CSS"
+                  align="left"
+                />
               </div>
               <div className="flex items-center gap-1.5 w-full sm:w-auto shrink-0">
                 <button
@@ -2451,6 +3735,11 @@ export function ClaudeSkillsClient({
               <div className="flex items-center gap-2">
                 <Sliders className="w-4 h-4 text-zinc-700 shrink-0" />
                 <h3 className="text-sm font-bold text-zinc-900">Engineering Philosophy</h3>
+                <InfoTooltip
+                  title="Engineering Philosophy"
+                  description="Select the architectural mindset your agent should prioritize: Pragmatic MVP, Strict Correctness, Performance First, or Production Hardened."
+                  align="left"
+                />
               </div>
               <span className="text-[10px] text-zinc-500 font-medium">Flexible & Adaptable</span>
             </div>
@@ -2486,6 +3775,11 @@ export function ClaudeSkillsClient({
               <div className="flex items-center gap-2">
                 <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
                 <h3 className="text-sm font-bold text-zinc-900">Agent Behavioral Guardrails</h3>
+                <InfoTooltip
+                  title="Agent Behavioral Guardrails"
+                  description="Select active rules that prevent destructive behaviors (e.g., silent failures, sweeping refactors, missing tests)."
+                  align="left"
+                />
               </div>
               <span className="text-[10px] text-zinc-400">Select active rules</span>
             </div>
@@ -2524,6 +3818,11 @@ export function ClaudeSkillsClient({
               <div className="flex items-center gap-2">
                 <Settings2 className="w-4 h-4 text-zinc-700 shrink-0" />
                 <h3 className="text-sm font-bold text-zinc-900">Architectural & Code Quality Conventions</h3>
+                <InfoTooltip
+                  title="Architectural Conventions"
+                  description="Select best-practice conventions such as strict typing, single-responsibility functions, and schema validation."
+                  align="left"
+                />
               </div>
               <span className="text-[10px] text-zinc-400">Less rigid & configurable</span>
             </div>
@@ -2562,6 +3861,12 @@ export function ClaudeSkillsClient({
               <div className="flex items-center gap-2">
                 <BookOpen className="w-4 h-4 text-zinc-700 shrink-0" />
                 <h3 className="text-sm font-bold text-zinc-900">Step-by-Step Workflow Procedures</h3>
+                <InfoTooltip
+                  title="Step-by-Step Procedures"
+                  description="Numbered, deterministic steps the AI agent must follow when invoked. Keep steps actionable and test-driven."
+                  example="1. Ingest context\n2. Trace execution\n3. Execute changes\n4. Run tests"
+                  align="left"
+                />
               </div>
             </div>
 
@@ -2574,9 +3879,17 @@ export function ClaudeSkillsClient({
             />
 
             <div className="pt-2">
-              <label className="text-xs font-semibold text-zinc-700 mb-1.5 block">
-                Custom Directives & Forbidden Patterns
-              </label>
+              <div className="flex items-center gap-1.5 mb-1.5">
+                <label className="text-xs font-semibold text-zinc-700 block">
+                  Custom Directives &amp; Forbidden Patterns
+                </label>
+                <InfoTooltip
+                  title="Custom Directives & Forbidden Patterns"
+                  description="Hard constraints and forbidden patterns specific to your repository (e.g. 'Never use eval', 'Always use server actions')."
+                  example="- Never use any or eval\n- Always validate request payloads with Zod"
+                  align="left"
+                />
+              </div>
               <textarea
                 value={customDirectives}
                 onChange={(e) => setCustomDirectives(e.target.value)}
@@ -2586,7 +3899,9 @@ export function ClaudeSkillsClient({
               />
             </div>
           </div>
-        </div>
+        </>
+      )}
+    </div>
 
         {/* Right Column: Sticky Real-time Editor & Unified Action Group */}
         <div
@@ -3423,6 +4738,14 @@ export function ClaudeSkillsClient({
                 <FileText className="w-3.5 h-3.5 text-indigo-600" />
               ) : format === "architecture_md" ? (
                 <Layers className="w-3.5 h-3.5 text-purple-600" />
+              ) : format === "prd_md" ? (
+                <FileText className="w-3.5 h-3.5 text-blue-600" />
+              ) : format === "design_md" ? (
+                <Layers className="w-3.5 h-3.5 text-indigo-600" />
+              ) : format === "task_md" ? (
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+              ) : format === "memory_md" ? (
+                <Cpu className="w-3.5 h-3.5 text-amber-600" />
               ) : (
                 <FolderGit2 className={cn("w-3.5 h-3.5", format === "skill_md" ? "text-orange-500" : "text-zinc-800")} />
               )}
@@ -3491,6 +4814,26 @@ export function ClaudeSkillsClient({
             {format === "architecture_md" && (
               <p className="text-zinc-500 text-xs leading-relaxed">
                 Save as <code className="bg-zinc-100 px-1 py-0.5 rounded text-zinc-800 font-mono text-[11px]">ARCHITECTURE.md</code> in repository root. Establishes non-negotiable data flow and system state invariants.
+              </p>
+            )}
+            {format === "prd_md" && (
+              <p className="text-zinc-500 text-xs leading-relaxed">
+                Save as <code className="bg-zinc-100 px-1 py-0.5 rounded text-zinc-800 font-mono text-[11px]">PRD.md</code> in repository root. Authoritative product requirements, user personas, and milestone roadmap.
+              </p>
+            )}
+            {format === "design_md" && (
+              <p className="text-zinc-500 text-xs leading-relaxed">
+                Save as <code className="bg-zinc-100 px-1 py-0.5 rounded text-zinc-800 font-mono text-[11px]">DESIGN.md</code> in repository root. UI/UX design tokens, single-canvas layout rules, and negative guardrails.
+              </p>
+            )}
+            {format === "task_md" && (
+              <p className="text-zinc-500 text-xs leading-relaxed">
+                Save as <code className="bg-zinc-100 px-1 py-0.5 rounded text-zinc-800 font-mono text-[11px]">TASK.md</code> in repository root. Active sprint tracker, mandatory verification gates, and agent session log.
+              </p>
+            )}
+            {format === "memory_md" && (
+              <p className="text-zinc-500 text-xs leading-relaxed">
+                Save as <code className="bg-zinc-100 px-1 py-0.5 rounded text-zinc-800 font-mono text-[11px]">MEMORY.md</code> in repository root. Persistent agent brain: tech context, ADRs, operational gotchas, and 5-step loop.
               </p>
             )}
           </div>

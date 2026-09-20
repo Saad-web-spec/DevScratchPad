@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-require-imports */
 const sharp = require('sharp');
 
 async function createLinkedInMockup() {

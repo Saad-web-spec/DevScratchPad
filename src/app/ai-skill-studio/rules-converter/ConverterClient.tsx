@@ -10,11 +10,8 @@ import {
   ArrowRight,
   ShieldCheck,
   FileText,
-  RefreshCw,
   Copy,
   Check,
-  ExternalLink,
-  Code,
   Sliders,
 } from "lucide-react";
 import { convertRawRulesToIR, ParsedRulesIR } from "@/app/claude-skills/lib/rulesConverter";

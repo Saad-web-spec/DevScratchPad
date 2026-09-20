@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, ChevronRight, Terminal, ArrowRight, ArrowUpRight, Clock, ShieldCheck, Tag } from "lucide-react";
+import { ArrowLeft, ArrowRight, ArrowUpRight, Clock } from "lucide-react";
 import { Marked } from "marked";
 import { markedHighlight } from "marked-highlight";
 import hljs from "highlight.js";

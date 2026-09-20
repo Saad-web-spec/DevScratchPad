@@ -106,6 +106,7 @@ export function WorkspaceShell({ initialToolSlug, toolMeta, children }: Workspac
     } else if (activeTool !== "json-formatter") {
       openTab("json-formatter");
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialToolSlug, openTab]);
 
   const [isCommandPaletteOpen, setCommandPaletteOpen] = useState(false);
@@ -128,7 +129,7 @@ export function WorkspaceShell({ initialToolSlug, toolMeta, children }: Workspac
   }, []);
 
   // Status Bar State
-  const [isValid, setIsValid] = useState(true);
+  const [, setIsValid] = useState(true);
   const [errorMsg, setErrorMsg] = useState<string | undefined>();
   const [errorLine, setErrorLine] = useState<number | undefined>();
   const [inputLength, setInputLength] = useState(0);

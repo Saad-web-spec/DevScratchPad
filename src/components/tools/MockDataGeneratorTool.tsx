@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { MonacoEditor } from "@/components/MonacoEditor";
-import { Play, Copy, Check, Download, ListOrdered } from "lucide-react";
+import { Play, Copy, Check, Download } from "lucide-react";
 
 interface MockDataGeneratorToolProps {
   onValidationChange?: (isValid: boolean) => void;
@@ -34,7 +34,7 @@ export function MockDataGeneratorTool({ restoredInput, onStatsChange }: MockData
     setError(null);
     try {
       // We parse the schema structure
-      let schemaObj = JSON.parse(schemaText);
+      const schemaObj = JSON.parse(schemaText);
       const { faker } = await import("@faker-js/faker");
       
       const results: any[] = [];
@@ -88,6 +88,7 @@ export function MockDataGeneratorTool({ restoredInput, onStatsChange }: MockData
 
   // Generate initially
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     void generateData();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

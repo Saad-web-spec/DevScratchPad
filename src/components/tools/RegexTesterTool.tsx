@@ -60,6 +60,7 @@ export function RegexTesterTool({
  if (restoredInput) {
  try {
  const parsed = JSON.parse(restoredInput);
+ // eslint-disable-next-line react-hooks/set-state-in-effect
  if (parsed.pattern) setPattern(parsed.pattern);
  if (parsed.testString) setTestString(parsed.testString);
  } catch {
@@ -72,13 +73,14 @@ export function RegexTesterTool({
  useEffect(() => {
  const start = performance.now();
  const flagStr = Object.entries(flags)
- .filter(([_, active]) => active)
+ .filter(([, active]) => active)
  .map(([f]) => f)
  .join("");
 
  const result = testRegex(pattern, flagStr, testString);
 
  if (result.valid) {
+ // eslint-disable-next-line react-hooks/set-state-in-effect
  setMatches(result.matches || []);
  setRegexError(undefined);
  onValidationChange(true);

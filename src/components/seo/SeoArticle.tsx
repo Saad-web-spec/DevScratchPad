@@ -46,7 +46,7 @@ export function SeoArticle({ title, explanation, codeExamples, shortcuts, howToU
           )}
 
           <p className="text-xs text-neutral-500 mt-8 mb-4">
-            <strong>100% Client-Side Privacy:</strong> This tool executes entirely within your browser's runtime environment. No payloads, tokens, or inputs are transmitted to external servers. Safe for offline usage.
+            <strong>100% Client-Side Privacy:</strong> This tool executes entirely within your browser&apos;s runtime environment. No payloads, tokens, or inputs are transmitted to external servers. Safe for offline usage.
           </p>
 
           {codeExamples && codeExamples.length > 0 && (

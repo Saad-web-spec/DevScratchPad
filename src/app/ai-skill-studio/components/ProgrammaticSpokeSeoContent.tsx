@@ -13,7 +13,6 @@ import {
   Copy,
   Check,
   Terminal,
-  Sparkles,
   Wrench,
   RefreshCw,
 } from "lucide-react";

@@ -1,5 +1,4 @@
 import { Metadata } from "next";
-import Link from "next/link";
 import { RECIPE_REGISTRY } from "@/lib/recipes/registry";
 import { SiteHeader } from "@/components/layout/SiteHeader";
 import { SiteFooter } from "@/components/layout/SiteFooter";

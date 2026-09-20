@@ -13,7 +13,11 @@ export type OutputFormat =
   | "cursorignore"
   | "claudeignore"
   | "llms_txt"
-  | "architecture_md";
+  | "architecture_md"
+  | "prd_md"
+  | "design_md"
+  | "task_md"
+  | "memory_md";
 
 export interface ProgrammaticPresetRoute {
   formatSlug: string;
@@ -2004,6 +2008,10 @@ export function getPresetRouteMetadata(formatSlug: string, presetSlug: string): 
   else if (formatSlug === "claudeignore") formatSuffix = ".claudeignore Shield";
   else if (formatSlug === "llms-txt") formatSuffix = "llms.txt Map";
   else if (formatSlug === "architecture-md") formatSuffix = "ARCHITECTURE.md Spec";
+  else if (formatSlug === "prd-md") formatSuffix = "PRD.md Spec";
+  else if (formatSlug === "design-md") formatSuffix = "DESIGN.md Spec";
+  else if (formatSlug === "task-md") formatSuffix = "TASK.md Tracker";
+  else if (formatSlug === "memory-md") formatSuffix = "MEMORY.md Brain";
 
   // Clean and simplify tech name for crisp, predictable SERP title
   const cleanTech = route.techName

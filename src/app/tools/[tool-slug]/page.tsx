@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { BookOpen, Wrench } from "lucide-react";
+import { Wrench } from "lucide-react";
 import { getToolMeta, TOOL_SLUGS } from "@/lib/tools/registry";
 import { RECIPE_REGISTRY } from "@/lib/recipes/registry";
 import { WorkspaceShell } from "@/components/WorkspaceShell";
@@ -81,22 +81,6 @@ export default async function ToolPage({
 
   return (
     <WorkspaceShell initialToolSlug={slug} toolMeta={toolMeta}>
-      {toolMeta.relatedBlogSlug && (
-        <div className="max-w-4xl mx-auto w-full px-4 pt-6 pb-2">
-          <Link
-            href={`/blog/${toolMeta.relatedBlogSlug}`}
-            className="group flex items-center justify-between p-4 rounded-xl bg-orange-50 border border-orange-200 hover:border-orange-300 transition-colors no-underline"
-          >
-            <div className="flex items-center gap-3 text-orange-900">
-              <BookOpen className="w-5 h-5 text-orange-600 shrink-0" />
-              <div>
-                <span className="font-semibold block sm:inline mr-2">📖 Deep Dive Guide:</span>
-                <span className="text-sm font-medium">{toolMeta.seoTitle} explained →</span>
-              </div>
-            </div>
-          </Link>
-        </div>
-      )}
       <SeoContent tool={toolMeta} />
       
       {toolRecipes.length > 0 && (

@@ -47,17 +47,9 @@ export function Base64InspectorTool({
 
   // Restore from history
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (restoredInput) setInput(restoredInput);
   }, [restoredInput]);
-
-  // Save workspace snapshot
-  useEffect(() => {
-    const handleSave = () => {
-      addSnapshot("base64-inspector", "Base64 / Hex / Binary Inspector", input, JSON.stringify(conversions, null, 2));
-    };
-    window.addEventListener("save-workspace", handleSave);
-    return () => window.removeEventListener("save-workspace", handleSave);
-  }, [input]);
 
   // Conversions computation
   const { conversions, execMs, isValid, error } = useMemo(() => {
@@ -66,11 +58,21 @@ export function Base64InspectorTool({
       const result = inspectAndConvert(input, forcedFormat);
       const end = performance.now();
       return { conversions: result, execMs: end - start, isValid: true };
-    } catch (err: any) {
+    } catch (err: unknown) {
       const end = performance.now();
-      return { conversions: inspectAndConvert(input), execMs: end - start, isValid: false, error: err.message };
+      const message = err instanceof Error ? err.message : String(err);
+      return { conversions: inspectAndConvert(input), execMs: end - start, isValid: false, error: message };
     }
   }, [input, forcedFormat]);
+
+  // Save workspace snapshot
+  useEffect(() => {
+    const handleSave = () => {
+      addSnapshot("base64-inspector", "Base64 / Hex / Binary Inspector", input, JSON.stringify(conversions, null, 2));
+    };
+    window.addEventListener("save-workspace", handleSave);
+    return () => window.removeEventListener("save-workspace", handleSave);
+  }, [input, conversions]);
 
   useEffect(() => {
     onValidationChange(isValid, error);

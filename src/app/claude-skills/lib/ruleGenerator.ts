@@ -13,7 +13,11 @@ export type OutputFormat =
   | "cursorignore"
   | "claudeignore"
   | "llms_txt"
-  | "architecture_md";
+  | "architecture_md"
+  | "prd_md"
+  | "design_md"
+  | "task_md"
+  | "memory_md";
 
 export interface McpServerPreset {
   id: string;
@@ -1595,6 +1599,304 @@ ${procedures.trim() || "1. Run typecheck and linting.\n2. Execute automated test
 `;
 }
 
+export function buildPrdMdContent(
+  params: RuleBuilderParams,
+  conventions: string[],
+  behaviors: string[],
+  procedures: string
+): string {
+  const {
+    skillTitle,
+    framework,
+    language,
+    database,
+    description,
+    customDirectives,
+    prdOverview,
+    prdProblemStatement,
+    prdPersonas,
+    prdFunctionalReqs,
+    prdNonFunctionalReqs,
+    prdMilestones,
+  } = params;
+
+  const defaultOverview = description.trim() || `Production-grade ${framework} application developed with AI pair programming.`;
+  const defaultProblem = `- Engineering teams face context degradation, inconsistent architectural patterns, and fragmented development velocity without clear, machine-readable specifications.\n- Autonomous coding agents lack authoritative feature scope boundaries, leading to rule drift and unaligned implementations.`;
+  const defaultPersonas = `| Persona | Role | Primary Goal & Need |\n| :--- | :--- | :--- |\n| **Full-Stack Developer** | Feature Delivery | Rapid development with deterministic component contracts and zero type ambiguity |\n| **DevOps / SRE** | Reliability | Automated verification gates, strict dependency boundaries, and predictable deployments |\n| **Security Auditor** | Compliance | Enforce zero data leakage, strict schema validation, and least-privilege operations |`;
+  const defaultFR = `### Core Capabilities (FR-1 to FR-4)\n1. **System Foundation (FR-1)**: Robust runtime using ${framework} and ${language} with strict static type guarantees.\n2. **Data Management (FR-2)**: High-throughput, strongly typed state and persistence using ${database}.\n3. **Execution Procedures (FR-3)**:\n${procedures.trim() ? procedures.trim().split("\n").map((p) => `   ${p}`).join("\n") : "   - Follow domain workflows cleanly."}\n4. **Architectural Conventions (FR-4)**:\n${conventions.length > 0 ? conventions.map((c) => `   ${c}`).join("\n") : "   - Adhere strictly to idiomatic system patterns."}`;
+  const defaultNFR = `- **Performance**: Sub-50ms processing overhead on core execution paths.\n- **Reliability & Security**: Zero runtime \`any\` types; strict schema validation on all boundary inputs.\n${behaviors.length > 0 ? behaviors.map((b) => `- ${b}`).join("\n") : "- Surgical diffs only: preserve surrounding code and documentation."}`;
+  const defaultMilestones = `| Milestone | Phase | Key Deliverables |\n| :--- | :--- | :--- |\n| **M1** | Core Foundation | Architecture scaffold, type definitions, and baseline test harness |\n| **M2** | Feature Implementation | Core domain capabilities and integrated data flows |\n| **M3** | Hardening & Audit | Full verification suite, security review, and production deployment |`;
+
+  return `# Product Requirements Document (PRD) — ${skillTitle.trim() || framework}
+
+## Document Metadata
+- **Project**: ${skillTitle.trim() || framework}
+- **Stack**: ${framework} • ${language} • ${database}
+- **Status**: Active / In Development
+- **Owner**: Engineering Team
+
+## 1. Executive Summary & Vision
+${(prdOverview !== undefined ? prdOverview : defaultOverview).trim()}
+
+## 2. Problem Statement
+${(prdProblemStatement !== undefined ? prdProblemStatement : defaultProblem).trim()}
+
+## 3. User Personas
+${(prdPersonas !== undefined ? prdPersonas : defaultPersonas).trim()}
+
+## 4. Functional Requirements
+${(prdFunctionalReqs !== undefined ? prdFunctionalReqs : defaultFR).trim()}
+
+## 5. Non-Functional Requirements (NFR)
+${(prdNonFunctionalReqs !== undefined ? prdNonFunctionalReqs : defaultNFR).trim()}
+
+${customDirectives.trim() ? `## 6. Domain-Specific Invariants\n${customDirectives.trim()}\n\n` : ""}## 7. Milestone Phasing & Roadmap
+${(prdMilestones !== undefined ? prdMilestones : defaultMilestones).trim()}
+`;
+}
+
+export function buildDesignMdContent(
+  params: RuleBuilderParams,
+  conventions: string[],
+  behaviors: string[],
+  procedures: string
+): string {
+  const {
+    skillTitle,
+    framework,
+    styling,
+    customDirectives,
+    exampleGood,
+    designTokens,
+    designLayout,
+    designConventions,
+    designGuardrails,
+    designDirectives,
+    designVerification,
+  } = params;
+
+  const defaultTokens = `- **Canvas / Background**: Pitch-black or deep dark neutral (\`#09090B\` / \`#121215\`)\n- **Card & Surface**: Elevated surface (\`#18181B\`) with \`border-zinc-800/60\`\n- **Accent Tokens**: High-contrast indicator for active states and primary CTAs\n- **Typography**: Monospace font for code/data metrics, sans-serif for UI labels\n- **Styling Paradigm**: ${styling}`;
+  const defaultLayout = `- **Single-Canvas Layout**: Avoid nested card-in-card containers. Keep UI depth to a single clean layer.\n- **Status & Feedback**: Explicit status indicators (execution latency, item count, validation state).\n- **Responsive Adaptability**: Desktop-first layout with graceful degradation for tablet and mobile viewports.`;
+  const defaultConventions = conventions.length > 0 ? conventions.join("\n") : `- Strictly decouple UI components from data-fetching and persistence layers.\n- Use controlled components with explicit prop types.`;
+  const defaultGuardrails = `${behaviors.length > 0 ? behaviors.join("\n") + "\n" : ""}- Never introduce nested card-in-card containers.\n- Never apply arbitrary inline CSS styles when design system classes exist.\n- Never break layout responsiveness on mobile viewports.\n- Never bypass accessibility standards (contrast ratios, focus rings, ARIA labels).`;
+  const defaultVerification = procedures.trim() || `1. Check contrast ratios and accessibility.\n2. Verify responsive layout on mobile and wide breakpoints.\n3. Ensure zero visual regressions.`;
+
+  return `# Technical & UI/UX Design System Specification: ${skillTitle.trim() || framework}
+
+> **StitchMCP Compatible**: This document specifies authoritative design tokens, component patterns, and negative guardrails for ${framework}.
+
+## 1. Visual Language & Semantic Tokens
+${(designTokens !== undefined ? designTokens : defaultTokens).trim()}
+
+## 2. Component Hierarchy & Layout Patterns
+${(designLayout !== undefined ? designLayout : defaultLayout).trim()}
+
+## 3. Core Architectural Conventions
+${(designConventions !== undefined ? designConventions : defaultConventions).trim()}
+
+## 4. Negative Design Guardrails (Forbidden Anti-Patterns)
+${(designGuardrails !== undefined ? designGuardrails : defaultGuardrails).trim()}
+
+${(designDirectives !== undefined ? designDirectives : customDirectives).trim() ? `## 5. Domain Design Directives\n${(designDirectives !== undefined ? designDirectives : customDirectives).trim()}\n\n` : ""}${
+  exampleGood.trim() ? `## 6. Component Reference Pattern\n\`\`\`tsx\n${exampleGood.trim()}\n\`\`\`\n\n` : ""
+}## 7. Design Verification Gate
+Before approving UI modifications:
+${(designVerification !== undefined ? designVerification : defaultVerification).trim()}
+`;
+}
+
+export function buildTaskMdContent(
+  params: RuleBuilderParams,
+  conventions: string[],
+  behaviors: string[],
+  procedures: string
+): string {
+  const {
+    skillTitle,
+    framework,
+    customDirectives,
+    taskDashboard,
+    taskPhases,
+    taskVerification,
+    taskDirectives,
+    taskSessionLog,
+  } = params;
+
+  const defaultDashboard = `- **Milestone 1.0 (Foundation)**: [x] 100% Completed\n- **Milestone 2.0 (Core Features)**: [/] In Progress\n- **Milestone 3.0 (Hardening & Release)**: [ ] Planned`;
+  const defaultPhases = `### Phase 1: Core Foundation & Scaffold\n- [x] Repository initialized with ${framework} standard conventions\n- [x] Environment configuration and static type checking verified\n- [x] Baseline test framework and linting pipelines configured\n\n### Phase 2: Active Sprint Tasks\n- [/] Core domain implementation following architecture specifications\n- [ ] Schema validation and input sanitation at system boundaries\n- [ ] Integration of persistent state handling\n${procedures.trim() ? procedures.trim().split("\n").map((p) => `- [ ] ${p.replace(/^\d+\.\s*/, "")}`).join("\n") : "- [ ] Implement end-to-end verification workflows"}\n\n### Phase 3: Quality Hardening & Compliance\n- [ ] Negative guardrail enforcement audit\n- [ ] Performance benchmarking and regression testing\n- [ ] Documentation and deployment readiness review`;
+  const defaultVerification = `Every agent and developer task MUST pass all verification gates before finalizing:\n\n\`\`\`bash\n# 1. Typecheck and linting\nnpm run lint\n\n# 2. Automated test suite\nnpm test\n\n# 3. Production build\nnpm run build\n\`\`\``;
+  const defaultSessionLog = `| Date | Agent / Engineer | Action Taken | Status |\n| :--- | :--- | :--- | :--- |\n| 2026-09-20 | Lead Agent | Scaffolded project rules and sprint tracker | ✅ Initialized |`;
+
+  return `# Active Sprint Tracker & Quality Gates: ${skillTitle.trim() || framework}
+
+## Quick Status Dashboard
+${(taskDashboard !== undefined ? taskDashboard : defaultDashboard).trim()}
+
+---
+
+## Active Phase Checklists
+${(taskPhases !== undefined ? taskPhases : defaultPhases).trim()}
+
+---
+
+## Verification Commands & Quality Gates
+${(taskVerification !== undefined ? taskVerification : defaultVerification).trim()}
+
+---
+
+${(taskDirectives !== undefined ? taskDirectives : customDirectives).trim() ? `## Sprint Directives\n${(taskDirectives !== undefined ? taskDirectives : customDirectives).trim()}\n\n---\n\n` : ""}## Agent Session Log
+
+${(taskSessionLog !== undefined ? taskSessionLog : defaultSessionLog).trim()}
+`;
+}
+
+export function buildMemoryMdContent(
+  params: RuleBuilderParams,
+  conventions: string[],
+  behaviors: string[],
+  procedures: string
+): string {
+  const {
+    skillTitle,
+    framework,
+    language,
+    database,
+    philosophy,
+    customDirectives,
+    memoryContext,
+    memoryAdrs,
+    memoryGotchas,
+    memoryLoop,
+    memoryInvariants,
+    memorySessionHistory,
+  } = params;
+
+  const defaultContext = `| Attribute | Specification | Notes |\n| :--- | :--- | :--- |\n| **Framework** | ${framework} | Core application framework |\n| **Language** | ${language} | Strict type checking, zero runtime \`any\` |\n| **Data Layer** | ${database} | Primary storage / state management |\n| **Philosophy** | ${philosophy} | Guiding engineering principles |`;
+  const defaultAdrs = `### ADR-001: Separation of Concerns\n- **Status**: Accepted\n- **Context**: Autonomous agents often blend UI rendering with data mutation logic.\n- **Decision**: Keep business logic, schema validation, and presentation strictly decoupled.\n- **Consequences**: Enhanced testability, reusable domain services, zero side-effects in views.\n\n### ADR-002: Surgical Diff Modification Protocol\n- **Status**: Accepted\n- **Context**: Broad reformatting causes merge conflicts and context bloating.\n- **Decision**: All code edits must be surgical, preserving surrounding comments and structure.\n- **Consequences**: Clean Git history and minimal risk of unintended regressions.`;
+  const defaultGotchas = `${behaviors.length > 0 ? behaviors.map((b) => `- ⚠️ ${b.replace(/^- \*\*(.*?)\*\*:\s*/, "**$1**: ")}`).join("\n") : "- ⚠️ Never bypass boundary validation with type casting.\n- ⚠️ Always verify builds before marking tasks complete."}${conventions.length > 0 ? "\n" + conventions.map((c) => `- 💡 ${c.replace(/^- \*\*(.*?)\*\*:\s*/, "**$1**: ")}`).join("\n") : ""}`;
+  const defaultLoop = `\`\`\`\n1. INGEST   → Read MEMORY.md → PRD.md → DESIGN.md\n2. PLAN     → Inspect TASK.md for active sprint objectives\n3. EXECUTE  → Apply surgical, minimal diffs\n4. VERIFY   → Execute all quality verification gates\n5. UPDATE   → Update TASK.md and log actions in MEMORY.md\n\`\`\``;
+  const defaultSessionHistory = `- **2026-09-20**: Initialized persistent memory bank and core ADRs.`;
+
+  return `# Persistent Agent Memory & Architectural Records: ${skillTitle.trim() || framework}
+
+> **Agent Context Anchor**: Read this file first before taking any action. It persists decisions, ADRs, and gotchas across context resets.
+
+## 1. Technology Context Matrix
+${(memoryContext !== undefined ? memoryContext : defaultContext).trim()}
+
+## 2. Architectural Decision Records (ADRs)
+${(memoryAdrs !== undefined ? memoryAdrs : defaultAdrs).trim()}
+
+## 3. Operational Gotchas & Pitfalls
+${(memoryGotchas !== undefined ? memoryGotchas : defaultGotchas).trim()}
+
+## 4. 5-Step Agent Execution Loop
+${(memoryLoop !== undefined ? memoryLoop : defaultLoop).trim()}
+
+${(memoryInvariants !== undefined ? memoryInvariants : customDirectives).trim() ? `## 5. Domain Invariants\n${(memoryInvariants !== undefined ? memoryInvariants : customDirectives).trim()}\n\n` : ""}## 6. Session History
+${(memorySessionHistory !== undefined ? memorySessionHistory : defaultSessionHistory).trim()}
+`;
+}
+
+export function getDefaultPrdValues(preset: {
+  title?: string;
+  framework: string;
+  language: string;
+  database: string;
+  description: string;
+  procedures: string;
+  conventions?: string[];
+  behaviors?: string[];
+  customDirectives?: string;
+}) {
+  const framework = preset.framework || "Standard Framework";
+  const language = preset.language || "TypeScript";
+  const database = preset.database || "PostgreSQL";
+  const conventions = preset.conventions || [];
+  const behaviors = preset.behaviors || [];
+  const procedures = preset.procedures || "";
+
+  return {
+    prdOverview: preset.description?.trim() || `Production-grade ${framework} application developed with AI pair programming.`,
+    prdProblemStatement: `- Engineering teams face context degradation, inconsistent architectural patterns, and fragmented development velocity without clear, machine-readable specifications.\n- Autonomous coding agents lack authoritative feature scope boundaries, leading to rule drift and unaligned implementations.`,
+    prdPersonas: `| Persona | Role | Primary Goal & Need |\n| :--- | :--- | :--- |\n| **Full-Stack Developer** | Feature Delivery | Rapid development with deterministic component contracts and zero type ambiguity |\n| **DevOps / SRE** | Reliability | Automated verification gates, strict dependency boundaries, and predictable deployments |\n| **Security Auditor** | Compliance | Enforce zero data leakage, strict schema validation, and least-privilege operations |`,
+    prdFunctionalReqs: `### Core Capabilities (FR-1 to FR-4)\n1. **System Foundation (FR-1)**: Robust runtime using ${framework} and ${language} with strict static type guarantees.\n2. **Data Management (FR-2)**: High-throughput, strongly typed state and persistence using ${database}.\n3. **Execution Procedures (FR-3)**:\n${procedures.trim() ? procedures.trim().split("\n").map((p) => `   ${p}`).join("\n") : "   - Follow domain workflows cleanly."}\n4. **Architectural Conventions (FR-4)**:\n${conventions.length > 0 ? conventions.map((c) => `   ${c}`).join("\n") : "   - Adhere strictly to idiomatic system patterns."}`,
+    prdNonFunctionalReqs: `- **Performance**: Sub-50ms processing overhead on core execution paths.\n- **Reliability & Security**: Zero runtime \`any\` types; strict schema validation on all boundary inputs.\n${behaviors.length > 0 ? behaviors.map((b) => `- ${b}`).join("\n") : "- Surgical diffs only: preserve surrounding code and documentation."}`,
+    prdMilestones: `| Milestone | Phase | Key Deliverables |\n| :--- | :--- | :--- |\n| **M1** | Core Foundation | Architecture scaffold, type definitions, and baseline test harness |\n| **M2** | Feature Implementation | Core domain capabilities and integrated data flows |\n| **M3** | Hardening & Audit | Full verification suite, security review, and production deployment |`,
+  };
+}
+
+export function getDefaultDesignValues(preset: {
+  title?: string;
+  framework: string;
+  styling: string;
+  procedures: string;
+  conventions?: string[];
+  behaviors?: string[];
+  customDirectives?: string;
+  exampleGood?: string;
+}) {
+  const framework = preset.framework || "Standard Framework";
+  const styling = preset.styling || "Tailwind CSS";
+  const conventions = preset.conventions || [];
+  const behaviors = preset.behaviors || [];
+  const procedures = preset.procedures || "";
+
+  return {
+    designTokens: `- **Canvas / Background**: Pitch-black or deep dark neutral (\`#09090B\` / \`#121215\`)\n- **Card & Surface**: Elevated surface (\`#18181B\`) with \`border-zinc-800/60\`\n- **Accent Tokens**: High-contrast indicator for active states and primary CTAs\n- **Typography**: Monospace font for code/data metrics, sans-serif for UI labels\n- **Styling Paradigm**: ${styling}`,
+    designLayout: `- **Single-Canvas Layout**: Avoid nested card-in-card containers. Keep UI depth to a single clean layer.\n- **Status & Feedback**: Explicit status indicators (execution latency, item count, validation state).\n- **Responsive Adaptability**: Desktop-first layout with graceful degradation for tablet and mobile viewports.`,
+    designConventions: conventions.length > 0 ? conventions.join("\n") : `- Strictly decouple UI components from data-fetching and persistence layers.\n- Use controlled components with explicit prop types.`,
+    designGuardrails: `${behaviors.length > 0 ? behaviors.join("\n") + "\n" : ""}- Never introduce nested card-in-card containers.\n- Never apply arbitrary inline CSS styles when design system classes exist.\n- Never break layout responsiveness on mobile viewports.\n- Never bypass accessibility standards (contrast ratios, focus rings, ARIA labels).`,
+    designDirectives: preset.customDirectives || "",
+    designVerification: procedures.trim() || `1. Check contrast ratios and accessibility.\n2. Verify responsive layout on mobile and wide breakpoints.\n3. Ensure zero visual regressions.`,
+  };
+}
+
+export function getDefaultTaskValues(preset: {
+  title?: string;
+  framework: string;
+  procedures: string;
+  customDirectives?: string;
+}) {
+  const framework = preset.framework || "Standard Framework";
+  const procedures = preset.procedures || "";
+
+  return {
+    taskDashboard: `- **Milestone 1.0 (Foundation)**: [x] 100% Completed\n- **Milestone 2.0 (Core Features)**: [/] In Progress\n- **Milestone 3.0 (Hardening & Release)**: [ ] Planned`,
+    taskPhases: `### Phase 1: Core Foundation & Scaffold\n- [x] Repository initialized with ${framework} standard conventions\n- [x] Environment configuration and static type checking verified\n- [x] Baseline test framework and linting pipelines configured\n\n### Phase 2: Active Sprint Tasks\n- [/] Core domain implementation following architecture specifications\n- [ ] Schema validation and input sanitation at system boundaries\n- [ ] Integration of persistent state handling\n${procedures.trim() ? procedures.trim().split("\n").map((p) => `- [ ] ${p.replace(/^\d+\.\s*/, "")}`).join("\n") : "- [ ] Implement end-to-end verification workflows"}\n\n### Phase 3: Quality Hardening & Compliance\n- [ ] Negative guardrail enforcement audit\n- [ ] Performance benchmarking and regression testing\n- [ ] Documentation and deployment readiness review`,
+    taskVerification: `Every agent and developer task MUST pass all verification gates before finalizing:\n\n\`\`\`bash\n# 1. Typecheck and linting\nnpm run lint\n\n# 2. Automated test suite\nnpm test\n\n# 3. Production build\nnpm run build\n\`\`\``,
+    taskDirectives: preset.customDirectives || "",
+    taskSessionLog: `| Date | Agent / Engineer | Action Taken | Status |\n| :--- | :--- | :--- | :--- |\n| 2026-09-20 | Lead Agent | Scaffolded project rules and sprint tracker | ✅ Initialized |`,
+  };
+}
+
+export function getDefaultMemoryValues(preset: {
+  title?: string;
+  framework: string;
+  language: string;
+  database: string;
+  philosophy: string;
+  behaviors?: string[];
+  conventions?: string[];
+  customDirectives?: string;
+}) {
+  const framework = preset.framework || "Standard Framework";
+  const language = preset.language || "TypeScript";
+  const database = preset.database || "PostgreSQL";
+  const philosophy = preset.philosophy || "pragmatic";
+  const behaviors = preset.behaviors || [];
+  const conventions = preset.conventions || [];
+
+  return {
+    memoryContext: `| Attribute | Specification | Notes |\n| :--- | :--- | :--- |\n| **Framework** | ${framework} | Core application framework |\n| **Language** | ${language} | Strict type checking, zero runtime \`any\` |\n| **Data Layer** | ${database} | Primary storage / state management |\n| **Philosophy** | ${philosophy} | Guiding engineering principles |`,
+    memoryAdrs: `### ADR-001: Separation of Concerns\n- **Status**: Accepted\n- **Context**: Autonomous agents often blend UI rendering with data mutation logic.\n- **Decision**: Keep business logic, schema validation, and presentation strictly decoupled.\n- **Consequences**: Enhanced testability, reusable domain services, zero side-effects in views.\n\n### ADR-002: Surgical Diff Modification Protocol\n- **Status**: Accepted\n- **Context**: Broad reformatting causes merge conflicts and context bloating.\n- **Decision**: All code edits must be surgical, preserving surrounding comments and structure.\n- **Consequences**: Clean Git history and minimal risk of unintended regressions.`,
+    memoryGotchas: `${behaviors.length > 0 ? behaviors.map((b) => `- ⚠️ ${b.replace(/^- \*\*(.*?)\*\*:\s*/, "**$1**: ")}`).join("\n") : "- ⚠️ Never bypass boundary validation with type casting.\n- ⚠️ Always verify builds before marking tasks complete."}${conventions.length > 0 ? "\n" + conventions.map((c) => `- 💡 ${c.replace(/^- \*\*(.*?)\*\*:\s*/, "**$1**: ")}`).join("\n") : ""}`,
+    memoryLoop: `\`\`\`\n1. INGEST   → Read MEMORY.md → PRD.md → DESIGN.md\n2. PLAN     → Inspect TASK.md for active sprint objectives\n3. EXECUTE  → Apply surgical, minimal diffs\n4. VERIFY   → Execute all quality verification gates\n5. UPDATE   → Update TASK.md and log actions in MEMORY.md\n\`\`\``,
+    memoryInvariants: preset.customDirectives || "",
+    memorySessionHistory: `- **2026-09-20**: Initialized persistent memory bank and core ADRs.`,
+  };
+}
+
 export interface RuleBuilderParams {
   targetFormat: OutputFormat;
   skillName: string;
@@ -1619,6 +1921,37 @@ export interface RuleBuilderParams {
   mcpArgs?: string;
   mcpEnvKey?: string;
   mcpEnvValue?: string;
+
+  // PRD customization
+  prdOverview?: string;
+  prdProblemStatement?: string;
+  prdPersonas?: string;
+  prdFunctionalReqs?: string;
+  prdNonFunctionalReqs?: string;
+  prdMilestones?: string;
+
+  // DESIGN customization
+  designTokens?: string;
+  designLayout?: string;
+  designConventions?: string;
+  designGuardrails?: string;
+  designDirectives?: string;
+  designVerification?: string;
+
+  // TASK customization
+  taskDashboard?: string;
+  taskPhases?: string;
+  taskVerification?: string;
+  taskDirectives?: string;
+  taskSessionLog?: string;
+
+  // MEMORY customization
+  memoryContext?: string;
+  memoryAdrs?: string;
+  memoryGotchas?: string;
+  memoryLoop?: string;
+  memoryInvariants?: string;
+  memorySessionHistory?: string;
 }
 
 export function buildRuleContent(params: RuleBuilderParams): string {
@@ -1675,6 +2008,22 @@ export function buildRuleContent(params: RuleBuilderParams): string {
 
   if (targetFormat === "architecture_md") {
     return buildArchitectureMdContent(params, selectedConventionTexts, selectedBehaviorTexts, procedures);
+  }
+
+  if (targetFormat === "prd_md") {
+    return buildPrdMdContent(params, selectedConventionTexts, selectedBehaviorTexts, procedures);
+  }
+
+  if (targetFormat === "design_md") {
+    return buildDesignMdContent(params, selectedConventionTexts, selectedBehaviorTexts, procedures);
+  }
+
+  if (targetFormat === "task_md") {
+    return buildTaskMdContent(params, selectedConventionTexts, selectedBehaviorTexts, procedures);
+  }
+
+  if (targetFormat === "memory_md") {
+    return buildMemoryMdContent(params, selectedConventionTexts, selectedBehaviorTexts, procedures);
   }
 
   if (targetFormat === "skill_md") {

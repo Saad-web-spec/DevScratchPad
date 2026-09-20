@@ -4,9 +4,9 @@ import { ClaudeSkillsClient } from "../claude-skills/ClaudeSkillsClient";
 import { AiSkillStudioSeoContent } from "./AiSkillStudioSeoContent";
 
 export const metadata: Metadata = {
-  title: "AI Skill Studio — 13 Formats & 5-Layer AI Agent Suite",
+  title: "AI Skill Studio — 17 Formats & 4-Layer AI Agent Operating Suite",
   description:
-    "AI Skill Studio: Free offline generator supporting 13 formats (Cursor .mdc, Claude SKILL.md, CLAUDE.md, AGENTS.md, MCP, Windsurf, Copilot) & 5-layer agent suite (.cursorignore, .claudeignore, llms.txt, ARCHITECTURE.md). 100% offline privacy.",
+    "AI Skill Studio: Free offline generator supporting 17 formats (Cursor .mdc, Claude SKILL.md, CLAUDE.md, AGENTS.md, PRD.md, DESIGN.md, TASK.md, MEMORY.md, MCP, Windsurf, Copilot, .cursorignore, .claudeignore, llms.txt, ARCHITECTURE.md). 100% offline privacy.",
   alternates: {
     canonical: "https://www.devscratchpad.tech/ai-skill-studio",
   },
@@ -24,6 +24,10 @@ export const metadata: Metadata = {
     ".cursorrules generator",
     "CLAUDE.md generator",
     "AGENTS.md builder",
+    "PRD.md generator",
+    "DESIGN.md builder",
+    "TASK.md tracker",
+    "MEMORY.md agent brain",
     "cursor mdc rules",
     "cursorignore generator",
     "claudeignore generator",
@@ -35,13 +39,13 @@ export const metadata: Metadata = {
     "claude code agent skills",
     "cursor project rules",
     "offline cursor rules generator",
-    "13 AI formats",
-    "5-layer AI agent suite",
+    "17 AI formats",
+    "4-layer AI agent suite",
   ],
   openGraph: {
-    title: "AI Skill Studio — 13 Formats & 5-Layer AI Agent Suite | DevScratchpad",
+    title: "AI Skill Studio — 17 Formats & 4-Layer AI Agent Operating Suite | DevScratchpad",
     description:
-      "Generate production-grade AI agent rules across 13 formats (Cursor .mdc, Claude SKILL.md, CLAUDE.md, AGENTS.md, MCP, Windsurf, Copilot) & 5-layer suite (.cursorignore, .claudeignore, llms.txt, ARCHITECTURE.md). 100% offline privacy.",
+      "Generate production-grade AI agent rules across 17 formats (Cursor .mdc, Claude SKILL.md, CLAUDE.md, AGENTS.md, PRD.md, DESIGN.md, TASK.md, MEMORY.md, MCP, Windsurf, Copilot, .cursorignore, .claudeignore, llms.txt, ARCHITECTURE.md). 100% offline privacy.",
     url: "https://www.devscratchpad.tech/ai-skill-studio",
     siteName: "DevScratchpad",
     locale: "en_US",
@@ -52,22 +56,22 @@ export const metadata: Metadata = {
         secureUrl: "https://www.devscratchpad.tech/og-ai-skill-studio.png",
         width: 1200,
         height: 630,
-        alt: "AI Skill Studio — 13 Formats & 5-Layer AI Agent Suite — DevScratchpad",
+        alt: "AI Skill Studio — 17 Formats & 4-Layer AI Agent Operating Suite — DevScratchpad",
         type: "image/png",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "AI Skill Studio — 13 Formats & 5-Layer AI Agent Suite | DevScratchpad",
+    title: "AI Skill Studio — 17 Formats & 4-Layer AI Agent Operating Suite | DevScratchpad",
     description:
-      "Generate production-grade AI agent rules across 13 formats & 5-layer suite (.cursorignore, .claudeignore, llms.txt, ARCHITECTURE.md). 100% offline workbench.",
+      "Generate production-grade AI agent rules across 17 formats & 4-layer suite (.cursorignore, .claudeignore, llms.txt, ARCHITECTURE.md, PRD.md, DESIGN.md, TASK.md, MEMORY.md). 100% offline workbench.",
     images: [
       {
         url: "https://www.devscratchpad.tech/og-ai-skill-studio.png",
         width: 1200,
         height: 630,
-        alt: "AI Skill Studio — 13 Formats & 5-Layer AI Agent Suite — DevScratchpad",
+        alt: "AI Skill Studio — 17 Formats & 4-Layer AI Agent Operating Suite — DevScratchpad",
       },
     ],
   },
@@ -81,7 +85,7 @@ const jsonLdGraph = {
       "@id": "https://www.devscratchpad.tech/ai-skill-studio#webapp",
       name: "AI Skill Studio",
       description:
-        "Generate production-grade AI agent configuration files for Claude Code (SKILL.md), Cursor IDE (.cursor/rules/*.mdc), Anthropic CLAUDE.md, AGENTS.md, .cursorignore, .claudeignore, llms.txt, and ARCHITECTURE.md.",
+        "Generate production-grade AI agent configuration files for Claude Code (SKILL.md), Cursor IDE (.cursor/rules/*.mdc), Anthropic CLAUDE.md, AGENTS.md, PRD.md, DESIGN.md, TASK.md, MEMORY.md, .cursorignore, .claudeignore, llms.txt, and ARCHITECTURE.md.",
       url: "https://www.devscratchpad.tech/ai-skill-studio",
       applicationCategory: "DeveloperApplication",
       operatingSystem: "Any",
@@ -96,11 +100,12 @@ const jsonLdGraph = {
         "Cursor IDE .cursor/rules/*.mdc modular rulebook builder",
         "Anthropic project root CLAUDE.md generator",
         "Multi-agent protocol AGENTS.md generator",
+        "Multi-agent governance suite (PRD.md, DESIGN.md, TASK.md, MEMORY.md)",
         ".cursorignore & .claudeignore context shields to mask secrets and eliminate token bloat",
         "llms.txt and ARCHITECTURE.md machine documentation blueprints",
         "100% client-side privacy with zero server uploads",
         "Package manifest ingestion for package.json, Cargo.toml, pyproject.toml, and go.mod",
-        "Unified 5-layer AI suite ZIP archive exporter and terminal CLI",
+        "Unified 17-file 4-layer AI suite ZIP archive exporter and terminal CLI",
       ],
     },
     {
@@ -144,7 +149,7 @@ const jsonLdGraph = {
           name: "Where should I put the generated files in my repository?",
           acceptedAnswer: {
             "@type": "Answer",
-            text: "Exporting the AI Kit ZIP will automatically arrange the files in the correct directory structure: Cursor rules go to .cursor/rules/<name>.mdc, Claude skills go to .claude/skills/<name>/SKILL.md, Anthropic guidelines go to CLAUDE.md at repo root, and multi-agent rules go to AGENTS.md at repo root.",
+            text: "Exporting the AI Kit ZIP will automatically arrange the files in the correct directory structure: Cursor rules go to .cursor/rules/<name>.mdc, Claude skills go to .claude/skills/<name>/SKILL.md, Anthropic guidelines go to CLAUDE.md, multi-agent protocol goes to AGENTS.md, governance documents (PRD.md, DESIGN.md, TASK.md, MEMORY.md) go to repository root, and context shields go to .cursorignore and .claudeignore.",
           },
         },
       ],
@@ -165,14 +170,14 @@ const jsonLdGraph = {
         {
           "@type": "HowToStep",
           position: 2,
-          name: "Configure Guardrails and Code References",
-          text: "Customize agent behaviors, architectural conventions, execution procedures, and before/after code snippets directly in the studio.",
+          name: "Configure Guardrails, Governance, and Code References",
+          text: "Customize agent behaviors, architectural conventions, PRD/DESIGN/TASK/MEMORY governance specs, and execution procedures using guided section cards and interactive info tooltips.",
         },
         {
           "@type": "HowToStep",
           position: 3,
           name: "Export AI Suite ZIP or Copy Markdown",
-          text: "Copy the formatted rule directly into your clipboard, or click 'Export AI Kit (.zip)' to download a complete pre-structured directory containing .cursor/rules/, .claude/skills/, CLAUDE.md, and AGENTS.md.",
+          text: "Copy the formatted rule directly into your clipboard, or click 'Export AI Kit (.zip)' to download a complete pre-structured directory containing .cursor/rules/, .claude/skills/, CLAUDE.md, AGENTS.md, PRD.md, DESIGN.md, TASK.md, and MEMORY.md.",
         },
       ],
     },

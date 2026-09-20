@@ -8,7 +8,7 @@ interface TimestampConverterToolProps {
 
 export function TimestampConverterTool({ restoredInput }: TimestampConverterToolProps) {
   const parsedInput = restoredInput ? JSON.parse(restoredInput) : null;
-  const [inputValue, setInputValue] = useState(parsedInput?.timestamp || Math.floor(Date.now() / 1000).toString());
+  const [inputValue, setInputValue] = useState(() => parsedInput?.timestamp || Math.floor(Date.now() / 1000).toString());
   const [isMillis, setIsMillis] = useState(false);
   
   const [parsedDate, setParsedDate] = useState<Date | null>(null);
