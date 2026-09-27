@@ -2350,29 +2350,38 @@ ${procedures.trim()}
   }
 
   if (targetFormat === "gemini_prompts") {
-    const instructionLines = [
-      `You are a ${role} specializing in ${framework} and ${language}.`,
-      `Philosophy: ${philObj?.title || "Pragmatic"} — ${philObj?.desc || "Production engineering standards."}.`,
-      "",
-      "Core Guidelines:",
-      ...(selectedConventionTexts.length > 0 ? selectedConventionTexts.map((c) => `- ${c}`) : ["- Follow idiomatic project conventions."]),
-      "",
-      "Negative Constraints & Guardrails:",
-      ...(selectedBehaviorTexts.length > 0 ? selectedBehaviorTexts.map((b) => `- ${b}`) : ["- Exercise standard engineering discretion."]),
-      ...(customDirectives.trim() ? ["", "Mandatory Project Directives:", customDirectives.trim()] : []),
-      ...(procedures.trim() ? ["", "Workflow Procedures:", procedures.trim()] : []),
-      "",
-      "Verification Protocol:",
-      "Ensure all answers adhere to strict type-safety, zero-trust security, and surgical minimal edits.",
+    const parts: { text: string }[] = [
+      {
+        text: `Role & Mission:\nYou are a ${role} specializing in ${framework} and ${language}.\nPhilosophy: ${philObj?.title || "Pragmatic"} — ${philObj?.desc || "Production engineering standards."}.`,
+      },
+      {
+        text: `Core Guidelines:\n${selectedConventionTexts.length > 0 ? selectedConventionTexts.map((c) => `- ${c}`).join("\n") : "- Follow idiomatic project conventions."}`,
+      },
+      {
+        text: `Negative Constraints & Guardrails:\n${selectedBehaviorTexts.length > 0 ? selectedBehaviorTexts.map((b) => `- ${b}`).join("\n") : "- Exercise standard engineering discretion."}`,
+      },
+      ...(customDirectives.trim()
+        ? [
+            {
+              text: `Mandatory Project Directives:\n${customDirectives.trim()}`,
+            },
+          ]
+        : []),
+      ...(procedures.trim()
+        ? [
+            {
+              text: `Workflow Procedures:\n${procedures.trim()}`,
+            },
+          ]
+        : []),
+      {
+        text: "Verification Protocol:\nEnsure all answers adhere to strict type-safety, zero-trust security, and surgical minimal edits.",
+      },
     ];
 
     const promptObj = {
       system_instruction: {
-        parts: [
-          {
-            text: instructionLines.join("\n"),
-          },
-        ],
+        parts,
       },
       generation_config: {
         temperature: 0.2,

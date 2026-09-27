@@ -289,6 +289,70 @@ export function findSectionLineRange(
   const lines = content.split("\n");
   if (lines.length === 0) return null;
 
+  // Dedicated range locator for Gemini System Prompts (JSON with modular parts)
+  if (_format === "gemini_prompts") {
+    for (let i = 0; i < lines.length; i++) {
+      const lineText = lines[i];
+      for (const pat of rule.headerPatterns) {
+        if (pat.test(lineText)) {
+          // Locate start of part: check if previous line has opening '{'
+          const startLine = i > 0 && lines[i - 1].trim() === "{" ? i : i + 1;
+          let endLine = i + 1;
+          for (let j = i; j < lines.length; j++) {
+            const trimmed = lines[j].trim();
+            if (trimmed === "}" || trimmed === "}," || trimmed === "]" || lines[j].includes('"generation_config"')) {
+              endLine = trimmed.startsWith("}") ? j + 1 : j;
+              break;
+            }
+          }
+          return {
+            startLine,
+            endLine: Math.max(startLine, endLine),
+            label: rule.label,
+          };
+        }
+      }
+    }
+    return null;
+  }
+
+  // Dedicated range locator for MCP Server Config (JSON)
+  if (_format === "mcp_json") {
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
+      if (
+        (fieldKey === "mcpCommand" && line.includes('"command":')) ||
+        (fieldKey === "mcpArgs" && line.includes('"args":')) ||
+        ((fieldKey === "mcpEnvKey" || fieldKey === "mcpEnvValue") && line.includes('"env":')) ||
+        ((fieldKey === "mcpServerName" || fieldKey === "mcpPresetId") && line.includes('"mcpServers":'))
+      ) {
+        const startLine = i + 1;
+        let endLine = startLine;
+        if (line.includes('"args": [')) {
+          for (let j = i; j < lines.length; j++) {
+            if (lines[j].includes("]")) {
+              endLine = j + 1;
+              break;
+            }
+          }
+        } else if (line.includes('"env": {')) {
+          for (let j = i; j < lines.length; j++) {
+            if (lines[j].includes("}")) {
+              endLine = j + 1;
+              break;
+            }
+          }
+        }
+        return {
+          startLine,
+          endLine,
+          label: rule.label,
+        };
+      }
+    }
+    return null;
+  }
+
   // Handle frontmatter or top title specifically
   if (fieldKey === "skillTitle" || fieldKey === "skillName" || fieldKey === "identity" || fieldKey === "globPattern" || fieldKey === "alwaysApply" || fieldKey === "triggers") {
     // Check if YAML frontmatter exists

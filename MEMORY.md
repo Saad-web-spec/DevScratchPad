@@ -350,6 +350,15 @@ All AI agents operating in this repository MUST follow this 5-step loop:
      - **Copy Button**: Icon-only `<Copy />` / `<Check />` with `aria-label="Copy audit report"` on mobile, full text label on `sm+`.
      - **Metric Grid**: Refined padding to `p-2 sm:p-2.5`, gaps to `gap-1 sm:gap-1.5`, and font sizes to `text-[8px] sm:text-[9px]` for labels so all 5 metric columns (Triggers, Density, Guards, Format, Arch) fit comfortably without horizontal clipping.
   3. **Verification**: Passed `npm run validate-presets` (100/100), `npm run lint` (0 errors), `npm run build` (872 routes SSG exit 0), and live local endpoint verified HTTP 200.
+### Session: 2026-09-27 — Format Switching Marker Clear, Header Filename & Auto-Scroll Jump Fix
+- **Agent**: Antigravity
+- **Task**: Address abnormal behavior when switching AI formats (Gemini, Copilot, Windsurf, etc.):
+  1. **Clean Format Switching**: Centralized format selection via `handleSelectFormat` in `ClaudeSkillsClient.tsx`. Resets `activeFieldKey` to `null`, `markedRange` to `null`, `isManuallyEdited(false)`, and scrolls editor to top (`scrollTop = 0`) across all 17 format selectors.
+  2. **Auto-Scroll Isolation**: Added `lastHandledScrollIdRef` so auto-scroll in Monaco runs strictly on new user-triggered form field edits/clicks (`scrollRequestId`), completely preventing auto-scroll jumps when switching formats or applying presets.
+  3. **Header & Filename Accuracy**: Updated `currentFileName`, `handleDownload`, and colored brand dots for all 17 formats (Gemini: `gemini-system-instructions.json`, Windsurf: `.windsurf/rules/${safeSkill}.md`, Copilot: `copilot-instructions.md`, OpenAI: `openai-custom-instructions.md`, etc.).
+  4. **Gemini Modular System Instructions**: Restructured `gemini_prompts` JSON output in `ruleGenerator.ts` to use modular `system_instruction.parts` (Role & Mission, Guidelines, Constraints, Procedures, Verification) instead of a single concatenated line.
+  5. **Section Locator Precision**: Added dedicated range locators for `gemini_prompts` and `mcp_json` in `sectionLocator.ts` to accurately isolate JSON keys/parts and prevent line range bleeding across the whole file.
+  6. **Verification**: Passed `npm run validate-presets` (100/100), `npm run lint` (0 errors), `npm run build` (872 routes SSG exit 0).
 - **Status**: ✅ Complete (All verification gates passed)
 
 ---

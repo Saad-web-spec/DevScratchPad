@@ -186,12 +186,28 @@ export function ClaudeSkillsClient({
   const markerDecorationsRef = React.useRef<string[]>([]);
   const previewContainerRef = React.useRef<HTMLPreElement>(null);
   const monacoInstanceRef = React.useRef<any>(null);
+  const lastHandledScrollIdRef = React.useRef(0);
 
   const requestSectionScroll = useCallback((fieldKey?: string) => {
     if (fieldKey) {
       setActiveFieldKey(fieldKey);
     }
     setScrollRequestId((prev) => prev + 1);
+  }, []);
+
+  // Central format switcher — clears active markers, resets editor to top, and updates format
+  const handleSelectFormat = useCallback((newFormat: OutputFormat) => {
+    setFormat(newFormat);
+    setActiveFieldKey(null);
+    setMarkedRange(null);
+    setIsManuallyEdited(false);
+    if (editorRef.current) {
+      try {
+        editorRef.current.setScrollTop(0);
+      } catch {
+        /* noop */
+      }
+    }
   }, []);
 
   useEffect(() => {
@@ -713,8 +729,13 @@ export function ClaudeSkillsClient({
       setFormat("agents_md");
     }
 
-    // Reset manual edit flag so the preset content takes over immediately
+    // Reset manual edit flag and clear markers so the preset content takes over cleanly
     setIsManuallyEdited(false);
+    setActiveFieldKey(null);
+    setMarkedRange(null);
+    if (editorRef.current) {
+      try { editorRef.current.setScrollTop(0); } catch { /* noop */ }
+    }
   };
 
   // Apply parsed manifest metadata to studio
@@ -1074,12 +1095,13 @@ export function ClaudeSkillsClient({
     );
   }, [markedRange, editorReady]);
 
-  // White Marker — auto-scroll editor ONLY on user click, focus, or section change in editing
-  // NO window scroll listener — Monaco stays 100% calm and steady when the user simply scrolls the page
+  // White Marker — auto-scroll editor ONLY on explicit user click/focus on form fields
+  // NO window scroll listener and NO jump on format switching
   useEffect(() => {
     const editor = editorRef.current;
     if (!editor || !markedRange || !activeFieldKey) return;
-    if (scrollRequestId === 0) return; // Do not scroll on initial page mount
+    if (scrollRequestId === 0 || scrollRequestId === lastHandledScrollIdRef.current) return;
+    lastHandledScrollIdRef.current = scrollRequestId;
 
     // Small delay to let Monaco and content layout settle
     const scrollTimer = setTimeout(() => {
@@ -1668,8 +1690,15 @@ export function ClaudeSkillsClient({
     if (format === "claude_md") filename = "CLAUDE.md";
     if (format === "cursor_mdc") filename = `${safeSkill}.mdc`.replace(/[^a-zA-Z0-9._-]/g, "-");
     if (format === "agents_md") filename = "AGENTS.md";
+    if (format === "windsurf_cascade") filename = `${safeSkill}.md`;
+    if (format === "copilot_instructions") filename = "copilot-instructions.md";
+    if (format === "openai_instructions") filename = "openai-custom-instructions.md";
+    if (format === "gemini_prompts") {
+      filename = "gemini-system-instructions.json";
+      mimeType = "application/json;charset=utf-8;";
+    }
     if (format === "mcp_json") {
-      filename = "claude.json";
+      filename = "claude_desktop_config.json";
       mimeType = "application/json;charset=utf-8;";
     }
     if (format === "cursorignore") {
@@ -1722,7 +1751,12 @@ export function ClaudeSkillsClient({
     if (format === "skill_md") return "SKILL.md";
     if (format === "claude_md") return "CLAUDE.md";
     if (format === "cursor_mdc") return `.cursor/rules/${safeSkill}.mdc`;
-    if (format === "mcp_json") return "claude.json (mcpServers)";
+    if (format === "mcp_json") return "claude_desktop_config.json";
+    if (format === "agents_md") return "AGENTS.md";
+    if (format === "windsurf_cascade") return `.windsurf/rules/${safeSkill}.md`;
+    if (format === "copilot_instructions") return "copilot-instructions.md";
+    if (format === "openai_instructions") return "openai-custom-instructions.md";
+    if (format === "gemini_prompts") return "gemini-system-instructions.json";
     if (format === "cursorignore") return ".cursorignore";
     if (format === "claudeignore") return ".claudeignore";
     if (format === "llms_txt") return "llms.txt";
@@ -1917,7 +1951,7 @@ export function ClaudeSkillsClient({
               <div suppressHydrationWarning className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                 <button
                   suppressHydrationWarning
-                  onClick={() => setFormat("cursor_mdc")}
+                  onClick={() => handleSelectFormat("cursor_mdc")}
                   className={cn(
                     "p-2 rounded-lg border text-left transition-all flex flex-col gap-1 overflow-hidden",
                     format === "cursor_mdc"
@@ -1936,7 +1970,7 @@ export function ClaudeSkillsClient({
 
                 <button
                   suppressHydrationWarning
-                  onClick={() => setFormat("skill_md")}
+                  onClick={() => handleSelectFormat("skill_md")}
                   className={cn(
                     "p-2 rounded-lg border text-left transition-all flex flex-col gap-1 overflow-hidden",
                     format === "skill_md"
@@ -1953,7 +1987,7 @@ export function ClaudeSkillsClient({
 
                 <button
                   suppressHydrationWarning
-                  onClick={() => setFormat("claude_md")}
+                  onClick={() => handleSelectFormat("claude_md")}
                   className={cn(
                     "p-2 rounded-lg border text-left transition-all flex flex-col gap-1 overflow-hidden",
                     format === "claude_md"
@@ -1970,7 +2004,7 @@ export function ClaudeSkillsClient({
 
                 <button
                   suppressHydrationWarning
-                  onClick={() => setFormat("agents_md")}
+                  onClick={() => handleSelectFormat("agents_md")}
                   className={cn(
                     "p-2 rounded-lg border text-left transition-all flex flex-col gap-1 overflow-hidden",
                     format === "agents_md"
@@ -1987,7 +2021,7 @@ export function ClaudeSkillsClient({
 
                 <button
                   suppressHydrationWarning
-                  onClick={() => setFormat("windsurf_cascade")}
+                  onClick={() => handleSelectFormat("windsurf_cascade")}
                   className={cn(
                     "p-2 rounded-lg border text-left transition-all flex flex-col gap-1 overflow-hidden",
                     format === "windsurf_cascade"
@@ -2004,7 +2038,7 @@ export function ClaudeSkillsClient({
 
                 <button
                   suppressHydrationWarning
-                  onClick={() => setFormat("copilot_instructions")}
+                  onClick={() => handleSelectFormat("copilot_instructions")}
                   className={cn(
                     "p-2 rounded-lg border text-left transition-all flex flex-col gap-1 overflow-hidden",
                     format === "copilot_instructions"
@@ -2021,7 +2055,7 @@ export function ClaudeSkillsClient({
 
                 <button
                   suppressHydrationWarning
-                  onClick={() => setFormat("openai_instructions")}
+                  onClick={() => handleSelectFormat("openai_instructions")}
                   className={cn(
                     "p-2 rounded-lg border text-left transition-all flex flex-col gap-1 overflow-hidden",
                     format === "openai_instructions"
@@ -2038,7 +2072,7 @@ export function ClaudeSkillsClient({
 
                 <button
                   suppressHydrationWarning
-                  onClick={() => setFormat("gemini_prompts")}
+                  onClick={() => handleSelectFormat("gemini_prompts")}
                   className={cn(
                     "p-2 rounded-lg border text-left transition-all flex flex-col gap-1 overflow-hidden",
                     format === "gemini_prompts"
@@ -2064,7 +2098,7 @@ export function ClaudeSkillsClient({
               <div suppressHydrationWarning className="grid grid-cols-2 gap-2">
                 <button
                   suppressHydrationWarning
-                  onClick={() => setFormat("cursorignore")}
+                  onClick={() => handleSelectFormat("cursorignore")}
                   className={cn(
                     "p-2 rounded-lg border text-left transition-all flex flex-col gap-1 overflow-hidden",
                     format === "cursorignore"
@@ -2081,7 +2115,7 @@ export function ClaudeSkillsClient({
 
                 <button
                   suppressHydrationWarning
-                  onClick={() => setFormat("claudeignore")}
+                  onClick={() => handleSelectFormat("claudeignore")}
                   className={cn(
                     "p-2 rounded-lg border text-left transition-all flex flex-col gap-1 overflow-hidden",
                     format === "claudeignore"
@@ -2107,7 +2141,7 @@ export function ClaudeSkillsClient({
               <div suppressHydrationWarning className="grid grid-cols-3 gap-2">
                 <button
                   suppressHydrationWarning
-                  onClick={() => setFormat("mcp_json")}
+                  onClick={() => handleSelectFormat("mcp_json")}
                   className={cn(
                     "p-2 rounded-lg border text-left transition-all flex flex-col gap-1 overflow-hidden",
                     format === "mcp_json"
@@ -2124,7 +2158,7 @@ export function ClaudeSkillsClient({
 
                 <button
                   suppressHydrationWarning
-                  onClick={() => setFormat("llms_txt")}
+                  onClick={() => handleSelectFormat("llms_txt")}
                   className={cn(
                     "p-2 rounded-lg border text-left transition-all flex flex-col gap-1 overflow-hidden",
                     format === "llms_txt"
@@ -2141,7 +2175,7 @@ export function ClaudeSkillsClient({
 
                 <button
                   suppressHydrationWarning
-                  onClick={() => setFormat("architecture_md")}
+                  onClick={() => handleSelectFormat("architecture_md")}
                   className={cn(
                     "p-2 rounded-lg border text-left transition-all flex flex-col gap-1 overflow-hidden",
                     format === "architecture_md"
@@ -2167,7 +2201,7 @@ export function ClaudeSkillsClient({
               <div suppressHydrationWarning className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                 <button
                   suppressHydrationWarning
-                  onClick={() => setFormat("prd_md")}
+                  onClick={() => handleSelectFormat("prd_md")}
                   className={cn(
                     "p-2 rounded-lg border text-left transition-all flex flex-col gap-1 overflow-hidden",
                     format === "prd_md"
@@ -2184,7 +2218,7 @@ export function ClaudeSkillsClient({
 
                 <button
                   suppressHydrationWarning
-                  onClick={() => setFormat("design_md")}
+                  onClick={() => handleSelectFormat("design_md")}
                   className={cn(
                     "p-2 rounded-lg border text-left transition-all flex flex-col gap-1 overflow-hidden",
                     format === "design_md"
@@ -2201,7 +2235,7 @@ export function ClaudeSkillsClient({
 
                 <button
                   suppressHydrationWarning
-                  onClick={() => setFormat("task_md")}
+                  onClick={() => handleSelectFormat("task_md")}
                   className={cn(
                     "p-2 rounded-lg border text-left transition-all flex flex-col gap-1 overflow-hidden",
                     format === "task_md"
@@ -2218,7 +2252,7 @@ export function ClaudeSkillsClient({
 
                 <button
                   suppressHydrationWarning
-                  onClick={() => setFormat("memory_md")}
+                  onClick={() => handleSelectFormat("memory_md")}
                   className={cn(
                     "p-2 rounded-lg border text-left transition-all flex flex-col gap-1 overflow-hidden",
                     format === "memory_md"
@@ -4068,6 +4102,16 @@ export function ClaudeSkillsClient({
                       ? "bg-white"
                       : format === "mcp_json"
                       ? "bg-blue-400"
+                      : format === "gemini_prompts"
+                      ? "bg-indigo-400"
+                      : format === "windsurf_cascade"
+                      ? "bg-teal-400"
+                      : format === "copilot_instructions"
+                      ? "bg-sky-400"
+                      : format === "openai_instructions"
+                      ? "bg-purple-400"
+                      : format === "agents_md"
+                      ? "bg-emerald-500"
                       : "bg-orange-500/90"
                   )}
                 />
