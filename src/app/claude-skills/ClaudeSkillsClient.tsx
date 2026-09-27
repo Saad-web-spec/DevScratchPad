@@ -51,6 +51,7 @@ const RulesConverterModal = dynamic(
 import { generateSafeSlug, validateTriggerPhrase } from "./lib/slugUtils";
 import { saveToStorageEnvelope, loadFromStorageEnvelope, STORAGE_KEY_V2 } from "./lib/storageEnvelope";
 import { auditRuleQuality, AuditDimension } from "./lib/ruleAuditor";
+import { findSectionLineRange, MarkedSectionRange } from "./lib/sectionLocator";
 
 // Dynamically import Monaco Editor to prevent SSR issues
 const Editor = dynamic(() => import("@monaco-editor/react"), {
@@ -176,6 +177,22 @@ export function ClaudeSkillsClient({
   const [isExportingZip, setIsExportingZip] = useState(false);
   const [mobileTab, setMobileTab] = useState<"form" | "editor">("form");
   const [shouldLoadEditor, setShouldLoadEditor] = useState(false);
+
+  // White Marker — tracks which form field is actively being edited and its corresponding line range
+  const [activeFieldKey, setActiveFieldKey] = useState<string | null>(null);
+  const [markedRange, setMarkedRange] = useState<MarkedSectionRange | null>(null);
+  const [scrollRequestId, setScrollRequestId] = useState(0);
+  const [editorReady, setEditorReady] = useState(false);
+  const markerDecorationsRef = React.useRef<string[]>([]);
+  const previewContainerRef = React.useRef<HTMLPreElement>(null);
+  const monacoInstanceRef = React.useRef<any>(null);
+
+  const requestSectionScroll = useCallback((fieldKey?: string) => {
+    if (fieldKey) {
+      setActiveFieldKey(fieldKey);
+    }
+    setScrollRequestId((prev) => prev + 1);
+  }, []);
 
   useEffect(() => {
     if (mobileTab === "editor") {
@@ -998,14 +1015,94 @@ export function ClaudeSkillsClient({
     if (!isManuallyEdited) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setEditorContent(generatedContent);
-      if (editorRef.current) {
-        editorRef.current.setScrollTop(0);
-      }
     }
   }, [generatedContent, isManuallyEdited]);
 
   // Active content being viewed/copied/downloaded
   const activeContent = isManuallyEdited ? editorContent : generatedContent;
+
+
+  // White Marker — compute marked section range whenever a field is being edited or scrolled to
+  useEffect(() => {
+    if (!activeFieldKey) {
+      setMarkedRange(null);
+      return;
+    }
+    const range = findSectionLineRange(activeContent, activeFieldKey, format);
+    setMarkedRange(range);
+  }, [activeFieldKey, activeContent, format]);
+
+  // White Marker — apply Monaco decorations (updates on every markedRange change)
+  useEffect(() => {
+    const editor = editorRef.current;
+    if (!editor) {
+      markerDecorationsRef.current = [];
+      return;
+    }
+
+    if (!markedRange) {
+      markerDecorationsRef.current = editor.deltaDecorations(
+        markerDecorationsRef.current,
+        []
+      );
+      return;
+    }
+
+    // Apply clean, continuous white marker in Monaco (single solid vertical marker line)
+    const newDecorations = [
+      {
+        range: {
+          startLineNumber: markedRange.startLine,
+          startColumn: 1,
+          endLineNumber: markedRange.endLine,
+          endColumn: 1,
+        },
+        options: {
+          isWholeLine: true,
+          className: "monaco-white-marker-line",
+          overviewRuler: {
+            color: "#ffffff",
+            position: 1, // Center lane in scrollbar
+          },
+        },
+      },
+    ];
+
+    markerDecorationsRef.current = editor.deltaDecorations(
+      markerDecorationsRef.current,
+      newDecorations
+    );
+  }, [markedRange, editorReady]);
+
+  // White Marker — auto-scroll editor ONLY on user click, focus, or section change in editing
+  // NO window scroll listener — Monaco stays 100% calm and steady when the user simply scrolls the page
+  useEffect(() => {
+    const editor = editorRef.current;
+    if (!editor || !markedRange || !activeFieldKey) return;
+    if (scrollRequestId === 0) return; // Do not scroll on initial page mount
+
+    // Small delay to let Monaco and content layout settle
+    const scrollTimer = setTimeout(() => {
+      try {
+        editor.revealLineInCenter(markedRange.startLine, 0); // 0 = Smooth scroll
+      } catch {
+        try { editor.revealLine(markedRange.startLine); } catch { /* noop */ }
+      }
+    }, 40);
+    return () => clearTimeout(scrollTimer);
+  }, [activeFieldKey, scrollRequestId, markedRange]);
+
+  // White Marker — also auto-scroll the static preview container if active (internal scroll ONLY, never window)
+  useEffect(() => {
+    if (!shouldLoadEditor && previewContainerRef.current && markedRange && scrollRequestId > 0) {
+      const container = previewContainerRef.current;
+      const markedElem = container.querySelector<HTMLElement>(".marked-preview-line");
+      if (markedElem) {
+        const topPos = markedElem.offsetTop - container.clientHeight / 2;
+        container.scrollTo({ top: Math.max(0, topPos), behavior: "smooth" });
+      }
+    }
+  }, [activeFieldKey, scrollRequestId, markedRange, shouldLoadEditor]);
 
   // Real-time Rule Quality & Security Audit Engine (5 Core Dimensions)
   const auditReport = useMemo(() => {
@@ -1773,10 +1870,30 @@ export function ClaudeSkillsClient({
       {/* Main Workspace Area: Split Screen */}
       <main className="flex-1 max-w-7xl w-full mx-auto p-3 sm:p-6 grid grid-cols-1 lg:grid-cols-12 gap-6 items-start pb-24 lg:pb-6">
         {/* Left Column: Generator Controls */}
-        <div className={cn(
-          "lg:col-span-6 space-y-4 sm:space-y-6",
-          mobileTab === "editor" ? "hidden lg:block" : "block"
-        )}>
+        <div
+          onClick={(e) => {
+            const sec = (e.target as HTMLElement).closest<HTMLElement>("[data-section]");
+            if (sec) {
+              const sectionKey = sec.getAttribute("data-section");
+              if (sectionKey) {
+                requestSectionScroll(sectionKey);
+              }
+            }
+          }}
+          onFocusCapture={(e) => {
+            const sec = (e.target as HTMLElement).closest<HTMLElement>("[data-section]");
+            if (sec) {
+              const sectionKey = sec.getAttribute("data-section");
+              if (sectionKey) {
+                requestSectionScroll(sectionKey);
+              }
+            }
+          }}
+          className={cn(
+            "lg:col-span-6 space-y-4 sm:space-y-6",
+            mobileTab === "editor" ? "hidden lg:block" : "block"
+          )}
+        >
           {/* Format Selector Card */}
           <div className="bg-white rounded-xl border border-zinc-200 p-3.5 sm:p-4 shadow-xs space-y-3.5">
             <div className="flex items-center justify-between gap-1 border-b border-zinc-100 pb-2">
@@ -2123,7 +2240,7 @@ export function ClaudeSkillsClient({
           {format === "prd_md" && (
             <div className="space-y-4">
               {/* Card 1: Executive Summary & Vision */}
-              <div className="bg-white rounded-xl border border-zinc-200 p-3.5 sm:p-4 shadow-xs space-y-2.5">
+              <div data-section="prdOverview" className="bg-white rounded-xl border border-zinc-200 p-3.5 sm:p-4 shadow-xs space-y-2.5">
                 <div className="flex items-center justify-between border-b border-zinc-100 pb-2 gap-2">
                   <div className="flex items-center gap-2">
                     <FileText className="w-4 h-4 text-blue-600 shrink-0" />
@@ -2155,8 +2272,9 @@ export function ClaudeSkillsClient({
                 </p>
                 <textarea
                   value={prdOverview}
+                  onFocus={() => setActiveFieldKey("prdOverview")}
                   onChange={(e) => {
-                    setPrdOverview(e.target.value);
+                    setPrdOverview(e.target.value); setActiveFieldKey("prdOverview");
                     setIsManuallyEdited(false);
                   }}
                   rows={3}
@@ -2166,7 +2284,7 @@ export function ClaudeSkillsClient({
               </div>
 
               {/* Card 2: Problem Statement */}
-              <div className="bg-white rounded-xl border border-zinc-200 p-3.5 sm:p-4 shadow-xs space-y-2.5">
+              <div data-section="prdProblemStatement" className="bg-white rounded-xl border border-zinc-200 p-3.5 sm:p-4 shadow-xs space-y-2.5">
                 <div className="flex items-center justify-between border-b border-zinc-100 pb-2 gap-2">
                   <div className="flex items-center gap-2">
                     <AlertCircle className="w-4 h-4 text-blue-600 shrink-0" />
@@ -2197,9 +2315,9 @@ export function ClaudeSkillsClient({
                   Engineering pain points, agent guardrails, and boundary definitions:
                 </p>
                 <textarea
-                  value={prdProblemStatement}
+                  value={prdProblemStatement} onFocus={() => setActiveFieldKey("prdProblemStatement")}
                   onChange={(e) => {
-                    setPrdProblemStatement(e.target.value);
+                    setPrdProblemStatement(e.target.value); setActiveFieldKey("prdProblemStatement");
                     setIsManuallyEdited(false);
                   }}
                   rows={3}
@@ -2209,7 +2327,7 @@ export function ClaudeSkillsClient({
               </div>
 
               {/* Card 3: User Personas */}
-              <div className="bg-white rounded-xl border border-zinc-200 p-3.5 sm:p-4 shadow-xs space-y-2.5">
+              <div data-section="prdPersonas" className="bg-white rounded-xl border border-zinc-200 p-3.5 sm:p-4 shadow-xs space-y-2.5">
                 <div className="flex items-center justify-between border-b border-zinc-100 pb-2 gap-2">
                   <div className="flex items-center gap-2">
                     <Users className="w-4 h-4 text-blue-600 shrink-0" />
@@ -2240,9 +2358,9 @@ export function ClaudeSkillsClient({
                   Target user personas, job titles, and primary pain points (Markdown table format):
                 </p>
                 <textarea
-                  value={prdPersonas}
+                  value={prdPersonas} onFocus={() => setActiveFieldKey("prdPersonas")}
                   onChange={(e) => {
-                    setPrdPersonas(e.target.value);
+                    setPrdPersonas(e.target.value); setActiveFieldKey("prdPersonas");
                     setIsManuallyEdited(false);
                   }}
                   rows={4}
@@ -2252,7 +2370,7 @@ export function ClaudeSkillsClient({
               </div>
 
               {/* Card 4: Functional Requirements */}
-              <div className="bg-white rounded-xl border border-zinc-200 p-3.5 sm:p-4 shadow-xs space-y-2.5">
+              <div data-section="prdFunctionalReqs" className="bg-white rounded-xl border border-zinc-200 p-3.5 sm:p-4 shadow-xs space-y-2.5">
                 <div className="flex items-center justify-between border-b border-zinc-100 pb-2 gap-2">
                   <div className="flex items-center gap-2">
                     <CheckCircle2 className="w-4 h-4 text-blue-600 shrink-0" />
@@ -2283,9 +2401,9 @@ export function ClaudeSkillsClient({
                   Numbered functional capabilities, domain workflows, and system behaviors:
                 </p>
                 <textarea
-                  value={prdFunctionalReqs}
+                  value={prdFunctionalReqs} onFocus={() => setActiveFieldKey("prdFunctionalReqs")}
                   onChange={(e) => {
-                    setPrdFunctionalReqs(e.target.value);
+                    setPrdFunctionalReqs(e.target.value); setActiveFieldKey("prdFunctionalReqs");
                     setIsManuallyEdited(false);
                   }}
                   rows={6}
@@ -2295,7 +2413,7 @@ export function ClaudeSkillsClient({
               </div>
 
               {/* Card 5: Non-Functional Requirements */}
-              <div className="bg-white rounded-xl border border-zinc-200 p-3.5 sm:p-4 shadow-xs space-y-2.5">
+              <div data-section="prdNonFunctionalReqs" className="bg-white rounded-xl border border-zinc-200 p-3.5 sm:p-4 shadow-xs space-y-2.5">
                 <div className="flex items-center justify-between border-b border-zinc-100 pb-2 gap-2">
                   <div className="flex items-center gap-2">
                     <ShieldCheck className="w-4 h-4 text-blue-600 shrink-0" />
@@ -2326,9 +2444,9 @@ export function ClaudeSkillsClient({
                   Performance SLAs, zero-server privacy constraints, and reliability standards:
                 </p>
                 <textarea
-                  value={prdNonFunctionalReqs}
+                  value={prdNonFunctionalReqs} onFocus={() => setActiveFieldKey("prdNonFunctionalReqs")}
                   onChange={(e) => {
-                    setPrdNonFunctionalReqs(e.target.value);
+                    setPrdNonFunctionalReqs(e.target.value); setActiveFieldKey("prdNonFunctionalReqs");
                     setIsManuallyEdited(false);
                   }}
                   rows={4}
@@ -2338,7 +2456,7 @@ export function ClaudeSkillsClient({
               </div>
 
               {/* Card 6: Milestone Phasing */}
-              <div className="bg-white rounded-xl border border-zinc-200 p-3.5 sm:p-4 shadow-xs space-y-2.5">
+              <div data-section="prdMilestones" className="bg-white rounded-xl border border-zinc-200 p-3.5 sm:p-4 shadow-xs space-y-2.5">
                 <div className="flex items-center justify-between border-b border-zinc-100 pb-2 gap-2">
                   <div className="flex items-center gap-2">
                     <Layers className="w-4 h-4 text-blue-600 shrink-0" />
@@ -2369,9 +2487,9 @@ export function ClaudeSkillsClient({
                   Roadmap milestones, deliverables, and release phases (Markdown table format):
                 </p>
                 <textarea
-                  value={prdMilestones}
+                  value={prdMilestones} onFocus={() => setActiveFieldKey("prdMilestones")}
                   onChange={(e) => {
-                    setPrdMilestones(e.target.value);
+                    setPrdMilestones(e.target.value); setActiveFieldKey("prdMilestones");
                     setIsManuallyEdited(false);
                   }}
                   rows={4}
@@ -2386,7 +2504,7 @@ export function ClaudeSkillsClient({
           {format === "design_md" && (
             <div className="space-y-4">
               {/* Card 1: Design Tokens & Palette */}
-              <div className="bg-white rounded-xl border border-zinc-200 p-3.5 sm:p-4 shadow-xs space-y-2.5">
+              <div data-section="designTokens" className="bg-white rounded-xl border border-zinc-200 p-3.5 sm:p-4 shadow-xs space-y-2.5">
                 <div className="flex items-center justify-between border-b border-zinc-100 pb-2 gap-2">
                   <div className="flex items-center gap-2">
                     <Layers className="w-4 h-4 text-indigo-600 shrink-0" />
@@ -2417,9 +2535,9 @@ export function ClaudeSkillsClient({
                   Pitch-black canvas palette, elevated surfaces, border tokens, and monospace metrics:
                 </p>
                 <textarea
-                  value={designTokens}
+                  value={designTokens} onFocus={() => setActiveFieldKey("designTokens")}
                   onChange={(e) => {
-                    setDesignTokens(e.target.value);
+                    setDesignTokens(e.target.value); setActiveFieldKey("designTokens");
                     setIsManuallyEdited(false);
                   }}
                   rows={5}
@@ -2428,7 +2546,7 @@ export function ClaudeSkillsClient({
               </div>
 
               {/* Card 2: Single-Canvas Layout */}
-              <div className="bg-white rounded-xl border border-zinc-200 p-3.5 sm:p-4 shadow-xs space-y-2.5">
+              <div data-section="designLayout" className="bg-white rounded-xl border border-zinc-200 p-3.5 sm:p-4 shadow-xs space-y-2.5">
                 <div className="flex items-center justify-between border-b border-zinc-100 pb-2 gap-2">
                   <div className="flex items-center gap-2">
                     <Sliders className="w-4 h-4 text-indigo-600 shrink-0" />
@@ -2459,9 +2577,9 @@ export function ClaudeSkillsClient({
                   Single-canvas layout rules, anti-nested card invariant, and mobile touch targets:
                 </p>
                 <textarea
-                  value={designLayout}
+                  value={designLayout} onFocus={() => setActiveFieldKey("designLayout")}
                   onChange={(e) => {
-                    setDesignLayout(e.target.value);
+                    setDesignLayout(e.target.value); setActiveFieldKey("designLayout");
                     setIsManuallyEdited(false);
                   }}
                   rows={4}
@@ -2470,7 +2588,7 @@ export function ClaudeSkillsClient({
               </div>
 
               {/* Card 3: Conventions */}
-              <div className="bg-white rounded-xl border border-zinc-200 p-3.5 sm:p-4 shadow-xs space-y-2.5">
+              <div data-section="designConventions" className="bg-white rounded-xl border border-zinc-200 p-3.5 sm:p-4 shadow-xs space-y-2.5">
                 <div className="flex items-center justify-between border-b border-zinc-100 pb-2 gap-2">
                   <div className="flex items-center gap-2">
                     <Settings2 className="w-4 h-4 text-indigo-600 shrink-0" />
@@ -2501,9 +2619,9 @@ export function ClaudeSkillsClient({
                   Component decoupling, controlled state contracts, and styling conventions:
                 </p>
                 <textarea
-                  value={designConventions}
+                  value={designConventions} onFocus={() => setActiveFieldKey("designConventions")}
                   onChange={(e) => {
-                    setDesignConventions(e.target.value);
+                    setDesignConventions(e.target.value); setActiveFieldKey("designConventions");
                     setIsManuallyEdited(false);
                   }}
                   rows={4}
@@ -2512,7 +2630,7 @@ export function ClaudeSkillsClient({
               </div>
 
               {/* Card 4: Negative Guardrails */}
-              <div className="bg-white rounded-xl border border-zinc-200 p-3.5 sm:p-4 shadow-xs space-y-2.5">
+              <div data-section="designGuardrails" className="bg-white rounded-xl border border-zinc-200 p-3.5 sm:p-4 shadow-xs space-y-2.5">
                 <div className="flex items-center justify-between border-b border-zinc-100 pb-2 gap-2">
                   <div className="flex items-center gap-2">
                     <AlertTriangle className="w-4 h-4 text-indigo-600 shrink-0" />
@@ -2543,9 +2661,9 @@ export function ClaudeSkillsClient({
                   Forbidden UI anti-patterns (nested cards, arbitrary margin offsets, non-standard CSS):
                 </p>
                 <textarea
-                  value={designGuardrails}
+                  value={designGuardrails} onFocus={() => setActiveFieldKey("designGuardrails")}
                   onChange={(e) => {
-                    setDesignGuardrails(e.target.value);
+                    setDesignGuardrails(e.target.value); setActiveFieldKey("designGuardrails");
                     setIsManuallyEdited(false);
                   }}
                   rows={4}
@@ -2554,7 +2672,7 @@ export function ClaudeSkillsClient({
               </div>
 
               {/* Card 5: StitchMCP & Design Verification */}
-              <div className="bg-white rounded-xl border border-zinc-200 p-3.5 sm:p-4 shadow-xs space-y-2.5">
+              <div data-section="designVerification" className="bg-white rounded-xl border border-zinc-200 p-3.5 sm:p-4 shadow-xs space-y-2.5">
                 <div className="flex items-center justify-between border-b border-zinc-100 pb-2 gap-2">
                   <div className="flex items-center gap-2">
                     <CheckCircle2 className="w-4 h-4 text-indigo-600 shrink-0" />
@@ -2585,9 +2703,9 @@ export function ClaudeSkillsClient({
                   StitchMCP schema integration, accessibility contrast, and visual QA checklist:
                 </p>
                 <textarea
-                  value={designVerification}
+                  value={designVerification} onFocus={() => setActiveFieldKey("designVerification")}
                   onChange={(e) => {
-                    setDesignVerification(e.target.value);
+                    setDesignVerification(e.target.value); setActiveFieldKey("designVerification");
                     setIsManuallyEdited(false);
                   }}
                   rows={4}
@@ -2601,7 +2719,7 @@ export function ClaudeSkillsClient({
           {format === "task_md" && (
             <div className="space-y-4">
               {/* Card 1: Sprint Status Dashboard */}
-              <div className="bg-white rounded-xl border border-zinc-200 p-3.5 sm:p-4 shadow-xs space-y-2.5">
+              <div data-section="taskDashboard" className="bg-white rounded-xl border border-zinc-200 p-3.5 sm:p-4 shadow-xs space-y-2.5">
                 <div className="flex items-center justify-between border-b border-zinc-100 pb-2 gap-2">
                   <div className="flex items-center gap-2">
                     <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
@@ -2632,9 +2750,9 @@ export function ClaudeSkillsClient({
                   Current milestone, sprint objective, target version, and overall progress:
                 </p>
                 <textarea
-                  value={taskDashboard}
+                  value={taskDashboard} onFocus={() => setActiveFieldKey("taskDashboard")}
                   onChange={(e) => {
-                    setTaskDashboard(e.target.value);
+                    setTaskDashboard(e.target.value); setActiveFieldKey("taskDashboard");
                     setIsManuallyEdited(false);
                   }}
                   rows={3}
@@ -2643,7 +2761,7 @@ export function ClaudeSkillsClient({
               </div>
 
               {/* Card 2: Active Phase Checklists */}
-              <div className="bg-white rounded-xl border border-zinc-200 p-3.5 sm:p-4 shadow-xs space-y-2.5">
+              <div data-section="taskPhases" className="bg-white rounded-xl border border-zinc-200 p-3.5 sm:p-4 shadow-xs space-y-2.5">
                 <div className="flex items-center justify-between border-b border-zinc-100 pb-2 gap-2">
                   <div className="flex items-center gap-2">
                     <Terminal className="w-4 h-4 text-emerald-600 shrink-0" />
@@ -2674,9 +2792,9 @@ export function ClaudeSkillsClient({
                   Manage Phase 1 Foundation, Phase 2 Active Tasks, and Phase 3 Quality checklists (- [ ] / - [x]):
                 </p>
                 <textarea
-                  value={taskPhases}
+                  value={taskPhases} onFocus={() => setActiveFieldKey("taskPhases")}
                   onChange={(e) => {
-                    setTaskPhases(e.target.value);
+                    setTaskPhases(e.target.value); setActiveFieldKey("taskPhases");
                     setIsManuallyEdited(false);
                   }}
                   rows={8}
@@ -2685,7 +2803,7 @@ export function ClaudeSkillsClient({
               </div>
 
               {/* Card 3: Verification Commands & Quality Gates */}
-              <div className="bg-white rounded-xl border border-zinc-200 p-3.5 sm:p-4 shadow-xs space-y-2.5">
+              <div data-section="taskVerification" className="bg-white rounded-xl border border-zinc-200 p-3.5 sm:p-4 shadow-xs space-y-2.5">
                 <div className="flex items-center justify-between border-b border-zinc-100 pb-2 gap-2">
                   <div className="flex items-center gap-2">
                     <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
@@ -2716,9 +2834,9 @@ export function ClaudeSkillsClient({
                   Required verification shell commands that all agents and developers must execute to pass:
                 </p>
                 <textarea
-                  value={taskVerification}
+                  value={taskVerification} onFocus={() => setActiveFieldKey("taskVerification")}
                   onChange={(e) => {
-                    setTaskVerification(e.target.value);
+                    setTaskVerification(e.target.value); setActiveFieldKey("taskVerification");
                     setIsManuallyEdited(false);
                   }}
                   rows={5}
@@ -2727,7 +2845,7 @@ export function ClaudeSkillsClient({
               </div>
 
               {/* Card 4: Agent Session Audit Log */}
-              <div className="bg-white rounded-xl border border-zinc-200 p-3.5 sm:p-4 shadow-xs space-y-2.5">
+              <div data-section="taskSessionLog" className="bg-white rounded-xl border border-zinc-200 p-3.5 sm:p-4 shadow-xs space-y-2.5">
                 <div className="flex items-center justify-between border-b border-zinc-100 pb-2 gap-2">
                   <div className="flex items-center gap-2">
                     <FileText className="w-4 h-4 text-emerald-600 shrink-0" />
@@ -2758,9 +2876,9 @@ export function ClaudeSkillsClient({
                   Living chronological audit table documenting agent runs, dates, and verification outcomes:
                 </p>
                 <textarea
-                  value={taskSessionLog}
+                  value={taskSessionLog} onFocus={() => setActiveFieldKey("taskSessionLog")}
                   onChange={(e) => {
-                    setTaskSessionLog(e.target.value);
+                    setTaskSessionLog(e.target.value); setActiveFieldKey("taskSessionLog");
                     setIsManuallyEdited(false);
                   }}
                   rows={4}
@@ -2769,7 +2887,7 @@ export function ClaudeSkillsClient({
               </div>
 
               {/* Card 5: Sprint Directives */}
-              <div className="bg-white rounded-xl border border-zinc-200 p-3.5 sm:p-4 shadow-xs space-y-2.5">
+              <div data-section="taskDirectives" className="bg-white rounded-xl border border-zinc-200 p-3.5 sm:p-4 shadow-xs space-y-2.5">
                 <div className="flex items-center justify-between border-b border-zinc-100 pb-2 gap-2">
                   <div className="flex items-center gap-2">
                     <Zap className="w-4 h-4 text-emerald-600 shrink-0" />
@@ -2800,9 +2918,9 @@ export function ClaudeSkillsClient({
                   Project-specific sprint guardrails, non-negotiable scope limits, and execution boundaries:
                 </p>
                 <textarea
-                  value={taskDirectives}
+                  value={taskDirectives} onFocus={() => setActiveFieldKey("taskDirectives")}
                   onChange={(e) => {
-                    setTaskDirectives(e.target.value);
+                    setTaskDirectives(e.target.value); setActiveFieldKey("taskDirectives");
                     setIsManuallyEdited(false);
                   }}
                   rows={3}
@@ -2817,7 +2935,7 @@ export function ClaudeSkillsClient({
           {format === "memory_md" && (
             <div className="space-y-4">
               {/* Card 1: Technology Context Matrix */}
-              <div className="bg-white rounded-xl border border-zinc-200 p-3.5 sm:p-4 shadow-xs space-y-2.5">
+              <div data-section="memoryContext" className="bg-white rounded-xl border border-zinc-200 p-3.5 sm:p-4 shadow-xs space-y-2.5">
                 <div className="flex items-center justify-between border-b border-zinc-100 pb-2 gap-2">
                   <div className="flex items-center gap-2">
                     <Cpu className="w-4 h-4 text-amber-600 shrink-0" />
@@ -2848,9 +2966,9 @@ export function ClaudeSkillsClient({
                   Application framework, language invariants, persistence layer, and engineering philosophy:
                 </p>
                 <textarea
-                  value={memoryContext}
+                  value={memoryContext} onFocus={() => setActiveFieldKey("memoryContext")}
                   onChange={(e) => {
-                    setMemoryContext(e.target.value);
+                    setMemoryContext(e.target.value); setActiveFieldKey("memoryContext");
                     setIsManuallyEdited(false);
                   }}
                   rows={4}
@@ -2859,7 +2977,7 @@ export function ClaudeSkillsClient({
               </div>
 
               {/* Card 2: Architectural Decision Records (ADRs) */}
-              <div className="bg-white rounded-xl border border-zinc-200 p-3.5 sm:p-4 shadow-xs space-y-2.5">
+              <div data-section="memoryAdrs" className="bg-white rounded-xl border border-zinc-200 p-3.5 sm:p-4 shadow-xs space-y-2.5">
                 <div className="flex items-center justify-between border-b border-zinc-100 pb-2 gap-2">
                   <div className="flex items-center gap-2">
                     <BookOpen className="w-4 h-4 text-amber-600 shrink-0" />
@@ -2890,9 +3008,9 @@ export function ClaudeSkillsClient({
                   Formal architectural decisions across context resets (Status, Context, Decision, Consequences):
                 </p>
                 <textarea
-                  value={memoryAdrs}
+                  value={memoryAdrs} onFocus={() => setActiveFieldKey("memoryAdrs")}
                   onChange={(e) => {
-                    setMemoryAdrs(e.target.value);
+                    setMemoryAdrs(e.target.value); setActiveFieldKey("memoryAdrs");
                     setIsManuallyEdited(false);
                   }}
                   rows={6}
@@ -2901,7 +3019,7 @@ export function ClaudeSkillsClient({
               </div>
 
               {/* Card 3: Operational Gotchas & Pitfalls */}
-              <div className="bg-white rounded-xl border border-zinc-200 p-3.5 sm:p-4 shadow-xs space-y-2.5">
+              <div data-section="memoryGotchas" className="bg-white rounded-xl border border-zinc-200 p-3.5 sm:p-4 shadow-xs space-y-2.5">
                 <div className="flex items-center justify-between border-b border-zinc-100 pb-2 gap-2">
                   <div className="flex items-center gap-2">
                     <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
@@ -2932,9 +3050,9 @@ export function ClaudeSkillsClient({
                   Critical traps, edge cases, and hard-earned learnings that all agents must heed:
                 </p>
                 <textarea
-                  value={memoryGotchas}
+                  value={memoryGotchas} onFocus={() => setActiveFieldKey("memoryGotchas")}
                   onChange={(e) => {
-                    setMemoryGotchas(e.target.value);
+                    setMemoryGotchas(e.target.value); setActiveFieldKey("memoryGotchas");
                     setIsManuallyEdited(false);
                   }}
                   rows={4}
@@ -2943,7 +3061,7 @@ export function ClaudeSkillsClient({
               </div>
 
               {/* Card 4: 5-Step Agent Loop */}
-              <div className="bg-white rounded-xl border border-zinc-200 p-3.5 sm:p-4 shadow-xs space-y-2.5">
+              <div data-section="memoryLoop" className="bg-white rounded-xl border border-zinc-200 p-3.5 sm:p-4 shadow-xs space-y-2.5">
                 <div className="flex items-center justify-between border-b border-zinc-100 pb-2 gap-2">
                   <div className="flex items-center gap-2">
                     <Terminal className="w-4 h-4 text-amber-600 shrink-0" />
@@ -2974,9 +3092,9 @@ export function ClaudeSkillsClient({
                   Standard agent execution loop (Ingest → Plan → Execute → Verify → Update):
                 </p>
                 <textarea
-                  value={memoryLoop}
+                  value={memoryLoop} onFocus={() => setActiveFieldKey("memoryLoop")}
                   onChange={(e) => {
-                    setMemoryLoop(e.target.value);
+                    setMemoryLoop(e.target.value); setActiveFieldKey("memoryLoop");
                     setIsManuallyEdited(false);
                   }}
                   rows={5}
@@ -2985,7 +3103,7 @@ export function ClaudeSkillsClient({
               </div>
 
               {/* Card 5: Domain Invariants & Anchors */}
-              <div className="bg-white rounded-xl border border-zinc-200 p-3.5 sm:p-4 shadow-xs space-y-2.5">
+              <div data-section="memoryInvariants" className="bg-white rounded-xl border border-zinc-200 p-3.5 sm:p-4 shadow-xs space-y-2.5">
                 <div className="flex items-center justify-between border-b border-zinc-100 pb-2 gap-2">
                   <div className="flex items-center gap-2">
                     <Layers className="w-4 h-4 text-amber-600 shrink-0" />
@@ -3016,9 +3134,9 @@ export function ClaudeSkillsClient({
                   System boundaries, core package directories, and project invariant constraints:
                 </p>
                 <textarea
-                  value={memoryInvariants}
+                  value={memoryInvariants} onFocus={() => setActiveFieldKey("memoryInvariants")}
                   onChange={(e) => {
-                    setMemoryInvariants(e.target.value);
+                    setMemoryInvariants(e.target.value); setActiveFieldKey("memoryInvariants");
                     setIsManuallyEdited(false);
                   }}
                   rows={3}
@@ -3028,7 +3146,7 @@ export function ClaudeSkillsClient({
               </div>
 
               {/* Card 6: Session History */}
-              <div className="bg-white rounded-xl border border-zinc-200 p-3.5 sm:p-4 shadow-xs space-y-2.5">
+              <div data-section="memorySessionHistory" className="bg-white rounded-xl border border-zinc-200 p-3.5 sm:p-4 shadow-xs space-y-2.5">
                 <div className="flex items-center justify-between border-b border-zinc-100 pb-2 gap-2">
                   <div className="flex items-center gap-2">
                     <FileText className="w-4 h-4 text-amber-600 shrink-0" />
@@ -3059,9 +3177,9 @@ export function ClaudeSkillsClient({
                   Chronological record of memory additions and changes over time:
                 </p>
                 <textarea
-                  value={memorySessionHistory}
+                  value={memorySessionHistory} onFocus={() => setActiveFieldKey("memorySessionHistory")}
                   onChange={(e) => {
-                    setMemorySessionHistory(e.target.value);
+                    setMemorySessionHistory(e.target.value); setActiveFieldKey("memorySessionHistory");
                     setIsManuallyEdited(false);
                   }}
                   rows={3}
@@ -3389,7 +3507,7 @@ export function ClaudeSkillsClient({
           {!isGovernanceFormat && !isMcpFormat && (
             <>
               {/* Identity & Trigger Configuration */}
-              <div className="bg-white rounded-xl border border-zinc-200 p-4 sm:p-5 shadow-xs space-y-4">
+              <div data-section="identity" className="bg-white rounded-xl border border-zinc-200 p-4 sm:p-5 shadow-xs space-y-4">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-zinc-100 pb-3 gap-2.5">
               <div className="flex items-center gap-2">
                 <Terminal className="w-4 h-4 text-zinc-700 shrink-0" />
@@ -3399,7 +3517,7 @@ export function ClaudeSkillsClient({
                 suppressHydrationWarning
                 type="button"
                 onClick={synthesizeFromContext}
-                className="flex items-center justify-center gap-1.5 text-[11px] font-semibold text-orange-700 hover:text-orange-800 bg-orange-50 hover:bg-orange-100 border border-orange-200/90 px-2.5 py-1.5 rounded-md transition-all active:scale-95 shadow-xs w-full sm:w-auto shrink-0"
+                className="flex items-center justify-center gap-1.5 text-[11px] font-semibold text-orange-700 hover:text-orange-800 bg-orange-50 hover:bg-orange-100 border border-orange-200/90 px-2.5 py-1.5 rounded-md transition-all active:scale-95 shadow-xs w-full sm:w-auto shrink-0 cursor-pointer"
                 title="Synthesizes triggers, procedures, and directives from all 12 current form fields and stack context"
               >
                 <Cpu className="w-3.5 h-3.5 text-orange-600 shrink-0" />
@@ -3445,7 +3563,12 @@ export function ClaudeSkillsClient({
                 <input
                   type="text"
                   value={skillName}
-                  onChange={(e) => handleSlugChange(e.target.value)}
+                  onFocus={() => setActiveFieldKey("skillName")}
+                  onChange={(e) => {
+                    handleSlugChange(e.target.value);
+                    setActiveFieldKey("skillName");
+                    setIsManuallyEdited(false);
+                  }}
                   placeholder="e.g. codebase-auditor"
                   className="w-full px-3 py-1.5 border border-zinc-200 rounded-lg text-xs font-mono focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500"
                 />
@@ -3464,7 +3587,12 @@ export function ClaudeSkillsClient({
                 <input
                   type="text"
                   value={skillTitle}
-                  onChange={(e) => handleTitleChange(e.target.value)}
+                  onFocus={() => setActiveFieldKey("skillTitle")}
+                  onChange={(e) => {
+                    handleTitleChange(e.target.value);
+                    setActiveFieldKey("skillTitle");
+                    setIsManuallyEdited(false);
+                  }}
                   placeholder="e.g. Codebase Health & Security Auditor"
                   className="w-full px-3 py-1.5 border border-zinc-200 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500"
                 />
@@ -3472,7 +3600,7 @@ export function ClaudeSkillsClient({
             </div>
 
             {/* Interactive Trigger Tag Chips & Heuristic Validation */}
-            <div className="space-y-3">
+            <div data-section="triggers" className="space-y-3">
               <div className="flex flex-col sm:flex-row sm:items-baseline justify-between gap-0.5 sm:gap-2">
                 <div className="flex items-center gap-1.5">
                   <label className="text-xs font-semibold text-zinc-700">Interactive Activation Trigger Chips</label>
@@ -3580,7 +3708,8 @@ export function ClaudeSkillsClient({
                 </div>
                 <textarea
                   value={description}
-                  onChange={(e) => setDescription(e.target.value)}
+                  onFocus={() => setActiveFieldKey("description")}
+                  onChange={(e) => { setDescription(e.target.value); setActiveFieldKey("description"); }}
                   rows={3}
                   placeholder="When should the AI activate this skill? (e.g., progressive disclosure condition for Claude Code or file globs for Cursor .mdc rules)..."
                   className="w-full p-3 border border-zinc-200 rounded-lg text-xs leading-relaxed focus:outline-none focus:ring-2 focus:ring-zinc-900/10 focus:border-zinc-900 min-h-[90px] resize-y"
@@ -3644,7 +3773,8 @@ export function ClaudeSkillsClient({
               <input
                 type="text"
                 value={role}
-                onChange={(e) => setRole(e.target.value)}
+                onFocus={() => setActiveFieldKey("techStack")}
+                onChange={(e) => { setRole(e.target.value); setActiveFieldKey("techStack"); setIsManuallyEdited(false); }}
                 placeholder="e.g. Senior Security & Systems Auditor"
                 className="w-full px-3 py-1.5 border border-zinc-200 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500"
               />
@@ -3652,7 +3782,7 @@ export function ClaudeSkillsClient({
           </div>
 
           {/* Tech Stack Customization */}
-          <div className="bg-white rounded-xl border border-zinc-200 p-3.5 sm:p-4 shadow-xs space-y-3">
+          <div data-section="techStack" className="bg-white rounded-xl border border-zinc-200 p-3.5 sm:p-4 shadow-xs space-y-3">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-zinc-100 pb-2.5 gap-2">
               <div className="flex items-center gap-2">
                 <Layers className="w-4 h-4 text-zinc-700 shrink-0" />
@@ -3692,7 +3822,8 @@ export function ClaudeSkillsClient({
                 <input
                   type="text"
                   value={framework}
-                  onChange={(e) => setFramework(e.target.value)}
+                  onFocus={() => setActiveFieldKey("techStack")}
+                  onChange={(e) => { setFramework(e.target.value); setActiveFieldKey("techStack"); setIsManuallyEdited(false); }}
                   className="w-full px-2.5 py-1.5 border border-zinc-200 rounded-lg text-xs focus:outline-none focus:border-orange-500"
                 />
               </div>
@@ -3702,7 +3833,8 @@ export function ClaudeSkillsClient({
                 <input
                   type="text"
                   value={language}
-                  onChange={(e) => setLanguage(e.target.value)}
+                  onFocus={() => setActiveFieldKey("techStack")}
+                  onChange={(e) => { setLanguage(e.target.value); setActiveFieldKey("techStack"); setIsManuallyEdited(false); }}
                   className="w-full px-2.5 py-1.5 border border-zinc-200 rounded-lg text-xs focus:outline-none focus:border-orange-500"
                 />
               </div>
@@ -3712,7 +3844,8 @@ export function ClaudeSkillsClient({
                 <input
                   type="text"
                   value={styling}
-                  onChange={(e) => setStyling(e.target.value)}
+                  onFocus={() => setActiveFieldKey("techStack")}
+                  onChange={(e) => { setStyling(e.target.value); setActiveFieldKey("techStack"); setIsManuallyEdited(false); }}
                   className="w-full px-2.5 py-1.5 border border-zinc-200 rounded-lg text-xs focus:outline-none focus:border-orange-500"
                 />
               </div>
@@ -3722,7 +3855,8 @@ export function ClaudeSkillsClient({
                 <input
                   type="text"
                   value={database}
-                  onChange={(e) => setDatabase(e.target.value)}
+                  onFocus={() => setActiveFieldKey("techStack")}
+                  onChange={(e) => { setDatabase(e.target.value); setActiveFieldKey("techStack"); setIsManuallyEdited(false); }}
                   className="w-full px-2.5 py-1.5 border border-zinc-200 rounded-lg text-xs focus:outline-none focus:border-orange-500"
                 />
               </div>
@@ -3730,7 +3864,7 @@ export function ClaudeSkillsClient({
           </div>
 
           {/* Philosophy & Non-Rigid Style Preferences */}
-          <div className="bg-white rounded-xl border border-zinc-200 p-3 sm:p-3.5 shadow-xs space-y-3">
+          <div data-section="techStack" className="bg-white rounded-xl border border-zinc-200 p-3 sm:p-3.5 shadow-xs space-y-3">
             <div className="flex flex-col sm:flex-row sm:items-baseline justify-between border-b border-zinc-100 pb-2.5 gap-1">
               <div className="flex items-center gap-2">
                 <Sliders className="w-4 h-4 text-zinc-700 shrink-0" />
@@ -3750,9 +3884,9 @@ export function ClaudeSkillsClient({
                 return (
                   <button
                     key={p.id}
-                    onClick={() => setPhilosophy(p.id as any)}
+                    onClick={() => { setPhilosophy(p.id as any); setActiveFieldKey("techStack"); setIsManuallyEdited(false); }}
                     className={cn(
-                      "p-2.5 rounded-lg border text-left transition-all flex flex-col gap-1",
+                      "p-2.5 rounded-lg border text-left transition-all flex flex-col gap-1 cursor-pointer",
                       isSelected
                         ? `${p.color} ring-1 ring-orange-500/20 shadow-xs font-semibold`
                         : "border-zinc-200 bg-white hover:bg-zinc-50 text-zinc-700"
@@ -3769,28 +3903,32 @@ export function ClaudeSkillsClient({
             </div>
           </div>
 
-          {/* Nuanced Agent Behavioral Guardrails */}
-          <div className="bg-white rounded-xl border border-zinc-200 p-3 sm:p-3.5 shadow-xs space-y-3">
+          {/* Architectural & Code Quality Conventions */}
+          <div data-section="conventions" className="bg-white rounded-xl border border-zinc-200 p-3 sm:p-3.5 shadow-xs space-y-3">
             <div className="flex flex-col sm:flex-row sm:items-baseline justify-between border-b border-zinc-100 pb-2.5 gap-1">
               <div className="flex items-center gap-2">
-                <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
-                <h3 className="text-sm font-bold text-zinc-900">Agent Behavioral Guardrails</h3>
+                <Settings2 className="w-4 h-4 text-zinc-700 shrink-0" />
+                <h3 className="text-sm font-bold text-zinc-900">Architectural & Code Quality Conventions</h3>
                 <InfoTooltip
-                  title="Agent Behavioral Guardrails"
-                  description="Select active rules that prevent destructive behaviors (e.g., silent failures, sweeping refactors, missing tests)."
+                  title="Architectural Conventions"
+                  description="Select best-practice conventions such as strict typing, single-responsibility functions, and schema validation."
                   align="left"
                 />
               </div>
-              <span className="text-[10px] text-zinc-400">Select active rules</span>
+              <span className="text-[10px] text-zinc-400">Less rigid & configurable</span>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              {BEHAVIOR_OPTIONS.map((opt) => {
-                const isChecked = behaviors.includes(opt.id);
+              {CONVENTION_OPTIONS.map((opt) => {
+                const isChecked = conventions.includes(opt.id);
                 return (
                   <label
                     key={opt.id}
-                    onClick={() => toggleItem(behaviors, setBehaviors, opt.id)}
+                    onClick={() => {
+                      toggleItem(conventions, setConventions, opt.id);
+                      setActiveFieldKey("conventions");
+                      setIsManuallyEdited(false);
+                    }}
                     className={cn(
                       "p-2 rounded-lg border text-left cursor-pointer transition-all flex items-start gap-2 select-none",
                       isChecked ? "border-zinc-300 bg-zinc-50/80 text-zinc-900" : "border-zinc-200 bg-white text-zinc-500"
@@ -3812,28 +3950,32 @@ export function ClaudeSkillsClient({
             </div>
           </div>
 
-          {/* Architectural & Code Quality Conventions */}
-          <div className="bg-white rounded-xl border border-zinc-200 p-3 sm:p-3.5 shadow-xs space-y-3">
+          {/* Nuanced Agent Behavioral Guardrails */}
+          <div data-section="behaviors" className="bg-white rounded-xl border border-zinc-200 p-3 sm:p-3.5 shadow-xs space-y-3">
             <div className="flex flex-col sm:flex-row sm:items-baseline justify-between border-b border-zinc-100 pb-2.5 gap-1">
               <div className="flex items-center gap-2">
-                <Settings2 className="w-4 h-4 text-zinc-700 shrink-0" />
-                <h3 className="text-sm font-bold text-zinc-900">Architectural & Code Quality Conventions</h3>
+                <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
+                <h3 className="text-sm font-bold text-zinc-900">Agent Behavioral Guardrails</h3>
                 <InfoTooltip
-                  title="Architectural Conventions"
-                  description="Select best-practice conventions such as strict typing, single-responsibility functions, and schema validation."
+                  title="Agent Behavioral Guardrails"
+                  description="Select active rules that prevent destructive behaviors (e.g., silent failures, sweeping refactors, missing tests)."
                   align="left"
                 />
               </div>
-              <span className="text-[10px] text-zinc-400">Less rigid & configurable</span>
+              <span className="text-[10px] text-zinc-400">Select active rules</span>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              {CONVENTION_OPTIONS.map((opt) => {
-                const isChecked = conventions.includes(opt.id);
+              {BEHAVIOR_OPTIONS.map((opt) => {
+                const isChecked = behaviors.includes(opt.id);
                 return (
                   <label
                     key={opt.id}
-                    onClick={() => toggleItem(conventions, setConventions, opt.id)}
+                    onClick={() => {
+                      toggleItem(behaviors, setBehaviors, opt.id);
+                      setActiveFieldKey("behaviors");
+                      setIsManuallyEdited(false);
+                    }}
                     className={cn(
                       "p-2 rounded-lg border text-left cursor-pointer transition-all flex items-start gap-2 select-none",
                       isChecked ? "border-zinc-300 bg-zinc-50/80 text-zinc-900" : "border-zinc-200 bg-white text-zinc-500"
@@ -3856,7 +3998,7 @@ export function ClaudeSkillsClient({
           </div>
 
           {/* Procedures & Custom Rules Textareas */}
-          <div className="bg-white rounded-xl border border-zinc-200 p-3.5 sm:p-4 shadow-xs space-y-3">
+          <div data-section="procedures" className="bg-white rounded-xl border border-zinc-200 p-3.5 sm:p-4 shadow-xs space-y-3">
             <div className="flex items-center justify-between border-b border-zinc-100 pb-2.5">
               <div className="flex items-center gap-2">
                 <BookOpen className="w-4 h-4 text-zinc-700 shrink-0" />
@@ -3872,13 +4014,14 @@ export function ClaudeSkillsClient({
 
             <textarea
               value={procedures}
-              onChange={(e) => setProcedures(e.target.value)}
+              onFocus={() => { setActiveFieldKey("procedures"); setIsManuallyEdited(false); }}
+              onChange={(e) => { setProcedures(e.target.value); setActiveFieldKey("procedures"); setIsManuallyEdited(false); }}
               rows={8}
               placeholder="1. Read context... 2. Trace execution..."
               className="w-full p-3 border border-zinc-200 rounded-lg text-xs font-mono leading-relaxed focus:outline-none focus:ring-2 focus:ring-zinc-900/10 focus:border-zinc-900 min-h-[195px] resize-y"
             />
 
-            <div className="pt-2">
+            <div data-section="customDirectives" className="pt-2">
               <div className="flex items-center gap-1.5 mb-1.5">
                 <label className="text-xs font-semibold text-zinc-700 block">
                   Custom Directives &amp; Forbidden Patterns
@@ -3892,7 +4035,8 @@ export function ClaudeSkillsClient({
               </div>
               <textarea
                 value={customDirectives}
-                onChange={(e) => setCustomDirectives(e.target.value)}
+                onFocus={() => { setActiveFieldKey("customDirectives"); setIsManuallyEdited(false); }}
+                onChange={(e) => { setCustomDirectives(e.target.value); setActiveFieldKey("customDirectives"); setIsManuallyEdited(false); }}
                 rows={5}
                 placeholder="- Never use eval or dangerous innerHTML..."
                 className="w-full p-3 border border-zinc-200 rounded-lg text-xs font-mono leading-relaxed focus:outline-none focus:ring-2 focus:ring-zinc-900/10 focus:border-zinc-900 min-h-[125px] resize-y"
@@ -4242,8 +4386,26 @@ export function ClaudeSkillsClient({
                   !shouldLoadEditor ? "cursor-text focus:outline-hidden" : "pointer-events-none select-none"
                 )}
               >
-                <pre className="p-4 font-mono text-xs text-zinc-300 whitespace-pre-wrap overflow-y-auto h-full select-text bg-zinc-950">
-                  {activeContent}
+                <pre
+                  ref={previewContainerRef}
+                  className="p-4 font-mono text-xs text-zinc-300 whitespace-pre-wrap overflow-y-auto h-full select-text bg-zinc-950"
+                >
+                  {activeContent.split("\n").map((line, idx) => {
+                    const lineNum = idx + 1;
+                    const isMarked = markedRange && lineNum >= markedRange.startLine && lineNum <= markedRange.endLine;
+                    return (
+                      <div
+                        key={idx}
+                        className={cn(
+                          isMarked
+                            ? "marked-preview-line border-l-[3px] border-white bg-transparent pl-2 -ml-2 text-white font-medium"
+                            : ""
+                        )}
+                      >
+                        {line || "\n"}
+                      </div>
+                    );
+                  })}
                 </pre>
                 {!shouldLoadEditor && (
                   <div className="absolute bottom-3 right-3 pointer-events-none transition-opacity duration-200 opacity-60 group-hover:opacity-100">
@@ -4263,12 +4425,11 @@ export function ClaudeSkillsClient({
                     language={format === "mcp_json" || format === "gemini_prompts" ? "json" : "markdown"}
                     value={activeContent}
                     theme="vs-dark"
-                    onMount={(editor) => {
+                    onMount={(editor, monaco) => {
                       editorRef.current = editor;
+                      monacoInstanceRef.current = monaco;
+                      setEditorReady(true);
                       editor.setScrollTop(0);
-                      if (typeof window !== "undefined" && window.innerWidth >= 768) {
-                        editor.focus();
-                      }
                     }}
                     onChange={(val) => {
                       if (val !== undefined) {
@@ -4298,7 +4459,7 @@ export function ClaudeSkillsClient({
                       wordWrap: "on",
                       lineNumbers: "on",
                       lineNumbersMinChars: 3,
-                      glyphMargin: false,
+                      glyphMargin: true,
                       scrollBeyondLastLine: false,
                       smoothScrolling: true,
                       automaticLayout: true,
@@ -4323,60 +4484,62 @@ export function ClaudeSkillsClient({
               {/* Rule Quality Audit — Professional Dark Floating Panel (Anchored above status bar) */}
               {showAuditPanel && (
                 <div className="absolute bottom-2 right-3 left-3 sm:left-auto sm:w-[460px] z-30 rounded-xl border border-zinc-800 bg-[#121316]/98 backdrop-blur-xl shadow-2xl shadow-black/90 overflow-hidden animate-in fade-in slide-in-from-bottom-2 duration-150 flex flex-col max-h-[380px]">
-                  {/* Header Bar: Clean Dark Monochrome */}
-                  <div className="flex items-center justify-between gap-2 px-3.5 py-2.5 border-b border-zinc-800/80 bg-[#121316] shrink-0">
-                    <div className="flex items-center gap-2 min-w-0">
-                      <span className="font-mono text-xs font-bold text-zinc-200 tracking-wider flex items-center gap-1.5 shrink-0">
-                        <Image src="/orange-star.png" width={16} height={16}  className="w-4 h-4 object-contain shrink-0" alt="Star" />
-                        <span>RULE AUDIT</span>
+                  {/* Header Bar: Clean Dark Monochrome (Responsive on mobile with zero text overlap) */}
+                  <div className="flex items-center justify-between gap-1.5 sm:gap-2 px-2.5 sm:px-3.5 py-2 sm:py-2.5 border-b border-zinc-800/80 bg-[#121316] shrink-0 min-w-0">
+                    <div className="flex items-center gap-1.5 sm:gap-2 min-w-0 flex-1 overflow-hidden">
+                      <span className="font-mono text-[11px] sm:text-xs font-bold text-zinc-200 tracking-wider flex items-center gap-1 sm:gap-1.5 shrink-0">
+                        <Image src="/orange-star.png" width={16} height={16} className="w-3.5 h-3.5 sm:w-4 sm:h-4 object-contain shrink-0" alt="Star" />
+                        <span><span className="hidden sm:inline">RULE </span>AUDIT</span>
                       </span>
 
-                      {/* Clean Dark Badge (NO flashy gold) */}
-                      <span className="bg-zinc-800 text-zinc-300 border border-zinc-700 font-mono text-[10px] font-semibold px-2 py-0.5 rounded-full shrink-0">
-                        {auditReport.overallScore}/100 · {auditReport.gradeLabel.toUpperCase()}
+                      {/* Clean Dark Badge (Responsive: score on mobile, full label on tablet/desktop) */}
+                      <span className="bg-zinc-800 text-zinc-300 border border-zinc-700 font-mono text-[10px] font-semibold px-1.5 sm:px-2 py-0.5 rounded-full shrink-0 truncate max-w-[130px] sm:max-w-none">
+                        {auditReport.overallScore}/100<span className="hidden sm:inline"> · {auditReport.gradeLabel.toUpperCase()}</span>
                       </span>
                     </div>
 
                     <div className="flex items-center gap-1 shrink-0">
-                      {/* One-click Copy Audit Report for PRs / documentation */}
+                      {/* One-click Copy Audit Report (Icon-only on mobile, full text on tablet/desktop) */}
                       <button
                         type="button"
                         onClick={handleCopyAuditReport}
-                        className="text-zinc-400 hover:text-zinc-200 text-[11px] font-mono flex items-center gap-1 px-2 py-1 rounded hover:bg-zinc-800/80 transition-colors cursor-pointer"
+                        className="text-zinc-400 hover:text-zinc-200 text-[11px] font-mono flex items-center gap-1 px-1.5 sm:px-2 py-1 rounded hover:bg-zinc-800/80 transition-colors cursor-pointer shrink-0"
                         title="Copy audit report summary to clipboard"
+                        aria-label="Copy audit report"
                       >
-                        {auditCopied ? <Check className="w-3 h-3 text-zinc-200" /> : <Copy className="w-3 h-3" />}
-                        <span>{auditCopied ? "Copied" : "Copy Report"}</span>
+                        {auditCopied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                        <span className="hidden sm:inline">{auditCopied ? "Copied" : "Copy Report"}</span>
                       </button>
 
                       <button
                         type="button"
                         onClick={() => setShowAuditPanel(false)}
-                        className="text-zinc-400 hover:text-zinc-100 p-1 rounded-md hover:bg-zinc-800/80 transition-colors cursor-pointer"
+                        className="text-zinc-400 hover:text-zinc-100 p-1 rounded-md hover:bg-zinc-800/80 transition-colors cursor-pointer shrink-0"
                         title="Close audit panel"
+                        aria-label="Close audit panel"
                       >
-                                <X className="w-3.5 h-3.5" />
-                              </button>
-                            </div>
-                          </div>
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </div>
 
                           {/* Standardized 5-Column Metric Grid (Interactive Troubleshooting Filters) */}
-                          <div className="p-2.5 bg-[#121316]/90 border-b border-zinc-800/80 shrink-0">
-                            <div className="grid grid-cols-5 gap-1.5">
+                          <div className="p-2 sm:p-2.5 bg-[#121316]/90 border-b border-zinc-800/80 shrink-0">
+                            <div className="grid grid-cols-5 gap-1 sm:gap-1.5">
                               {/* Triggers */}
                               <button
                                 type="button"
                                 onClick={() => setSelectedDimension((prev: AuditDimension | "all") => (prev === "triggers" ? "all" : "triggers"))}
                                 className={cn(
-                                  "flex flex-col items-start min-w-0 p-1.5 rounded-lg text-left transition-colors cursor-pointer border",
+                                  "flex flex-col items-start min-w-0 p-1 sm:p-1.5 rounded-lg text-left transition-colors cursor-pointer border",
                                   selectedDimension === "triggers"
                                     ? "bg-zinc-800/80 border-zinc-500"
                                     : "bg-white/[0.02] border-white/[0.06] hover:bg-white/[0.05]"
                                 )}
                                 title="Click to filter Trigger Specificity diagnostics"
                               >
-                                <span className="text-[9px] font-mono uppercase tracking-wider text-zinc-500 truncate w-full">TRIGGERS</span>
-                                <span className="text-[12px] font-mono font-semibold text-zinc-100">{auditReport.dimensions.triggers.score}%</span>
+                                <span className="text-[8px] sm:text-[9px] font-mono uppercase tracking-wider text-zinc-500 truncate w-full">TRIGGERS</span>
+                                <span className="text-[11px] sm:text-[12px] font-mono font-semibold text-zinc-100">{auditReport.dimensions.triggers.score}%</span>
                               </button>
 
                               {/* Density */}
@@ -4384,15 +4547,15 @@ export function ClaudeSkillsClient({
                                 type="button"
                                 onClick={() => setSelectedDimension((prev: AuditDimension | "all") => (prev === "tokenDensity" ? "all" : "tokenDensity"))}
                                 className={cn(
-                                  "flex flex-col items-start min-w-0 p-1.5 rounded-lg text-left transition-colors cursor-pointer border",
+                                  "flex flex-col items-start min-w-0 p-1 sm:p-1.5 rounded-lg text-left transition-colors cursor-pointer border",
                                   selectedDimension === "tokenDensity"
                                     ? "bg-zinc-800/80 border-zinc-500"
                                     : "bg-white/[0.02] border-white/[0.06] hover:bg-white/[0.05]"
                                 )}
                                 title="Click to filter Rule Density diagnostics"
                               >
-                                <span className="text-[9px] font-mono uppercase tracking-wider text-zinc-500 truncate w-full">DENSITY</span>
-                                <span className="text-[12px] font-mono font-semibold text-zinc-100">~{auditReport.tokenCount}t</span>
+                                <span className="text-[8px] sm:text-[9px] font-mono uppercase tracking-wider text-zinc-500 truncate w-full">DENSITY</span>
+                                <span className="text-[11px] sm:text-[12px] font-mono font-semibold text-zinc-100">~{auditReport.tokenCount}t</span>
                               </button>
 
                               {/* Guardrails */}
@@ -4400,15 +4563,15 @@ export function ClaudeSkillsClient({
                                 type="button"
                                 onClick={() => setSelectedDimension((prev: AuditDimension | "all") => (prev === "guardrails" ? "all" : "guardrails"))}
                                 className={cn(
-                                  "flex flex-col items-start min-w-0 p-1.5 rounded-lg text-left transition-colors cursor-pointer border",
+                                  "flex flex-col items-start min-w-0 p-1 sm:p-1.5 rounded-lg text-left transition-colors cursor-pointer border",
                                   selectedDimension === "guardrails"
                                     ? "bg-zinc-800/80 border-zinc-500"
                                     : "bg-white/[0.02] border-white/[0.06] hover:bg-white/[0.05]"
                                 )}
                                 title="Click to filter Negative Guardrails diagnostics"
                               >
-                                <span className="text-[9px] font-mono uppercase tracking-wider text-zinc-500 truncate w-full">GUARDS</span>
-                                <span className="text-[12px] font-mono font-semibold text-zinc-100">{auditReport.dimensions.guardrails.score}%</span>
+                                <span className="text-[8px] sm:text-[9px] font-mono uppercase tracking-wider text-zinc-500 truncate w-full">GUARDS</span>
+                                <span className="text-[11px] sm:text-[12px] font-mono font-semibold text-zinc-100">{auditReport.dimensions.guardrails.score}%</span>
                               </button>
 
                               {/* Format Compliance */}
@@ -4416,15 +4579,15 @@ export function ClaudeSkillsClient({
                                 type="button"
                                 onClick={() => setSelectedDimension((prev: AuditDimension | "all") => (prev === "formatCompliance" ? "all" : "formatCompliance"))}
                                 className={cn(
-                                  "flex flex-col items-start min-w-0 p-1.5 rounded-lg text-left transition-colors cursor-pointer border",
+                                  "flex flex-col items-start min-w-0 p-1 sm:p-1.5 rounded-lg text-left transition-colors cursor-pointer border",
                                   selectedDimension === "formatCompliance"
                                     ? "bg-zinc-800/80 border-zinc-500"
                                     : "bg-white/[0.02] border-white/[0.06] hover:bg-white/[0.05]"
                                 )}
                                 title="Click to filter Format Compliance diagnostics"
                               >
-                                <span className="text-[9px] font-mono uppercase tracking-wider text-zinc-500 truncate w-full">FORMAT</span>
-                                <span className="text-[12px] font-mono font-semibold text-zinc-100">{auditReport.dimensions.formatCompliance.score}%</span>
+                                <span className="text-[8px] sm:text-[9px] font-mono uppercase tracking-wider text-zinc-500 truncate w-full">FORMAT</span>
+                                <span className="text-[11px] sm:text-[12px] font-mono font-semibold text-zinc-100">{auditReport.dimensions.formatCompliance.score}%</span>
                               </button>
 
                               {/* Architectural Boundaries */}
@@ -4432,21 +4595,21 @@ export function ClaudeSkillsClient({
                                 type="button"
                                 onClick={() => setSelectedDimension((prev: AuditDimension | "all") => (prev === "architecture" ? "all" : "architecture"))}
                                 className={cn(
-                                  "flex flex-col items-start min-w-0 p-1.5 rounded-lg text-left transition-colors cursor-pointer border",
+                                  "flex flex-col items-start min-w-0 p-1 sm:p-1.5 rounded-lg text-left transition-colors cursor-pointer border",
                                   selectedDimension === "architecture"
                                     ? "bg-zinc-800/80 border-zinc-500"
                                     : "bg-white/[0.02] border-white/[0.06] hover:bg-white/[0.05]"
                                 )}
                                 title="Click to filter Architectural Boundaries diagnostics"
                               >
-                                <span className="text-[9px] font-mono uppercase tracking-wider text-zinc-500 truncate w-full">ARCH</span>
-                                <span className="text-[12px] font-mono font-semibold text-zinc-100">{auditReport.dimensions.architecture.score}%</span>
+                                <span className="text-[8px] sm:text-[9px] font-mono uppercase tracking-wider text-zinc-500 truncate w-full">ARCH</span>
+                                <span className="text-[11px] sm:text-[12px] font-mono font-semibold text-zinc-100">{auditReport.dimensions.architecture.score}%</span>
                               </button>
                             </div>
                           </div>
 
                   {/* Sub-Tabs: Findings vs Checklist (Actionable & Powerful) */}
-                  <div className="flex items-center justify-between px-3 bg-[#121316] border-b border-zinc-800/60 text-xs font-mono shrink-0">
+                  <div className="flex items-center justify-between px-2.5 sm:px-3 bg-[#121316] border-b border-zinc-800/60 text-xs font-mono shrink-0">
                     <div className="flex items-center gap-1">
                       <button
                         type="button"
@@ -4455,7 +4618,7 @@ export function ClaudeSkillsClient({
                           setSelectedDimension("all");
                         }}
                         className={cn(
-                          "px-2.5 py-1.5 border-b-2 text-[11px] font-semibold transition-colors cursor-pointer",
+                          "px-2 sm:px-2.5 py-1.5 border-b-2 text-[10px] sm:text-[11px] font-semibold transition-colors cursor-pointer",
                           auditTab === "findings"
                             ? "border-zinc-300 text-zinc-100 bg-zinc-800/40"
                             : "border-transparent text-zinc-500 hover:text-zinc-300"
@@ -4467,13 +4630,13 @@ export function ClaudeSkillsClient({
                         type="button"
                         onClick={() => setAuditTab("checklist")}
                         className={cn(
-                          "px-2.5 py-1.5 border-b-2 text-[11px] font-semibold transition-colors cursor-pointer",
+                          "px-2 sm:px-2.5 py-1.5 border-b-2 text-[10px] sm:text-[11px] font-semibold transition-colors cursor-pointer",
                           auditTab === "checklist"
                             ? "border-zinc-300 text-zinc-100 bg-zinc-800/40"
                             : "border-transparent text-zinc-500 hover:text-zinc-300"
                         )}
                       >
-                        Rule Checklist
+                        <span className="hidden sm:inline">Rule </span>Checklist
                       </button>
                     </div>
 
@@ -4481,10 +4644,10 @@ export function ClaudeSkillsClient({
                       <button
                         type="button"
                         onClick={handleAutoFixAll}
-                        className="text-[10px] font-mono font-semibold text-zinc-900 bg-white hover:bg-zinc-200 px-2 py-0.5 rounded transition-all cursor-pointer shadow-xs active:scale-95"
+                        className="text-[10px] font-mono font-semibold text-zinc-900 bg-white hover:bg-zinc-200 px-1.5 sm:px-2 py-0.5 rounded transition-all cursor-pointer shadow-xs active:scale-95 shrink-0"
                         title="Automatically remediate all detected issues"
                       >
-                        ⚡ Auto-Fix All
+                        ⚡ Auto-Fix<span className="hidden sm:inline"> All</span>
                       </button>
                     )}
                   </div>

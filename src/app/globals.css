@@ -237,3 +237,122 @@ body {
 .dark ::-webkit-scrollbar-thumb:hover {
   background: #3f3f46;
 }
+
+/* PromptCraft Studio — Utilitarian Minimalist Tokens */
+.promptcraft-fox-btn {
+  background: #1e293b;
+  color: #e2e8f0;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow: none;
+  transition: all 0.15s ease-in-out;
+}
+
+.promptcraft-fox-btn:hover:not(:disabled) {
+  background: #334155;
+  color: #f8fafc;
+  border-color: rgba(255, 255, 255, 0.25);
+  box-shadow: none;
+  transform: none;
+}
+
+/* Glass Terminal (Ported from my website with Fox-Orange glow) */
+.glass-terminal {
+  background: rgba(10, 10, 18, 0.82);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7), 0 0 45px rgba(234, 88, 12, 0.08);
+  overflow: hidden;
+  text-align: left;
+  width: 100%;
+}
+
+.terminal-header {
+  background: rgba(255, 255, 255, 0.03);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  display: flex;
+  align-items: center;
+  padding: 0.65rem 1rem;
+  gap: 6px;
+  position: relative;
+}
+
+.terminal-header .dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.dot-red { background: #ff5f56; }
+.dot-yellow { background: #ffbd2e; }
+.dot-green { background: #27c93f; }
+
+.terminal-title {
+  color: #71717a;
+  font-size: 0.75rem;
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  font-family: monospace;
+}
+
+.terminal-body {
+  padding: 1.25rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.85rem;
+  line-height: 1.65;
+  min-height: 160px;
+  color: #d4d4d8;
+}
+
+.terminal-line {
+  margin-bottom: 0.5rem;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.command-color {
+  color: #fb923c;
+}
+
+.success-color {
+  color: #4ade80;
+}
+
+.cursor-block {
+  display: inline-block;
+  color: #f97316;
+  font-weight: bold;
+}
+
+.cursor-block.blink {
+  animation: cursor-blink 1s step-end infinite;
+}
+
+@keyframes cursor-blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+/* AI Skill Studio — Sleek White Marker with Radiant Glow in Monaco Editor */
+.monaco-editor .monaco-white-marker-line,
+.monaco-white-marker-line {
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.02) 40%, transparent 100%) !important;
+  border-left: 3px solid #ffffff !important;
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.4), inset 2px 0 6px rgba(255, 255, 255, 0.1) !important;
+  pointer-events: none;
+}
+
+.monaco-editor .view-overlays .monaco-white-marker-line {
+  z-index: 0 !important;
+}
+
+.monaco-editor .view-lines {
+  z-index: 1 !important;
+}
+
+
+
+
