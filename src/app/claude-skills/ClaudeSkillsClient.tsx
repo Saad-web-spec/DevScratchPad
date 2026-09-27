@@ -1073,9 +1073,9 @@ export function ClaudeSkillsClient({
     const newDecorations = [
       {
         range: {
-          startLineNumber: markedRange.startLine,
+          startLineNumber: Math.min(markedRange.startLine, markedRange.endLine),
           startColumn: 1,
-          endLineNumber: markedRange.endLine,
+          endLineNumber: Math.max(markedRange.startLine, markedRange.endLine),
           endColumn: 1,
         },
         options: {
@@ -4442,7 +4442,7 @@ export function ClaudeSkillsClient({
                         key={idx}
                         className={cn(
                           isMarked
-                            ? "marked-preview-line border-l-[3px] border-white bg-transparent pl-2 -ml-2 text-white font-medium"
+                            ? "marked-preview-line border-l-[3px] border-white bg-white/5 pl-2 -ml-2 text-white font-medium"
                             : ""
                         )}
                       >

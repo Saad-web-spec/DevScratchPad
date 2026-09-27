@@ -1,4 +1,4 @@
-import { OutputFormat } from "./ruleGenerator";
+import type { OutputFormat } from "./ruleGenerator";
 
 export interface MarkedSectionRange {
   startLine: number;
@@ -43,7 +43,12 @@ const SECTION_RULES: SearchRule[] = [
   {
     fieldKeys: ["prdMilestones"],
     label: "Milestones & Roadmap",
-    headerPatterns: [/^##\s+7\.\s+Milestone/i, /^##\s+Milestone/i, /^##\s+Roadmap/i],
+    headerPatterns: [
+      /^##\s+6\.\s+Milestones/i,
+      /^##\s+7\.\s+Milestone/i,
+      /^##\s+Milestones/i,
+      /^##\s+Roadmap/i,
+    ],
   },
 
   // DESIGN.md sections
@@ -75,7 +80,11 @@ const SECTION_RULES: SearchRule[] = [
   {
     fieldKeys: ["designVerification"],
     label: "Design Verification Gate",
-    headerPatterns: [/^##\s+7\.\s+Design Verification/i, /^##\s+Verification Gate/i],
+    headerPatterns: [
+      /^##\s+6\.\s+Design Verification/i,
+      /^##\s+7\.\s+Design Verification/i,
+      /^##\s+Verification Gate/i,
+    ],
   },
 
   // TASK.md sections
@@ -124,17 +133,31 @@ const SECTION_RULES: SearchRule[] = [
   {
     fieldKeys: ["memoryLoop"],
     label: "Agent Execution Loop",
-    headerPatterns: [/^##\s+4\.\s+Core Execution Loop/i, /^##\s+5\.\s+Agent Execution Protocol/i, /^##\s+Agent Execution Loop/i],
+    headerPatterns: [
+      /^##\s+4\.\s+.*Execution Loop/i,
+      /^##\s+5\.\s+Agent Execution Protocol/i,
+      /^##\s+.*Execution Loop/i,
+    ],
   },
   {
     fieldKeys: ["memoryInvariants"],
     label: "Key File Hierarchy",
-    headerPatterns: [/^##\s+5\.\s+Key File Hierarchy/i, /^##\s+6\.\s+File Hierarchy/i, /^##\s+Invariants/i],
+    headerPatterns: [
+      /^##\s+5\.\s+Domain Invariants/i,
+      /^##\s+5\.\s+Key File Hierarchy/i,
+      /^##\s+6\.\s+File Hierarchy/i,
+      /^##\s+.*Invariants/i,
+    ],
   },
   {
     fieldKeys: ["memorySessionHistory"],
     label: "Agent Session History",
-    headerPatterns: [/^##\s+6\.\s+Agent Session History/i, /^##\s+7\.\s+Session History/i],
+    headerPatterns: [
+      /^##\s+6\.\s+Session History/i,
+      /^##\s+6\.\s+Agent Session History/i,
+      /^##\s+7\.\s+Session History/i,
+      /^##\s+.*Session History/i,
+    ],
   },
 
   // Standard skill / agent / model instruction sections
@@ -148,8 +171,10 @@ const SECTION_RULES: SearchRule[] = [
       /^##\s+Conventions/i,
       /^##\s+Architectural Directives/i,
       /^##\s+3\.\s+Mandatory Architectural Guardrails/i,
+      /^##\s+2\.\s+Core Architectural Invariants/i,
+      /^##\s+Core Architectural Invariants/i,
       /^Core Engineering Standards:/i,
-      /["']?Core Guidelines:?["']?/i,
+      /<conventions>/i,
     ],
   },
   {
@@ -158,12 +183,14 @@ const SECTION_RULES: SearchRule[] = [
     headerPatterns: [
       /^##\s+4\.\s+Agent Behavioral Guardrails/i,
       /^##\s+Operational Guardrails/i,
+      /^##\s+Operational Guardrails & Prohibited Patterns/i,
+      /^##\s+4\.\s+Forbidden Anti-Patterns/i,
       /^##\s+Prohibited Patterns & Guardrails/i,
       /^##\s+4\.\s+Negative Constraints/i,
-      /^Operational Guardrails & Prohibitions:/i,
-      /["']?Negative Constraints & Guardrails:?["']?/i,
       /^##\s+Agent Directives/i,
       /^##\s+Guardrails/i,
+      /^Operational Guardrails & Prohibitions:/i,
+      /<agent_guardrails>/i,
     ],
   },
   {
@@ -174,9 +201,13 @@ const SECTION_RULES: SearchRule[] = [
       /^##\s+Execution Procedures/i,
       /^##\s+Standard Operating Procedures/i,
       /^##\s+2\.\s+Cascade Execution Workflow/i,
-      /^Workflow Checklist:/i,
-      /["']?Workflow Procedures:?["']?/i,
+      /^##\s+Instructions for Copilot/i,
       /^3\.\s+Execution Procedures:/i,
+      /^##\s+Verification Commands & Workflows/i,
+      /^##\s+7\.\s+Verification Protocol/i,
+      /^##\s+Verification Protocol/i,
+      /^Workflow Checklist:/i,
+      /<workflows_and_procedures>/i,
       /^##\s+Procedures/i,
       /^##\s+Workflow/i,
     ],
@@ -186,15 +217,19 @@ const SECTION_RULES: SearchRule[] = [
     label: "Project Directives & Constraints",
     headerPatterns: [
       /^##\s+5\.\s+Project-Specific Directives/i,
+      /^##\s+Project-Specific Directives/i,
+      /^##\s+Specific Project Constraints/i,
+      /^##\s+5\.\s+Domain-Specific Invariants/i,
       /^##\s+6\.\s+Domain-Specific Invariants/i,
+      /^##\s+Domain-Specific Invariants/i,
       /^##\s+Domain Design Directives/i,
+      /^##\s+Mandatory Project Directives/i,
+      /^##\s+Mandatory Project Rules/i,
       /^##\s+Sprint Directives/i,
       /^##\s+Directives/i,
       /^##\s+Custom Rules/i,
-      /^##\s+Mandatory Project Rules/i,
       /^Specific Project Requirements:/i,
-      /["']?Mandatory Project Directives:?["']?/i,
-      /^##\s+Specific Project Constraints/i,
+      /<custom_directives>/i,
     ],
   },
   {
@@ -202,16 +237,19 @@ const SECTION_RULES: SearchRule[] = [
     label: "Role, Mission & Tech Stack",
     headerPatterns: [
       /^##\s+1\.\s+Overview & Role/i,
-      /^##\s+What would you like ChatGPT/i,
-      /^##\s+How would you like ChatGPT/i,
+      /^##\s+1\.\s+Character & Role/i,
       /^##\s+Role & Mission/i,
       /^##\s+Target Architecture/i,
       /^##\s+Tech Stack Context/i,
-      /^##\s+1\.\s+Character & Role/i,
       /^##\s+Project Context/i,
-      /^##\s+Overview/i,
+      /^##\s+Quick Reference/i,
+      /^###\s+Technology Stack/i,
+      /^##\s+What would you like ChatGPT/i,
+      /^##\s+How would you like ChatGPT/i,
       /^You are acting as/i,
       /^You are a/i,
+      /<tech_stack>/i,
+      /^##\s+Overview/i,
     ],
   },
   {
@@ -222,18 +260,34 @@ const SECTION_RULES: SearchRule[] = [
   {
     fieldKeys: ["description"],
     label: "Skill Activation & Description",
-    headerPatterns: [/^description:\s+/m, /^##\s+Project Context/i, /^##\s+Overview/i],
+    headerPatterns: [
+      /^description:\s+/m,
+      /^##\s+1\.\s+System Overview/i,
+      /^##\s+Project Context/i,
+      /^##\s+Overview/i,
+      /^>\s+/m,
+      /<project_context>/i,
+      /^##\s+Role & Mission/i,
+      /^##\s+1\.\s+Character & Role/i,
+      /^##\s+What would you like ChatGPT/i,
+      /^##\s+1\.\s+Overview & Role/i,
+    ],
   },
   {
     fieldKeys: ["exampleGood", "exampleBad", "examples"],
     label: "Implementation Reference & Examples",
     headerPatterns: [
       /^##\s+6\.\s+Implementation Reference/i,
+      /^##\s+Implementation Reference/i,
+      /^##\s+6\.\s+Implementation Reference Patterns/i,
       /^##\s+Reference Patterns/i,
       /^##\s+Reference Implementations/i,
+      /^Reference Implementation Patterns:/i,
       /^###\s+Preferred Patterns/i,
+      /^###\s+Preferred Pattern/i,
       /^###\s+Recommended/i,
       /^##\s+Examples/i,
+      /<implementation_reference>/i,
     ],
   },
   {
@@ -250,23 +304,20 @@ const SECTION_RULES: SearchRule[] = [
 
 /**
  * Universal boundary patterns that signal the start of a new section
- * across Markdown, OpenAI system prompts, and Gemini instruction configs.
+ * across Markdown, OpenAI system prompts, Gemini configs, and CLAUDE.md XML.
  */
 const SECTION_BOUNDARY_PATTERNS = [
   /^#{1,3}\s+/,
   /^---\s*$/,
   /^<!--\s*END/i,
+  /^<[a-zA-Z_]+>/,
+  /^<\/[a-zA-Z_]+>/,
   /^Core Engineering Standards:/i,
   /^Operational Guardrails & Prohibitions:/i,
   /^Operational Guardrails/i,
   /^Specific Project Requirements:/i,
   /^Workflow Checklist:/i,
   /^Verification Rules:/i,
-  /["']?Core Guidelines:?["']?/i,
-  /["']?Negative Constraints & Guardrails:?["']?/i,
-  /["']?Mandatory Project Directives:?["']?/i,
-  /["']?Workflow Procedures:?["']?/i,
-  /["']?Verification Protocol:?["']?/i,
   /^3\.\s+Execution Procedures:/i,
   /^##\s+How would you like/i,
   /^##\s+What would you like/i,
@@ -289,34 +340,55 @@ export function findSectionLineRange(
   const lines = content.split("\n");
   if (lines.length === 0) return null;
 
-  // Dedicated range locator for Gemini System Prompts (JSON with modular parts)
+  // 1. Dedicated range locator for Gemini System Prompts (JSON with modular parts)
   if (_format === "gemini_prompts") {
+    const geminiKeywordMap: Record<string, string[]> = {
+      techStack: ["Role & Mission:", "Role & Mission"],
+      role: ["Role & Mission:", "Role & Mission"],
+      philosophy: ["Role & Mission:", "Philosophy:"],
+      framework: ["Role & Mission:", "specializing in"],
+      language: ["Role & Mission:"],
+      styling: ["Role & Mission:"],
+      database: ["Role & Mission:"],
+      conventions: ["Core Guidelines:", "Core Guidelines"],
+      behaviors: ["Negative Constraints & Guardrails:", "Negative Constraints"],
+      customDirectives: ["Mandatory Project Directives:", "Mandatory Project Directives"],
+      directives: ["Mandatory Project Directives:"],
+      procedures: ["Workflow Procedures:", "Workflow Procedures"],
+      skillTitle: ["Role & Mission:"],
+      skillName: ["Role & Mission:"],
+      description: ["Role & Mission:"],
+      exampleGood: ["Implementation Reference", "Preferred", "Role & Mission:"],
+      exampleBad: ["Implementation Reference", "Anti-Pattern", "Role & Mission:"],
+    };
+
+    const keywords = geminiKeywordMap[fieldKey] || [];
     for (let i = 0; i < lines.length; i++) {
       const lineText = lines[i];
-      for (const pat of rule.headerPatterns) {
-        if (pat.test(lineText)) {
-          // Locate start of part: check if previous line has opening '{'
-          const startLine = i > 0 && lines[i - 1].trim() === "{" ? i : i + 1;
-          let endLine = i + 1;
-          for (let j = i; j < lines.length; j++) {
-            const trimmed = lines[j].trim();
-            if (trimmed === "}" || trimmed === "}," || trimmed === "]" || lines[j].includes('"generation_config"')) {
-              endLine = trimmed.startsWith("}") ? j + 1 : j;
-              break;
-            }
+      const matched =
+        keywords.some((kw) => lineText.includes(kw)) ||
+        rule.headerPatterns.some((pat) => pat.test(lineText));
+      if (matched) {
+        const startLine = i > 0 && lines[i - 1].trim() === "{" ? i : i + 1;
+        let endLine = i + 1;
+        for (let j = i; j < lines.length; j++) {
+          const trimmed = lines[j].trim();
+          if (trimmed === "}" || trimmed === "}," || trimmed === "]" || lines[j].includes('"generation_config"')) {
+            endLine = trimmed.startsWith("}") ? j + 1 : j;
+            break;
           }
-          return {
-            startLine,
-            endLine: Math.max(startLine, endLine),
-            label: rule.label,
-          };
         }
+        return {
+          startLine,
+          endLine: Math.max(startLine, endLine),
+          label: rule.label,
+        };
       }
     }
     return null;
   }
 
-  // Dedicated range locator for MCP Server Config (JSON)
+  // 2. Dedicated range locator for MCP Server Config (JSON)
   if (_format === "mcp_json") {
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i];
@@ -353,26 +425,132 @@ export function findSectionLineRange(
     return null;
   }
 
-  // Handle frontmatter or top title specifically
-  if (fieldKey === "skillTitle" || fieldKey === "skillName" || fieldKey === "identity" || fieldKey === "globPattern" || fieldKey === "alwaysApply" || fieldKey === "triggers") {
-    // Check if YAML frontmatter exists
-    if (lines[0]?.trim() === "---") {
-      let fmEnd = 1;
-      while (fmEnd < lines.length && lines[fmEnd].trim() !== "---") {
-        fmEnd++;
+  // 3. Dedicated range locator for CLAUDE.md (Structured XML tags)
+  if (_format === "claude_md") {
+    const xmlTagMap: Record<string, string> = {
+      description: "project_context",
+      techStack: "tech_stack",
+      role: "project_context",
+      philosophy: "project_context",
+      framework: "tech_stack",
+      language: "tech_stack",
+      styling: "tech_stack",
+      database: "tech_stack",
+      procedures: "workflows_and_procedures",
+      conventions: "conventions",
+      behaviors: "agent_guardrails",
+      customDirectives: "custom_directives",
+      directives: "custom_directives",
+      exampleGood: "implementation_reference",
+      exampleBad: "implementation_reference",
+    };
+
+    if (fieldKey === "skillTitle" || fieldKey === "skillName" || fieldKey === "identity") {
+      for (let i = 0; i < lines.length; i++) {
+        if (lines[i].startsWith("# ")) {
+          return { startLine: i + 1, endLine: i + 1, label: "Title & Identity" };
+        }
       }
-      if (fmEnd < lines.length) {
-        // Frontmatter found: line 1 to fmEnd + 1
+    }
+
+    const targetTag = xmlTagMap[fieldKey];
+    if (targetTag) {
+      let startLine = -1;
+      let endLine = -1;
+      const openTag = `<${targetTag}>`;
+      const closeTag = `</${targetTag}>`;
+      for (let i = 0; i < lines.length; i++) {
+        if (lines[i].includes(openTag)) {
+          startLine = i + 1;
+        }
+        if (startLine !== -1 && lines[i].includes(closeTag)) {
+          endLine = i + 1;
+          break;
+        }
+      }
+      if (startLine !== -1) {
         return {
-          startLine: 1,
-          endLine: Math.min(lines.length, fmEnd + 1),
+          startLine,
+          endLine: endLine !== -1 ? endLine : startLine,
           label: rule.label,
         };
       }
     }
   }
 
-  // Scan line by line for any of the header patterns
+  // 4. Frontmatter line isolators for cursor_mdc and skill_md
+  if (lines[0]?.trim() === "---") {
+    let fmEnd = 1;
+    while (fmEnd < lines.length && lines[fmEnd].trim() !== "---") {
+      fmEnd++;
+    }
+
+    if (fmEnd < lines.length) {
+      // If editing globs or triggers specifically
+      if (fieldKey === "globPattern" || fieldKey === "alwaysApply" || fieldKey === "triggers") {
+        for (let i = 1; i < fmEnd; i++) {
+          if (
+            (fieldKey === "globPattern" && lines[i].includes("globs:")) ||
+            (fieldKey === "alwaysApply" && lines[i].includes("alwaysApply:"))
+          ) {
+            return {
+              startLine: i + 1,
+              endLine: i + 1,
+              label: rule.label,
+            };
+          }
+        }
+        return { startLine: 1, endLine: fmEnd + 1, label: rule.label };
+      }
+
+      // If editing skillName in frontmatter
+      if (fieldKey === "skillName") {
+        for (let i = 1; i < fmEnd; i++) {
+          if (lines[i].startsWith("name:")) {
+            return { startLine: i + 1, endLine: i + 1, label: rule.label };
+          }
+        }
+      }
+
+      // If editing description in frontmatter
+      if (fieldKey === "description") {
+        for (let i = 1; i < fmEnd; i++) {
+          if (lines[i].startsWith("description:")) {
+            // Check if description continues to end of frontmatter or next key
+            let descEnd = i;
+            while (
+              descEnd + 1 < fmEnd &&
+              !lines[descEnd + 1].includes(":") &&
+              !lines[descEnd + 1].startsWith("globs:") &&
+              !lines[descEnd + 1].startsWith("alwaysApply:")
+            ) {
+              descEnd++;
+            }
+            return {
+              startLine: i + 1,
+              endLine: descEnd + 1,
+              label: rule.label,
+            };
+          }
+        }
+      }
+
+      // If editing skillTitle, do NOT match frontmatter — match # Title after frontmatter!
+      if (fieldKey === "skillTitle") {
+        for (let i = fmEnd + 1; i < lines.length; i++) {
+          if (lines[i].startsWith("# ")) {
+            return {
+              startLine: i + 1,
+              endLine: i + 1,
+              label: rule.label,
+            };
+          }
+        }
+      }
+    }
+  }
+
+  // 5. Scan line by line for any of the header patterns
   let startLine = -1;
 
   for (let i = 0; i < lines.length; i++) {

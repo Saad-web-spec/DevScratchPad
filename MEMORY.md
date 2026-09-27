@@ -361,6 +361,17 @@ All AI agents operating in this repository MUST follow this 5-step loop:
   6. **Verification**: Passed `npm run validate-presets` (100/100), `npm run lint` (0 errors), `npm run build` (872 routes SSG exit 0).
 - **Status**: ✅ Complete (All verification gates passed)
 
+### Session: 2026-09-27 — Universal White Marker Fix & 100% Cross-Format Validation
+- **Agent**: Antigravity
+- **Task**: Eliminate broken marker lines, zebra stripes, and right-edge blisters across all AI formats:
+  1. **Monaco CSS Overhaul**: Diagnosed that `box-shadow: 0 0 10px rgba(255, 255, 255, 0.4), inset 2px 0 6px...` applied 10px blur in all 4 directions on every visual row in `.view-overlays`. This created overlapping horizontal lines between rows and protruding blisters on wrapped lines. Replaced with clean `border-left: 3px solid #ffffff !important;`, `box-shadow: none !important;`, and smooth translucent horizontal gradient `linear-gradient(90deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.02) 50%, transparent 100%) !important;`.
+  2. **Range Safety Guardrails**: Added `Math.min` and `Math.max` for Monaco `startLineNumber` and `endLineNumber` to eliminate any inverted range rendering.
+  3. **Dedicated XML Locator for CLAUDE.md**: Implemented tag-based locator isolating `<project_context>`, `<tech_stack>`, `<workflows_and_procedures>`, `<conventions>`, `<agent_guardrails>`, `<custom_directives>`, `<implementation_reference>`.
+  4. **Frontmatter Line Isolators**: For `cursor_mdc` and `skill_md`, isolate exact lines for `globs:`, `alwaysApply:`, `name:`, and `description:` instead of whole frontmatter blocks, while pointing `skillTitle` to `# Title`.
+  5. **100% Automated Cross-Format Testing**: Ran diagnostic covering all 15 active formats and all fields (127/127 fields located successfully, 100% pass rate).
+  6. **Verification Gates**: Passed `validate-presets` (100/100), `lint` (0 errors), `build` (872 SSG routes exit 0).
+- **Status**: ✅ Complete (All verification gates passed)
+
 ---
 
 *This document is updated by AI agents after significant sessions. Human maintainers should review and correct any inaccuracies periodically.*

@@ -1531,7 +1531,7 @@ export function buildLlmsTxtContent(
   behaviors: string[],
   procedures: string
 ): string {
-  const { framework, language, styling, database, philosophy, skillTitle, description, customDirectives } = params;
+  const { framework, language, styling, database, philosophy, skillTitle, description, customDirectives, exampleGood = "", exampleBad = "" } = params;
   return `# ${skillTitle.trim() || framework || "Project Architecture Roadmap"}
 
 > ${description.trim().replace(/\n+/g, " ") || "Standardized machine-readable codebase roadmap for AI agents, LLMs, and autonomous tools."}
@@ -1547,7 +1547,11 @@ ${conventions.length > 0 ? conventions.join("\n") : "- Maintain strict typing an
 ## Operational Guardrails & Prohibited Patterns
 ${behaviors.length > 0 ? behaviors.join("\n") : "- Provide surgical, focused diffs; never reformat unrelated files.\n- Never delete existing test coverage or weaken type constraints."}
 
-${customDirectives.trim() ? `## Mandatory Project Directives\n${customDirectives.trim()}\n\n` : ""}## Verification Commands & Workflows
+${customDirectives.trim() ? `## Mandatory Project Directives\n${customDirectives.trim()}\n\n` : ""}${
+  exampleGood.trim() || exampleBad.trim()
+    ? `## Implementation Reference\n\n### Preferred Patterns\n\`\`\`${deduceLangTag(language)}\n${exampleGood.trim()}\n\`\`\`\n\n### Discouraged Anti-Patterns\n\`\`\`${deduceLangTag(language)}\n${exampleBad.trim()}\n\`\`\`\n\n`
+    : ""
+}## Verification Commands & Workflows
 ${procedures.trim() || "- Run automated test suite and linter before declaring any task complete."}
 
 ## Context Documents & Specs
@@ -2342,6 +2346,11 @@ ${customDirectives.trim()}
     ? `Workflow Checklist:
 ${procedures.trim()}
 `
+    : ""
+}${
+  exampleGood.trim() || exampleBad.trim()
+    ? `Reference Implementation Patterns:
+${exampleGood.trim() ? `Recommended:\n${exampleGood.trim()}\n\n` : ""}${exampleBad.trim() ? `Prohibited:\n${exampleBad.trim()}\n\n` : ""}`
     : ""
 }Verification Rules:
 1. Verify type safety and defensive error handling on every suggested change.
