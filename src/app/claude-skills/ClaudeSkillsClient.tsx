@@ -39,6 +39,7 @@ import { ParsedManifestResult } from "./lib/manifestParser";
 import { ConvertedRulesIR } from "./lib/rulesConverter";
 import { WindsurfIcon, OpenAIIcon, GeminiIcon, CopilotIcon } from "@/components/icons/AssistantBrandIcons";
 import { InfoTooltip } from "./components/InfoTooltip";
+import { DownloadAuditHud, DownloadHudPayload } from "./components/DownloadAuditHud";
 
 const ManifestImportModal = dynamic(
   () => import("./components/ManifestImportModal").then((m) => m.ManifestImportModal),
@@ -226,6 +227,10 @@ export function ClaudeSkillsClient({
   const [auditTab, setAuditTab] = useState<"findings" | "checklist">("findings");
   const [auditCopied, setAuditCopied] = useState(false);
   const [selectedDimension, setSelectedDimension] = useState<AuditDimension | "all">("all");
+
+  // Download Audit HUD — bottom notification triggered on download/export
+  const [downloadHudPayload, setDownloadHudPayload] = useState<DownloadHudPayload | null>(null);
+  const downloadHudIdRef = React.useRef(0);
 
   // Title & Slug synchronization handlers
   const handleTitleChange = (newTitle: string) => {
@@ -1174,6 +1179,28 @@ export function ClaudeSkillsClient({
     setTimeout(() => setAuditCopied(false), 2000);
   };
 
+  // Trigger Download Audit HUD — builds payload from current state and shows notification
+  const triggerDownloadHud = useCallback((fileName: string, isZipExport: boolean) => {
+    downloadHudIdRef.current += 1;
+    const payload: DownloadHudPayload = {
+      fileName,
+      format,
+      tokenCount: auditReport.tokenCount,
+      charCount: auditReport.charCount,
+      auditScore: auditReport.overallScore,
+      auditGrade: auditReport.grade,
+      auditGradeLabel: auditReport.gradeLabel,
+      auditIssuesCount: auditReport.allIssues.length,
+      triggerCount: triggerTags.length,
+      guardrailsScore: auditReport.dimensions.guardrails.score,
+      framework,
+      language,
+      isManuallyEdited,
+      isZipExport,
+    };
+    setDownloadHudPayload(payload);
+  }, [format, auditReport, triggerTags.length, framework, language, isManuallyEdited]);
+
   // One-click quick fix: Inject negative boundary guardrails
   // One-click quick fix: Inject negative boundary guardrails
   const handleInjectNegativeGuardrails = () => {
@@ -1361,6 +1388,10 @@ export function ClaudeSkillsClient({
         framework,
         language,
       });
+
+      // Trigger the bottom verification HUD on successful export
+      const safeSkill = (skillName || "rule").replace(/[^a-zA-Z0-9._-]/g, "-");
+      triggerDownloadHud(`${safeSkill}-ai-kit.zip`, true);
     } catch (err) {
       console.error("Failed to export zip", err);
     } finally {
@@ -1743,6 +1774,9 @@ export function ClaudeSkillsClient({
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
+
+    // Trigger the bottom verification HUD
+    triggerDownloadHud(filename, false);
   };
 
   // Get file name indicator
@@ -5107,6 +5141,13 @@ export function ClaudeSkillsClient({
         isOpen={isConverterModalOpen}
         onClose={() => setIsConverterModalOpen(false)}
         onApply={handleApplyConvertedRules}
+      />
+
+      {/* Download Audit HUD — bottom notification on download/export */}
+      <DownloadAuditHud
+        payload={downloadHudPayload}
+        onDismiss={() => setDownloadHudPayload(null)}
+        onViewAuditDetails={() => setShowAuditPanel(true)}
       />
     </div>
   );
