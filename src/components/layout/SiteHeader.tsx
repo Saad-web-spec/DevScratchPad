@@ -65,13 +65,7 @@ export function SiteHeader() {
             <span className="hidden xs:inline sm:inline">AI Studio</span>
           </Link>
 
-          <Link
-            href="/promptcraft"
-            className="flex bg-zinc-900 hover:bg-zinc-800 text-zinc-300 hover:text-white border border-zinc-800 text-xs px-2 sm:px-2.5 py-1 rounded-md items-center gap-1.5 transition-colors font-medium shrink-0"
-            title="PromptCraft — Generative Prompt Studio"
-          >
-            <span className="hidden xs:inline sm:inline">PromptCraft</span>
-          </Link>
+
           <div className="hidden lg:flex bg-neutral-900 text-neutral-100 text-xs px-2.5 py-1 rounded-md items-center gap-1.5"><Lock className="w-3 h-3" /> 100% Local</div>
 
           <Link

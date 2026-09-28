@@ -98,24 +98,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: "daily" as const,
       priority: 1.0,
     },
-    {
-      url: `${SITE_URL}/promptcraft`,
-      lastModified: new Date(),
-      changeFrequency: "daily" as const,
-      priority: 1.0,
-    },
-    {
-      url: `${SITE_URL}/promptcraft/images`,
-      lastModified: new Date(),
-      changeFrequency: "daily" as const,
-      priority: 0.95,
-    },
-    {
-      url: `${SITE_URL}/promptcraft/video`,
-      lastModified: new Date(),
-      changeFrequency: "daily" as const,
-      priority: 0.95,
-    },
+
     {
       url: `${SITE_URL}/about`,
       lastModified: new Date(),

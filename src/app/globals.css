@@ -238,22 +238,7 @@ body {
   background: #3f3f46;
 }
 
-/* PromptCraft Studio — Utilitarian Minimalist Tokens */
-.promptcraft-fox-btn {
-  background: #1e293b;
-  color: #e2e8f0;
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  box-shadow: none;
-  transition: all 0.15s ease-in-out;
-}
 
-.promptcraft-fox-btn:hover:not(:disabled) {
-  background: #334155;
-  color: #f8fafc;
-  border-color: rgba(255, 255, 255, 0.25);
-  box-shadow: none;
-  transform: none;
-}
 
 /* Glass Terminal (Ported from my website with Fox-Orange glow) */
 .glass-terminal {

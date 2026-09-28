@@ -94,16 +94,7 @@ const nextConfig: NextConfig = {
         destination: "/ai-skill-studio/:format/postgres",
         permanent: true,
       },
-      {
-        source: "/prompt-studio",
-        destination: "/promptcraft",
-        permanent: true,
-      },
-      {
-        source: "/tools/promptcraft-studio",
-        destination: "/promptcraft",
-        permanent: true,
-      },
+
     ];
   },
   async rewrites() {
@@ -137,7 +128,7 @@ const nextConfig: NextConfig = {
       "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net",
       "img-src 'self' data: blob: https:",
       "font-src 'self' data: https://cdn.jsdelivr.net",
-      "connect-src 'self' https://vitals.vercel-insights.com https://*.vercel-insights.com https://va.vercel-scripts.com https://*.vercel-scripts.com https://cdn.jsdelivr.net https://huggingface.co https://*.huggingface.co https://cdn-lfs.huggingface.co https://cdn-lfs.hf.co",
+      "connect-src 'self' https://vitals.vercel-insights.com https://*.vercel-insights.com https://va.vercel-scripts.com https://*.vercel-scripts.com https://cdn.jsdelivr.net",
       "worker-src 'self' blob: data:",
       "object-src 'none'",
       "base-uri 'self'",

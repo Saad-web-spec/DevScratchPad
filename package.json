@@ -15,7 +15,6 @@
   },
   "dependencies": {
     "@faker-js/faker": "^10.6.0",
-    "@huggingface/transformers": "^4.3.0",
     "@monaco-editor/react": "^4.7.0",
     "@noble/hashes": "^2.4.0",
     "@peculiar/x509": "^2.0.0",

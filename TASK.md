@@ -131,36 +131,8 @@
 - [ ] Cross-format conversion (e.g., .mdc → SKILL.md)
 - [ ] Optimization suggestions with before/after preview
 - [ ] Bulk repository rule health dashboard
-
-## Phase 7: PromptCraft Studio — Multi-Route Architecture (Hub + Dedicated Studios) ✅
-
-- [x] Web Worker isolation (`src/app/promptcraft-studio/worker/inference.worker.ts`)
-  - [x] `@huggingface/transformers` v3 in-browser pipeline (`onnx-community/Qwen2.5-0.5B-Instruct` q4 ONNX)
-  - [x] WebGPU hardware probe with graceful WASM fallback
-  - [x] Real-time streaming generation loop
-  - [x] Real-time download progress callbacks (`progress_callback`)
-- [x] 3-Page Clean Multi-Route Architecture
-  - [x] Pitch Dark & Orange Sleek Hub Page (`/promptcraft-studio`): `#09090B` canvas, glowing Fox-Orange typography (`#FF6B00 → #EA580C`), glowing Fox logo, platform overview, architecture breakdown, visual route launchers.
-  - [x] Dedicated Image Prompt Studio (`/promptcraft-studio/images`): Clean photographic workspace for Midjourney v6.1 & Flux.1 with optical lens glass, aspect ratios (1:1, 16:9, 9:16, 4:5, 2:3, 4:3), lighting, stylize slider, raw mode switch, and output terminal. Zero timeline clutter.
-  - [x] Dedicated Video Prompt Studio (`/promptcraft-studio/video`): Clean cinematic workspace for Kling 2.0, Runway Gen-3 & Sora with camera vectors, motion intensity (1-10), FPS (24/30/60), duration (5s/10s), temporal video timeline builder, and output terminal.
-- [x] Dismissible Model Notification Badge (`ModelNotificationBadge.tsx`)
-  - [x] Floating notification with live download % progress bar, MBs loaded / ~310 MB, and filename
-  - [x] Single-click `✕` dismiss action that permanently hides the badge so it never bloats the screen
-- [x] Unified Header with Transparent Fox Logo (`StudioHeader.tsx`)
-  - [x] Transparent Fox Logo (`/promptcraft-fox-clean.png`) + "PromptCraft Studio"
-  - [x] Mode switcher tabs: `Overview` (`/promptcraft-studio`) | `🖼️ Images` (`/promptcraft-studio/images`) | `🎬 Video` (`/promptcraft-studio/video`)
-  - [x] Direct button linking to **AI Skill Studio** (`/ai-skill-studio`) with sparkles icon
-  - [x] Compact WebGPU status badge (green pulse when ready)
-- [x] Output & Export Layer (`OutputPanel.tsx`)
-  - [x] Mode-filtered engine tabs (shows only image engines on image page, video engines on video page)
-  - [x] Monaco-style `#09090B` code box with blinking cursor and real-time streaming
-  - [x] 32px status bar (chars, words, tok/s, elapsed ms)
-  - [x] Side-by-side & unified Diff Inspector
-  - [x] Structured JSON exporter & .txt downloader
-  - [x] URL hash state sharing (`#data=...` via LZ-String)
-- [x] Hydration error permanently resolved: Client components mounted safely without SSR attribute mismatch
-
 ---
+
 
 ## Verification Commands & Quality Gates
 
