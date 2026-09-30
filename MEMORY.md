@@ -335,6 +335,15 @@ All AI agents operating in this repository MUST follow this 5-step loop:
   4. **Verification**: Passed `npm run validate-presets` (100/100), `npm run lint` (0 errors), `npm run build` (867 SSG pages exit 0), dev server active on `http://localhost:3000` (200 OK).
 - **Status**: ✅ Complete (All verification gates passed)
 
+### Session: 2026-09-30 — Mobile View Hero Header Logo & Text Alignment
+- **Agent**: Antigravity (Gemini)
+- **Task**: Resolve vertical logo misplacement and text squishing on mobile viewports (<640px):
+  1. **Direct Title Pairing**: Grouped the folder icon (`w-11 h-11`) directly with the `Skill HUB` heading in the top row on mobile, eliminating vertical floating.
+  2. **Full-Width Typography**: Allowed subtitle ("Multi-Platform Agent Skills") and description to span full width below the title pair on mobile instead of being squished into a narrow column.
+  3. **Touch Action Targets**: Styled mobile CTA button with full-width stretch and centered the 100% Local Browser Privacy badge.
+  4. **Verification**: Passed `npm run validate-presets` (100/100), `npm run lint` (0 errors), `npm run build` (867 SSG routes exit 0).
+- **Status**: ✅ Complete (All verification gates passed)
+
 ---
 
 *This document is updated by AI agents after significant sessions. Human maintainers should review and correct any inaccuracies periodically.*

@@ -351,19 +351,33 @@ export function SkillsLibraryClient() {
       
       {/* Front-Side Hero Banner */}
       <section className="border-b border-zinc-200 bg-white">
-        <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-7 sm:py-8 flex flex-col md:flex-row md:items-center md:justify-between gap-6">
-          <div className="flex items-center gap-4 sm:gap-5">
-            {/* Minimalist AI Skill Studio Logo */}
-            <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-xl border border-zinc-200 bg-white flex items-center justify-center shrink-0">
-              <img 
-                src="/ai-skill-icon.png" 
-                alt="AI Skill Studio Logo" 
-                className="w-10 h-8 sm:w-11 sm:h-9 object-contain" 
-              />
+        <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-5 sm:py-7 flex flex-col md:flex-row md:items-center md:justify-between gap-5 sm:gap-6">
+          <div className="flex flex-col sm:flex-row sm:items-start gap-3.5 sm:gap-4 md:gap-5">
+            {/* Logo Container */}
+            <div className="flex items-center gap-3 sm:block">
+              <div className="w-11 h-11 sm:w-14 sm:h-14 rounded-xl border border-zinc-200 bg-white flex items-center justify-center shrink-0 shadow-2xs sm:mt-0.5">
+                <img 
+                  src="/ai-skill-icon.png" 
+                  alt="AI Skill Studio Logo" 
+                  className="w-7 h-5.5 sm:w-9 sm:h-7 object-contain" 
+                />
+              </div>
+              
+              {/* Mobile-Only Title Pair (Inline with logo) */}
+              <div className="flex items-center gap-2 sm:hidden">
+                <h1 className="text-2xl font-extrabold tracking-tight text-zinc-950 font-gemini leading-none">
+                  Skill
+                </h1>
+                <span className="bg-orange-50 border border-orange-200 text-orange-800 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider font-gemini">
+                  HUB
+                </span>
+              </div>
             </div>
             
-            <div className="flex flex-col">
-              <div className="flex items-center gap-2.5">
+            {/* Headings & Descriptions */}
+            <div className="flex flex-col min-w-0">
+              {/* Desktop/Tablet Title Pair */}
+              <div className="hidden sm:flex items-center gap-2.5">
                 <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-zinc-950 font-gemini leading-none">
                   Skill
                 </h1>
@@ -371,16 +385,16 @@ export function SkillsLibraryClient() {
                   HUB
                 </span>
               </div>
-              <p className="text-sm font-semibold text-zinc-700 mt-1 font-gemini">
+              <p className="text-sm font-semibold text-zinc-800 sm:mt-1 font-gemini">
                 Multi-Platform Agent Skills
               </p>
-              <p className="text-xs text-zinc-500 max-w-xl mt-0.5 font-gemini">
+              <p className="text-xs text-zinc-500 max-w-xl mt-1 sm:mt-0.5 font-gemini leading-relaxed">
                 Curated, production-grade rules and skills across Cursor, Claude, Windsurf, Copilot, ChatGPT & Gemini.
               </p>
             </div>
           </div>
 
-          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 shrink-0">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 sm:gap-3 shrink-0">
             <button 
               onClick={() => setIsUploadModalOpen(true)}
               className="flex items-center justify-center gap-2 bg-zinc-950 hover:bg-zinc-800 text-white font-medium py-2.5 px-5 rounded-xl border border-zinc-900 transition-colors text-sm cursor-pointer active:scale-98 font-gemini shadow-xs"
@@ -388,7 +402,7 @@ export function SkillsLibraryClient() {
               <UploadCloud className="w-4 h-4 text-white" />
               Upload Custom Skill
             </button>
-            <div className="flex items-center gap-1.5 text-xs text-zinc-400 font-gemini">
+            <div className="flex items-center justify-center sm:justify-start gap-1.5 text-xs text-zinc-400 font-gemini">
               <Lock className="w-3.5 h-3.5 text-zinc-400" /> 100% Local Browser Privacy
             </div>
           </div>
