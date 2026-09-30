@@ -1,6 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
-import { ArrowRight, Lock, Terminal } from "lucide-react";
+import { ArrowRight, Lock, Terminal, Zap } from "lucide-react";
 
 export function SiteHeader() {
   return (
@@ -58,11 +58,20 @@ export function SiteHeader() {
 
           <Link
             href="/ai-skill-studio"
-            className="flex bg-orange-50 hover:bg-orange-100 text-orange-700 border border-orange-200 text-xs px-2 sm:px-2.5 py-1 rounded-md items-center gap-1.5 transition-colors font-semibold shadow-xs hover:shadow-sm shrink-0"
-            title="AI Skill Studio"
+            className="flex bg-zinc-100 hover:bg-zinc-200 text-zinc-800 border border-zinc-200 text-xs px-2 sm:px-2.5 py-1 rounded-md items-center gap-1.5 transition-colors font-semibold shadow-xs hover:shadow-sm shrink-0"
+            title="AI Skill Studio (Editor)"
           >
-            <img src="/ai-skill-icon.png" className="w-3.5 h-3.5 object-contain shrink-0" alt="AI Skill Studio" />
+            <Zap className="w-3.5 h-3.5 text-zinc-600" />
             <span className="hidden xs:inline sm:inline">AI Studio</span>
+          </Link>
+
+          <Link
+            href="/ai-skill-studio/skills"
+            className="flex bg-orange-50 hover:bg-orange-100 text-orange-700 border border-orange-200 text-xs px-2 sm:px-2.5 py-1 rounded-md items-center gap-1.5 transition-colors font-semibold shadow-xs hover:shadow-sm shrink-0"
+            title="AI Skill Library (Hub)"
+          >
+            <img src="/skill-ruler-icon.png" className="w-3.5 h-3.5 object-contain shrink-0 brightness-95" alt="AI Skill Library" />
+            <span className="hidden xs:inline sm:inline">AI Library</span>
           </Link>
 
 

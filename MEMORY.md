@@ -301,6 +301,40 @@ All AI agents operating in this repository MUST follow this 5-step loop:
   3. Verified all quality gates pass: `npm run validate-presets` (100/100), `npm run lint` (0 errors), `npm run build` (872 SSG routes exit 0), dev server active on `http://localhost:3000`.
 - **Status**: ✅ Complete (All verification gates passed)
 
+### Session: 2026-09-30 — AI Skill Library Sidebar Alignment, Model Filtering & Catalog Expansion
+- **Agent**: Antigravity (Gemini)
+- **Task**: Fix sidebar button alignment, resolve model filtering bug where selecting a platform returned Claude Code skills, and expand catalog with official suites:
+  1. **Sidebar Alignment & Orientation**: Fixed indentation discrepancy on "All Platforms" by introducing uniform `w-4 h-4` icon containers across all platform and source buttons. Added count pills (`platformCounts`, `sourceCounts`) displaying live counts per category. Added `<Server>` for MCP and `<Globe>` for Universal.
+  2. **Model Filtering Isolation**: Changed filter logic in `SkillsLibraryClient.tsx` from generic target format substring matching (`targetFormats.some(...)`) to strict primary platform matching (`skill.primaryPlatform === activePlatform`). Selecting Cursor Rules (.mdc) strictly renders Cursor `.mdc` cards; Claude Code renders Claude `SKILL.md` cards; Gemini, Windsurf, Copilot, ChatGPT, and MCP each display strictly their designated models.
+  3. **Universal Cross-IDE Support**: Added "Universal (Cross-IDE)" to the platform filter list for framework/language rules (Dart, Flutter, Chrome Extensions, Modern Web) usable across any agent.
+  4. **Official Catalog Expansion**: Added 11 premier official skills (GitHub MCP Server, PostgreSQL MCP Server, Puppeteer MCP Server, Brave Search MCP Server, Open Memory MCP Server, Windsurf Supabase Realtime, Windsurf Docker Microservices, GitHub Copilot Actions CI/CD, OpenAI Strict Function Calling, OpenAI Canvas Refactoring, Cursor Stripe Billing). Total skills reached 136 (111 official).
+  5. **Verification**: Passed `npm run validate-presets` (100/100), `npm run lint` (0 errors), and `npm run build` (867 SSG routes exit 0).
+- **Status**: ✅ Complete (All verification gates passed)
+
+### Session: 2026-09-30 — Sort Selector Popover, Premium Gradient Blues & Full Mobile Optimization
+- **Agent**: Antigravity (Gemini)
+- **Task**: Fix non-functional sort dropdown, replace ugly Windows-native blue select highlights, upgrade Gemini and Cursor card themes to rich gradient blue, and make the AI Skill Library 100% mobile-ready:
+  1. **Custom Sort Popover**: Replaced native `<select>` element with a custom interactive popover component featuring `<ArrowUpDown />`, `<ChevronDown />`, and `<Check />` indicators. Eliminated native OS select picker highlighting (`#0055ff`) from user screenshots. Implemented actual array sorting for "Most Popular" (descending stars), "Highest Score" (descending audit score), and "Recently Added" (recent uploads first).
+  2. **Elevated Gradient Blues for Gemini & Cursor**:
+     - **Gemini**: Multi-stop gradient badge (`from-blue-600 via-indigo-600 to-sky-400`), soft tinted icon background (`from-blue-50 via-indigo-50 to-sky-100`), smooth hover text (`group-hover:text-blue-600`), and soft indigo/blue elevation shadow (`hover:border-blue-300 hover:shadow-[0_8px_30px_rgba(37,99,235,0.08)]`).
+     - **Cursor**: Vibrant cyan-to-blue gradient badge (`from-blue-600 to-cyan-500`), subtle container tint (`from-blue-50 via-sky-50 to-cyan-100`), sky hover text (`group-hover:text-sky-600`), and radiant cyan shadow (`hover:border-sky-300 hover:shadow-[0_8px_30px_rgba(2,132,199,0.08)]`).
+  3. **Full Mobile Optimization**:
+     - Transformed desktop 25-button vertical sidebar into `hidden lg:flex` to prevent displacing cards off-screen on mobile.
+     - Added horizontal touch-scrollable model ribbon (`lg:hidden`) with compact labels (`mobileLabel`) and count badges for 1-tap switching.
+     - Added collapsible mobile "Filters" accordion toggle button with active count indicator dot to easily reveal Source and Category filters.
+     - Optimized card padding to `p-4 sm:p-5`, clamped title to 2 lines (`line-clamp-2`), and truncated filename badges with responsive constraints (`max-w-[110px] xs:max-w-[160px] sm:max-w-none`).
+  4. **Verification**: Passed `npm run validate-presets` (100/100), `npm run lint` (0 errors), `npm run build` (867 SSG pages exit 0), dev server active on `http://localhost:3000`.
+- **Status**: ✅ Complete (All verification gates passed)
+
+### Session: 2026-09-30 — MCP Theme Transition from Purple to Minimalist Dark Zinc
+- **Agent**: Antigravity (Gemini)
+- **Task**: Remove purple theme from MCP in the AI Skill Library per user direction:
+  1. **Minimalist Zinc Palette**: Replaced loud purple accents (`bg-purple-50`, `text-purple-700`, `border-purple-200`, `bg-purple-600`) with sleek, professional dark zinc styling (`bg-zinc-100`, `text-zinc-800`, `border-zinc-200`, `bg-zinc-800`, `group-hover:text-zinc-950`).
+  2. **Active Filter Classes**: Configured active platform button to clean `bg-zinc-100 text-zinc-950 border-zinc-300 font-semibold shadow-xs` with `bg-zinc-200 text-zinc-800` badge.
+  3. **Brand Server Icon**: Replaced `<Server className="text-purple-600" />` with crisp `<Server className="text-zinc-700" />`.
+  4. **Verification**: Passed `npm run validate-presets` (100/100), `npm run lint` (0 errors), `npm run build` (867 SSG pages exit 0), dev server active on `http://localhost:3000` (200 OK).
+- **Status**: ✅ Complete (All verification gates passed)
+
 ---
 
 *This document is updated by AI agents after significant sessions. Human maintainers should review and correct any inaccuracies periodically.*
