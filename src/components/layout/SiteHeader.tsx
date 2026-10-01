@@ -66,12 +66,16 @@ export function SiteHeader() {
           </Link>
 
           <Link
-            href="/ai-skill-studio/skills"
-            className="flex bg-orange-50 hover:bg-orange-100 text-orange-700 border border-orange-200 text-xs px-2 sm:px-2.5 py-1 rounded-md items-center gap-1.5 transition-colors font-semibold shadow-xs hover:shadow-sm shrink-0"
-            title="AI Skill Library (Hub)"
+            href="/skill"
+            className="p-1 hover:bg-zinc-100 rounded-md transition-colors flex items-center justify-center shrink-0"
+            title="AI Skill Hub & Library"
+            aria-label="AI Skill Hub & Library"
           >
-            <img src="/skill-ruler-icon.png" className="w-3.5 h-3.5 object-contain shrink-0 brightness-95" alt="AI Skill Library" />
-            <span className="hidden xs:inline sm:inline">AI Library</span>
+            <img
+              src="/skill-folder-icon.png"
+              className="w-7 h-5.5 sm:w-8 sm:h-6 object-contain hover:scale-105 transition-transform"
+              alt="Skills"
+            />
           </Link>
 
 

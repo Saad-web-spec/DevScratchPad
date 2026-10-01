@@ -1831,12 +1831,24 @@ export function ClaudeSkillsClient({
             </div>
           </div>
 
-          {/* Right: Status Indicators */}
+          {/* Right: Status Indicators & SKILL navigation */}
           <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+            <Link
+              href="/skill"
+              className="p-1 hover:bg-zinc-100 active:bg-zinc-200 rounded-md transition-colors flex items-center justify-center shrink-0"
+              title="AI Skill Hub & Library"
+              aria-label="AI Skill Hub & Library"
+            >
+              <img
+                src="/skill-folder-icon.png"
+                className="w-7 h-5.5 sm:w-8 sm:h-6 object-contain hover:scale-105 transition-transform"
+                alt="Skills"
+              />
+            </Link>
             <span className="hidden md:inline-flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-semibold bg-zinc-900 text-white rounded-full border border-zinc-800 shadow-xs">
               <span>Cursor .mdc + Claude Ready</span>
             </span>
-            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-bold bg-[#fff7ed] text-[#9a3412] border border-[#fed7aa] rounded-full shadow-xs whitespace-nowrap">
+            <span className="hidden xs:inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-bold bg-[#fff7ed] text-[#9a3412] border border-[#fed7aa] rounded-full shadow-xs whitespace-nowrap">
               <span className="w-2 h-2 rounded-full bg-[#ea580c] shrink-0 shadow-[0_0_6px_rgba(234,88,12,0.8)]" />
               <span>Client-Side</span>
             </span>

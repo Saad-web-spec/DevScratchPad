@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { 
   Search, 
   UploadCloud, 
@@ -22,7 +23,8 @@ import {
   Download,
   ChevronDown,
   SlidersHorizontal,
-  ArrowUpDown
+  ArrowUpDown,
+  ArrowLeft
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getAllSkills } from "@/data/skills/skillsData";
@@ -348,7 +350,53 @@ export function SkillsLibraryClient() {
 
   return (
     <div className="min-h-screen bg-white text-zinc-900 font-gemini selection:bg-orange-500/20 selection:text-orange-950">
-      
+      {/* Top Sticky Navigation Header */}
+      <header className="sticky top-0 z-40 w-full bg-white border-b border-zinc-200 shadow-xs">
+        <div className="max-w-[1600px] mx-auto px-3 sm:px-6 lg:px-8 h-14 flex items-center justify-between gap-2">
+          {/* Left: Back button to Workspace */}
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+            <Link
+              href="/"
+              className="flex items-center gap-1.5 px-2 py-1.5 sm:px-2.5 sm:py-1.5 rounded-lg text-xs font-semibold text-zinc-700 hover:text-zinc-900 bg-zinc-100 hover:bg-zinc-200 transition-all border border-zinc-200/80 active:scale-95 shrink-0"
+              title="Open Developer Tools Workspace"
+            >
+              <ArrowLeft className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Developer Tools </span>
+              <span>Workspace</span>
+            </Link>
+
+            <div className="h-4 w-px bg-zinc-200 shrink-0 hidden sm:block" />
+
+            <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
+              <img
+                src="/skill-folder-icon.png"
+                alt="AI Skill Hub"
+                className="w-7 h-5.5 sm:w-8 sm:h-6 object-contain shrink-0"
+              />
+              <span className="text-xs sm:text-base font-bold text-zinc-900 tracking-tight truncate">
+                AI Skill Hub
+              </span>
+            </div>
+          </div>
+
+          {/* Right: Link to AI Skill Studio */}
+          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+            <Link
+              href="/ai-skill-studio"
+              className="text-zinc-700 hover:text-zinc-900 hover:bg-zinc-100 text-xs px-2.5 py-1.5 rounded-md flex items-center gap-1.5 transition-colors font-semibold"
+              title="AI Skill Studio (Rules & Prompts Generator)"
+            >
+              <img src="/ai-skill-icon.png" className="w-4 h-3.5 object-contain" alt="AI Skill Studio" />
+              <span className="hidden sm:inline">AI Skill Studio</span>
+              <span className="sm:hidden text-xs">Studio</span>
+            </Link>
+            <div className="hidden sm:flex bg-neutral-900 text-neutral-100 text-xs px-2.5 py-1 rounded-md items-center gap-1.5">
+              <Lock className="w-3 h-3" /> 100% Local
+            </div>
+          </div>
+        </div>
+      </header>
+
       {/* Front-Side Hero Banner */}
       <section className="border-b border-zinc-200 bg-white">
         <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-5 sm:py-7 flex flex-col md:flex-row md:items-center md:justify-between gap-5 sm:gap-6">

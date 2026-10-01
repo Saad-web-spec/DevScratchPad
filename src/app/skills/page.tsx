@@ -1,5 +1,5 @@
 import { permanentRedirect } from "next/navigation";
 
-export default function AiSkillAliasPage() {
+export default function SkillsPluralRedirectPage() {
   permanentRedirect("/skill");
 }
