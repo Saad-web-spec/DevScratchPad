@@ -24,7 +24,8 @@ import {
   ChevronDown,
   SlidersHorizontal,
   ArrowUpDown,
-  ArrowLeft
+  ArrowLeft,
+  Zap
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getAllSkills } from "@/data/skills/skillsData";
@@ -367,16 +368,9 @@ export function SkillsLibraryClient() {
 
             <div className="h-4 w-px bg-zinc-200 shrink-0 hidden sm:block" />
 
-            <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
-              <img
-                src="/skill-folder-icon.png"
-                alt="AI Skill Hub"
-                className="w-7 h-5.5 sm:w-8 sm:h-6 object-contain shrink-0"
-              />
-              <span className="text-xs sm:text-base font-bold text-zinc-900 tracking-tight truncate">
-                AI Skill Hub
-              </span>
-            </div>
+            <span className="text-xs sm:text-base font-bold text-zinc-900 tracking-tight truncate hidden sm:inline">
+              AI Skill Hub
+            </span>
           </div>
 
           {/* Right: Link to AI Skill Studio */}
@@ -386,7 +380,7 @@ export function SkillsLibraryClient() {
               className="text-zinc-700 hover:text-zinc-900 hover:bg-zinc-100 text-xs px-2.5 py-1.5 rounded-md flex items-center gap-1.5 transition-colors font-semibold"
               title="AI Skill Studio (Rules & Prompts Generator)"
             >
-              <img src="/ai-skill-icon.png" className="w-4 h-3.5 object-contain" alt="AI Skill Studio" />
+              <Zap className="w-3.5 h-3.5 text-zinc-600" />
               <span className="hidden sm:inline">AI Skill Studio</span>
               <span className="sm:hidden text-xs">Studio</span>
             </Link>
@@ -405,8 +399,8 @@ export function SkillsLibraryClient() {
             <div className="flex items-center gap-3 sm:block">
               <div className="w-11 h-11 sm:w-14 sm:h-14 rounded-xl border border-zinc-200 bg-white flex items-center justify-center shrink-0 shadow-2xs sm:mt-0.5">
                 <img 
-                  src="/ai-skill-icon.png" 
-                  alt="AI Skill Studio Logo" 
+                  src="/skill-folder-icon.png" 
+                  alt="Skill Hub Logo" 
                   className="w-7 h-5.5 sm:w-9 sm:h-7 object-contain" 
                 />
               </div>
@@ -944,35 +938,52 @@ export function SkillsLibraryClient() {
             onClick={() => setInspectSkill(null)}
           >
             <div 
-              className="w-full max-w-4xl bg-white border border-zinc-200 rounded-2xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden text-zinc-900"
+              className="w-full max-w-4xl bg-white border border-zinc-200 rounded-xl sm:rounded-2xl shadow-2xl flex flex-col max-h-[92vh] sm:max-h-[90vh] overflow-hidden text-zinc-900 mx-2 sm:mx-auto"
               onClick={(e) => e.stopPropagation()}
             >
               {/* Modal Header */}
-              <div className="px-6 py-4 border-b border-zinc-200 flex items-center justify-between bg-zinc-50/80">
-                <div className="flex items-center gap-3">
-                  <div className={cn("w-10 h-10 rounded-xl border flex items-center justify-center font-bold text-sm", inspectTheme.iconBg)}>
-                    {renderPlatformBrandIcon(inspectSkill.primaryPlatform, "w-5 h-5")}
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <h2 className="text-base font-bold text-zinc-900">{inspectSkill.title}</h2>
-                      <span className={cn("px-2 py-0.5 rounded text-[10px] font-semibold uppercase border", inspectTheme.badge)}>
-                        {inspectSkill.primaryPlatform}
-                      </span>
+              <div className="p-3.5 sm:px-6 sm:py-4 border-b border-zinc-200 bg-zinc-50/80 flex flex-col gap-3">
+                {/* Top Row: Icon + Title info + Close Button */}
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-start gap-2.5 sm:gap-3 min-w-0">
+                    <div className={cn("w-9 h-9 sm:w-10 sm:h-10 rounded-xl border flex items-center justify-center font-bold text-sm shrink-0 mt-0.5", inspectTheme.iconBg)}>
+                      {renderPlatformBrandIcon(inspectSkill.primaryPlatform, "w-4 h-4 sm:w-5 sm:h-5")}
                     </div>
-                    <p className="text-xs text-zinc-500">
-                      {inspectSkill.sourceOrganization} • {inspectSkill.category} • Audit Score: <span className="text-zinc-900 font-bold">{inspectSkill.auditScore}/100</span>
-                    </p>
+                    <div className="min-w-0">
+                      <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+                        <h2 className="text-sm sm:text-base font-bold text-zinc-900 leading-snug break-words">
+                          {inspectSkill.title}
+                        </h2>
+                        <span className={cn("px-1.5 sm:px-2 py-0.5 rounded text-[9px] sm:text-[10px] font-semibold uppercase border shrink-0", inspectTheme.badge)}>
+                          {inspectSkill.primaryPlatform}
+                        </span>
+                      </div>
+                      <p className="text-[11px] sm:text-xs text-zinc-500 mt-0.5 leading-tight">
+                        {inspectSkill.sourceOrganization} • {inspectSkill.category} • Audit Score: <span className="text-zinc-900 font-bold">{inspectSkill.auditScore}/100</span>
+                      </p>
+                    </div>
                   </div>
+
+                  {/* Close button always in top-right corner, 1-tap accessible */}
+                  <button
+                    onClick={() => setInspectSkill(null)}
+                    className="p-1.5 -mr-1 -mt-1 rounded-lg text-zinc-400 hover:text-zinc-900 hover:bg-zinc-200/70 transition-colors shrink-0 cursor-pointer"
+                    aria-label="Close modal"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
                 </div>
 
-                <div className="flex items-center gap-2">
+                {/* Actions Row: Optimized across all viewports */}
+                <div className="flex items-center gap-2 pt-1 border-t border-zinc-200/60 sm:border-0 sm:pt-0 sm:justify-end">
                   <button
-                    onClick={() => handleDownloadSkill(inspectSkill)}
-                    className={cn("flex items-center gap-1.5 px-3 py-1.5 bg-zinc-100 text-zinc-700 rounded-lg text-xs font-semibold transition-colors cursor-pointer border border-zinc-200", inspectTheme.downloadHover)}
+                    onClick={() => {
+                      handleOpenInStudio(inspectSkill);
+                      setInspectSkill(null);
+                    }}
+                    className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-3 py-1.5 bg-zinc-950 hover:bg-zinc-800 text-white rounded-lg text-xs font-semibold shadow-xs transition-colors cursor-pointer font-gemini"
                   >
-                    <Download className="w-3.5 h-3.5" />
-                    Download
+                    Open in Studio
                   </button>
                   <button
                     onClick={() => {
@@ -980,40 +991,32 @@ export function SkillsLibraryClient() {
                       setCopiedRaw(true);
                       setTimeout(() => setCopiedRaw(false), 2000);
                     }}
-                    className="flex items-center gap-1.5 px-3 py-1.5 bg-zinc-100 hover:bg-zinc-200 text-zinc-700 hover:text-black rounded-lg text-xs font-semibold transition-colors cursor-pointer border border-zinc-200"
+                    className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-3 py-1.5 bg-zinc-100 hover:bg-zinc-200 text-zinc-800 rounded-lg text-xs font-semibold transition-colors cursor-pointer border border-zinc-200"
                   >
                     {copiedRaw ? <Check className={cn("w-3.5 h-3.5", inspectTheme.checkText)} /> : <Copy className="w-3.5 h-3.5" />}
                     {copiedRaw ? "Copied!" : "Copy Code"}
                   </button>
                   <button
-                    onClick={() => {
-                      handleOpenInStudio(inspectSkill);
-                      setInspectSkill(null);
-                    }}
-                    className="flex items-center justify-center px-3.5 py-1.5 bg-zinc-950 hover:bg-zinc-800 text-white rounded-lg text-xs font-semibold shadow-xs transition-colors cursor-pointer font-gemini"
+                    onClick={() => handleDownloadSkill(inspectSkill)}
+                    className={cn("flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-3 py-1.5 bg-zinc-100 text-zinc-800 rounded-lg text-xs font-semibold transition-colors cursor-pointer border border-zinc-200", inspectTheme.downloadHover)}
                   >
-                    Open in Studio
-                  </button>
-                  <button
-                    onClick={() => setInspectSkill(null)}
-                    className="p-1.5 rounded-lg text-zinc-400 hover:text-zinc-900 hover:bg-zinc-100 transition-colors ml-1 cursor-pointer"
-                  >
-                    <X className="w-5 h-5" />
+                    <Download className="w-3.5 h-3.5" />
+                    Download
                   </button>
                 </div>
               </div>
 
               {/* Modal Body: Raw Code */}
-              <div className="p-6 overflow-y-auto bg-zinc-50/50 font-mono text-xs text-zinc-800 leading-relaxed whitespace-pre-wrap select-text">
-                <pre className="p-4 rounded-xl bg-white border border-zinc-200 overflow-x-auto text-[13px] text-zinc-800 shadow-2xs">
+              <div className="p-3 sm:p-5 overflow-y-auto bg-zinc-50/50 flex-1">
+                <pre className="p-3 sm:p-4 rounded-xl bg-white border border-zinc-200 overflow-x-auto text-xs sm:text-[13px] font-mono text-zinc-800 shadow-2xs leading-relaxed whitespace-pre font-normal">
                   {inspectSkill.rawContent}
                 </pre>
               </div>
 
               {/* Modal Footer */}
-              <div className="px-6 py-3 border-t border-zinc-200 bg-zinc-50/80 flex items-center justify-between text-xs text-zinc-500">
+              <div className="px-4 sm:px-6 py-2.5 sm:py-3 border-t border-zinc-200 bg-zinc-50/80 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-1 text-[11px] sm:text-xs text-zinc-500">
                 <span>Supports formats: {inspectSkill.targetFormats.join(", ")}</span>
-                <span className="font-mono text-[11px] text-zinc-400">Target: {inspectSkill.fileTarget || `${inspectSkill.slug}.md`}</span>
+                <span className="font-mono text-[10px] sm:text-[11px] text-zinc-400">Target: {inspectSkill.fileTarget || `${inspectSkill.slug}.md`}</span>
               </div>
             </div>
           </div>

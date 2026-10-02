@@ -1824,7 +1824,7 @@ export function ClaudeSkillsClient({
             <div className="h-4 w-px bg-zinc-200 shrink-0 hidden sm:block" />
 
             <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
-              <Image src="/ai-skill-icon.png" width={24} height={20} priority  alt="AI Skill Studio" className="w-5 h-4 sm:w-6 sm:h-5 object-contain shrink-0" />
+              <Zap className="w-5 h-5 text-orange-600 shrink-0" />
               <span className="text-xs sm:text-base font-bold text-zinc-900 tracking-tight truncate">
                 AI Skill Studio
               </span>
