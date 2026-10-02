@@ -2,12 +2,13 @@ import sharp from "sharp";
 import fs from "fs";
 import path from "path";
 
+// Vector icon with gently rounded nose on brackets (zero razor/sharp points, completely smooth and friendly)
 const transparentSvg = `<?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="2048" height="2048">
   <g fill="none" stroke="#000000" stroke-width="36" stroke-linecap="round" stroke-linejoin="round">
-    <path d="M 178 142 L 64 256 L 178 370" />
+    <path d="M 174 142 L 80 244 Q 68 256 80 268 L 174 370" />
     <path d="M 278 116 L 234 396" />
-    <path d="M 334 142 L 448 256 L 334 370" />
+    <path d="M 338 142 L 432 244 Q 444 256 432 268 L 338 370" />
   </g>
 </svg>`;
 
@@ -15,9 +16,9 @@ const whiteBgSvg = `<?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="2048" height="2048">
   <rect width="512" height="512" fill="#ffffff" />
   <g fill="none" stroke="#000000" stroke-width="36" stroke-linecap="round" stroke-linejoin="round">
-    <path d="M 178 142 L 64 256 L 178 370" />
+    <path d="M 174 142 L 80 244 Q 68 256 80 268 L 174 370" />
     <path d="M 278 116 L 234 396" />
-    <path d="M 334 142 L 448 256 L 334 370" />
+    <path d="M 338 142 L 432 244 Q 444 256 432 268 L 338 370" />
   </g>
 </svg>`;
 
@@ -25,9 +26,9 @@ const maskableSvg = `<?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="2048" height="2048">
   <rect width="512" height="512" fill="#ffffff" />
   <g transform="translate(51.2, 51.2) scale(0.8)" fill="none" stroke="#000000" stroke-width="36" stroke-linecap="round" stroke-linejoin="round">
-    <path d="M 178 142 L 64 256 L 178 370" />
+    <path d="M 174 142 L 80 244 Q 68 256 80 268 L 174 370" />
     <path d="M 278 116 L 234 396" />
-    <path d="M 334 142 L 448 256 L 334 370" />
+    <path d="M 338 142 L 432 244 Q 444 256 432 268 L 338 370" />
   </g>
 </svg>`;
 
