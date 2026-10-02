@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useRef, useEffect } from"react";
-import { Search, Save, Menu, MoreVertical, Lock, Zap } from "lucide-react";
+import { useState, useRef, useEffect } from "react";
+import { Search, Save, Menu, MoreVertical, Lock } from "lucide-react";
 import Link from "next/link";
 import { InstallAppButton } from "./InstallAppButton";
 
@@ -88,7 +88,7 @@ export function TopBar({ onOpenCommandPalette, onOpenMobileMenu }: TopBarProps) 
             className="text-zinc-700 hover:text-zinc-900 hover:bg-zinc-100 text-xs px-2.5 py-1.5 rounded-md flex items-center gap-1.5 transition-colors font-semibold"
             title="AI Skill Studio"
           >
-            <Zap className="w-3.5 h-3.5 text-zinc-600" />
+            <img src="/ai-skill-icon.png" className="w-4 h-3.5 object-contain" alt="AI Skill Studio" />
             <span>AI Skill Studio</span>
           </Link>
           <Link
@@ -131,7 +131,7 @@ export function TopBar({ onOpenCommandPalette, onOpenMobileMenu }: TopBarProps) 
                 onClick={() => setIsOverflowOpen(false)}
                 className="w-full flex items-center gap-2.5 px-4 py-2.5 text-xs text-zinc-900 hover:bg-zinc-50 font-semibold transition-colors text-left border-b border-zinc-100"
               >
-                <Zap className="w-4 h-4 text-orange-600" />
+                <img src="/ai-skill-icon.png" className="w-4 h-3.5 object-contain" alt="AI Skill Studio" />
                 <span>AI Skill Studio</span>
               </Link>
               <button
