@@ -70,6 +70,11 @@
 - **Context**: Colored pill badges added visual noise and looked like action buttons or status indicators rather than subtle guidance. Developers needed clear, interactive, and immediate explanations on "how to edit" each section without cluttering the screen.
 - **Consequences**: `InfoTooltip` provides accessible, keyboard-navigable (`Escape` key dismissal and outside click detection), responsive (left/right/center alignment) guidance popovers with concise descriptions and syntax examples.
 
+### ADR-010: Dynamic URL History Synchronization & Dot-Route Aliasing
+- **Decision**: In-studio format and preset selection updates the browser address bar in real-time using `window.history.pushState` and a `popstate` listener rather than full App Router transitions (`router.push`). File formats with dot extensions (`claude.md`, `prd.md`, `design.md`, `task.md`, `memory.md`, `agents.md`, `cursor.mdc`, `llms.txt`, `architecture.md`, `mcp.json`) are generated as first-class static export pages via `getAllFormatSlugsWithAliases()`, with `alternates.canonical` preserving search engine indexing.
+- **Context**: Developers require direct deep-links like `/ai-skill-studio/claude.md` that reflect in the address bar without page reloads or unmounting the Monaco Editor and losing user input.
+- **Consequences**: Zero editor state loss, 0ms tab switching latency, native browser Back/Forward navigation, zero duplicate content SEO penalty, and direct deep-link access to `/ai-skill-studio/claude.md` with the interactive studio mounted at the top.
+
 ---
 
 ## 3. Operational Gotchas & Known Constraints

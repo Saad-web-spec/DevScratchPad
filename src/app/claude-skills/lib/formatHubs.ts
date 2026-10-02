@@ -843,10 +843,64 @@ npm run lint && npm run build
   }
 };
 
+export const FORMAT_SLUG_ALIASES: Record<string, string> = {
+  // Dot-extension file format aliases
+  "claude.md": "claude-md",
+  "prd.md": "prd-md",
+  "design.md": "design-md",
+  "task.md": "task-md",
+  "memory.md": "memory-md",
+  "agents.md": "agents-md",
+  "cursor.mdc": "cursor-rules",
+  "cursorrules": "cursor-rules",
+  "llms.txt": "llms-txt",
+  "architecture.md": "architecture-md",
+  "mcp.json": "mcp-config",
+  "copilot-instructions.md": "copilot-instructions",
+  "openai-custom-instructions.md": "openai-instructions",
+  "gemini-system-instructions.json": "gemini-prompts",
+  // Short brand aliases
+  "claude": "claude-skills",
+  "cursor": "cursor-rules",
+  "openai": "openai-instructions",
+  "gemini": "gemini-prompts",
+  "mcp": "mcp-config",
+  "copilot": "copilot-instructions",
+  "windsurf": "windsurf-rules",
+};
+
+export const FORMAT_TO_URL_SLUG: Record<OutputFormat, string> = {
+  cursor_mdc: "cursor-rules",
+  skill_md: "claude-skills",
+  claude_md: "claude.md",
+  agents_md: "agents.md",
+  mcp_json: "mcp-config",
+  windsurf_cascade: "windsurf-rules",
+  copilot_instructions: "copilot-instructions",
+  openai_instructions: "openai-instructions",
+  gemini_prompts: "gemini-prompts",
+  cursorignore: "cursorignore",
+  claudeignore: "claudeignore",
+  llms_txt: "llms.txt",
+  architecture_md: "architecture.md",
+  prd_md: "prd.md",
+  design_md: "design.md",
+  task_md: "task.md",
+  memory_md: "memory-md",
+};
+
 export function getFormatHub(formatSlug: string): FormatHubMeta | null {
-  return FORMAT_HUBS[formatSlug] || null;
+  if (!formatSlug) return null;
+  const canonical = FORMAT_SLUG_ALIASES[formatSlug.toLowerCase()] || formatSlug;
+  return FORMAT_HUBS[canonical] || null;
 }
 
 export function getAllFormatHubs(): FormatHubMeta[] {
   return Object.values(FORMAT_HUBS);
+}
+
+export function getAllFormatSlugsWithAliases(): string[] {
+  const primarySlugs = Object.keys(FORMAT_HUBS);
+  const aliasSlugs = Object.keys(FORMAT_SLUG_ALIASES);
+  return Array.from(new Set([...primarySlugs, ...aliasSlugs]));
 }

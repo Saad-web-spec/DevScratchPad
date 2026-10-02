@@ -11,12 +11,13 @@ import {
   ChevronRight,
   Code2,
 } from "lucide-react";
-import { getAllFormatHubs, getFormatHub } from "../../claude-skills/lib/formatHubs";
+import { getAllFormatHubs, getFormatHub, getAllFormatSlugsWithAliases } from "../../claude-skills/lib/formatHubs";
 import { getPresetsByFormat } from "../../claude-skills/lib/presetRegistry";
+import { ClaudeSkillsClient } from "../../claude-skills/ClaudeSkillsClient";
 
 export function generateStaticParams() {
-  return getAllFormatHubs().map((hub) => ({
-    formatSlug: hub.slug,
+  return getAllFormatSlugsWithAliases().map((slug) => ({
+    formatSlug: slug,
   }));
 }
 
@@ -152,29 +153,51 @@ export default async function FormatHubPage({
       />
 
       {/* Top Breadcrumb Navigation */}
-      <div className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-zinc-200 px-4 py-3 sm:px-6 shadow-2xs">
+      <div className="bg-white border-b border-zinc-200 px-4 py-2 sm:px-6 shadow-2xs">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <nav className="flex items-center space-x-2 text-xs sm:text-sm text-zinc-600 font-medium">
-            <Link href="/" className="hover:text-zinc-900 transition-colors">
+          <nav className="flex items-center space-x-1.5 sm:space-x-2 text-xs text-zinc-600 truncate mr-3 font-medium">
+            <Link href="/" className="hover:text-zinc-900 transition-colors shrink-0">
               Home
             </Link>
-            <ChevronRight className="w-3.5 h-3.5 text-zinc-400" />
-            <Link href="/ai-skill-studio" className="hover:text-zinc-900 transition-colors">
+            <ChevronRight className="w-3 h-3 text-zinc-400 shrink-0" />
+            <Link href="/ai-skill-studio" className="hover:text-zinc-900 transition-colors shrink-0">
               AI Skill Studio
             </Link>
-            <ChevronRight className="w-3.5 h-3.5 text-zinc-400" />
-            <span className="text-orange-600 font-bold">{hub.name}</span>
+            <ChevronRight className="w-3 h-3 text-zinc-400 shrink-0" />
+            <span className="text-orange-600 font-bold truncate">{hub.name}</span>
           </nav>
 
           <Link
             href="/ai-skill-studio"
-            className="flex items-center text-xs font-mono text-zinc-600 hover:text-orange-600 transition-colors"
+            className="flex items-center text-xs font-mono text-zinc-600 hover:text-orange-600 transition-colors shrink-0"
           >
-            <ArrowLeft className="w-3.5 h-3.5 mr-1.5" />
+            <ArrowLeft className="w-3.5 h-3.5 mr-1" />
             All Formats
           </Link>
         </div>
       </div>
+
+      {/* Cross-Format Switcher */}
+      <div className="bg-white border-b border-zinc-200 px-4 py-2.5 sm:px-6">
+        <div className="max-w-7xl mx-auto flex flex-wrap items-center gap-2">
+          <span className="text-xs font-medium text-zinc-500 mr-1">Switch standard:</span>
+          {allHubs.map((h) => (
+            <Link 
+              key={h.slug}
+              href={`/ai-skill-studio/${h.slug}`}
+              className="text-xs px-2.5 py-1 rounded-full border border-zinc-200 bg-white text-zinc-600 hover:border-orange-300 hover:text-orange-700 shadow-2xs transition-colors"
+            >
+              {h.badge}
+            </Link>
+          ))}
+        </div>
+      </div>
+
+      {/* Interactive Studio Workspace with Pre-selected Format */}
+      <ClaudeSkillsClient
+        initialFormat={hub.format}
+        formatSlug={hub.slug}
+      />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-16 space-y-16">
         {/* Hero Section */}

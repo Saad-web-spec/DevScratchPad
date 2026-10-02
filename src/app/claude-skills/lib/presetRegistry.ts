@@ -19,6 +19,52 @@ export type OutputFormat =
   | "task_md"
   | "memory_md";
 
+export const FORMAT_SLUG_ALIASES: Record<string, string> = {
+  // Dot-extension file format aliases
+  "claude.md": "claude-md",
+  "prd.md": "prd-md",
+  "design.md": "design-md",
+  "task.md": "task-md",
+  "memory.md": "memory-md",
+  "agents.md": "agents-md",
+  "cursor.mdc": "cursor-rules",
+  "cursorrules": "cursor-rules",
+  "llms.txt": "llms-txt",
+  "architecture.md": "architecture-md",
+  "mcp.json": "mcp-config",
+  "copilot-instructions.md": "copilot-instructions",
+  "openai-custom-instructions.md": "openai-instructions",
+  "gemini-system-instructions.json": "gemini-prompts",
+  // Short brand aliases
+  "claude": "claude-skills",
+  "cursor": "cursor-rules",
+  "openai": "openai-instructions",
+  "gemini": "gemini-prompts",
+  "mcp": "mcp-config",
+  "copilot": "copilot-instructions",
+  "windsurf": "windsurf-rules",
+};
+
+export const FORMAT_TO_URL_SLUG: Record<OutputFormat, string> = {
+  cursor_mdc: "cursor-rules",
+  skill_md: "claude-skills",
+  claude_md: "claude.md",
+  agents_md: "agents.md",
+  mcp_json: "mcp-config",
+  windsurf_cascade: "windsurf-rules",
+  copilot_instructions: "copilot-instructions",
+  openai_instructions: "openai-instructions",
+  gemini_prompts: "gemini-prompts",
+  cursorignore: "cursorignore",
+  claudeignore: "claudeignore",
+  llms_txt: "llms.txt",
+  architecture_md: "architecture.md",
+  prd_md: "prd.md",
+  design_md: "design.md",
+  task_md: "task.md",
+  memory_md: "memory-md",
+};
+
 export interface ProgrammaticPresetRoute {
   formatSlug: string;
   presetSlug: string;
@@ -2098,18 +2144,24 @@ export function getPresetsByFormat(formatSlug: string): ProgrammaticPresetRoute[
 }
 
 export function getPresetBySlug(formatSlug: string, presetSlug: string): ProgrammaticPresetRoute | null {
-  // 1. Direct match
-  const direct = PRESET_ROUTES.find((r) => r.formatSlug === formatSlug && r.presetSlug === presetSlug);
+  const canonicalFormat = FORMAT_SLUG_ALIASES[formatSlug.toLowerCase()] || formatSlug;
+
+  // 1. Direct match (check both original and canonical formatSlug)
+  const direct = PRESET_ROUTES.find(
+    (r) => (r.formatSlug === formatSlug || r.formatSlug === canonicalFormat) && r.presetSlug === presetSlug
+  );
   if (direct) return direct;
 
   // 2. Alias match in PRESET_ROUTES (case-insensitive)
   const lowerPreset = presetSlug.toLowerCase();
   const normalized = SLUG_ALIASES[lowerPreset] || lowerPreset;
-  const aliasMatch = PRESET_ROUTES.find((r) => r.formatSlug === formatSlug && r.presetSlug === normalized);
+  const aliasMatch = PRESET_ROUTES.find(
+    (r) => (r.formatSlug === formatSlug || r.formatSlug === canonicalFormat) && r.presetSlug === normalized
+  );
   if (aliasMatch) {
     return aliasMatch;
   }
 
   // 3. Multi-format synthesis
-  return synthesizeRouteForFormat(formatSlug, presetSlug);
+  return synthesizeRouteForFormat(canonicalFormat, presetSlug);
 }

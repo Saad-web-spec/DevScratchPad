@@ -76,8 +76,8 @@ import {
   getDefaultTaskValues,
   getDefaultMemoryValues,
 } from "./lib/ruleGenerator";
-import { PRESET_ROUTES, SLUG_ALIASES } from "./lib/presetRegistry";
-
+import { PRESET_ROUTES, SLUG_ALIASES, FORMAT_TO_URL_SLUG } from "./lib/presetRegistry";
+import { getFormatHub } from "./lib/formatHubs";
 import { decodeStudioState, createShareableUrl } from "./lib/stateSharing";
 
 interface ClaudeSkillsClientProps {
@@ -196,7 +196,30 @@ export function ClaudeSkillsClient({
     setScrollRequestId((prev) => prev + 1);
   }, []);
 
-  // Central format switcher — clears active markers, resets editor to top, and updates format
+  // Synchronize browser address bar with current format and preset without re-rendering or wiping state
+  const syncUrl = useCallback((targetPath: string, replace = false) => {
+    if (typeof window === "undefined") return;
+    const currentPath = window.location.pathname;
+    if (currentPath === targetPath) return;
+
+    // Only sync if we are within the /ai-skill-studio path hierarchy
+    if (!currentPath.startsWith("/ai-skill-studio")) return;
+
+    const currentHash = window.location.hash;
+    const fullTarget = currentHash ? `${targetPath}${currentHash}` : targetPath;
+
+    try {
+      if (replace) {
+        window.history.replaceState({ path: targetPath }, "", fullTarget);
+      } else {
+        window.history.pushState({ path: targetPath }, "", fullTarget);
+      }
+    } catch {
+      // Ignore browser restrictions silently
+    }
+  }, []);
+
+  // Central format switcher — clears active markers, resets editor to top, updates format and syncs URL
   const handleSelectFormat = useCallback((newFormat: OutputFormat) => {
     setFormat(newFormat);
     setActiveFieldKey(null);
@@ -209,7 +232,9 @@ export function ClaudeSkillsClient({
         /* noop */
       }
     }
-  }, []);
+    const targetSlug = FORMAT_TO_URL_SLUG[newFormat] || "cursor-rules";
+    syncUrl(`/ai-skill-studio/${targetSlug}`);
+  }, [syncUrl]);
 
   useEffect(() => {
     if (mobileTab === "editor") {
@@ -431,7 +456,43 @@ export function ClaudeSkillsClient({
         setMcpEnvValue("");
       }
     }
+    syncUrl(`/ai-skill-studio/mcp-config/${presetId}`);
   };
+
+  // Browser Back/Forward navigation listener
+  useEffect(() => {
+    const handlePopState = () => {
+      const pathname = window.location.pathname;
+      if (!pathname.startsWith("/ai-skill-studio")) return;
+
+      const segments = pathname.replace(/^\/ai-skill-studio\/?/, "").split("/").filter(Boolean);
+      if (segments.length === 0) return;
+
+      const fSlug = segments[0];
+      const pSlug = segments[1];
+
+      if (fSlug) {
+        const hub = getFormatHub(fSlug);
+        if (hub) {
+          setFormat(hub.format);
+        }
+      }
+
+      if (pSlug) {
+        const matchedMcp = MCP_PRESETS.find((m) => m.id === pSlug || m.name === pSlug);
+        if (matchedMcp) {
+          setMcpPresetId(matchedMcp.id);
+        }
+        const matchedPreset = PRESETS.find((p) => p.slug === pSlug || p.id === pSlug);
+        if (matchedPreset) {
+          setSelectedPresetId(matchedPreset.id);
+        }
+      }
+    };
+
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, []);
 
   // Storage envelope state restore on mount (with automatic v1 legacy migration)
   useEffect(() => {
@@ -724,13 +785,17 @@ export function ClaudeSkillsClient({
     setMemorySessionHistory(newMemory.memorySessionHistory);
 
     // Auto-switch format according to preset runtime
+    let targetFormat = format;
     if (preset.id === "cursor-mdc-pro") {
+      targetFormat = "cursor_mdc";
       setFormat("cursor_mdc");
       setGlobPattern("**/*");
       setAlwaysApply(false);
     } else if (preset.id === "claude-auditor" || preset.id === "security-guard") {
+      targetFormat = "skill_md";
       setFormat("skill_md");
     } else if (preset.id === "fullstack-agent-team") {
+      targetFormat = "agents_md";
       setFormat("agents_md");
     }
 
@@ -741,6 +806,10 @@ export function ClaudeSkillsClient({
     if (editorRef.current) {
       try { editorRef.current.setScrollTop(0); } catch { /* noop */ }
     }
+
+    const formatSlug = FORMAT_TO_URL_SLUG[targetFormat] || "cursor-rules";
+    const presetSlug = SLUG_ALIASES[preset.slug] || preset.slug;
+    syncUrl(`/ai-skill-studio/${formatSlug}/${presetSlug}`);
   };
 
   // Apply parsed manifest metadata to studio
