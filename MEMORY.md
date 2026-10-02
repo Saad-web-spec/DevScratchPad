@@ -75,6 +75,11 @@
 - **Context**: Developers require direct deep-links like `/ai-skill-studio/claude.md` that reflect in the address bar without page reloads or unmounting the Monaco Editor and losing user input.
 - **Consequences**: Zero editor state loss, 0ms tab switching latency, native browser Back/Forward navigation, zero duplicate content SEO penalty, and direct deep-link access to `/ai-skill-studio/claude.md` with the interactive studio mounted at the top.
 
+### ADR-011: Client-Side Living Ingestion Engines (GitHub, SQL DDL, Local Filesystem)
+- **Decision**: All repository introspection (GitHub REST v3 recursive git tree, raw manifests, commit conventions), database schema introspection (SQL DDL and Prisma models), and local filesystem configuration (Web File System Access API) execute 100% in the user's browser sandbox without any proxy or server transmission.
+- **Context**: Static boilerplate presets are dead templates. Transforming presets into living, authentic project rules requires deep structural awareness of real codebases, databases, and local paths without violating ADR-001 (Zero Server Transmission).
+- **Consequences**: Developers can ingest any public or private GitHub repository, inspect schemas, and pick local directories without security risks or token leaks. Manifests and git trees are parsed in milliseconds directly on the client, synthesizing tailored directives, procedures, and safety guardrails.
+
 ---
 
 ## 3. Operational Gotchas & Known Constraints
@@ -107,6 +112,9 @@ The CLI (`cli/bin/devscratchpad.mjs`) operates on zero npm dependencies — it u
 
 ### ⚠️ Preset Schema Validation
 All community presets in `/community-presets/` must validate against `schemas/preset-schema.json`. Run `npm run validate-presets` before committing any preset changes.
+
+### ⚠️ Preserving Architectural Copy on Spoke Pages
+When adding live features, ingestion capabilities, or protocol enhancements to preset spoke pages (`[formatSlug]/[presetSlug]/page.tsx` and `ProgrammaticSpokeSeoContent.tsx`), never replace or genericize curated preset copy (`route.description` and `route.whyNeeded`). Retain the original architectural text as the primary foundation and append new feature context.
 
 ---
 
@@ -345,8 +353,25 @@ All AI agents operating in this repository MUST follow this 5-step loop:
 - **Task**: Resolve vertical logo misplacement and text squishing on mobile viewports (<640px):
   1. **Direct Title Pairing**: Grouped the folder icon (`w-11 h-11`) directly with the `Skill HUB` heading in the top row on mobile, eliminating vertical floating.
   2. **Full-Width Typography**: Allowed subtitle ("Multi-Platform Agent Skills") and description to span full width below the title pair on mobile instead of being squished into a narrow column.
-  3. **Touch Action Targets**: Styled mobile CTA button with full-width stretch and centered the 100% Local Browser Privacy badge.
-  4. **Verification**: Passed `npm run validate-presets` (100/100), `npm run lint` (0 errors), `npm run build` (867 SSG routes exit 0).
+### Session: 2026-10-03 — Ingestion to Markdown (.md) Pipeline, Modal Unification & Spoke Layout Fix
+- **Agent**: Antigravity (Gemini)
+- **Task**: Fix editor rulebook population after GitHub & DDL ingestion, modernize ingestion modals to clean monochrome aesthetic, restore Technology Stack Context header, and align programmatic spoke page text:
+  1. **Direct Markdown Synthesis via `buildRuleContent`**: Diagnosed root cause where ingesting a repository or SQL DDL failed to populate rules in Monaco editor — an undefined `generateRules` call threw an unhandled reference exception before state could sync. Replaced with `buildRuleContent` supplying all required arguments. Now, applying GitHub or DDL analysis immediately generates the complete markdown rulebook (`CLAUDE.md`, `cursor.mdc`, `AGENTS.md`, or `SKILL.md`), updates `editorContent`, resets `isManuallyEdited(false)`, and deep-links to `/ai-skill-studio/{formatSlug}`.
+  2. **Format Selection in Ingestion Modals**: Added target format selector pills (`CLAUDE.md`, `cursor.mdc`, `AGENTS.md`, `SKILL.md`) to both `GitHubRepoModal` and `DdlIntrospectModal`. Synced `initialFormat` dynamically when opening modals so users can directly choose their preferred output rulebook.
+  3. **Monochrome Minimalist Modal Card Styling**: Removed distracting stars, forks, terminal prompts (`>_`), sparkles, and loud blues from both `GitHubRepoModal` and `DdlIntrospectModal`. Unified cards to sleek dark zinc and white surfaces with crisp typography and subtle orange accents matching DevScratchpad's design system. Filtered out `"None / Irrelevant"` tags.
+  4. **Technology Stack Header & Ingestion Layout**: Restored Technology Stack Context header buttons back to original clean state (`Convert Legacy Rules` + `Auto-Detect`) and housed `Ingest GitHub` and `Introspect DDL` in a dedicated, clean "Live Project Ingestion" section row.
+  5. **Spoke Page Text Preservation & Reciprocal Callouts**: Reverted promotional text injected into the top executive summary of `ProgrammaticSpokeSeoContent.tsx` back to original technology copy (`route.description` + `route.whyNeeded`). Added a dedicated, balanced reciprocal action callout card at the end of the page alongside the Reverse Converter, directing users to Launch AI Skill Studio with zero server transmission.
+  6. **Verification**: Passed `npm run validate-presets` (100/100), `npm run lint` (0 errors), `npm run build` (890 SSG routes exit 0), and fresh production server running on `http://localhost:3000`.
+- **Status**: ✅ Complete (All verification gates passed)
+
+### Session: 2026-10-03 — Mobile Viewport Optimization for Live Ingestion & Spoke Pages
+- **Agent**: Antigravity (Gemini)
+- **Task**: Optimize all Phase 2 components, modals, and spoke content for small mobile viewports (320px–640px):
+  1. **`GitHubRepoModal.tsx`**: Updated modal container with responsive padding (`p-3 sm:p-4`, `p-4 sm:p-5`, `max-h-[92vh] sm:max-h-[90vh]`); converted token access section to `flex-col sm:flex-row` with wrapped badges; switched detected scripts grid from 2 columns to `grid-cols-1 sm:grid-cols-2` to prevent truncation of long scripts; formatted format switcher pills into `grid grid-cols-2 sm:flex` with `min-h-[30px]` touch targets; ensured footer action buttons have `min-h-[38px]`.
+  2. **`DdlIntrospectModal.tsx`**: Added mobile padding, flex-wrapping header with `min-w-0`, `grid-cols-1 sm:grid-cols-2` table preview grid, `min-h-[28px]` sample chips, `grid grid-cols-2 sm:flex` format pills, and `min-h-[38px]` footer apply button.
+  3. **`ClaudeSkillsClient.tsx`**: In Live Project Ingestion section, configured `Ingest GitHub` and `Introspect DDL` buttons with `flex-1 sm:flex-none` and `w-full sm:w-auto` for equal-width, comfortable mobile touch targets (`min-h-[36px]`). Applied same responsive layout to GitHub PAT and DDL banners in MCP mode.
+  4. **`ProgrammaticSpokeSeoContent.tsx`**: Optimized TerminalInstallWidget tab bar and header; removed mobile margin indentations (`ml-0 sm:ml-8`, `pl-0 sm:pl-8`) in Steps 1-3 to maximize code reading space; made Central Pillar Hub button `w-full sm:w-auto min-h-[38px]`; made reciprocal action callout buttons self-stretching (`self-stretch sm:self-start min-h-[38px]`).
+  5. **Verification**: Passed `npm run validate-presets` (100/100), `npm run lint` (0 errors), `npm run build` (890 SSG routes exit 0), and production server running on `http://localhost:3000`.
 - **Status**: ✅ Complete (All verification gates passed)
 
 ---

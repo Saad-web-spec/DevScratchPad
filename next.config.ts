@@ -138,7 +138,7 @@ const nextConfig: NextConfig = {
       "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net",
       "img-src 'self' data: blob: https:",
       "font-src 'self' data: https://cdn.jsdelivr.net",
-      "connect-src 'self' https://vitals.vercel-insights.com https://*.vercel-insights.com https://va.vercel-scripts.com https://*.vercel-scripts.com https://cdn.jsdelivr.net",
+      "connect-src 'self' https://vitals.vercel-insights.com https://*.vercel-insights.com https://va.vercel-scripts.com https://*.vercel-scripts.com https://cdn.jsdelivr.net https://api.github.com https://raw.githubusercontent.com",
       "worker-src 'self' blob: data:",
       "object-src 'none'",
       "base-uri 'self'",

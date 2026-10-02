@@ -32,12 +32,14 @@ import {
   Bot,
   FileText,
   Users,
+  Database,
+  FolderOpen,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { downloadAiKitZip } from "./lib/zipExporter";
 import { ParsedManifestResult } from "./lib/manifestParser";
 import { ConvertedRulesIR } from "./lib/rulesConverter";
-import { WindsurfIcon, OpenAIIcon, GeminiIcon, CopilotIcon } from "@/components/icons/AssistantBrandIcons";
+import { WindsurfIcon, OpenAIIcon, GeminiIcon, CopilotIcon, GitHubIcon } from "@/components/icons/AssistantBrandIcons";
 import { InfoTooltip } from "./components/InfoTooltip";
 import { DownloadAuditHud, DownloadHudPayload } from "./components/DownloadAuditHud";
 
@@ -49,6 +51,17 @@ const RulesConverterModal = dynamic(
   () => import("./components/RulesConverterModal").then((m) => m.RulesConverterModal),
   { ssr: false }
 );
+const GitHubRepoModal = dynamic(
+  () => import("./components/GitHubRepoModal").then((m) => m.GitHubRepoModal),
+  { ssr: false }
+);
+const DdlIntrospectModal = dynamic(
+  () => import("./components/DdlIntrospectModal").then((m) => m.DdlIntrospectModal),
+  { ssr: false }
+);
+import { IngestedRepoAnalysis } from "./lib/githubIngest";
+import { ParsedDatabaseSchema } from "./lib/ddlParser";
+import { pickLocalDirectory } from "./lib/fsPicker";
 import { generateSafeSlug, validateTriggerPhrase } from "./lib/slugUtils";
 import { saveToStorageEnvelope, loadFromStorageEnvelope, STORAGE_KEY_V2 } from "./lib/storageEnvelope";
 import { auditRuleQuality, AuditDimension } from "./lib/ruleAuditor";
@@ -175,6 +188,8 @@ export function ClaudeSkillsClient({
   const [quotaError, setQuotaError] = useState<string | null>(null);
   const [isManifestModalOpen, setIsManifestModalOpen] = useState(false);
   const [isConverterModalOpen, setIsConverterModalOpen] = useState(false);
+  const [isGitHubModalOpen, setIsGitHubModalOpen] = useState(false);
+  const [isDdlModalOpen, setIsDdlModalOpen] = useState(false);
   const [isExportingZip, setIsExportingZip] = useState(false);
   const [mobileTab, setMobileTab] = useState<"form" | "editor">("form");
   const [shouldLoadEditor, setShouldLoadEditor] = useState(false);
@@ -824,6 +839,223 @@ export function ClaudeSkillsClient({
       setIsSlugLocked(true);
     }
     setIsManuallyEdited(false);
+  };
+
+  // Apply parsed GitHub repository analysis to studio
+  const handleApplyGitHubRepo = (
+    analysis: IngestedRepoAnalysis,
+    token?: string,
+    targetFormat: OutputFormat = "claude_md"
+  ) => {
+    const fw = analysis.manifest?.framework || (analysis.metadata.language ? `${analysis.metadata.language} Fullstack` : framework);
+    const lang = analysis.manifest?.language || analysis.metadata.language || language;
+    const sty = analysis.manifest?.styling && analysis.manifest.styling !== "None / Irrelevant" ? analysis.manifest.styling : styling;
+    const db = analysis.manifest?.database && analysis.manifest.database !== "None / Irrelevant" ? analysis.manifest.database : database;
+    const r = analysis.synthesizedRole || role;
+    const sName = generateSafeSlug(analysis.suggestedSkillName || skillName);
+    const sTitle = analysis.suggestedTitle || skillTitle;
+    const desc = analysis.metadata.description || description;
+    const globs = analysis.suggestedGlobs.length > 0 ? analysis.suggestedGlobs.join(", ") : globPattern;
+    const procs = analysis.synthesizedProcedures.length > 0 ? analysis.synthesizedProcedures.join("\n") : procedures;
+    const dirs = analysis.synthesizedDirectives.length > 0 ? analysis.synthesizedDirectives.join("\n") : customDirectives;
+
+    setFramework(fw);
+    setLanguage(lang);
+    setStyling(sty);
+    setDatabase(db);
+    setRole(r);
+    setSkillName(sName);
+    setIsSlugLocked(true);
+    setSkillTitle(sTitle);
+    setDescription(desc);
+    setGlobPattern(globs);
+    setProcedures(procs);
+    setCustomDirectives(dirs);
+
+    // If format is mcp_json, configure MCP as well
+    if (targetFormat === "mcp_json" || format === "mcp_json") {
+      setMcpPresetId("github");
+      setMcpServerName("github");
+      setMcpCommand("npx");
+      setMcpArgs(`-y\n@modelcontextprotocol/server-github\n${analysis.metadata.fullName}`);
+      setMcpEnvKey("GITHUB_PERSONAL_ACCESS_TOKEN");
+      if (token) {
+        setMcpEnvValue(token);
+      }
+    }
+
+    // Default to targetFormat, or claude_md if user was viewing mcp_json
+    const activeFmt = targetFormat !== "mcp_json" ? targetFormat : (format === "mcp_json" ? "claude_md" : format);
+    setFormat(activeFmt);
+
+    // Immediately generate synthesized rules so the editor displays them without delay
+    const newContent = buildRuleContent({
+      targetFormat: activeFmt,
+      framework: fw,
+      language: lang,
+      styling: sty,
+      database: db,
+      role: r,
+      skillName: sName,
+      skillTitle: sTitle,
+      description: desc,
+      philosophy,
+      conventions,
+      behaviors,
+      procedures: procs,
+      customDirectives: dirs,
+      exampleGood,
+      exampleBad,
+      globPattern: globs,
+      alwaysApply,
+      mcpServerName: "github",
+      mcpCommand: "npx",
+      mcpArgs: `-y\n@modelcontextprotocol/server-github\n${analysis.metadata.fullName}`,
+      mcpEnvKey: "GITHUB_PERSONAL_ACCESS_TOKEN",
+      mcpEnvValue: token || mcpEnvValue,
+      prdOverview,
+      prdProblemStatement,
+      prdPersonas,
+      prdFunctionalReqs,
+      prdNonFunctionalReqs,
+      prdMilestones,
+      designTokens,
+      designLayout,
+      designConventions,
+      designGuardrails,
+      designDirectives,
+      designVerification,
+      taskDashboard,
+      taskPhases,
+      taskVerification,
+      taskDirectives,
+      taskSessionLog,
+      memoryContext,
+      memoryAdrs,
+      memoryGotchas,
+      memoryLoop,
+      memoryInvariants,
+      memorySessionHistory,
+    });
+
+    setEditorContent(newContent);
+    setIsManuallyEdited(false);
+
+    const formatSlug = FORMAT_TO_URL_SLUG[activeFmt] || "claude.md";
+    syncUrl(`/ai-skill-studio/${formatSlug}`);
+  };
+
+  // Apply parsed DDL schema to studio
+  const handleApplyDdlSchema = (
+    schema: ParsedDatabaseSchema,
+    targetFormat: OutputFormat = "claude_md"
+  ) => {
+    let db = "SQL Database";
+    let sty = styling;
+    if (schema.dialect === "postgresql") {
+      db = "PostgreSQL";
+      sty = "Prisma / Drizzle ORM";
+    } else if (schema.dialect === "sqlite") {
+      db = "SQLite";
+    } else if (schema.dialect === "prisma") {
+      db = "PostgreSQL (via Prisma ORM)";
+    }
+
+    const r = schema.synthesizedRole || role;
+    const sTitle = schema.suggestedTitle || skillTitle;
+    const dirs = schema.synthesizedDirectives.length > 0 ? schema.synthesizedDirectives.join("\n") : customDirectives;
+    const procs = schema.synthesizedProcedures.length > 0 ? schema.synthesizedProcedures.join("\n") : procedures;
+
+    setDatabase(db);
+    setStyling(sty);
+    setRole(r);
+    setSkillTitle(sTitle);
+    setCustomDirectives(dirs);
+    setProcedures(procs);
+
+    if (targetFormat === "mcp_json" || format === "mcp_json") {
+      if (schema.dialect === "postgresql") {
+        setMcpPresetId("postgres");
+        setMcpServerName("postgres");
+        setMcpCommand("npx");
+        setMcpArgs("-y\n@modelcontextprotocol/server-postgres\npostgresql://user:password@localhost:5432/dbname");
+      } else if (schema.dialect === "sqlite") {
+        setMcpPresetId("sqlite");
+        setMcpServerName("sqlite");
+        setMcpCommand("uvx");
+        setMcpArgs("mcp-server-sqlite\n--db-path\n./app.db");
+      }
+    }
+
+    const activeFmt = targetFormat !== "mcp_json" ? targetFormat : (format === "mcp_json" ? "claude_md" : format);
+    setFormat(activeFmt);
+
+    const newContent = buildRuleContent({
+      targetFormat: activeFmt,
+      framework,
+      language,
+      styling: sty,
+      database: db,
+      role: r,
+      skillName,
+      skillTitle: sTitle,
+      description,
+      philosophy,
+      conventions,
+      behaviors,
+      procedures: procs,
+      customDirectives: dirs,
+      exampleGood,
+      exampleBad,
+      globPattern,
+      alwaysApply,
+      mcpServerName: schema.dialect === "sqlite" ? "sqlite" : "postgres",
+      mcpCommand: schema.dialect === "sqlite" ? "uvx" : "npx",
+      mcpArgs: schema.dialect === "sqlite" ? "mcp-server-sqlite\n--db-path\n./app.db" : "-y\n@modelcontextprotocol/server-postgres\npostgresql://user:password@localhost:5432/dbname",
+      mcpEnvKey,
+      mcpEnvValue,
+      prdOverview,
+      prdProblemStatement,
+      prdPersonas,
+      prdFunctionalReqs,
+      prdNonFunctionalReqs,
+      prdMilestones,
+      designTokens,
+      designLayout,
+      designConventions,
+      designGuardrails,
+      designDirectives,
+      designVerification,
+      taskDashboard,
+      taskPhases,
+      taskVerification,
+      taskDirectives,
+      taskSessionLog,
+      memoryContext,
+      memoryAdrs,
+      memoryGotchas,
+      memoryLoop,
+      memoryInvariants,
+      memorySessionHistory,
+    });
+
+    setEditorContent(newContent);
+    setIsManuallyEdited(false);
+
+    const formatSlug = FORMAT_TO_URL_SLUG[activeFmt] || "claude.md";
+    syncUrl(`/ai-skill-studio/${formatSlug}`);
+  };
+
+  // Local filesystem directory picker for MCP Filesystem server
+  const handlePickDirectory = async () => {
+    try {
+      const result = await pickLocalDirectory();
+      if (result.supported && result.suggestedArg) {
+        setMcpArgs(`-y\n@modelcontextprotocol/server-filesystem\n${result.suggestedArg}`);
+      }
+    } catch {
+      // User cancelled picker
+    }
   };
 
   // Apply reverse converted legacy rules to studio
@@ -3513,7 +3745,20 @@ export function ClaudeSkillsClient({
 
               <div className="space-y-1">
                 <div className="flex items-center justify-between">
-                  <label className="text-xs font-semibold text-zinc-700">Command Arguments (One per line)</label>
+                  <div className="flex items-center gap-2">
+                    <label className="text-xs font-semibold text-zinc-700">Command Arguments (One per line)</label>
+                    {mcpValidation.isFilesystem && (
+                      <button
+                        type="button"
+                        onClick={handlePickDirectory}
+                        className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded transition-colors cursor-pointer"
+                        title="Pick local folder using browser File System Access API"
+                      >
+                        <FolderOpen className="w-3 h-3 text-blue-600" />
+                        <span>Pick Local Folder</span>
+                      </button>
+                    )}
+                  </div>
                   <InfoTooltip
                     title="Command Arguments"
                     description="Command line arguments passed to the MCP server process, one argument per line."
@@ -3590,15 +3835,48 @@ export function ClaudeSkillsClient({
                       Classic token (<code className="bg-orange-100/60 text-orange-800 px-1 py-0.2 rounded font-mono text-[10px]">ghp_...</code>) or Fine-grained (<code className="bg-orange-100/60 text-orange-800 px-1 py-0.2 rounded font-mono text-[10px]">github_pat_...</code>) with <code className="bg-orange-100/60 text-orange-800 px-1 py-0.2 rounded font-mono text-[10px]">repo</code> and <code className="bg-orange-100/60 text-orange-800 px-1 py-0.2 rounded font-mono text-[10px]">read:org</code> scopes.
                     </p>
                   </div>
-                  <a
-                    href="https://github.com/settings/tokens/new?description=Claude+Code+MCP&scopes=repo,read:org,read:user"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center justify-center gap-1 px-3 py-1.5 bg-white hover:bg-orange-50/80 text-orange-700 hover:text-orange-800 border border-orange-200 rounded-md text-xs font-semibold transition-all shadow-2xs shrink-0 cursor-pointer"
+                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 shrink-0 w-full sm:w-auto">
+                    <button
+                      type="button"
+                      onClick={() => setIsGitHubModalOpen(true)}
+                      className="flex-1 sm:flex-none inline-flex items-center justify-center gap-1 px-3 py-2 sm:py-1.5 bg-zinc-900 hover:bg-zinc-800 text-white rounded-md text-xs font-semibold transition-all shadow-2xs cursor-pointer min-h-[36px]"
+                    >
+                      <GitHubIcon className="w-3.5 h-3.5 text-white" />
+                      <span>Ingest Repo</span>
+                    </button>
+                    <a
+                      href="https://github.com/settings/tokens/new?description=Claude+Code+MCP&scopes=repo,read:org,read:user"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex-1 sm:flex-none inline-flex items-center justify-center gap-1 px-3 py-2 sm:py-1.5 bg-white hover:bg-orange-50/80 text-orange-700 hover:text-orange-800 border border-orange-200 rounded-md text-xs font-semibold transition-all shadow-2xs cursor-pointer min-h-[36px]"
+                    >
+                      <span>Generate Token</span>
+                      <ExternalLink className="w-3 h-3 text-orange-700" />
+                    </a>
+                  </div>
+                </div>
+              )}
+
+              {/* Database Schema Introspection Banner */}
+              {(mcpValidation.isPostgres || mcpPresetId === "sqlite") && (
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-2.5 bg-zinc-50 border border-zinc-200/80 rounded-lg text-xs">
+                  <div className="space-y-0.5">
+                    <div className="font-semibold text-zinc-900 flex items-center gap-1.5">
+                      <Database className="w-3.5 h-3.5 text-zinc-700 shrink-0" />
+                      <span>Live Database Schema Introspection</span>
+                    </div>
+                    <p className="text-[11px] text-zinc-500 leading-relaxed">
+                      Paste SQL DDL or Prisma schema to extract tables, foreign keys, and synthesize database safety guardrails.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setIsDdlModalOpen(true)}
+                    className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-3 py-2 sm:py-1.5 bg-zinc-900 hover:bg-zinc-800 text-white rounded-md text-xs font-semibold transition-all shadow-2xs cursor-pointer min-h-[36px]"
                   >
-                    <span>Generate Token</span>
-                    <ExternalLink className="w-3 h-3 text-orange-700" />
-                  </a>
+                    <Database className="w-3.5 h-3.5" />
+                    <span>Introspect DDL</span>
+                  </button>
                 </div>
               )}
 
@@ -3961,6 +4239,39 @@ export function ClaudeSkillsClient({
                 >
                   <UploadCloud className="w-3.5 h-3.5 text-orange-600 shrink-0" />
                   <span>Auto-Detect</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Live Project Ingestion Section */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 p-3 bg-zinc-50/80 border border-zinc-200 rounded-xl text-xs">
+              <div className="space-y-0.5">
+                <div className="font-semibold text-zinc-900 flex items-center gap-1.5">
+                  <FolderGit2 className="w-3.5 h-3.5 text-zinc-700 shrink-0" />
+                  <span>Live Project Ingestion</span>
+                </div>
+                <p className="text-[11px] text-zinc-500">
+                  Inspect repositories or database schemas directly in your browser with zero server transmission.
+                </p>
+              </div>
+              <div className="flex items-center gap-2 w-full sm:w-auto">
+                <button
+                  type="button"
+                  onClick={() => setIsGitHubModalOpen(true)}
+                  className="flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 text-xs font-semibold text-zinc-900 hover:text-black bg-white hover:bg-zinc-100 border border-zinc-200 px-3 py-2 sm:py-1.5 rounded-lg transition-all active:scale-95 shadow-2xs cursor-pointer min-h-[36px]"
+                  title="Ingest public or private GitHub repository to auto-synthesize authentic project rules"
+                >
+                  <GitHubIcon className="w-3.5 h-3.5 shrink-0" />
+                  <span>Ingest GitHub</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIsDdlModalOpen(true)}
+                  className="flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 text-xs font-semibold text-zinc-900 hover:text-black bg-white hover:bg-zinc-100 border border-zinc-200 px-3 py-2 sm:py-1.5 rounded-lg transition-all active:scale-95 shadow-2xs cursor-pointer min-h-[36px]"
+                  title="Introspect SQL DDL or Prisma schema for database safety guardrails"
+                >
+                  <Database className="w-3.5 h-3.5 text-zinc-700 shrink-0" />
+                  <span>Introspect DDL</span>
                 </button>
               </div>
             </div>
@@ -5222,6 +5533,22 @@ export function ClaudeSkillsClient({
         isOpen={isConverterModalOpen}
         onClose={() => setIsConverterModalOpen(false)}
         onApply={handleApplyConvertedRules}
+      />
+
+      {/* GitHub Repository Live Ingest Modal */}
+      <GitHubRepoModal
+        isOpen={isGitHubModalOpen}
+        onClose={() => setIsGitHubModalOpen(false)}
+        onApply={handleApplyGitHubRepo}
+        initialFormat={format}
+      />
+
+      {/* Database Schema / DDL Introspection Modal */}
+      <DdlIntrospectModal
+        isOpen={isDdlModalOpen}
+        onClose={() => setIsDdlModalOpen(false)}
+        onApply={handleApplyDdlSchema}
+        initialFormat={format}
       />
 
       {/* Download Audit HUD — bottom notification on download/export */}

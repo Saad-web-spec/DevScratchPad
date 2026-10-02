@@ -20,6 +20,7 @@ import { ProgrammaticPresetRoute, getPresetsByFormat } from "../../claude-skills
 import { getFormatHub } from "../../claude-skills/lib/formatHubs";
 import { getInstallCommands, copyToClipboard } from "../../claude-skills/lib/ruleGenerator";
 import { TOOLS_REGISTRY } from "@/lib/tools/registry";
+import { GitHubIcon } from "@/components/icons/AssistantBrandIcons";
 
 const TOOL_MAPPINGS: { keywords: string[]; slugs: string[] }[] = [
   {
@@ -182,11 +183,11 @@ function TerminalInstallWidget({ route }: { route: ProgrammaticPresetRoute }) {
 
   return (
     <div className="rounded-xl border border-zinc-200 bg-white overflow-hidden shadow-2xs space-y-0">
-      <div className="p-5 sm:p-6 pb-4 border-b border-zinc-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-zinc-50/60">
+      <div className="p-4 sm:p-6 pb-3 sm:pb-4 border-b border-zinc-100 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-3 bg-zinc-50/60">
         <div>
           <h4 className="text-sm sm:text-base font-bold text-zinc-900 flex items-center gap-2">
-            <Terminal className="w-4 h-4 text-orange-600" />
-            Terminal One-Liner Install
+            <Terminal className="w-4 h-4 text-orange-600 shrink-0" />
+            <span>Terminal One-Liner Install</span>
           </h4>
           <p className="text-xs text-zinc-600 mt-0.5">
             Run directly in your project root to stream and write this rule file with one command.
@@ -205,11 +206,11 @@ function TerminalInstallWidget({ route }: { route: ProgrammaticPresetRoute }) {
       <div className="bg-zinc-950 text-zinc-100 font-mono text-xs">
         {/* Tab & Action Bar */}
         <div className="flex flex-wrap items-center justify-between border-b border-zinc-800 px-3 py-2 bg-zinc-900/90 gap-2">
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1 flex-wrap">
             <button
               type="button"
               onClick={() => setActiveTab("bash")}
-              className={`px-3 py-1.5 rounded-md text-xs font-mono font-medium transition-colors cursor-pointer ${
+              className={`px-2.5 sm:px-3 py-1.5 rounded-md text-xs font-mono font-medium transition-colors cursor-pointer ${
                 activeTab === "bash"
                   ? "bg-zinc-800 text-orange-400 border border-zinc-700 shadow-xs"
                   : "text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/50"
@@ -220,7 +221,7 @@ function TerminalInstallWidget({ route }: { route: ProgrammaticPresetRoute }) {
             <button
               type="button"
               onClick={() => setActiveTab("powershell")}
-              className={`px-3 py-1.5 rounded-md text-xs font-mono font-medium transition-colors cursor-pointer ${
+              className={`px-2.5 sm:px-3 py-1.5 rounded-md text-xs font-mono font-medium transition-colors cursor-pointer ${
                 activeTab === "powershell"
                   ? "bg-zinc-800 text-orange-400 border border-zinc-700 shadow-xs"
                   : "text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/50"
@@ -231,7 +232,7 @@ function TerminalInstallWidget({ route }: { route: ProgrammaticPresetRoute }) {
             <button
               type="button"
               onClick={() => setActiveTab("wget")}
-              className={`px-3 py-1.5 rounded-md text-xs font-mono font-medium transition-colors cursor-pointer ${
+              className={`px-2.5 sm:px-3 py-1.5 rounded-md text-xs font-mono font-medium transition-colors cursor-pointer ${
                 activeTab === "wget"
                   ? "bg-zinc-800 text-orange-400 border border-zinc-700 shadow-xs"
                   : "text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/50"
@@ -329,7 +330,9 @@ export function ProgrammaticSpokeSeoContent({ route }: { route: ProgrammaticPres
               {route.title}
             </h1>
             <p className="text-sm sm:text-base leading-relaxed text-zinc-600 max-w-4xl">
-              Production-grade architectural rulebook for <strong>{route.techName}</strong>. Engineered to eliminate LLM hallucinations, enforce strict deterministic conventions, and prevent architectural drift across Cursor IDE, Claude Code CLI, and autonomous multi-agent pipelines.
+              {route.description ? `${route.description} ` : ""}
+              {route.whyNeeded ? `${route.whyNeeded} ` : ""}
+              Engineered to eliminate LLM hallucinations, enforce strict deterministic conventions, and prevent architectural drift across Cursor IDE, Claude Code CLI{route.format === "mcp_json" ? ", Claude Desktop," : ""} and autonomous multi-agent pipelines.
             </p>
           </div>
 
@@ -521,28 +524,28 @@ export function ProgrammaticSpokeSeoContent({ route }: { route: ProgrammaticPres
 
           <div className="space-y-4">
             {/* Step 1 */}
-            <div id="step-1" className="rounded-xl border border-zinc-200 bg-white p-6 sm:p-7 space-y-3 shadow-2xs scroll-mt-20">
+            <div id="step-1" className="rounded-xl border border-zinc-200 bg-white p-4 sm:p-6 md:p-7 space-y-3 shadow-2xs scroll-mt-20">
               <div className="flex items-center gap-2.5">
                 <span className="flex items-center justify-center w-6 h-6 rounded-full bg-orange-100 text-orange-700 text-xs font-mono font-bold shrink-0">
                   1
                 </span>
                 <h3 className="text-base sm:text-lg font-bold text-zinc-900 flex items-center gap-2">
                   <FolderTree className="w-4 h-4 text-orange-600 shrink-0" />
-                  Step 1: Open Project Directory &amp; Verify Target Placement
+                  <span>Step 1: Open Project Directory &amp; Verify Target Placement</span>
                 </h3>
               </div>
-              <p className="text-sm text-zinc-600 leading-relaxed pl-8">
+              <p className="text-xs sm:text-sm text-zinc-600 leading-relaxed pl-0 sm:pl-8">
                 Open your terminal and navigate to your project root folder where the <code>{route.targetFile}</code> file will reside. Ensure the file is placed at the exact path below relative to your project root so the AI engine automatically loads it:
               </p>
-              <div className="bg-zinc-100 border border-zinc-200 rounded-lg px-4 py-3 font-mono text-xs text-zinc-900 flex items-center justify-between ml-8">
-                <span className="truncate pr-4 font-bold text-zinc-900">{route.targetFile}</span>
+              <div className="bg-zinc-100 border border-zinc-200 rounded-lg px-3 sm:px-4 py-2.5 sm:py-3 font-mono text-xs text-zinc-900 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 ml-0 sm:ml-8">
+                <span className="truncate pr-0 sm:pr-4 font-bold text-zinc-900 break-all">{route.targetFile}</span>
                 <CopyButton text={route.targetFile} label="Copy Path" />
               </div>
             </div>
 
             {/* Step 2 */}
             <div id="step-2" className="rounded-xl border border-zinc-200 bg-white overflow-hidden shadow-2xs scroll-mt-20">
-              <div className="p-6 sm:p-7 pb-3 space-y-2">
+              <div className="p-4 sm:p-6 md:p-7 pb-3 space-y-2">
                 <div className="flex items-center gap-2.5">
                   <span className="flex items-center justify-center w-6 h-6 rounded-full bg-orange-100 text-orange-700 text-xs font-mono font-bold shrink-0">
                     2
@@ -551,27 +554,27 @@ export function ProgrammaticSpokeSeoContent({ route }: { route: ProgrammaticPres
                     Step 2: Fetch Rule File via Terminal Command
                   </h3>
                 </div>
-                <p className="text-sm text-zinc-600 leading-relaxed pl-8">
+                <p className="text-xs sm:text-sm text-zinc-600 leading-relaxed pl-0 sm:pl-8">
                   Run curl, PowerShell, or wget to stream the rule directly from the DevScratchpad raw API endpoint and write it to <code>{route.targetFile}</code>:
                 </p>
               </div>
-              <div className="px-6 pb-6">
+              <div className="px-3 pb-3 sm:px-6 sm:pb-6">
                 <TerminalInstallWidget route={route} />
               </div>
             </div>
 
             {/* Step 3 */}
-            <div id="step-3" className="rounded-xl border border-zinc-200 bg-white p-6 sm:p-7 space-y-3 shadow-2xs scroll-mt-20">
+            <div id="step-3" className="rounded-xl border border-zinc-200 bg-white p-4 sm:p-6 md:p-7 space-y-3 shadow-2xs scroll-mt-20">
               <div className="flex items-center gap-2.5">
                 <span className="flex items-center justify-center w-6 h-6 rounded-full bg-orange-100 text-orange-700 text-xs font-mono font-bold shrink-0">
                   3
                 </span>
                 <h3 className="text-base sm:text-lg font-bold text-zinc-900 flex items-center gap-2">
                   <CheckCircle2 className="w-4 h-4 text-[#ea580c] shrink-0" />
-                  Step 3: Verify and Activate with AI Agent
+                  <span>Step 3: Verify and Activate with AI Agent</span>
                 </h3>
               </div>
-              <p className="text-sm text-zinc-600 leading-relaxed pl-8">
+              <p className="text-xs sm:text-sm text-zinc-600 leading-relaxed pl-0 sm:pl-8">
                 Launch your AI coding assistant ({meta.aiSupport}). The assistant will automatically discover <code>{route.targetFile}</code> in your repository and apply the architectural guardrails, type constraints, and verification protocols during code generation.
               </p>
             </div>
@@ -696,7 +699,7 @@ export function ProgrammaticSpokeSeoContent({ route }: { route: ProgrammaticPres
               </div>
               <Link
                 href={`/ai-skill-studio/${hub.slug}`}
-                className="shrink-0 inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-orange-600 text-white hover:bg-orange-500 text-xs font-mono font-semibold transition-colors shadow-2xs"
+                className="shrink-0 w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 sm:py-2 rounded-lg bg-orange-600 text-white hover:bg-orange-500 text-xs font-mono font-semibold transition-colors shadow-2xs min-h-[38px]"
               >
                 <span>/{hub.slug} Directory</span>
                 <ArrowRight className="w-3.5 h-3.5" />
@@ -759,27 +762,55 @@ export function ProgrammaticSpokeSeoContent({ route }: { route: ProgrammaticPres
             ))}
           </div>
 
-          {/* Reverse Importer Callout Card */}
-          <div className="p-4 rounded-xl bg-gradient-to-r from-orange-50/70 via-white to-amber-50/40 border border-orange-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs">
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-lg bg-orange-600 text-white flex items-center justify-center shrink-0">
-                <RefreshCw className="w-4 h-4" />
+          {/* Action Callout Cards Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2">
+            {/* Live Ingestion into AI Skill Studio Card */}
+            <div className="p-4 rounded-xl bg-gradient-to-r from-zinc-50 via-white to-orange-50/30 border border-zinc-200 flex flex-col justify-between gap-3 shadow-2xs">
+              <div className="flex items-start gap-3">
+                <div className="w-8 h-8 rounded-lg bg-zinc-950 text-white flex items-center justify-center shrink-0 shadow-xs">
+                  <GitHubIcon className="w-4 h-4 text-white" />
+                </div>
+                <div>
+                  <h4 className="text-xs font-bold text-zinc-900">
+                    Live Repository &amp; Schema Ingestion
+                  </h4>
+                  <p className="text-[11px] text-zinc-600 mt-0.5 leading-relaxed">
+                    Inspect any public or private GitHub repository, or paste SQL DDL and Prisma models directly in AI Skill Studio to auto-generate authentic rules. Zero server transmission.
+                  </p>
+                </div>
               </div>
-              <div>
-                <h4 className="text-xs font-bold text-zinc-900">
-                  Migrating from Legacy .cursorrules or CLAUDE.md?
-                </h4>
-                <p className="text-[11px] text-zinc-600">
-                  Use our free, offline converter to transform monolithic rulebooks into modular Cursor .mdc, Claude SKILL.md, and Windsurf Cascade rules.
-                </p>
-              </div>
+              <Link
+                href="/ai-skill-studio"
+                className="w-full sm:w-auto px-4 py-2 sm:py-1.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-white text-xs font-semibold whitespace-nowrap self-stretch sm:self-start justify-center transition-all shadow-xs inline-flex items-center gap-1.5 min-h-[38px]"
+              >
+                <span>Launch AI Skill Studio</span>
+                <ArrowRight className="w-3 h-3" />
+              </Link>
             </div>
-            <Link
-              href="/ai-skill-studio/rules-converter"
-              className="px-3 py-1.5 rounded-lg bg-orange-600 hover:bg-orange-500 text-white text-xs font-bold whitespace-nowrap self-start sm:self-auto transition-all shadow-xs"
-            >
-              Convert Rules Free &rarr;
-            </Link>
+
+            {/* Reverse Importer Callout Card */}
+            <div className="p-4 rounded-xl bg-gradient-to-r from-orange-50/70 via-white to-amber-50/40 border border-orange-200 flex flex-col justify-between gap-3 shadow-2xs">
+              <div className="flex items-start gap-3">
+                <div className="w-8 h-8 rounded-lg bg-orange-600 text-white flex items-center justify-center shrink-0 shadow-xs">
+                  <RefreshCw className="w-4 h-4" />
+                </div>
+                <div>
+                  <h4 className="text-xs font-bold text-zinc-900">
+                    Migrating from Legacy .cursorrules or CLAUDE.md?
+                  </h4>
+                  <p className="text-[11px] text-zinc-600 mt-0.5 leading-relaxed">
+                    Use our free, offline converter to transform monolithic rulebooks into modular Cursor .mdc, Claude SKILL.md, and Windsurf Cascade rules.
+                  </p>
+                </div>
+              </div>
+              <Link
+                href="/ai-skill-studio/rules-converter"
+                className="w-full sm:w-auto px-4 py-2 sm:py-1.5 rounded-lg bg-orange-600 hover:bg-orange-500 text-white text-xs font-semibold whitespace-nowrap self-stretch sm:self-start justify-center transition-all shadow-xs inline-flex items-center gap-1.5 min-h-[38px]"
+              >
+                <span>Convert Rules Free</span>
+                <ArrowRight className="w-3 h-3" />
+              </Link>
+            </div>
           </div>
         </section>
 
