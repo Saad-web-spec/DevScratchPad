@@ -371,10 +371,21 @@ All AI agents operating in this repository MUST follow this 5-step loop:
   2. **`DdlIntrospectModal.tsx`**: Added mobile padding, flex-wrapping header with `min-w-0`, `grid-cols-1 sm:grid-cols-2` table preview grid, `min-h-[28px]` sample chips, `grid grid-cols-2 sm:flex` format pills, and `min-h-[38px]` footer apply button.
   3. **`ClaudeSkillsClient.tsx`**: In Live Project Ingestion section, configured `Ingest GitHub` and `Introspect DDL` buttons with `flex-1 sm:flex-none` and `w-full sm:w-auto` for equal-width, comfortable mobile touch targets (`min-h-[36px]`). Applied same responsive layout to GitHub PAT and DDL banners in MCP mode.
   4. **`ProgrammaticSpokeSeoContent.tsx`**: Optimized TerminalInstallWidget tab bar and header; removed mobile margin indentations (`ml-0 sm:ml-8`, `pl-0 sm:pl-8`) in Steps 1-3 to maximize code reading space; made Central Pillar Hub button `w-full sm:w-auto min-h-[38px]`; made reciprocal action callout buttons self-stretching (`self-stretch sm:self-start min-h-[38px]`).
-  5. **Verification**: Passed `npm run validate-presets` (100/100), `npm run lint` (0 errors), `npm run build` (890 SSG routes exit 0), and production server running on `http://localhost:3000`.
+### Session: 2026-10-03 — Phase 3: Local Filesystem, Docker Compose Ingestion & Format UI Restoration
+- **Agent**: Antigravity (Gemini)
+- **Task**: Implement Phase 3 and restore clean format URL routing:
+  1. **Local Filesystem Inspection (`fsPicker.ts`)**: Built native client-side directory inspector using Chromium's `window.showDirectoryPicker()` with zero server upload. Iterates top-level directories, extracts manifests, parses package managers & scripts, and synthesizes pair programming directives.
+  2. **Docker Compose Parser (`dockerParser.ts`)**: Implemented client-side parser extracting services, images, ports, volumes, networks, environment keys, and dependencies.
+  3. **Interactive Modals with Gradient Buttons**: Created `LocalFolderModal.tsx` and `DockerInspectModal.tsx`. Upgraded modal apply buttons with professional orange-to-amber gradients (`from-orange-600 via-orange-500 to-amber-600`), hover depth shadows, and spring press feedback.
+  4. **Single Dedicated Position for MCP Engines**: Consolidated MCP introspection engines exclusively into `MCP Server Configuration` (Filesystem, GitHub, Postgres/SQLite, Docker), eliminating duplication in `Technology Stack Context`. Restored clean header buttons (`Convert Legacy Rules` & `Auto-Detect`).
+  5. **Exact UI Preservation for `[formatSlug]`**: Restored `/ai-skill-studio/[formatSlug]` to render the exact same UI as `/ai-skill-studio` without top breadcrumb bars or bottom hub directory text, loading `<AiSkillStudioSeoContent />` below the fold.
+  6. **Mobile Optimization**: Verified all modals, format switcher pills (`min-h-[30px]`), sample chips (`min-h-[28px]`), and action buttons (`min-h-[36px]` / `min-h-[38px]`) are completely optimized for mobile viewports down to 320px with zero overflow.
+  7. **Verification**: Passed `npm run validate-presets` (100/100), `npm run lint` (0 errors), `npm run build` (890 static routes exit 0).
 - **Status**: ✅ Complete (All verification gates passed)
 
 ---
 
 *This document is updated by AI agents after significant sessions. Human maintainers should review and correct any inaccuracies periodically.*
+
+
 

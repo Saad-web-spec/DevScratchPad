@@ -472,7 +472,7 @@ export function GitHubRepoModal({
             type="button"
             onClick={handleApply}
             disabled={!analysis}
-            className="px-4 py-2 bg-orange-600 hover:bg-orange-500 disabled:bg-zinc-200 text-white disabled:text-zinc-400 text-xs font-semibold rounded-lg shadow-sm transition-all flex items-center justify-center gap-1.5 cursor-pointer disabled:cursor-not-allowed min-h-[38px]"
+            className="px-4 py-2 bg-gradient-to-r from-orange-600 via-orange-500 to-amber-600 hover:from-orange-500 hover:via-orange-400 hover:to-amber-500 disabled:from-zinc-200 disabled:via-zinc-200 disabled:to-zinc-200 text-white disabled:text-zinc-400 text-xs font-semibold rounded-lg shadow-sm hover:shadow-[0_4px_14px_rgba(234,88,12,0.35)] transition-all flex items-center justify-center gap-1.5 cursor-pointer disabled:cursor-not-allowed disabled:shadow-none min-h-[38px] active:scale-[0.98]"
           >
             <Check className="w-3.5 h-3.5 shrink-0" />
             <span className="truncate">Apply &amp; Generate {selectedFormat === "claude_md" ? "CLAUDE.md" : selectedFormat === "cursor_mdc" ? "cursor.mdc" : selectedFormat === "agents_md" ? "AGENTS.md" : "SKILL.md"}</span>

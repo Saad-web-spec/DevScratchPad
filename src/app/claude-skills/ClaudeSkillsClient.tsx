@@ -34,6 +34,8 @@ import {
   Users,
   Database,
   FolderOpen,
+  Boxes,
+  FolderTree,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { downloadAiKitZip } from "./lib/zipExporter";
@@ -59,9 +61,18 @@ const DdlIntrospectModal = dynamic(
   () => import("./components/DdlIntrospectModal").then((m) => m.DdlIntrospectModal),
   { ssr: false }
 );
+const DockerInspectModal = dynamic(
+  () => import("./components/DockerInspectModal").then((m) => m.DockerInspectModal),
+  { ssr: false }
+);
+const LocalFolderModal = dynamic(
+  () => import("./components/LocalFolderModal").then((m) => m.LocalFolderModal),
+  { ssr: false }
+);
 import { IngestedRepoAnalysis } from "./lib/githubIngest";
 import { ParsedDatabaseSchema } from "./lib/ddlParser";
-import { pickLocalDirectory } from "./lib/fsPicker";
+import { ParsedDockerCompose } from "./lib/dockerParser";
+import { LocalProjectAnalysis, pickAndInspectLocalDirectory, pickLocalDirectory } from "./lib/fsPicker";
 import { generateSafeSlug, validateTriggerPhrase } from "./lib/slugUtils";
 import { saveToStorageEnvelope, loadFromStorageEnvelope, STORAGE_KEY_V2 } from "./lib/storageEnvelope";
 import { auditRuleQuality, AuditDimension } from "./lib/ruleAuditor";
@@ -190,6 +201,8 @@ export function ClaudeSkillsClient({
   const [isConverterModalOpen, setIsConverterModalOpen] = useState(false);
   const [isGitHubModalOpen, setIsGitHubModalOpen] = useState(false);
   const [isDdlModalOpen, setIsDdlModalOpen] = useState(false);
+  const [isDockerModalOpen, setIsDockerModalOpen] = useState(false);
+  const [isFolderModalOpen, setIsFolderModalOpen] = useState(false);
   const [isExportingZip, setIsExportingZip] = useState(false);
   const [mobileTab, setMobileTab] = useState<"form" | "editor">("form");
   const [shouldLoadEditor, setShouldLoadEditor] = useState(false);
@@ -1046,12 +1059,183 @@ export function ClaudeSkillsClient({
     syncUrl(`/ai-skill-studio/${formatSlug}`);
   };
 
+  const handleApplyDockerCompose = (compose: ParsedDockerCompose, targetFormat: OutputFormat = "claude_md") => {
+    const r = compose.synthesizedRole;
+    const dirs = compose.synthesizedDirectives;
+    const procs = compose.synthesizedProcedures.join("\n");
+    const sTitle = compose.suggestedTitle;
+    const sName = compose.suggestedTitle.toLowerCase().replace(/[^a-z0-9]+/g, "-");
+
+    setRole(r);
+    setSkillTitle(sTitle);
+    setSkillName(sName);
+    setCustomDirectives(dirs.join("\n"));
+    setProcedures(procs);
+
+    if (format === "mcp_json") {
+      setMcpPresetId("docker");
+      setMcpServerName("docker");
+      setMcpCommand("docker");
+      setMcpArgs("compose\nup\n-d");
+    }
+
+    const activeFmt = targetFormat !== "mcp_json" ? targetFormat : (format === "mcp_json" ? "claude_md" : format);
+    setFormat(activeFmt);
+
+    const newContent = buildRuleContent({
+      targetFormat: activeFmt,
+      framework: "Docker Compose",
+      language: "YAML / Container",
+      styling,
+      database,
+      role: r,
+      skillName: sName,
+      skillTitle: sTitle,
+      description: `Container-aware pair programming and DevOps orchestration rules for ${sTitle}`,
+      philosophy,
+      conventions,
+      behaviors,
+      procedures: procs,
+      customDirectives: dirs.join("\n"),
+      exampleGood,
+      exampleBad,
+      globPattern,
+      alwaysApply,
+      mcpServerName: "docker",
+      mcpCommand: "docker",
+      mcpArgs: "compose\nup\n-d",
+      mcpEnvKey,
+      mcpEnvValue,
+      prdOverview,
+      prdProblemStatement,
+      prdPersonas,
+      prdFunctionalReqs,
+      prdNonFunctionalReqs,
+      prdMilestones,
+      designTokens,
+      designLayout,
+      designConventions,
+      designGuardrails,
+      designDirectives,
+      designVerification,
+      taskDashboard,
+      taskPhases,
+      taskVerification,
+      taskDirectives,
+      taskSessionLog,
+      memoryContext,
+      memoryAdrs,
+      memoryGotchas,
+      memoryLoop,
+      memoryInvariants,
+      memorySessionHistory,
+    });
+
+    setEditorContent(newContent);
+    setIsManuallyEdited(false);
+
+    const formatSlug = FORMAT_TO_URL_SLUG[activeFmt] || "claude.md";
+    syncUrl(`/ai-skill-studio/${formatSlug}`);
+  };
+
+  const handleApplyLocalFolder = (analysis: LocalProjectAnalysis, targetFormat: OutputFormat = "claude_md") => {
+    const r = analysis.synthesizedRole;
+    const dirs = analysis.synthesizedDirectives;
+    const sName = analysis.directoryName.toLowerCase().replace(/[^a-z0-9]+/g, "-");
+    const sTitle = `${analysis.directoryName} Production Architecture`;
+
+    setRole(r);
+    setSkillName(sName);
+    setSkillTitle(sTitle);
+    setFramework(analysis.framework);
+    setLanguage(analysis.language);
+    setStyling(analysis.styling);
+    setDatabase(analysis.database);
+    setCustomDirectives(dirs.join("\n"));
+
+    const procs = [
+      analysis.scripts.dev ? `1. Run local development server: \`${analysis.packageManager !== "unknown" ? analysis.packageManager : "npm"} run dev\` (or \`${analysis.scripts.dev}\`)` : "",
+      analysis.scripts.test ? `2. Run unit & integration tests: \`${analysis.packageManager !== "unknown" ? analysis.packageManager : "npm"} test\` (or \`${analysis.scripts.test}\`)` : "",
+      analysis.scripts.build ? `3. Validate production build: \`${analysis.packageManager !== "unknown" ? analysis.packageManager : "npm"} run build\` (or \`${analysis.scripts.build}\`)` : "",
+      analysis.scripts.lint ? `4. Run linter: \`${analysis.packageManager !== "unknown" ? analysis.packageManager : "npm"} run lint\` (or \`${analysis.scripts.lint}\`)` : "",
+    ].filter(Boolean).join("\n");
+    if (procs) setProcedures(procs);
+
+    if (format === "mcp_json") {
+      setMcpPresetId("filesystem");
+      setMcpServerName("filesystem");
+      setMcpCommand("npx");
+      setMcpArgs(`-y\n@modelcontextprotocol/server-filesystem\n${analysis.suggestedMcpArg}`);
+    }
+
+    const activeFmt = targetFormat !== "mcp_json" ? targetFormat : (format === "mcp_json" ? "claude_md" : format);
+    setFormat(activeFmt);
+
+    const newContent = buildRuleContent({
+      targetFormat: activeFmt,
+      framework: analysis.framework,
+      language: analysis.language,
+      styling: analysis.styling,
+      database: analysis.database,
+      role: r,
+      skillName: sName,
+      skillTitle: sTitle,
+      description: `Production architectural guidelines and pair programming constraints for ${analysis.directoryName}`,
+      philosophy,
+      conventions,
+      behaviors,
+      procedures: procs || procedures,
+      customDirectives: dirs.join("\n"),
+      exampleGood,
+      exampleBad,
+      globPattern,
+      alwaysApply,
+      mcpServerName: "filesystem",
+      mcpCommand: "npx",
+      mcpArgs: `-y\n@modelcontextprotocol/server-filesystem\n${analysis.suggestedMcpArg}`,
+      mcpEnvKey,
+      mcpEnvValue,
+      prdOverview,
+      prdProblemStatement,
+      prdPersonas,
+      prdFunctionalReqs,
+      prdNonFunctionalReqs,
+      prdMilestones,
+      designTokens,
+      designLayout,
+      designConventions,
+      designGuardrails,
+      designDirectives,
+      designVerification,
+      taskDashboard,
+      taskPhases,
+      taskVerification,
+      taskDirectives,
+      taskSessionLog,
+      memoryContext,
+      memoryAdrs,
+      memoryGotchas,
+      memoryLoop,
+      memoryInvariants,
+      memorySessionHistory,
+    });
+
+    setEditorContent(newContent);
+    setIsManuallyEdited(false);
+
+    const formatSlug = FORMAT_TO_URL_SLUG[activeFmt] || "claude.md";
+    syncUrl(`/ai-skill-studio/${formatSlug}`);
+  };
+
   // Local filesystem directory picker for MCP Filesystem server
   const handlePickDirectory = async () => {
     try {
-      const result = await pickLocalDirectory();
+      const result = await pickAndInspectLocalDirectory();
       if (result.supported && result.suggestedArg) {
         setMcpArgs(`-y\n@modelcontextprotocol/server-filesystem\n${result.suggestedArg}`);
+        if (result.analysis) {
+          handleApplyLocalFolder(result.analysis, format);
+        }
       }
     } catch {
       // User cancelled picker
@@ -3750,12 +3934,12 @@ export function ClaudeSkillsClient({
                     {mcpValidation.isFilesystem && (
                       <button
                         type="button"
-                        onClick={handlePickDirectory}
-                        className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded transition-colors cursor-pointer"
-                        title="Pick local folder using browser File System Access API"
+                        onClick={() => setIsFolderModalOpen(true)}
+                        className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-md transition-colors cursor-pointer"
+                        title="Inspect local folder manifests and directory structure"
                       >
                         <FolderOpen className="w-3 h-3 text-blue-600" />
-                        <span>Pick Local Folder</span>
+                        <span>Inspect Local Folder</span>
                       </button>
                     )}
                   </div>
@@ -3876,6 +4060,29 @@ export function ClaudeSkillsClient({
                   >
                     <Database className="w-3.5 h-3.5" />
                     <span>Introspect DDL</span>
+                  </button>
+                </div>
+              )}
+
+              {/* Docker Compose Introspection Banner */}
+              {mcpPresetId === "docker" && (
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-2.5 bg-zinc-50 border border-zinc-200/80 rounded-lg text-xs">
+                  <div className="space-y-0.5">
+                    <div className="font-semibold text-zinc-900 flex items-center gap-1.5">
+                      <Boxes className="w-3.5 h-3.5 text-zinc-700 shrink-0" />
+                      <span>Live Docker Compose &amp; Container Introspection</span>
+                    </div>
+                    <p className="text-[11px] text-zinc-500 leading-relaxed">
+                      Paste docker-compose.yml or Dockerfile to extract services, port mappings, and container rules.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setIsDockerModalOpen(true)}
+                    className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-3 py-2 sm:py-1.5 bg-zinc-900 hover:bg-zinc-800 text-white rounded-md text-xs font-semibold transition-all shadow-2xs cursor-pointer min-h-[36px]"
+                  >
+                    <Boxes className="w-3.5 h-3.5" />
+                    <span>Introspect Compose</span>
                   </button>
                 </div>
               )}
@@ -4225,7 +4432,7 @@ export function ClaudeSkillsClient({
                 <button
                   type="button"
                   onClick={() => setIsConverterModalOpen(true)}
-                  className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 text-[11px] font-semibold text-zinc-700 hover:text-orange-700 bg-zinc-100 hover:bg-orange-50 border border-zinc-200 hover:border-orange-200 px-2.5 py-1.5 rounded-md transition-all active:scale-95 shadow-xs cursor-pointer"
+                  className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 text-[11px] font-semibold text-zinc-700 hover:text-orange-700 bg-zinc-100 hover:bg-orange-50 border border-zinc-200 hover:border-orange-200 px-2.5 py-1.5 rounded-md transition-all active:scale-95 shadow-xs cursor-pointer min-h-[32px]"
                   title="Reverse-convert existing .cursorrules, CLAUDE.md, or custom prompts into Universal Studio IR"
                 >
                   <FileText className="w-3.5 h-3.5 text-orange-600 shrink-0" />
@@ -4234,44 +4441,11 @@ export function ClaudeSkillsClient({
                 <button
                   type="button"
                   onClick={() => setIsManifestModalOpen(true)}
-                  className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 text-[11px] font-semibold text-zinc-700 hover:text-orange-700 bg-zinc-100 hover:bg-orange-50 border border-zinc-200 hover:border-orange-200 px-2.5 py-1.5 rounded-md transition-all active:scale-95 shadow-xs cursor-pointer"
+                  className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 text-[11px] font-semibold text-zinc-700 hover:text-orange-700 bg-zinc-100 hover:bg-orange-50 border border-zinc-200 hover:border-orange-200 px-2.5 py-1.5 rounded-md transition-all active:scale-95 shadow-xs cursor-pointer min-h-[32px]"
                   title="Auto-detect stack from package.json, pyproject.toml, Cargo.toml, or go.mod"
                 >
                   <UploadCloud className="w-3.5 h-3.5 text-orange-600 shrink-0" />
                   <span>Auto-Detect</span>
-                </button>
-              </div>
-            </div>
-
-            {/* Live Project Ingestion Section */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 p-3 bg-zinc-50/80 border border-zinc-200 rounded-xl text-xs">
-              <div className="space-y-0.5">
-                <div className="font-semibold text-zinc-900 flex items-center gap-1.5">
-                  <FolderGit2 className="w-3.5 h-3.5 text-zinc-700 shrink-0" />
-                  <span>Live Project Ingestion</span>
-                </div>
-                <p className="text-[11px] text-zinc-500">
-                  Inspect repositories or database schemas directly in your browser with zero server transmission.
-                </p>
-              </div>
-              <div className="flex items-center gap-2 w-full sm:w-auto">
-                <button
-                  type="button"
-                  onClick={() => setIsGitHubModalOpen(true)}
-                  className="flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 text-xs font-semibold text-zinc-900 hover:text-black bg-white hover:bg-zinc-100 border border-zinc-200 px-3 py-2 sm:py-1.5 rounded-lg transition-all active:scale-95 shadow-2xs cursor-pointer min-h-[36px]"
-                  title="Ingest public or private GitHub repository to auto-synthesize authentic project rules"
-                >
-                  <GitHubIcon className="w-3.5 h-3.5 shrink-0" />
-                  <span>Ingest GitHub</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setIsDdlModalOpen(true)}
-                  className="flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 text-xs font-semibold text-zinc-900 hover:text-black bg-white hover:bg-zinc-100 border border-zinc-200 px-3 py-2 sm:py-1.5 rounded-lg transition-all active:scale-95 shadow-2xs cursor-pointer min-h-[36px]"
-                  title="Introspect SQL DDL or Prisma schema for database safety guardrails"
-                >
-                  <Database className="w-3.5 h-3.5 text-zinc-700 shrink-0" />
-                  <span>Introspect DDL</span>
                 </button>
               </div>
             </div>
@@ -5548,6 +5722,22 @@ export function ClaudeSkillsClient({
         isOpen={isDdlModalOpen}
         onClose={() => setIsDdlModalOpen(false)}
         onApply={handleApplyDdlSchema}
+        initialFormat={format}
+      />
+
+      {/* Local Folder Project Inspection Modal */}
+      <LocalFolderModal
+        isOpen={isFolderModalOpen}
+        onClose={() => setIsFolderModalOpen(false)}
+        onApply={handleApplyLocalFolder}
+        initialFormat={format}
+      />
+
+      {/* Docker Compose / Container Introspection Modal */}
+      <DockerInspectModal
+        isOpen={isDockerModalOpen}
+        onClose={() => setIsDockerModalOpen(false)}
+        onApply={handleApplyDockerCompose}
         initialFormat={format}
       />
 

@@ -290,7 +290,7 @@ export function ManifestImportModal({ isOpen, onClose, onApply }: ManifestImport
             onClick={handleConfirm}
             className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-semibold shadow-xs transition-all cursor-pointer ${
               parsedResult && parsedResult.detected
-                ? "bg-orange-600 hover:bg-orange-500 text-white active:scale-95"
+                ? "bg-gradient-to-r from-orange-600 via-orange-500 to-amber-600 hover:from-orange-500 hover:via-orange-400 hover:to-amber-500 text-white shadow-sm hover:shadow-[0_4px_14px_rgba(234,88,12,0.35)] active:scale-[0.98]"
                 : "bg-zinc-100 hover:bg-zinc-200 text-zinc-600 border border-zinc-200 active:scale-95"
             }`}
             title={

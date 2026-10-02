@@ -2,91 +2,117 @@
 
 import React, { useState, useEffect } from "react";
 import {
-  Database,
+  Boxes,
   X,
   Check,
   AlertCircle,
-  Table,
+  Container,
   ShieldCheck,
+  Server,
+  Layers,
 } from "lucide-react";
 import {
-  introspectDatabaseSchema,
-  ParsedDatabaseSchema,
-} from "../lib/ddlParser";
+  inspectDockerCompose,
+  ParsedDockerCompose,
+} from "../lib/dockerParser";
 import { OutputFormat } from "../lib/ruleGenerator";
 
-interface DdlIntrospectModalProps {
+interface DockerInspectModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onApply: (schema: ParsedDatabaseSchema, targetFormat?: OutputFormat) => void;
+  onApply: (compose: ParsedDockerCompose, targetFormat?: OutputFormat) => void;
   initialFormat?: OutputFormat;
 }
 
-const SAMPLE_POSTGRES_DDL = `CREATE TABLE users (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  email VARCHAR(255) NOT NULL UNIQUE,
-  password_hash TEXT NOT NULL,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
+const SAMPLE_FULLSTACK_COMPOSE = `version: '3.8'
 
-CREATE TABLE organizations (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  name VARCHAR(100) NOT NULL,
-  slug VARCHAR(100) NOT NULL UNIQUE,
-  owner_id UUID NOT NULL REFERENCES users(id),
-  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
+services:
+  web:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+      - DATABASE_URL=postgresql://postgres:secret@db:5432/app
+      - REDIS_URL=redis://cache:6379
+    volumes:
+      - .:/app
+      - /app/node_modules
+    depends_on:
+      - db
+      - cache
 
-CREATE TABLE projects (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  org_id UUID NOT NULL REFERENCES organizations(id),
-  title VARCHAR(200) NOT NULL,
-  settings JSONB NOT NULL DEFAULT '{}',
-  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
+  db:
+    image: postgres:16-alpine
+    restart: always
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=secret
+      - POSTGRES_DB=app
+    volumes:
+      - pgdata:/var/lib/postgresql/data
 
-CREATE INDEX idx_projects_org_id ON projects(org_id);`;
+  cache:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redisdata:/data
 
-const SAMPLE_PRISMA_SCHEMA = `model User {
-  id        String   @id @default(uuid())
-  email     String   @unique
-  name      String?
-  posts     Post[]
-  createdAt DateTime @default(now())
-}
+volumes:
+  pgdata:
+  redisdata:`;
 
-model Post {
-  id        String   @id @default(uuid())
-  title     String
-  content   String?
-  published Boolean  @default(false)
-  authorId  String
-  author    User     @relation(fields: [authorId], references: [id])
-  createdAt DateTime @default(now())
-}`;
+const SAMPLE_PYTHON_COMPOSE = `version: '3.9'
 
-const SAMPLE_SQLITE_DDL = `CREATE TABLE users (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  email TEXT NOT NULL UNIQUE,
-  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-);
+services:
+  api:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql://postgres:secret@db:5432/fastapi_db
+    volumes:
+      - ./app:/code/app
+    depends_on:
+      - db
 
-CREATE TABLE documents (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  user_id INTEGER NOT NULL REFERENCES users(id),
-  title TEXT NOT NULL,
-  content TEXT,
-  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-);`;
+  db:
+    image: postgres:15
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_PASSWORD=secret
+      - POSTGRES_DB=fastapi_db
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
 
-export function DdlIntrospectModal({
+volumes:
+  postgres_data:`;
+
+const SAMPLE_DOCKERFILE = `FROM node:20-alpine AS base
+WORKDIR /app
+
+COPY package*.json ./
+RUN npm ci
+
+COPY . .
+RUN npm run build
+
+EXPOSE 3000
+ENV PORT=3000
+CMD ["npm", "start"]`;
+
+export function DockerInspectModal({
   isOpen,
   onClose,
   onApply,
   initialFormat = "claude_md",
-}: DdlIntrospectModalProps) {
-  const [schemaText, setSchemaText] = useState("");
-  const [parsed, setParsed] = useState<ParsedDatabaseSchema | null>(null);
+}: DockerInspectModalProps) {
+  const [inputText, setInputText] = useState("");
+  const [parsed, setParsed] = useState<ParsedDockerCompose | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [selectedFormat, setSelectedFormat] = useState<OutputFormat>(
     initialFormat === "mcp_json" ? "claude_md" : initialFormat
@@ -101,7 +127,7 @@ export function DdlIntrospectModal({
   if (!isOpen) return null;
 
   const handleParse = (text: string) => {
-    setSchemaText(text);
+    setInputText(text);
     setError(null);
     if (!text.trim()) {
       setParsed(null);
@@ -109,10 +135,10 @@ export function DdlIntrospectModal({
     }
 
     try {
-      const result = introspectDatabaseSchema(text);
+      const result = inspectDockerCompose(text);
       setParsed(result);
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "Failed to parse schema.";
+      const msg = err instanceof Error ? err.message : "Failed to parse Docker configuration.";
       setError(msg);
       setParsed(null);
     }
@@ -134,17 +160,20 @@ export function DdlIntrospectModal({
         <div className="flex items-start sm:items-center justify-between border-b border-zinc-100 pb-3 shrink-0 gap-2">
           <div className="flex items-start sm:items-center gap-2.5 min-w-0">
             <div className="w-8 h-8 rounded-lg bg-zinc-950 flex items-center justify-center text-white shadow-xs shrink-0 mt-0.5 sm:mt-0">
-              <Database className="w-4 h-4" />
+              <Boxes className="w-4 h-4" />
             </div>
             <div className="min-w-0">
               <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
-                <h3 className="text-sm font-bold text-zinc-900 font-sans tracking-tight">Introspect Database DDL / Prisma</h3>
+                <h3 className="text-sm font-bold text-zinc-900 font-sans tracking-tight">
+                  Introspect Docker Compose &amp; Containers
+                </h3>
                 <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-orange-50 text-orange-700 border border-orange-200/80 shrink-0">
-                  <ShieldCheck className="w-2.5 h-2.5 text-orange-600" /> 100% Client-Side Private
+                  <ShieldCheck className="w-2.5 h-2.5 text-orange-600" />
+                  <span>100% Client-Side Private</span>
                 </span>
               </div>
               <p className="text-[11px] text-zinc-500 mt-0.5 leading-snug">
-                Paste SQL DDL or Prisma models to synthesize schema-aware rules and safety guardrails.
+                Paste docker-compose.yml or Dockerfile to extract services, ports, and containerized pair programming rules.
               </p>
             </div>
           </div>
@@ -164,35 +193,35 @@ export function DdlIntrospectModal({
             <span className="text-[10px] text-zinc-400 font-medium">Load Sample:</span>
             <button
               type="button"
-              onClick={() => handleParse(SAMPLE_POSTGRES_DDL)}
+              onClick={() => handleParse(SAMPLE_FULLSTACK_COMPOSE)}
               className="text-[10px] font-mono px-2 py-1 sm:py-0.5 rounded-md bg-zinc-100 hover:bg-orange-50 text-zinc-700 hover:text-orange-700 border border-zinc-200 hover:border-orange-200 transition-colors cursor-pointer min-h-[28px] sm:min-h-0 flex items-center"
             >
-              PostgreSQL SaaS DDL
+              Next.js + Postgres + Redis
             </button>
             <button
               type="button"
-              onClick={() => handleParse(SAMPLE_PRISMA_SCHEMA)}
+              onClick={() => handleParse(SAMPLE_PYTHON_COMPOSE)}
               className="text-[10px] font-mono px-2 py-1 sm:py-0.5 rounded-md bg-zinc-100 hover:bg-orange-50 text-zinc-700 hover:text-orange-700 border border-zinc-200 hover:border-orange-200 transition-colors cursor-pointer min-h-[28px] sm:min-h-0 flex items-center"
             >
-              Prisma Schema
+              FastAPI + Postgres
             </button>
             <button
               type="button"
-              onClick={() => handleParse(SAMPLE_SQLITE_DDL)}
+              onClick={() => handleParse(SAMPLE_DOCKERFILE)}
               className="text-[10px] font-mono px-2 py-1 sm:py-0.5 rounded-md bg-zinc-100 hover:bg-orange-50 text-zinc-700 hover:text-orange-700 border border-zinc-200 hover:border-orange-200 transition-colors cursor-pointer min-h-[28px] sm:min-h-0 flex items-center"
             >
-              SQLite DDL
+              Dockerfile
             </button>
           </div>
 
-          {/* DDL Input Textarea */}
+          {/* Input Textarea */}
           <div className="space-y-1">
-            <label className="text-xs font-semibold text-zinc-700">Schema Input (SQL DDL or Prisma)</label>
+            <label className="text-xs font-semibold text-zinc-700">Docker Configuration (YAML / Dockerfile)</label>
             <textarea
               rows={7}
-              value={schemaText}
+              value={inputText}
               onChange={(e) => handleParse(e.target.value)}
-              placeholder="Paste CREATE TABLE statements or Prisma schema models here..."
+              placeholder="Paste docker-compose.yml or Dockerfile contents here..."
               className="w-full p-2.5 border border-zinc-200 rounded-lg text-xs font-mono leading-relaxed focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 resize-y"
             />
           </div>
@@ -205,52 +234,65 @@ export function DdlIntrospectModal({
             </div>
           )}
 
-          {/* Parsed Schema Summary Preview */}
+          {/* Parsed Output Card */}
           {parsed && (
             <div className="space-y-2.5 bg-zinc-50 border border-zinc-200 rounded-xl p-3 animate-in fade-in-50 duration-150">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-1.5 flex-wrap">
-                  <span className="text-xs font-mono font-bold text-zinc-900 px-2 py-0.5 rounded bg-zinc-200">
-                    {parsed.dialect.toUpperCase()}
+                  <span className="text-xs font-mono font-bold text-zinc-900 px-2 py-0.5 rounded bg-zinc-200 flex items-center gap-1">
+                    <Container className="w-3 h-3 text-zinc-700" />
+                    <span>{parsed.totalServices} Services</span>
                   </span>
-                  <span className="text-[10px] font-mono font-medium px-2 py-0.5 rounded bg-white border border-zinc-200 text-zinc-700">
-                    {parsed.totalTables} Tables
-                  </span>
-                  <span className="text-[10px] font-mono font-medium px-2 py-0.5 rounded bg-white border border-zinc-200 text-zinc-700">
-                    {parsed.totalColumns} Columns
-                  </span>
+                  {parsed.exposedPorts.length > 0 && (
+                    <span className="text-[10px] font-mono font-medium px-2 py-0.5 rounded bg-white border border-zinc-200 text-zinc-700">
+                      Ports: {parsed.exposedPorts.slice(0, 4).join(", ")}
+                    </span>
+                  )}
+                  {parsed.detectedVolumes.length > 0 && (
+                    <span className="text-[10px] font-mono font-medium px-2 py-0.5 rounded bg-white border border-zinc-200 text-zinc-700">
+                      Volumes: {parsed.detectedVolumes.length}
+                    </span>
+                  )}
                 </div>
               </div>
 
-              {/* Table List & Relations */}
+              {/* Service Cards Grid */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px] font-mono">
-                {parsed.tables.slice(0, 6).map((tbl) => (
-                  <div key={tbl.name} className="p-2 bg-white rounded-lg border border-zinc-200/80 space-y-0.5">
-                    <div className="font-bold text-zinc-900 flex items-center gap-1">
-                      <Table className="w-3 h-3 text-zinc-600 shrink-0" />
-                      <span className="truncate">{tbl.name}</span>
+                {parsed.services.map((svc) => (
+                  <div key={svc.name} className="p-2 bg-white rounded-lg border border-zinc-200/80 space-y-1">
+                    <div className="font-bold text-zinc-900 flex items-center justify-between">
+                      <div className="flex items-center gap-1 truncate">
+                        <Server className="w-3 h-3 text-zinc-600 shrink-0" />
+                        <span className="truncate">{svc.name}</span>
+                      </div>
+                      {svc.ports.length > 0 && (
+                        <span className="text-[10px] px-1.5 py-0.2 rounded bg-zinc-100 text-zinc-600">
+                          {svc.ports[0]}
+                        </span>
+                      )}
                     </div>
-                    <div className="text-[10px] text-zinc-500">
-                      PK: {tbl.primaryKeys.join(", ") || "none"}
+                    <div className="text-[10px] text-zinc-500 truncate">
+                      {svc.image ? `image: ${svc.image}` : svc.buildPath ? `build: ${svc.buildPath}` : "custom"}
                     </div>
-                    {tbl.foreignKeys.length > 0 && (
+                    {svc.dependsOn.length > 0 && (
                       <div className="text-[10px] text-zinc-600 truncate">
-                        FK: {tbl.foreignKeys.map((f) => `→ ${f.refTable}`).join(", ")}
+                        depends on: {svc.dependsOn.join(", ")}
                       </div>
                     )}
                   </div>
                 ))}
               </div>
 
-              {/* Guardrails Synthesized */}
+              {/* Synthesized Directives */}
               <div className="space-y-1 bg-white p-2.5 rounded-lg border border-zinc-200/80 text-xs text-zinc-700">
-                <div className="text-[11px] font-medium text-zinc-500">
-                  Synthesized Safety Guardrails
+                <div className="text-[11px] font-medium text-zinc-500 flex items-center gap-1">
+                  <Layers className="w-3 h-3 text-zinc-600" />
+                  <span>Synthesized Container Rules</span>
                 </div>
                 <ul className="space-y-0.5 pt-0.5 text-[11px] text-zinc-700 list-disc list-inside leading-relaxed">
                   {parsed.synthesizedDirectives.slice(0, 3).map((dir, i) => (
                     <li key={i} className="truncate">
-                      {dir.replace(/^- /, "")}
+                      {dir}
                     </li>
                   ))}
                 </ul>
@@ -302,7 +344,9 @@ export function DdlIntrospectModal({
             className="px-4 py-2 bg-gradient-to-r from-orange-600 via-orange-500 to-amber-600 hover:from-orange-500 hover:via-orange-400 hover:to-amber-500 disabled:from-zinc-200 disabled:via-zinc-200 disabled:to-zinc-200 text-white disabled:text-zinc-400 text-xs font-semibold rounded-lg shadow-sm hover:shadow-[0_4px_14px_rgba(234,88,12,0.35)] transition-all flex items-center justify-center gap-1.5 cursor-pointer disabled:cursor-not-allowed disabled:shadow-none min-h-[38px] active:scale-[0.98]"
           >
             <Check className="w-3.5 h-3.5 shrink-0" />
-            <span className="truncate">Apply &amp; Generate {selectedFormat === "claude_md" ? "CLAUDE.md" : selectedFormat === "cursor_mdc" ? "cursor.mdc" : selectedFormat === "agents_md" ? "AGENTS.md" : "SKILL.md"}</span>
+            <span className="truncate">
+              Apply &amp; Generate {selectedFormat === "claude_md" ? "CLAUDE.md" : selectedFormat === "cursor_mdc" ? "cursor.mdc" : selectedFormat === "agents_md" ? "AGENTS.md" : "SKILL.md"}
+            </span>
           </button>
         </div>
       </div>
