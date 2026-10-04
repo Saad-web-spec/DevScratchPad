@@ -2421,6 +2421,26 @@ ${selectedConventionTexts.length > 0 ? selectedConventionTexts.join("\n") : "- F
 
 ## Operational Guardrails
 ${selectedBehaviorTexts.length > 0 ? selectedBehaviorTexts.join("\n") : "- Exercise standard precision."}
+
+## Multi-Agent Coordination Specification (The Graph Blueprint)
+### Topology: Goal -> Splitter -> [Workers 1-4] -> Verifier (Fresh Context) -> Synthesizer
+
+#### 1. Task Splitter
+- Objective: Partition user request into non-overlapping sub-problems.
+- Contract: Emit typed list of discrete assignments for parallel worker fleet.
+
+#### 2. Parallel Workers (Domain-Isolated Contexts)
+- Worker 1 (Research): Retrieve facts, codebase context, internal documentation, and external references.
+- Worker 2 (Comparative): Benchmark alternatives, evaluate trade-offs, and verify architectural consistency.
+- Worker 3 (Validation): Verify type safety, syntax, test suites, and strict constraint adherence.
+- Worker 4 (Gap Analysis): Discover edge cases, race conditions, memory leaks, and security vulnerabilities.
+
+#### 3. Independent Verifier (Reduce / Anti-Hallucination Gate)
+- Context Policy: MUST execute in fresh context window with ZERO worker chain-of-thought (CoT) leakage to eliminate confirmation bias.
+- Objective: Audit assertions, cross-reference evidence, validate schemas, and eliminate hallucinations.
+
+#### 4. Synthesizer / Merge
+- Deliverable: Consolidate verified points into single cohesive deliverable with prioritized actions.
 ${
   customDirectives.trim()
     ? `

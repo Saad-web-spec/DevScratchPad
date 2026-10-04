@@ -312,7 +312,7 @@ export function DownloadAuditHud({
         {/* ── Row 3: Adjustment Pills ─────────────────────────────── */}
         {adjustmentPills.length > 0 && (
           <div className="flex items-center flex-wrap gap-1 sm:gap-1.5 px-3.5 sm:px-4.5 pb-2">
-            <span className="text-[9px] sm:text-[10px] text-zinc-400 font-semibold uppercase tracking-wider mr-0.5 shrink-0">
+            <span className="text-[10px] sm:text-[10px] text-zinc-400 font-semibold uppercase tracking-wider mr-0.5 shrink-0">
               Adjustments
             </span>
             {adjustmentPills.map((pill) => (
@@ -337,7 +337,7 @@ export function DownloadAuditHud({
             <span className="transition-transform group-hover:translate-x-0.5">→</span>
           </button>
           {isHovered && (
-            <span className="text-[9px] sm:text-[10px] text-zinc-400 italic">
+            <span className="text-[10px] sm:text-[10px] text-zinc-400 italic">
               Paused — move away to resume
             </span>
           )}

@@ -186,7 +186,7 @@ export function InfoTooltip({
               <Info className="w-3.5 h-3.5 text-orange-400 shrink-0" />
               <span className="text-xs font-bold text-zinc-100 truncate">{title}</span>
             </div>
-            <span className="text-[9px] font-mono text-orange-400 bg-orange-950/80 border border-orange-800/80 px-1.5 py-0.5 rounded shrink-0">
+            <span className="text-[10px] font-mono text-orange-400 bg-orange-950/80 border border-orange-800/80 px-1.5 py-0.5 rounded shrink-0">
               How to edit
             </span>
           </div>
@@ -197,7 +197,7 @@ export function InfoTooltip({
 
           {example && (
             <div className="mt-2.5 pt-2 border-t border-zinc-800/80">
-              <span className="text-[9px] font-mono uppercase tracking-wider text-zinc-500 block mb-1 font-semibold">
+              <span className="text-[10px] font-mono uppercase tracking-wider text-zinc-500 block mb-1 font-semibold">
                 Format Guide:
               </span>
               <pre className="p-2 bg-zinc-950/90 rounded-md border border-zinc-800 text-[10px] font-mono text-zinc-300 overflow-x-auto whitespace-pre-wrap leading-tight max-h-32 overflow-y-auto">

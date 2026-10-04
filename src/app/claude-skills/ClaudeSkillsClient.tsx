@@ -2460,11 +2460,14 @@ export function ClaudeSkillsClient({
           )}
         >
           {/* Format Selector Card */}
-          <div className="bg-white rounded-xl border border-zinc-200 p-3.5 sm:p-4 shadow-xs space-y-3.5">
-            <div className="flex items-center justify-between gap-1 border-b border-zinc-100 pb-2">
-              <span className="text-xs font-bold uppercase tracking-wider text-zinc-600">Target Standard &amp; File Format</span>
+          <div className="bg-white rounded-xl border border-zinc-200 p-4 sm:p-5 shadow-xs space-y-3.5">
+            <div className="flex items-center justify-between gap-2 border-b border-zinc-100 pb-3">
+              <div className="flex items-center gap-2 min-w-0">
+                <Boxes className="w-4 h-4 text-zinc-700 shrink-0" />
+                <h3 className="text-sm font-bold text-zinc-900 truncate">Target Standard &amp; File Format</h3>
+              </div>
               <div className="flex items-center gap-1.5">
-                <span className="text-[10px] text-zinc-400 font-normal hidden sm:inline">Select runtime specification</span>
+                <span className="text-[11px] text-zinc-500 hidden sm:inline">Select runtime specification</span>
                 <InfoTooltip
                   title="Target File Format"
                   description="Choose from 17 supported agent formats including Cursor rules, Claude Code skills, MCP servers, and the 4-layer AI governance documents (PRD.md, DESIGN.md, TASK.md, MEMORY.md)."
@@ -2475,7 +2478,7 @@ export function ClaudeSkillsClient({
 
             {/* Group 1: AI Agent Rules & Skills */}
             <div className="space-y-1.5">
-              <div className="text-[10px] font-semibold tracking-wider uppercase text-zinc-400 flex items-center gap-1.5">
+              <div className="text-[10px] font-semibold tracking-wider uppercase text-zinc-500 flex items-center gap-1.5">
                 <Bot className="w-3 h-3 text-orange-500" />
                 <span>AI Agent Rules & Skills</span>
               </div>
@@ -2622,7 +2625,7 @@ export function ClaudeSkillsClient({
 
             {/* Group 2: Context Shields & Privacy (Ignore Files) */}
             <div className="space-y-1.5 pt-2 border-t border-zinc-100">
-              <div className="text-[10px] font-semibold tracking-wider uppercase text-zinc-400 flex items-center gap-1.5">
+              <div className="text-[10px] font-semibold tracking-wider uppercase text-zinc-500 flex items-center gap-1.5">
                 <ShieldCheck className="w-3 h-3 text-emerald-600" />
                 <span>Context Shields & Privacy (Ignore Files)</span>
               </div>
@@ -2665,11 +2668,11 @@ export function ClaudeSkillsClient({
 
             {/* Group 3: Integrations & Machine Documentation */}
             <div className="space-y-1.5 pt-2 border-t border-zinc-100">
-              <div className="text-[10px] font-semibold tracking-wider uppercase text-zinc-400 flex items-center gap-1.5">
+              <div className="text-[10px] font-semibold tracking-wider uppercase text-zinc-500 flex items-center gap-1.5">
                 <FileText className="w-3 h-3 text-blue-600" />
                 <span>Integrations & Machine Documentation</span>
               </div>
-              <div suppressHydrationWarning className="grid grid-cols-3 gap-2">
+              <div suppressHydrationWarning className="grid grid-cols-2 sm:grid-cols-3 gap-2 [&>*:last-child]:col-span-2 sm:[&>*:last-child]:col-span-1">
                 <button
                   suppressHydrationWarning
                   onClick={() => handleSelectFormat("mcp_json")}
@@ -2725,7 +2728,7 @@ export function ClaudeSkillsClient({
 
             {/* Group 4: AI Governance & Multi-Agent Planning Suite */}
             <div className="space-y-1.5 pt-2 border-t border-zinc-100">
-              <div className="text-[10px] font-semibold tracking-wider uppercase text-zinc-400 flex items-center gap-1.5">
+              <div className="text-[10px] font-semibold tracking-wider uppercase text-zinc-500 flex items-center gap-1.5">
                 <Layers className="w-3 h-3 text-emerald-600" />
                 <span>AI Governance & Multi-Agent Planning Suite</span>
               </div>
@@ -2805,7 +2808,7 @@ export function ClaudeSkillsClient({
           {format === "prd_md" && (
             <div className="space-y-4">
               {/* Card 1: Executive Summary & Vision */}
-              <div data-section="prdOverview" className="bg-white rounded-xl border border-zinc-200 p-3.5 sm:p-4 shadow-xs space-y-2.5">
+              <div data-section="prdOverview" className="bg-white rounded-xl border border-zinc-200 p-4 sm:p-5 shadow-xs space-y-2.5">
                 <div className="flex items-center justify-between border-b border-zinc-100 pb-2 gap-2">
                   <div className="flex items-center gap-2">
                     <FileText className="w-4 h-4 text-blue-600 shrink-0" />
@@ -2819,7 +2822,7 @@ export function ClaudeSkillsClient({
                         setPrdOverview(d.prdOverview);
                         setIsManuallyEdited(false);
                       }}
-                      className="text-[10px] text-zinc-400 hover:text-zinc-700 transition-colors font-mono cursor-pointer"
+                      className="text-[10px] text-zinc-500 hover:text-zinc-700 transition-colors font-mono cursor-pointer"
                       title="Reset to preset default"
                     >
                       Reset
@@ -2844,12 +2847,12 @@ export function ClaudeSkillsClient({
                   }}
                   rows={3}
                   placeholder="Executive summary of the product..."
-                  className="w-full p-2.5 border border-zinc-200 rounded-lg text-xs leading-relaxed focus:outline-none focus:ring-2 focus:ring-zinc-900/10 focus:border-zinc-900 resize-y"
+                  className="w-full p-2.5 border border-zinc-200 rounded-lg text-xs leading-relaxed focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 resize-y"
                 />
               </div>
 
               {/* Card 2: Problem Statement */}
-              <div data-section="prdProblemStatement" className="bg-white rounded-xl border border-zinc-200 p-3.5 sm:p-4 shadow-xs space-y-2.5">
+              <div data-section="prdProblemStatement" className="bg-white rounded-xl border border-zinc-200 p-4 sm:p-5 shadow-xs space-y-2.5">
                 <div className="flex items-center justify-between border-b border-zinc-100 pb-2 gap-2">
                   <div className="flex items-center gap-2">
                     <AlertCircle className="w-4 h-4 text-blue-600 shrink-0" />
@@ -2863,7 +2866,7 @@ export function ClaudeSkillsClient({
                         setPrdProblemStatement(d.prdProblemStatement);
                         setIsManuallyEdited(false);
                       }}
-                      className="text-[10px] text-zinc-400 hover:text-zinc-700 transition-colors font-mono cursor-pointer"
+                      className="text-[10px] text-zinc-500 hover:text-zinc-700 transition-colors font-mono cursor-pointer"
                       title="Reset to preset default"
                     >
                       Reset
@@ -2887,12 +2890,12 @@ export function ClaudeSkillsClient({
                   }}
                   rows={3}
                   placeholder="Specific problems this software addresses..."
-                  className="w-full p-2.5 border border-zinc-200 rounded-lg text-xs font-mono leading-relaxed focus:outline-none focus:ring-2 focus:ring-zinc-900/10 focus:border-zinc-900 resize-y"
+                  className="w-full p-2.5 border border-zinc-200 rounded-lg text-xs font-mono leading-relaxed focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 resize-y"
                 />
               </div>
 
               {/* Card 3: User Personas */}
-              <div data-section="prdPersonas" className="bg-white rounded-xl border border-zinc-200 p-3.5 sm:p-4 shadow-xs space-y-2.5">
+              <div data-section="prdPersonas" className="bg-white rounded-xl border border-zinc-200 p-4 sm:p-5 shadow-xs space-y-2.5">
                 <div className="flex items-center justify-between border-b border-zinc-100 pb-2 gap-2">
                   <div className="flex items-center gap-2">
                     <Users className="w-4 h-4 text-blue-600 shrink-0" />
@@ -2906,7 +2909,7 @@ export function ClaudeSkillsClient({
                         setPrdPersonas(d.prdPersonas);
                         setIsManuallyEdited(false);
                       }}
-                      className="text-[10px] text-zinc-400 hover:text-zinc-700 transition-colors font-mono cursor-pointer"
+                      className="text-[10px] text-zinc-500 hover:text-zinc-700 transition-colors font-mono cursor-pointer"
                       title="Reset to preset default"
                     >
                       Reset
@@ -2930,12 +2933,12 @@ export function ClaudeSkillsClient({
                   }}
                   rows={4}
                   placeholder="| Persona | Role | Primary Goal & Need |"
-                  className="w-full p-2.5 border border-zinc-200 rounded-lg text-xs font-mono leading-relaxed focus:outline-none focus:ring-2 focus:ring-zinc-900/10 focus:border-zinc-900 resize-y"
+                  className="w-full p-2.5 border border-zinc-200 rounded-lg text-xs font-mono leading-relaxed focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 resize-y"
                 />
               </div>
 
               {/* Card 4: Functional Requirements */}
-              <div data-section="prdFunctionalReqs" className="bg-white rounded-xl border border-zinc-200 p-3.5 sm:p-4 shadow-xs space-y-2.5">
+              <div data-section="prdFunctionalReqs" className="bg-white rounded-xl border border-zinc-200 p-4 sm:p-5 shadow-xs space-y-2.5">
                 <div className="flex items-center justify-between border-b border-zinc-100 pb-2 gap-2">
                   <div className="flex items-center gap-2">
                     <CheckCircle2 className="w-4 h-4 text-blue-600 shrink-0" />
@@ -2949,7 +2952,7 @@ export function ClaudeSkillsClient({
                         setPrdFunctionalReqs(d.prdFunctionalReqs);
                         setIsManuallyEdited(false);
                       }}
-                      className="text-[10px] text-zinc-400 hover:text-zinc-700 transition-colors font-mono cursor-pointer"
+                      className="text-[10px] text-zinc-500 hover:text-zinc-700 transition-colors font-mono cursor-pointer"
                       title="Reset to preset default"
                     >
                       Reset
@@ -2973,12 +2976,12 @@ export function ClaudeSkillsClient({
                   }}
                   rows={6}
                   placeholder="### Core Capabilities (FR-1 to FR-4)..."
-                  className="w-full p-2.5 border border-zinc-200 rounded-lg text-xs font-mono leading-relaxed focus:outline-none focus:ring-2 focus:ring-zinc-900/10 focus:border-zinc-900 resize-y"
+                  className="w-full p-2.5 border border-zinc-200 rounded-lg text-xs font-mono leading-relaxed focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 resize-y"
                 />
               </div>
 
               {/* Card 5: Non-Functional Requirements */}
-              <div data-section="prdNonFunctionalReqs" className="bg-white rounded-xl border border-zinc-200 p-3.5 sm:p-4 shadow-xs space-y-2.5">
+              <div data-section="prdNonFunctionalReqs" className="bg-white rounded-xl border border-zinc-200 p-4 sm:p-5 shadow-xs space-y-2.5">
                 <div className="flex items-center justify-between border-b border-zinc-100 pb-2 gap-2">
                   <div className="flex items-center gap-2">
                     <ShieldCheck className="w-4 h-4 text-blue-600 shrink-0" />
@@ -2992,7 +2995,7 @@ export function ClaudeSkillsClient({
                         setPrdNonFunctionalReqs(d.prdNonFunctionalReqs);
                         setIsManuallyEdited(false);
                       }}
-                      className="text-[10px] text-zinc-400 hover:text-zinc-700 transition-colors font-mono cursor-pointer"
+                      className="text-[10px] text-zinc-500 hover:text-zinc-700 transition-colors font-mono cursor-pointer"
                       title="Reset to preset default"
                     >
                       Reset
@@ -3016,12 +3019,12 @@ export function ClaudeSkillsClient({
                   }}
                   rows={4}
                   placeholder="- Performance: Sub-50ms overhead..."
-                  className="w-full p-2.5 border border-zinc-200 rounded-lg text-xs font-mono leading-relaxed focus:outline-none focus:ring-2 focus:ring-zinc-900/10 focus:border-zinc-900 resize-y"
+                  className="w-full p-2.5 border border-zinc-200 rounded-lg text-xs font-mono leading-relaxed focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 resize-y"
                 />
               </div>
 
               {/* Card 6: Milestone Phasing */}
-              <div data-section="prdMilestones" className="bg-white rounded-xl border border-zinc-200 p-3.5 sm:p-4 shadow-xs space-y-2.5">
+              <div data-section="prdMilestones" className="bg-white rounded-xl border border-zinc-200 p-4 sm:p-5 shadow-xs space-y-2.5">
                 <div className="flex items-center justify-between border-b border-zinc-100 pb-2 gap-2">
                   <div className="flex items-center gap-2">
                     <Layers className="w-4 h-4 text-blue-600 shrink-0" />
@@ -3035,7 +3038,7 @@ export function ClaudeSkillsClient({
                         setPrdMilestones(d.prdMilestones);
                         setIsManuallyEdited(false);
                       }}
-                      className="text-[10px] text-zinc-400 hover:text-zinc-700 transition-colors font-mono cursor-pointer"
+                      className="text-[10px] text-zinc-500 hover:text-zinc-700 transition-colors font-mono cursor-pointer"
                       title="Reset to preset default"
                     >
                       Reset
@@ -3059,7 +3062,7 @@ export function ClaudeSkillsClient({
                   }}
                   rows={4}
                   placeholder="| Milestone | Phase | Key Deliverables |"
-                  className="w-full p-2.5 border border-zinc-200 rounded-lg text-xs font-mono leading-relaxed focus:outline-none focus:ring-2 focus:ring-zinc-900/10 focus:border-zinc-900 resize-y"
+                  className="w-full p-2.5 border border-zinc-200 rounded-lg text-xs font-mono leading-relaxed focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 resize-y"
                 />
               </div>
             </div>
@@ -3069,7 +3072,7 @@ export function ClaudeSkillsClient({
           {format === "design_md" && (
             <div className="space-y-4">
               {/* Card 1: Design Tokens & Palette */}
-              <div data-section="designTokens" className="bg-white rounded-xl border border-zinc-200 p-3.5 sm:p-4 shadow-xs space-y-2.5">
+              <div data-section="designTokens" className="bg-white rounded-xl border border-zinc-200 p-4 sm:p-5 shadow-xs space-y-2.5">
                 <div className="flex items-center justify-between border-b border-zinc-100 pb-2 gap-2">
                   <div className="flex items-center gap-2">
                     <Layers className="w-4 h-4 text-indigo-600 shrink-0" />
@@ -3083,7 +3086,7 @@ export function ClaudeSkillsClient({
                         setDesignTokens(d.designTokens);
                         setIsManuallyEdited(false);
                       }}
-                      className="text-[10px] text-zinc-400 hover:text-zinc-700 transition-colors font-mono cursor-pointer"
+                      className="text-[10px] text-zinc-500 hover:text-zinc-700 transition-colors font-mono cursor-pointer"
                       title="Reset to preset default"
                     >
                       Reset
@@ -3106,12 +3109,12 @@ export function ClaudeSkillsClient({
                     setIsManuallyEdited(false);
                   }}
                   rows={5}
-                  className="w-full p-2.5 border border-zinc-200 rounded-lg text-xs font-mono leading-relaxed focus:outline-none focus:ring-2 focus:ring-zinc-900/10 focus:border-zinc-900 resize-y"
+                  className="w-full p-2.5 border border-zinc-200 rounded-lg text-xs font-mono leading-relaxed focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 resize-y"
                 />
               </div>
 
               {/* Card 2: Single-Canvas Layout */}
-              <div data-section="designLayout" className="bg-white rounded-xl border border-zinc-200 p-3.5 sm:p-4 shadow-xs space-y-2.5">
+              <div data-section="designLayout" className="bg-white rounded-xl border border-zinc-200 p-4 sm:p-5 shadow-xs space-y-2.5">
                 <div className="flex items-center justify-between border-b border-zinc-100 pb-2 gap-2">
                   <div className="flex items-center gap-2">
                     <Sliders className="w-4 h-4 text-indigo-600 shrink-0" />
@@ -3125,7 +3128,7 @@ export function ClaudeSkillsClient({
                         setDesignLayout(d.designLayout);
                         setIsManuallyEdited(false);
                       }}
-                      className="text-[10px] text-zinc-400 hover:text-zinc-700 transition-colors font-mono cursor-pointer"
+                      className="text-[10px] text-zinc-500 hover:text-zinc-700 transition-colors font-mono cursor-pointer"
                       title="Reset to preset default"
                     >
                       Reset
@@ -3148,12 +3151,12 @@ export function ClaudeSkillsClient({
                     setIsManuallyEdited(false);
                   }}
                   rows={4}
-                  className="w-full p-2.5 border border-zinc-200 rounded-lg text-xs font-mono leading-relaxed focus:outline-none focus:ring-2 focus:ring-zinc-900/10 focus:border-zinc-900 resize-y"
+                  className="w-full p-2.5 border border-zinc-200 rounded-lg text-xs font-mono leading-relaxed focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 resize-y"
                 />
               </div>
 
               {/* Card 3: Conventions */}
-              <div data-section="designConventions" className="bg-white rounded-xl border border-zinc-200 p-3.5 sm:p-4 shadow-xs space-y-2.5">
+              <div data-section="designConventions" className="bg-white rounded-xl border border-zinc-200 p-4 sm:p-5 shadow-xs space-y-2.5">
                 <div className="flex items-center justify-between border-b border-zinc-100 pb-2 gap-2">
                   <div className="flex items-center gap-2">
                     <Settings2 className="w-4 h-4 text-indigo-600 shrink-0" />
@@ -3167,7 +3170,7 @@ export function ClaudeSkillsClient({
                         setDesignConventions(d.designConventions);
                         setIsManuallyEdited(false);
                       }}
-                      className="text-[10px] text-zinc-400 hover:text-zinc-700 transition-colors font-mono cursor-pointer"
+                      className="text-[10px] text-zinc-500 hover:text-zinc-700 transition-colors font-mono cursor-pointer"
                       title="Reset to preset default"
                     >
                       Reset
@@ -3190,12 +3193,12 @@ export function ClaudeSkillsClient({
                     setIsManuallyEdited(false);
                   }}
                   rows={4}
-                  className="w-full p-2.5 border border-zinc-200 rounded-lg text-xs font-mono leading-relaxed focus:outline-none focus:ring-2 focus:ring-zinc-900/10 focus:border-zinc-900 resize-y"
+                  className="w-full p-2.5 border border-zinc-200 rounded-lg text-xs font-mono leading-relaxed focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 resize-y"
                 />
               </div>
 
               {/* Card 4: Negative Guardrails */}
-              <div data-section="designGuardrails" className="bg-white rounded-xl border border-zinc-200 p-3.5 sm:p-4 shadow-xs space-y-2.5">
+              <div data-section="designGuardrails" className="bg-white rounded-xl border border-zinc-200 p-4 sm:p-5 shadow-xs space-y-2.5">
                 <div className="flex items-center justify-between border-b border-zinc-100 pb-2 gap-2">
                   <div className="flex items-center gap-2">
                     <AlertTriangle className="w-4 h-4 text-indigo-600 shrink-0" />
@@ -3209,7 +3212,7 @@ export function ClaudeSkillsClient({
                         setDesignGuardrails(d.designGuardrails);
                         setIsManuallyEdited(false);
                       }}
-                      className="text-[10px] text-zinc-400 hover:text-zinc-700 transition-colors font-mono cursor-pointer"
+                      className="text-[10px] text-zinc-500 hover:text-zinc-700 transition-colors font-mono cursor-pointer"
                       title="Reset to preset default"
                     >
                       Reset
@@ -3232,12 +3235,12 @@ export function ClaudeSkillsClient({
                     setIsManuallyEdited(false);
                   }}
                   rows={4}
-                  className="w-full p-2.5 border border-zinc-200 rounded-lg text-xs font-mono leading-relaxed focus:outline-none focus:ring-2 focus:ring-zinc-900/10 focus:border-zinc-900 resize-y"
+                  className="w-full p-2.5 border border-zinc-200 rounded-lg text-xs font-mono leading-relaxed focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 resize-y"
                 />
               </div>
 
               {/* Card 5: StitchMCP & Design Verification */}
-              <div data-section="designVerification" className="bg-white rounded-xl border border-zinc-200 p-3.5 sm:p-4 shadow-xs space-y-2.5">
+              <div data-section="designVerification" className="bg-white rounded-xl border border-zinc-200 p-4 sm:p-5 shadow-xs space-y-2.5">
                 <div className="flex items-center justify-between border-b border-zinc-100 pb-2 gap-2">
                   <div className="flex items-center gap-2">
                     <CheckCircle2 className="w-4 h-4 text-indigo-600 shrink-0" />
@@ -3251,7 +3254,7 @@ export function ClaudeSkillsClient({
                         setDesignVerification(d.designVerification);
                         setIsManuallyEdited(false);
                       }}
-                      className="text-[10px] text-zinc-400 hover:text-zinc-700 transition-colors font-mono cursor-pointer"
+                      className="text-[10px] text-zinc-500 hover:text-zinc-700 transition-colors font-mono cursor-pointer"
                       title="Reset to preset default"
                     >
                       Reset
@@ -3274,7 +3277,7 @@ export function ClaudeSkillsClient({
                     setIsManuallyEdited(false);
                   }}
                   rows={4}
-                  className="w-full p-2.5 border border-zinc-200 rounded-lg text-xs font-mono leading-relaxed focus:outline-none focus:ring-2 focus:ring-zinc-900/10 focus:border-zinc-900 resize-y"
+                  className="w-full p-2.5 border border-zinc-200 rounded-lg text-xs font-mono leading-relaxed focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 resize-y"
                 />
               </div>
             </div>
@@ -3284,7 +3287,7 @@ export function ClaudeSkillsClient({
           {format === "task_md" && (
             <div className="space-y-4">
               {/* Card 1: Sprint Status Dashboard */}
-              <div data-section="taskDashboard" className="bg-white rounded-xl border border-zinc-200 p-3.5 sm:p-4 shadow-xs space-y-2.5">
+              <div data-section="taskDashboard" className="bg-white rounded-xl border border-zinc-200 p-4 sm:p-5 shadow-xs space-y-2.5">
                 <div className="flex items-center justify-between border-b border-zinc-100 pb-2 gap-2">
                   <div className="flex items-center gap-2">
                     <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
@@ -3298,7 +3301,7 @@ export function ClaudeSkillsClient({
                         setTaskDashboard(d.taskDashboard);
                         setIsManuallyEdited(false);
                       }}
-                      className="text-[10px] text-zinc-400 hover:text-zinc-700 transition-colors font-mono cursor-pointer"
+                      className="text-[10px] text-zinc-500 hover:text-zinc-700 transition-colors font-mono cursor-pointer"
                       title="Reset to preset default"
                     >
                       Reset
@@ -3321,12 +3324,12 @@ export function ClaudeSkillsClient({
                     setIsManuallyEdited(false);
                   }}
                   rows={3}
-                  className="w-full p-2.5 border border-zinc-200 rounded-lg text-xs font-mono leading-relaxed focus:outline-none focus:ring-2 focus:ring-zinc-900/10 focus:border-zinc-900 resize-y"
+                  className="w-full p-2.5 border border-zinc-200 rounded-lg text-xs font-mono leading-relaxed focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 resize-y"
                 />
               </div>
 
               {/* Card 2: Active Phase Checklists */}
-              <div data-section="taskPhases" className="bg-white rounded-xl border border-zinc-200 p-3.5 sm:p-4 shadow-xs space-y-2.5">
+              <div data-section="taskPhases" className="bg-white rounded-xl border border-zinc-200 p-4 sm:p-5 shadow-xs space-y-2.5">
                 <div className="flex items-center justify-between border-b border-zinc-100 pb-2 gap-2">
                   <div className="flex items-center gap-2">
                     <Terminal className="w-4 h-4 text-emerald-600 shrink-0" />
@@ -3340,7 +3343,7 @@ export function ClaudeSkillsClient({
                         setTaskPhases(d.taskPhases);
                         setIsManuallyEdited(false);
                       }}
-                      className="text-[10px] text-zinc-400 hover:text-zinc-700 transition-colors font-mono cursor-pointer"
+                      className="text-[10px] text-zinc-500 hover:text-zinc-700 transition-colors font-mono cursor-pointer"
                       title="Reset to preset default"
                     >
                       Reset
@@ -3363,12 +3366,12 @@ export function ClaudeSkillsClient({
                     setIsManuallyEdited(false);
                   }}
                   rows={8}
-                  className="w-full p-2.5 border border-zinc-200 rounded-lg text-xs font-mono leading-relaxed focus:outline-none focus:ring-2 focus:ring-zinc-900/10 focus:border-zinc-900 resize-y"
+                  className="w-full p-2.5 border border-zinc-200 rounded-lg text-xs font-mono leading-relaxed focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 resize-y"
                 />
               </div>
 
               {/* Card 3: Verification Commands & Quality Gates */}
-              <div data-section="taskVerification" className="bg-white rounded-xl border border-zinc-200 p-3.5 sm:p-4 shadow-xs space-y-2.5">
+              <div data-section="taskVerification" className="bg-white rounded-xl border border-zinc-200 p-4 sm:p-5 shadow-xs space-y-2.5">
                 <div className="flex items-center justify-between border-b border-zinc-100 pb-2 gap-2">
                   <div className="flex items-center gap-2">
                     <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
@@ -3382,7 +3385,7 @@ export function ClaudeSkillsClient({
                         setTaskVerification(d.taskVerification);
                         setIsManuallyEdited(false);
                       }}
-                      className="text-[10px] text-zinc-400 hover:text-zinc-700 transition-colors font-mono cursor-pointer"
+                      className="text-[10px] text-zinc-500 hover:text-zinc-700 transition-colors font-mono cursor-pointer"
                       title="Reset to preset default"
                     >
                       Reset
@@ -3405,12 +3408,12 @@ export function ClaudeSkillsClient({
                     setIsManuallyEdited(false);
                   }}
                   rows={5}
-                  className="w-full p-2.5 border border-zinc-200 rounded-lg text-xs font-mono leading-relaxed focus:outline-none focus:ring-2 focus:ring-zinc-900/10 focus:border-zinc-900 resize-y"
+                  className="w-full p-2.5 border border-zinc-200 rounded-lg text-xs font-mono leading-relaxed focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 resize-y"
                 />
               </div>
 
               {/* Card 4: Agent Session Audit Log */}
-              <div data-section="taskSessionLog" className="bg-white rounded-xl border border-zinc-200 p-3.5 sm:p-4 shadow-xs space-y-2.5">
+              <div data-section="taskSessionLog" className="bg-white rounded-xl border border-zinc-200 p-4 sm:p-5 shadow-xs space-y-2.5">
                 <div className="flex items-center justify-between border-b border-zinc-100 pb-2 gap-2">
                   <div className="flex items-center gap-2">
                     <FileText className="w-4 h-4 text-emerald-600 shrink-0" />
@@ -3424,7 +3427,7 @@ export function ClaudeSkillsClient({
                         setTaskSessionLog(d.taskSessionLog);
                         setIsManuallyEdited(false);
                       }}
-                      className="text-[10px] text-zinc-400 hover:text-zinc-700 transition-colors font-mono cursor-pointer"
+                      className="text-[10px] text-zinc-500 hover:text-zinc-700 transition-colors font-mono cursor-pointer"
                       title="Reset to preset default"
                     >
                       Reset
@@ -3447,12 +3450,12 @@ export function ClaudeSkillsClient({
                     setIsManuallyEdited(false);
                   }}
                   rows={4}
-                  className="w-full p-2.5 border border-zinc-200 rounded-lg text-xs font-mono leading-relaxed focus:outline-none focus:ring-2 focus:ring-zinc-900/10 focus:border-zinc-900 resize-y"
+                  className="w-full p-2.5 border border-zinc-200 rounded-lg text-xs font-mono leading-relaxed focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 resize-y"
                 />
               </div>
 
               {/* Card 5: Sprint Directives */}
-              <div data-section="taskDirectives" className="bg-white rounded-xl border border-zinc-200 p-3.5 sm:p-4 shadow-xs space-y-2.5">
+              <div data-section="taskDirectives" className="bg-white rounded-xl border border-zinc-200 p-4 sm:p-5 shadow-xs space-y-2.5">
                 <div className="flex items-center justify-between border-b border-zinc-100 pb-2 gap-2">
                   <div className="flex items-center gap-2">
                     <Zap className="w-4 h-4 text-emerald-600 shrink-0" />
@@ -3466,7 +3469,7 @@ export function ClaudeSkillsClient({
                         setTaskDirectives(d.taskDirectives);
                         setIsManuallyEdited(false);
                       }}
-                      className="text-[10px] text-zinc-400 hover:text-zinc-700 transition-colors font-mono cursor-pointer"
+                      className="text-[10px] text-zinc-500 hover:text-zinc-700 transition-colors font-mono cursor-pointer"
                       title="Reset to preset default"
                     >
                       Reset
@@ -3490,7 +3493,7 @@ export function ClaudeSkillsClient({
                   }}
                   rows={3}
                   placeholder="- Critical SLA: Zero regression on build times..."
-                  className="w-full p-2.5 border border-zinc-200 rounded-lg text-xs font-mono leading-relaxed focus:outline-none focus:ring-2 focus:ring-zinc-900/10 focus:border-zinc-900 resize-y"
+                  className="w-full p-2.5 border border-zinc-200 rounded-lg text-xs font-mono leading-relaxed focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 resize-y"
                 />
               </div>
             </div>
@@ -3500,7 +3503,7 @@ export function ClaudeSkillsClient({
           {format === "memory_md" && (
             <div className="space-y-4">
               {/* Card 1: Technology Context Matrix */}
-              <div data-section="memoryContext" className="bg-white rounded-xl border border-zinc-200 p-3.5 sm:p-4 shadow-xs space-y-2.5">
+              <div data-section="memoryContext" className="bg-white rounded-xl border border-zinc-200 p-4 sm:p-5 shadow-xs space-y-2.5">
                 <div className="flex items-center justify-between border-b border-zinc-100 pb-2 gap-2">
                   <div className="flex items-center gap-2">
                     <Cpu className="w-4 h-4 text-amber-600 shrink-0" />
@@ -3514,7 +3517,7 @@ export function ClaudeSkillsClient({
                         setMemoryContext(d.memoryContext);
                         setIsManuallyEdited(false);
                       }}
-                      className="text-[10px] text-zinc-400 hover:text-zinc-700 transition-colors font-mono cursor-pointer"
+                      className="text-[10px] text-zinc-500 hover:text-zinc-700 transition-colors font-mono cursor-pointer"
                       title="Reset to preset default"
                     >
                       Reset
@@ -3537,12 +3540,12 @@ export function ClaudeSkillsClient({
                     setIsManuallyEdited(false);
                   }}
                   rows={4}
-                  className="w-full p-2.5 border border-zinc-200 rounded-lg text-xs font-mono leading-relaxed focus:outline-none focus:ring-2 focus:ring-zinc-900/10 focus:border-zinc-900 resize-y"
+                  className="w-full p-2.5 border border-zinc-200 rounded-lg text-xs font-mono leading-relaxed focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 resize-y"
                 />
               </div>
 
               {/* Card 2: Architectural Decision Records (ADRs) */}
-              <div data-section="memoryAdrs" className="bg-white rounded-xl border border-zinc-200 p-3.5 sm:p-4 shadow-xs space-y-2.5">
+              <div data-section="memoryAdrs" className="bg-white rounded-xl border border-zinc-200 p-4 sm:p-5 shadow-xs space-y-2.5">
                 <div className="flex items-center justify-between border-b border-zinc-100 pb-2 gap-2">
                   <div className="flex items-center gap-2">
                     <BookOpen className="w-4 h-4 text-amber-600 shrink-0" />
@@ -3556,7 +3559,7 @@ export function ClaudeSkillsClient({
                         setMemoryAdrs(d.memoryAdrs);
                         setIsManuallyEdited(false);
                       }}
-                      className="text-[10px] text-zinc-400 hover:text-zinc-700 transition-colors font-mono cursor-pointer"
+                      className="text-[10px] text-zinc-500 hover:text-zinc-700 transition-colors font-mono cursor-pointer"
                       title="Reset to preset default"
                     >
                       Reset
@@ -3579,12 +3582,12 @@ export function ClaudeSkillsClient({
                     setIsManuallyEdited(false);
                   }}
                   rows={6}
-                  className="w-full p-2.5 border border-zinc-200 rounded-lg text-xs font-mono leading-relaxed focus:outline-none focus:ring-2 focus:ring-zinc-900/10 focus:border-zinc-900 resize-y"
+                  className="w-full p-2.5 border border-zinc-200 rounded-lg text-xs font-mono leading-relaxed focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 resize-y"
                 />
               </div>
 
               {/* Card 3: Operational Gotchas & Pitfalls */}
-              <div data-section="memoryGotchas" className="bg-white rounded-xl border border-zinc-200 p-3.5 sm:p-4 shadow-xs space-y-2.5">
+              <div data-section="memoryGotchas" className="bg-white rounded-xl border border-zinc-200 p-4 sm:p-5 shadow-xs space-y-2.5">
                 <div className="flex items-center justify-between border-b border-zinc-100 pb-2 gap-2">
                   <div className="flex items-center gap-2">
                     <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
@@ -3598,7 +3601,7 @@ export function ClaudeSkillsClient({
                         setMemoryGotchas(d.memoryGotchas);
                         setIsManuallyEdited(false);
                       }}
-                      className="text-[10px] text-zinc-400 hover:text-zinc-700 transition-colors font-mono cursor-pointer"
+                      className="text-[10px] text-zinc-500 hover:text-zinc-700 transition-colors font-mono cursor-pointer"
                       title="Reset to preset default"
                     >
                       Reset
@@ -3621,12 +3624,12 @@ export function ClaudeSkillsClient({
                     setIsManuallyEdited(false);
                   }}
                   rows={4}
-                  className="w-full p-2.5 border border-zinc-200 rounded-lg text-xs font-mono leading-relaxed focus:outline-none focus:ring-2 focus:ring-zinc-900/10 focus:border-zinc-900 resize-y"
+                  className="w-full p-2.5 border border-zinc-200 rounded-lg text-xs font-mono leading-relaxed focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 resize-y"
                 />
               </div>
 
               {/* Card 4: 5-Step Agent Loop */}
-              <div data-section="memoryLoop" className="bg-white rounded-xl border border-zinc-200 p-3.5 sm:p-4 shadow-xs space-y-2.5">
+              <div data-section="memoryLoop" className="bg-white rounded-xl border border-zinc-200 p-4 sm:p-5 shadow-xs space-y-2.5">
                 <div className="flex items-center justify-between border-b border-zinc-100 pb-2 gap-2">
                   <div className="flex items-center gap-2">
                     <Terminal className="w-4 h-4 text-amber-600 shrink-0" />
@@ -3640,7 +3643,7 @@ export function ClaudeSkillsClient({
                         setMemoryLoop(d.memoryLoop);
                         setIsManuallyEdited(false);
                       }}
-                      className="text-[10px] text-zinc-400 hover:text-zinc-700 transition-colors font-mono cursor-pointer"
+                      className="text-[10px] text-zinc-500 hover:text-zinc-700 transition-colors font-mono cursor-pointer"
                       title="Reset to preset default"
                     >
                       Reset
@@ -3663,12 +3666,12 @@ export function ClaudeSkillsClient({
                     setIsManuallyEdited(false);
                   }}
                   rows={5}
-                  className="w-full p-2.5 border border-zinc-200 rounded-lg text-xs font-mono leading-relaxed focus:outline-none focus:ring-2 focus:ring-zinc-900/10 focus:border-zinc-900 resize-y"
+                  className="w-full p-2.5 border border-zinc-200 rounded-lg text-xs font-mono leading-relaxed focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 resize-y"
                 />
               </div>
 
               {/* Card 5: Domain Invariants & Anchors */}
-              <div data-section="memoryInvariants" className="bg-white rounded-xl border border-zinc-200 p-3.5 sm:p-4 shadow-xs space-y-2.5">
+              <div data-section="memoryInvariants" className="bg-white rounded-xl border border-zinc-200 p-4 sm:p-5 shadow-xs space-y-2.5">
                 <div className="flex items-center justify-between border-b border-zinc-100 pb-2 gap-2">
                   <div className="flex items-center gap-2">
                     <Layers className="w-4 h-4 text-amber-600 shrink-0" />
@@ -3682,7 +3685,7 @@ export function ClaudeSkillsClient({
                         setMemoryInvariants(d.memoryInvariants);
                         setIsManuallyEdited(false);
                       }}
-                      className="text-[10px] text-zinc-400 hover:text-zinc-700 transition-colors font-mono cursor-pointer"
+                      className="text-[10px] text-zinc-500 hover:text-zinc-700 transition-colors font-mono cursor-pointer"
                       title="Reset to preset default"
                     >
                       Reset
@@ -3706,12 +3709,12 @@ export function ClaudeSkillsClient({
                   }}
                   rows={3}
                   placeholder="- Key directory anchors..."
-                  className="w-full p-2.5 border border-zinc-200 rounded-lg text-xs font-mono leading-relaxed focus:outline-none focus:ring-2 focus:ring-zinc-900/10 focus:border-zinc-900 resize-y"
+                  className="w-full p-2.5 border border-zinc-200 rounded-lg text-xs font-mono leading-relaxed focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 resize-y"
                 />
               </div>
 
               {/* Card 6: Session History */}
-              <div data-section="memorySessionHistory" className="bg-white rounded-xl border border-zinc-200 p-3.5 sm:p-4 shadow-xs space-y-2.5">
+              <div data-section="memorySessionHistory" className="bg-white rounded-xl border border-zinc-200 p-4 sm:p-5 shadow-xs space-y-2.5">
                 <div className="flex items-center justify-between border-b border-zinc-100 pb-2 gap-2">
                   <div className="flex items-center gap-2">
                     <FileText className="w-4 h-4 text-amber-600 shrink-0" />
@@ -3725,7 +3728,7 @@ export function ClaudeSkillsClient({
                         setMemorySessionHistory(d.memorySessionHistory);
                         setIsManuallyEdited(false);
                       }}
-                      className="text-[10px] text-zinc-400 hover:text-zinc-700 transition-colors font-mono cursor-pointer"
+                      className="text-[10px] text-zinc-500 hover:text-zinc-700 transition-colors font-mono cursor-pointer"
                       title="Reset to preset default"
                     >
                       Reset
@@ -3748,7 +3751,7 @@ export function ClaudeSkillsClient({
                     setIsManuallyEdited(false);
                   }}
                   rows={3}
-                  className="w-full p-2.5 border border-zinc-200 rounded-lg text-xs font-mono leading-relaxed focus:outline-none focus:ring-2 focus:ring-zinc-900/10 focus:border-zinc-900 resize-y"
+                  className="w-full p-2.5 border border-zinc-200 rounded-lg text-xs font-mono leading-relaxed focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 resize-y"
                 />
               </div>
             </div>
@@ -3756,14 +3759,14 @@ export function ClaudeSkillsClient({
 
           {/* Cursor Rule Scope Card (Visible only when format is cursor_mdc) */}
           {format === "cursor_mdc" && (
-            <div className="bg-white rounded-xl border border-zinc-200 p-3.5 sm:p-4 shadow-xs space-y-3">
+            <div className="bg-white rounded-xl border border-zinc-200 p-4 sm:p-5 shadow-xs space-y-3">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-zinc-100 pb-2.5 gap-1">
                 <div className="flex items-center gap-2">
                   <FolderGit2 className="w-4 h-4 text-zinc-900 shrink-0" />
                   <h3 className="text-sm font-bold text-zinc-900">Cursor Rule Scope</h3>
                 </div>
                 <div className="flex items-center gap-1.5">
-                  <span className="text-[10px] text-zinc-400 font-mono">.cursor/rules/*.mdc</span>
+                  <span className="text-[10px] text-zinc-500 font-mono">.cursor/rules/*.mdc</span>
                   <InfoTooltip
                     title="Cursor Rule Scope"
                     description="Configure how Cursor IDE loads this .mdc rule — either scoped to specific glob matching files or injected into all model contexts."
@@ -3788,9 +3791,9 @@ export function ClaudeSkillsClient({
                     value={globPattern}
                     onChange={(e) => setGlobPattern(e.target.value)}
                     placeholder="e.g. src/app/**/*.tsx or **/*"
-                    className="w-full px-2.5 py-1.5 border border-zinc-200 rounded-lg text-xs font-mono focus:outline-none focus:ring-2 focus:ring-zinc-900/10 focus:border-zinc-900"
+                    className="w-full px-2.5 py-1.5 border border-zinc-200 rounded-lg text-xs font-mono focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500"
                   />
-                  <p className="text-[10px] text-zinc-400">Scopes rule to matching files. Use **/* for global workspace scope.</p>
+                  <p className="text-[10px] text-zinc-500">Scopes rule to matching files. Use **/* for global workspace scope.</p>
                 </div>
                 <div className="space-y-1">
                   <div className="flex items-center justify-between">
@@ -3816,7 +3819,7 @@ export function ClaudeSkillsClient({
                       {alwaysApply ? "ALWAYS ON" : "SCOPED ONLY"}
                     </span>
                   </button>
-                  <p className="text-[10px] text-zinc-400">When ON, Cursor injects this rule in every generation context.</p>
+                  <p className="text-[10px] text-zinc-500">When ON, Cursor injects this rule in every generation context.</p>
                 </div>
               </div>
             </div>
@@ -3824,8 +3827,8 @@ export function ClaudeSkillsClient({
 
           {/* MCP Server Configuration Card (Visible only when format is mcp_json) */}
           {format === "mcp_json" && (
-            <div className="bg-white rounded-xl border border-zinc-200 p-3.5 sm:p-4 shadow-xs space-y-4">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-zinc-100 pb-2.5 gap-2">
+            <div className="bg-white rounded-xl border border-zinc-200 p-4 sm:p-5 shadow-xs space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-zinc-100 pb-3 gap-2">
                 <div className="flex items-center gap-2">
                   <Server className="w-4 h-4 text-orange-600 shrink-0" />
                   <h3 className="text-sm font-bold text-zinc-900">Claude MCP Server Configuration</h3>
@@ -3847,7 +3850,7 @@ export function ClaudeSkillsClient({
                       Ready for Claude
                     </span>
                   )}
-                  <span className="text-[10px] text-zinc-400 font-mono hidden sm:inline">claude.json</span>
+                  <span className="text-[10px] text-zinc-500 font-mono hidden sm:inline">claude.json</span>
                   <InfoTooltip
                     title="Claude MCP Server"
                     description="Model Context Protocol config for connecting Claude Code CLI or Claude Desktop to local tools, filesystems, and databases."
@@ -3881,7 +3884,7 @@ export function ClaudeSkillsClient({
                       )}
                     >
                       <span className="truncate">{preset.label}</span>
-                      <span className="text-[10px] text-zinc-400 font-mono font-normal truncate">{preset.command}</span>
+                      <span className="text-[10px] text-zinc-500 font-mono font-normal truncate">{preset.command}</span>
                     </button>
                   ))}
                 </div>
@@ -3992,7 +3995,7 @@ export function ClaudeSkillsClient({
                             <Check className="w-2.5 h-2.5" /> Valid PAT format
                           </span>
                         ) : (
-                          <span className="text-zinc-400">Custom token</span>
+                          <span className="text-zinc-500">Custom token</span>
                         )}
                       </span>
                     )}
@@ -4188,7 +4191,7 @@ export function ClaudeSkillsClient({
                       </>
                     ) : (
                       <>
-                        <Unlock className="w-3 h-3 text-zinc-400" />
+                        <Unlock className="w-3 h-3 text-zinc-500" />
                         <span>Auto-sync</span>
                       </>
                     )}
@@ -4244,11 +4247,11 @@ export function ClaudeSkillsClient({
                     example="audit, security, review, lint"
                     align="left"
                   />
-                  <span className="text-[10px] bg-orange-100 text-orange-800 font-mono px-1.5 py-0.2 rounded font-medium">
+                  <span className="text-[10px] bg-orange-100 text-orange-800 font-mono px-1.5 py-0.5 rounded font-medium leading-none">
                     {triggerTags.length} chips
                   </span>
                 </div>
-                <span className="text-[10px] text-zinc-400">Scoped domain keywords evaluated in real time</span>
+                <span className="text-[11px] text-zinc-500">Scoped domain keywords evaluated in real time</span>
               </div>
 
               {/* Active Chips List */}
@@ -4270,7 +4273,7 @@ export function ClaudeSkillsClient({
                       <button
                         type="button"
                         onClick={() => handleRemoveTag(tag)}
-                        className="text-zinc-400 hover:text-zinc-900 rounded p-0.5 transition-colors cursor-pointer"
+                        className="text-zinc-500 hover:text-zinc-900 rounded p-0.5 transition-colors cursor-pointer"
                         title={`Remove tag '${tag}'`}
                       >
                         <X className="w-3 h-3" />
@@ -4308,7 +4311,7 @@ export function ClaudeSkillsClient({
 
               {/* Quick-Add Preset Tag Chips Suggestions */}
               <div className="flex items-center gap-1.5 flex-wrap">
-                <span className="text-[10px] font-semibold text-zinc-400 uppercase tracking-wider">Suggested Chips:</span>
+                <span className="text-[10px] font-semibold text-zinc-500 uppercase tracking-wider">Suggested Chips:</span>
                 {PRESET_TRIGGER_TAGS.map((presetTag) => {
                   const isAdded = triggerTags.includes(presetTag);
                   return (
@@ -4346,7 +4349,7 @@ export function ClaudeSkillsClient({
                   onChange={(e) => { setDescription(e.target.value); setActiveFieldKey("description"); }}
                   rows={3}
                   placeholder="When should the AI activate this skill? (e.g., progressive disclosure condition for Claude Code or file globs for Cursor .mdc rules)..."
-                  className="w-full p-3 border border-zinc-200 rounded-lg text-xs leading-relaxed focus:outline-none focus:ring-2 focus:ring-zinc-900/10 focus:border-zinc-900 min-h-[90px] resize-y"
+                  className="w-full p-3 border border-zinc-200 rounded-lg text-xs leading-relaxed focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 min-h-[90px] resize-y"
                 />
               </div>
 
@@ -4416,8 +4419,8 @@ export function ClaudeSkillsClient({
           </div>
 
           {/* Tech Stack Customization */}
-          <div data-section="techStack" className="bg-white rounded-xl border border-zinc-200 p-3.5 sm:p-4 shadow-xs space-y-3">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-zinc-100 pb-2.5 gap-2">
+          <div data-section="techStack" className="bg-white rounded-xl border border-zinc-200 p-4 sm:p-5 shadow-xs space-y-3">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-zinc-100 pb-3 gap-2">
               <div className="flex items-center gap-2">
                 <Layers className="w-4 h-4 text-zinc-700 shrink-0" />
                 <h3 className="text-sm font-bold text-zinc-900">Technology Stack Context</h3>
@@ -4458,7 +4461,7 @@ export function ClaudeSkillsClient({
                   value={framework}
                   onFocus={() => setActiveFieldKey("techStack")}
                   onChange={(e) => { setFramework(e.target.value); setActiveFieldKey("techStack"); setIsManuallyEdited(false); }}
-                  className="w-full px-2.5 py-1.5 border border-zinc-200 rounded-lg text-xs focus:outline-none focus:border-orange-500"
+                  className="w-full px-2.5 py-1.5 border border-zinc-200 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500"
                 />
               </div>
 
@@ -4469,7 +4472,7 @@ export function ClaudeSkillsClient({
                   value={language}
                   onFocus={() => setActiveFieldKey("techStack")}
                   onChange={(e) => { setLanguage(e.target.value); setActiveFieldKey("techStack"); setIsManuallyEdited(false); }}
-                  className="w-full px-2.5 py-1.5 border border-zinc-200 rounded-lg text-xs focus:outline-none focus:border-orange-500"
+                  className="w-full px-2.5 py-1.5 border border-zinc-200 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500"
                 />
               </div>
 
@@ -4480,7 +4483,7 @@ export function ClaudeSkillsClient({
                   value={styling}
                   onFocus={() => setActiveFieldKey("techStack")}
                   onChange={(e) => { setStyling(e.target.value); setActiveFieldKey("techStack"); setIsManuallyEdited(false); }}
-                  className="w-full px-2.5 py-1.5 border border-zinc-200 rounded-lg text-xs focus:outline-none focus:border-orange-500"
+                  className="w-full px-2.5 py-1.5 border border-zinc-200 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500"
                 />
               </div>
 
@@ -4491,15 +4494,15 @@ export function ClaudeSkillsClient({
                   value={database}
                   onFocus={() => setActiveFieldKey("techStack")}
                   onChange={(e) => { setDatabase(e.target.value); setActiveFieldKey("techStack"); setIsManuallyEdited(false); }}
-                  className="w-full px-2.5 py-1.5 border border-zinc-200 rounded-lg text-xs focus:outline-none focus:border-orange-500"
+                  className="w-full px-2.5 py-1.5 border border-zinc-200 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500"
                 />
               </div>
             </div>
           </div>
 
           {/* Philosophy & Non-Rigid Style Preferences */}
-          <div data-section="techStack" className="bg-white rounded-xl border border-zinc-200 p-3 sm:p-3.5 shadow-xs space-y-3">
-            <div className="flex flex-col sm:flex-row sm:items-baseline justify-between border-b border-zinc-100 pb-2.5 gap-1">
+          <div data-section="techStack" className="bg-white rounded-xl border border-zinc-200 p-4 sm:p-5 shadow-xs space-y-3">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-zinc-100 pb-3 gap-1">
               <div className="flex items-center gap-2">
                 <Sliders className="w-4 h-4 text-zinc-700 shrink-0" />
                 <h3 className="text-sm font-bold text-zinc-900">Engineering Philosophy</h3>
@@ -4509,7 +4512,7 @@ export function ClaudeSkillsClient({
                   align="left"
                 />
               </div>
-              <span className="text-[10px] text-zinc-500 font-medium">Flexible & Adaptable</span>
+              <span className="text-[11px] text-zinc-500">Flexible & Adaptable</span>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -4522,12 +4525,12 @@ export function ClaudeSkillsClient({
                     className={cn(
                       "p-2.5 rounded-lg border text-left transition-all flex flex-col gap-1 cursor-pointer",
                       isSelected
-                        ? `${p.color} ring-1 ring-orange-500/20 shadow-xs font-semibold`
-                        : "border-zinc-200 bg-white hover:bg-zinc-50 text-zinc-700"
+                        ? "border-orange-300 bg-orange-50/50 text-zinc-900 ring-1 ring-orange-500/15 shadow-xs"
+                        : "border-zinc-200 bg-white hover:border-zinc-300 hover:bg-zinc-50/60 text-zinc-700"
                     )}
                   >
                     <div className="flex items-center justify-between text-xs">
-                      <span className="font-bold">{p.title}</span>
+                      <span className="font-semibold text-zinc-900">{p.title}</span>
                       {isSelected && <Check className="w-3.5 h-3.5 text-orange-600" />}
                     </div>
                     <p className="text-xs leading-relaxed text-zinc-500 font-normal">{p.desc}</p>
@@ -4538,8 +4541,8 @@ export function ClaudeSkillsClient({
           </div>
 
           {/* Architectural & Code Quality Conventions */}
-          <div data-section="conventions" className="bg-white rounded-xl border border-zinc-200 p-3 sm:p-3.5 shadow-xs space-y-3">
-            <div className="flex flex-col sm:flex-row sm:items-baseline justify-between border-b border-zinc-100 pb-2.5 gap-1">
+          <div data-section="conventions" className="bg-white rounded-xl border border-zinc-200 p-4 sm:p-5 shadow-xs space-y-3">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-zinc-100 pb-3 gap-1">
               <div className="flex items-center gap-2">
                 <Settings2 className="w-4 h-4 text-zinc-700 shrink-0" />
                 <h3 className="text-sm font-bold text-zinc-900">Architectural & Code Quality Conventions</h3>
@@ -4549,7 +4552,7 @@ export function ClaudeSkillsClient({
                   align="left"
                 />
               </div>
-              <span className="text-[10px] text-zinc-400">Less rigid & configurable</span>
+              <span className="text-[11px] text-zinc-500">Less rigid & configurable</span>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -4564,15 +4567,15 @@ export function ClaudeSkillsClient({
                       setIsManuallyEdited(false);
                     }}
                     className={cn(
-                      "p-2 rounded-lg border text-left cursor-pointer transition-all flex items-start gap-2 select-none",
-                      isChecked ? "border-zinc-300 bg-zinc-50/80 text-zinc-900" : "border-zinc-200 bg-white text-zinc-500"
+                      "p-2.5 rounded-lg border text-left cursor-pointer transition-all flex items-start gap-2.5 select-none",
+                      isChecked ? "border-orange-200 bg-orange-50/40 text-zinc-900" : "border-zinc-200 bg-white text-zinc-500 hover:border-zinc-300 hover:bg-zinc-50/60"
                     )}
                   >
                     <input
                       type="checkbox"
                       checked={isChecked}
                       onChange={() => {}}
-                      className="mt-0.5 rounded border-zinc-300 text-orange-600 focus:ring-orange-500 shrink-0"
+                      className="mt-0.5 w-3.5 h-3.5 rounded border-zinc-300 accent-orange-600 cursor-pointer shrink-0"
                     />
                     <div>
                       <span className="text-xs font-semibold block text-zinc-800">{opt.label}</span>
@@ -4585,8 +4588,8 @@ export function ClaudeSkillsClient({
           </div>
 
           {/* Nuanced Agent Behavioral Guardrails */}
-          <div data-section="behaviors" className="bg-white rounded-xl border border-zinc-200 p-3 sm:p-3.5 shadow-xs space-y-3">
-            <div className="flex flex-col sm:flex-row sm:items-baseline justify-between border-b border-zinc-100 pb-2.5 gap-1">
+          <div data-section="behaviors" className="bg-white rounded-xl border border-zinc-200 p-4 sm:p-5 shadow-xs space-y-3">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-zinc-100 pb-3 gap-1">
               <div className="flex items-center gap-2">
                 <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
                 <h3 className="text-sm font-bold text-zinc-900">Agent Behavioral Guardrails</h3>
@@ -4596,7 +4599,7 @@ export function ClaudeSkillsClient({
                   align="left"
                 />
               </div>
-              <span className="text-[10px] text-zinc-400">Select active rules</span>
+              <span className="text-[11px] text-zinc-500">Select active rules</span>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -4611,15 +4614,15 @@ export function ClaudeSkillsClient({
                       setIsManuallyEdited(false);
                     }}
                     className={cn(
-                      "p-2 rounded-lg border text-left cursor-pointer transition-all flex items-start gap-2 select-none",
-                      isChecked ? "border-zinc-300 bg-zinc-50/80 text-zinc-900" : "border-zinc-200 bg-white text-zinc-500"
+                      "p-2.5 rounded-lg border text-left cursor-pointer transition-all flex items-start gap-2.5 select-none",
+                      isChecked ? "border-orange-200 bg-orange-50/40 text-zinc-900" : "border-zinc-200 bg-white text-zinc-500 hover:border-zinc-300 hover:bg-zinc-50/60"
                     )}
                   >
                     <input
                       type="checkbox"
                       checked={isChecked}
                       onChange={() => {}}
-                      className="mt-0.5 rounded border-zinc-300 text-orange-600 focus:ring-orange-500 shrink-0"
+                      className="mt-0.5 w-3.5 h-3.5 rounded border-zinc-300 accent-orange-600 cursor-pointer shrink-0"
                     />
                     <div>
                       <span className="text-xs font-semibold block text-zinc-800">{opt.label}</span>
@@ -4632,8 +4635,8 @@ export function ClaudeSkillsClient({
           </div>
 
           {/* Procedures & Custom Rules Textareas */}
-          <div data-section="procedures" className="bg-white rounded-xl border border-zinc-200 p-3.5 sm:p-4 shadow-xs space-y-3">
-            <div className="flex items-center justify-between border-b border-zinc-100 pb-2.5">
+          <div data-section="procedures" className="bg-white rounded-xl border border-zinc-200 p-4 sm:p-5 shadow-xs space-y-3">
+            <div className="flex items-center justify-between border-b border-zinc-100 pb-3">
               <div className="flex items-center gap-2">
                 <BookOpen className="w-4 h-4 text-zinc-700 shrink-0" />
                 <h3 className="text-sm font-bold text-zinc-900">Step-by-Step Workflow Procedures</h3>
@@ -4652,7 +4655,7 @@ export function ClaudeSkillsClient({
               onChange={(e) => { setProcedures(e.target.value); setActiveFieldKey("procedures"); setIsManuallyEdited(false); }}
               rows={8}
               placeholder="1. Read context... 2. Trace execution..."
-              className="w-full p-3 border border-zinc-200 rounded-lg text-xs font-mono leading-relaxed focus:outline-none focus:ring-2 focus:ring-zinc-900/10 focus:border-zinc-900 min-h-[195px] resize-y"
+              className="w-full p-3 border border-zinc-200 rounded-lg text-xs font-mono leading-relaxed focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 min-h-[195px] resize-y"
             />
 
             <div data-section="customDirectives" className="pt-2">
@@ -4673,7 +4676,7 @@ export function ClaudeSkillsClient({
                 onChange={(e) => { setCustomDirectives(e.target.value); setActiveFieldKey("customDirectives"); setIsManuallyEdited(false); }}
                 rows={5}
                 placeholder="- Never use eval or dangerous innerHTML..."
-                className="w-full p-3 border border-zinc-200 rounded-lg text-xs font-mono leading-relaxed focus:outline-none focus:ring-2 focus:ring-zinc-900/10 focus:border-zinc-900 min-h-[125px] resize-y"
+                className="w-full p-3 border border-zinc-200 rounded-lg text-xs font-mono leading-relaxed focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 min-h-[125px] resize-y"
               />
             </div>
           </div>
@@ -4717,12 +4720,12 @@ export function ClaudeSkillsClient({
                 />
                 <span
                   suppressHydrationWarning
-                  className="font-mono text-xs text-zinc-200 font-semibold truncate"
+                  className="font-mono text-xs text-zinc-200 font-semibold truncate shrink-0 max-w-[14rem]"
                   title={currentFileName}
                 >
                   {currentFileName}
                 </span>
-                <span className="text-[10px] px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-400 font-mono shrink-0 hidden xl:inline-block">
+                <span className="text-[10px] px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-400 font-mono shrink-0 hidden 2xl:inline-block">
                   {activeContent.split("\n").length} lines
                 </span>
                 {!shouldLoadEditor && (
@@ -5182,7 +5185,7 @@ export function ClaudeSkillsClient({
                                 )}
                                 title="Click to filter Trigger Specificity diagnostics"
                               >
-                                <span className="text-[8px] sm:text-[9px] font-mono uppercase tracking-wider text-zinc-500 truncate w-full">TRIGGERS</span>
+                                <span className="text-[10px] sm:text-[10px] font-mono uppercase tracking-wider text-zinc-500 truncate w-full">TRIGGERS</span>
                                 <span className="text-[11px] sm:text-[12px] font-mono font-semibold text-zinc-100">{auditReport.dimensions.triggers.score}%</span>
                               </button>
 
@@ -5198,7 +5201,7 @@ export function ClaudeSkillsClient({
                                 )}
                                 title="Click to filter Rule Density diagnostics"
                               >
-                                <span className="text-[8px] sm:text-[9px] font-mono uppercase tracking-wider text-zinc-500 truncate w-full">DENSITY</span>
+                                <span className="text-[10px] sm:text-[10px] font-mono uppercase tracking-wider text-zinc-500 truncate w-full">DENSITY</span>
                                 <span className="text-[11px] sm:text-[12px] font-mono font-semibold text-zinc-100">~{auditReport.tokenCount}t</span>
                               </button>
 
@@ -5214,7 +5217,7 @@ export function ClaudeSkillsClient({
                                 )}
                                 title="Click to filter Negative Guardrails diagnostics"
                               >
-                                <span className="text-[8px] sm:text-[9px] font-mono uppercase tracking-wider text-zinc-500 truncate w-full">GUARDS</span>
+                                <span className="text-[10px] sm:text-[10px] font-mono uppercase tracking-wider text-zinc-500 truncate w-full">GUARDS</span>
                                 <span className="text-[11px] sm:text-[12px] font-mono font-semibold text-zinc-100">{auditReport.dimensions.guardrails.score}%</span>
                               </button>
 
@@ -5230,7 +5233,7 @@ export function ClaudeSkillsClient({
                                 )}
                                 title="Click to filter Format Compliance diagnostics"
                               >
-                                <span className="text-[8px] sm:text-[9px] font-mono uppercase tracking-wider text-zinc-500 truncate w-full">FORMAT</span>
+                                <span className="text-[10px] sm:text-[10px] font-mono uppercase tracking-wider text-zinc-500 truncate w-full">FORMAT</span>
                                 <span className="text-[11px] sm:text-[12px] font-mono font-semibold text-zinc-100">{auditReport.dimensions.formatCompliance.score}%</span>
                               </button>
 
@@ -5246,7 +5249,7 @@ export function ClaudeSkillsClient({
                                 )}
                                 title="Click to filter Architectural Boundaries diagnostics"
                               >
-                                <span className="text-[8px] sm:text-[9px] font-mono uppercase tracking-wider text-zinc-500 truncate w-full">ARCH</span>
+                                <span className="text-[10px] sm:text-[10px] font-mono uppercase tracking-wider text-zinc-500 truncate w-full">ARCH</span>
                                 <span className="text-[11px] sm:text-[12px] font-mono font-semibold text-zinc-100">{auditReport.dimensions.architecture.score}%</span>
                               </button>
                             </div>
@@ -5344,7 +5347,7 @@ export function ClaudeSkillsClient({
                               >
                                 <div className="flex items-center justify-between font-semibold">
                                   <span>{issue.title}</span>
-                                  <span className="text-[8px] uppercase font-mono px-1.5 py-0.5 rounded bg-black/50 text-zinc-300">
+                                  <span className="text-[10px] uppercase font-mono px-1.5 py-0.5 rounded bg-black/50 text-zinc-300">
                                     {issue.severity}
                                   </span>
                                 </div>
@@ -5422,7 +5425,7 @@ export function ClaudeSkillsClient({
                         <div className="p-2 rounded-lg bg-zinc-900/80 border border-zinc-800 text-[11px] space-y-0.5">
                           <div className="flex items-center justify-between">
                             <span className="font-semibold text-zinc-200 font-mono">1. Trigger Specificity</span>
-                            <span className={cn("text-[9px] font-mono font-bold uppercase px-1.5 py-0.5 rounded", auditReport.dimensions.triggers.score >= 80 ? "bg-zinc-800 text-zinc-200" : "bg-zinc-800 text-amber-300")}>
+                            <span className={cn("text-[10px] font-mono font-bold uppercase px-1.5 py-0.5 rounded", auditReport.dimensions.triggers.score >= 80 ? "bg-zinc-800 text-zinc-200" : "bg-zinc-800 text-amber-300")}>
                               {auditReport.dimensions.triggers.score >= 80 ? "Passed" : "Review Scope"}
                             </span>
                           </div>
@@ -5434,7 +5437,7 @@ export function ClaudeSkillsClient({
                         <div className="p-2 rounded-lg bg-zinc-900/80 border border-zinc-800 text-[11px] space-y-0.5">
                           <div className="flex items-center justify-between">
                             <span className="font-semibold text-zinc-200 font-mono">2. Rule Density</span>
-                            <span className={cn("text-[9px] font-mono font-bold uppercase px-1.5 py-0.5 rounded", auditReport.tokenCount <= 1200 && auditReport.tokenCount >= 70 ? "bg-zinc-800 text-zinc-200" : "bg-zinc-800 text-amber-300")}>
+                            <span className={cn("text-[10px] font-mono font-bold uppercase px-1.5 py-0.5 rounded", auditReport.tokenCount <= 1200 && auditReport.tokenCount >= 70 ? "bg-zinc-800 text-zinc-200" : "bg-zinc-800 text-amber-300")}>
                               {auditReport.tokenCount <= 1200 && auditReport.tokenCount >= 70 ? "Optimal" : "Attention"}
                             </span>
                           </div>
@@ -5446,7 +5449,7 @@ export function ClaudeSkillsClient({
                         <div className="p-2 rounded-lg bg-zinc-900/80 border border-zinc-800 text-[11px] space-y-0.5">
                           <div className="flex items-center justify-between">
                             <span className="font-semibold text-zinc-200 font-mono">4. Format Compliance</span>
-                            <span className={cn("text-[9px] font-mono font-bold uppercase px-1.5 py-0.5 rounded", auditReport.dimensions.formatCompliance.score >= 80 ? "bg-zinc-800 text-zinc-200" : "bg-zinc-800 text-amber-300")}>
+                            <span className={cn("text-[10px] font-mono font-bold uppercase px-1.5 py-0.5 rounded", auditReport.dimensions.formatCompliance.score >= 80 ? "bg-zinc-800 text-zinc-200" : "bg-zinc-800 text-amber-300")}>
                               {auditReport.dimensions.formatCompliance.score >= 80 ? "Passed" : "Syntax Check"}
                             </span>
                           </div>
@@ -5458,7 +5461,7 @@ export function ClaudeSkillsClient({
                         <div className="p-2 rounded-lg bg-zinc-900/80 border border-zinc-800 text-[11px] space-y-0.5">
                           <div className="flex items-center justify-between">
                             <span className="font-semibold text-zinc-200 font-mono">5. Architectural Boundaries</span>
-                            <span className={cn("text-[9px] font-mono font-bold uppercase px-1.5 py-0.5 rounded", auditReport.dimensions.architecture.score >= 80 ? "bg-zinc-800 text-zinc-200" : "bg-zinc-800 text-amber-300")}>
+                            <span className={cn("text-[10px] font-mono font-bold uppercase px-1.5 py-0.5 rounded", auditReport.dimensions.architecture.score >= 80 ? "bg-zinc-800 text-zinc-200" : "bg-zinc-800 text-amber-300")}>
                               {auditReport.dimensions.architecture.score >= 80 ? "Passed" : "Review Rules"}
                             </span>
                           </div>
@@ -5515,7 +5518,7 @@ export function ClaudeSkillsClient({
                 <span className="font-semibold text-zinc-100">{auditReport.overallScore}/100</span>
                 <span className="text-zinc-600">·</span>
                 <span className="text-[10px] text-zinc-400 uppercase tracking-wider">{auditReport.gradeLabel}</span>
-                <span className="text-[9px] text-zinc-500 ml-0.5">{showAuditPanel ? "▼" : "▲"}</span>
+                <span className="text-[10px] text-zinc-500 ml-0.5">{showAuditPanel ? "▼" : "▲"}</span>
               </button>
             </div>
           </div>

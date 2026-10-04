@@ -186,30 +186,30 @@ export function ManifestImportModal({ isOpen, onClose, onApply }: ManifestImport
                 <div className="space-y-2 pt-1">
                   <div className="grid grid-cols-2 gap-2 font-mono text-[11px]">
                     <div className="bg-white/80 p-1.5 rounded border border-emerald-100">
-                      <span className="text-zinc-500 block text-[9px] uppercase font-sans font-bold">Framework</span>
+                      <span className="text-zinc-500 block text-[10px] uppercase font-sans font-bold">Framework</span>
                       <span className="font-semibold text-zinc-900">{parsedResult.framework}</span>
                     </div>
                     <div className="bg-white/80 p-1.5 rounded border border-emerald-100">
-                      <span className="text-zinc-500 block text-[9px] uppercase font-sans font-bold">Language</span>
+                      <span className="text-zinc-500 block text-[10px] uppercase font-sans font-bold">Language</span>
                       <span className="font-semibold text-zinc-900">{parsedResult.language}</span>
                     </div>
                     <div className="bg-white/80 p-1.5 rounded border border-emerald-100">
-                      <span className="text-zinc-500 block text-[9px] uppercase font-sans font-bold">Styling</span>
+                      <span className="text-zinc-500 block text-[10px] uppercase font-sans font-bold">Styling</span>
                       <span className="font-semibold text-zinc-900">{parsedResult.styling}</span>
                     </div>
                     <div className="bg-white/80 p-1.5 rounded border border-emerald-100">
-                      <span className="text-zinc-500 block text-[9px] uppercase font-sans font-bold">Database</span>
+                      <span className="text-zinc-500 block text-[10px] uppercase font-sans font-bold">Database</span>
                       <span className="font-semibold text-zinc-900">{parsedResult.database}</span>
                     </div>
                     {parsedResult.testing && (
                       <div className="bg-white/80 p-1.5 rounded border border-emerald-100">
-                        <span className="text-zinc-500 block text-[9px] uppercase font-sans font-bold">Testing</span>
+                        <span className="text-zinc-500 block text-[10px] uppercase font-sans font-bold">Testing</span>
                         <span className="font-semibold text-zinc-900">{parsedResult.testing}</span>
                       </div>
                     )}
                     {parsedResult.validation && (
                       <div className="bg-white/80 p-1.5 rounded border border-emerald-100">
-                        <span className="text-zinc-500 block text-[9px] uppercase font-sans font-bold">Validation</span>
+                        <span className="text-zinc-500 block text-[10px] uppercase font-sans font-bold">Validation</span>
                         <span className="font-semibold text-zinc-900">{parsedResult.validation}</span>
                       </div>
                     )}
