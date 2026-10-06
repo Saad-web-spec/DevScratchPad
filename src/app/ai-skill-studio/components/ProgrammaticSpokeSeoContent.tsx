@@ -832,7 +832,7 @@ export function ProgrammaticSpokeSeoContent({ route }: { route: ProgrammaticPres
             <div className="space-y-3 pt-2">
               {route.faqs.map((faq, idx) => (
                 <div key={idx} className="rounded-xl border border-zinc-200 bg-white p-5 space-y-2 shadow-2xs">
-                  <h4 className="text-sm font-bold text-zinc-900">{faq.question}</h4>
+                  <h3 className="text-sm font-bold text-zinc-900">{faq.question}</h3>
                   <p className="text-xs sm:text-sm text-zinc-600 leading-relaxed">{faq.answer}</p>
                 </div>
               ))}

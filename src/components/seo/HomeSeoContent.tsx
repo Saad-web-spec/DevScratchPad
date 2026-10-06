@@ -116,9 +116,9 @@ export function HomeSeoContent() {
         </div>
         <div>
           <div className="flex flex-wrap items-center gap-2">
-            <h3 className="text-base font-bold text-zinc-900 group-hover:text-orange-600 transition-colors">
+            <h2 className="text-base font-bold text-zinc-900 group-hover:text-orange-600 transition-colors">
               AI Skill Studio — 5-Layer AI Agent Suite
-            </h3>
+            </h2>
             <span className="text-[10px] font-mono font-bold tracking-wide px-2 py-0.5 bg-orange-100 text-orange-800 border border-orange-200 rounded-full">
               New Editions • 100% Client-Side
             </span>

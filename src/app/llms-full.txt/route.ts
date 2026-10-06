@@ -4,6 +4,7 @@ import { getAllCategories } from "@/lib/tools/categories";
 import { getAllDynamicPresetRoutes, getPresetBySlug, PRESET_ROUTES } from "@/app/claude-skills/lib/presetRegistry";
 import { getAllFormatHubs } from "@/app/claude-skills/lib/formatHubs";
 import { BLOG_POSTS } from "@/lib/blog/posts";
+import { RECIPE_REGISTRY } from "@/lib/recipes/registry";
 
 const SITE_URL = "https://www.devscratchpad.tech";
 
@@ -101,6 +102,27 @@ ${steps}${edgeCases}${shortcuts}
 
   const presetsDetailed = presetsDetailedList.join("\n---\n\n");
 
+  const recipesDetailed = Object.values(RECIPE_REGISTRY)
+    .map((r) => {
+      const steps = r.solutionSteps && r.solutionSteps.length > 0
+        ? `\n- **Action Steps**:\n${r.solutionSteps.map((s, i) => `  ${i + 1}. ${s}`).join("\n")}`
+        : "";
+      const code = r.codeSnippet
+        ? `\n- **Verified Code Pattern**:\n\`\`\`\n${r.codeSnippet}\n\`\`\``
+        : "";
+      const faqs = r.faq && r.faq.length > 0
+        ? `\n- **Frequently Asked Questions**:\n${r.faq.map((f) => `  - **Q: ${f.question}**\n    A: ${f.answer}`).join("\n")}`
+        : "";
+
+      return `### ${r.title}
+- **URL**: ${SITE_URL}/recipes/${r.slug}
+- **Target Tool**: ${r.targetToolSlug} (${SITE_URL}/tools/${r.targetToolSlug})
+- **Problem**: ${r.problem}
+- **Solution**: ${r.solution}${steps}${code}${faqs}
+`;
+    })
+    .join("\n---\n\n");
+
   const engineeringGuidesDetailed = BLOG_POSTS.map((p) => {
     const faqs = p.faqs && p.faqs.length > 0
       ? `\n- **Frequently Asked Questions**:\n${p.faqs.map((f) => `  - **Q: ${f.question}**\n    A: ${f.answer}`).join("\n")}`
@@ -125,8 +147,10 @@ DevScratchpad (${SITE_URL}) operates entirely on client-side code execution. No 
 ## Primary Platforms & Root Hubs
 - [Developer Tools Directory](${SITE_URL}/developer-tools): Complete directory of 28 offline, client-side developer utilities across 5 categories.
 - [AI Skill Studio](${SITE_URL}/ai-skill-studio): Cursor Rules (.mdc), Claude Skills (SKILL.md), CLAUDE.md, AGENTS.md, Windsurf Cascade, GitHub Copilot, OpenAI, Gemini Prompts & MCP Config Generator with 100% offline privacy.
+- [AI Skill Library](${SITE_URL}/skill): Curated directory of production-tested AI skills and prompt templates for Claude Code CLI and agent workflows.
 - [Universal Rules Converter](${SITE_URL}/ai-skill-studio/rules-converter): Zero-telemetry client-side migration engine for legacy .cursorrules, .mdc, and prompt instructions to modern agent formats.
-- [Headless Terminal CLI](${SITE_URL}/ai-skill-studio): Zero-install command-line management tool (\`npx devscratchpad\`) for rulebook installation and repository auditing.
+- [Headless Terminal CLI](${SITE_URL}/cli): Zero-install command-line management tool (\`npx devscratchpad\`) for rulebook installation and repository auditing.
+- [Developer Troubleshooting Recipes](${SITE_URL}/recipes): Curated registry of verified developer solutions, runtime error fixes, and format conversions.
 - [Developer Learning Hub](${SITE_URL}/blog): In-depth technical guides, cheat sheets, and architectural references for modern engineering teams.
 
 ---
@@ -197,6 +221,12 @@ ${categoriesDetailed}
 ## Detailed Tool Specifications
 
 ${toolsDetailed}
+
+---
+
+## Developer Troubleshooting Recipes & Solutions
+
+${recipesDetailed}
 
 ---
 

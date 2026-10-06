@@ -78,7 +78,9 @@ export function RecipeDirectory({ recipes }: { recipes: RecipeMeta[] }) {
 
       {/* Results Header */}
       <div className="flex items-center justify-between text-xs text-zinc-500 px-1 font-mono" suppressHydrationWarning>
-        <span>Showing {filtered.length} verified developer troubleshooting recipes</span>
+        <h2 className="text-xs sm:text-sm font-semibold text-zinc-800 font-sans">
+          Verified Developer Solutions <span className="font-mono text-zinc-500 text-xs font-normal">({filtered.length})</span>
+        </h2>
         {selectedTool !== "all" && (
           <button
             type="button"

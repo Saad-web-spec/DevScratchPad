@@ -25,7 +25,7 @@ export function SeoArticle({ title, explanation, codeExamples, shortcuts, howToU
           
           {howToUse && howToUse.length > 0 && (
             <div className="mb-6">
-              <h3 className="text-sm font-semibold text-neutral-900 mb-2">How to use</h3>
+              <h2 className="text-sm font-semibold text-neutral-900 mb-2">How to use</h2>
               <ol className="list-decimal pl-5 space-y-1 text-sm text-neutral-600 leading-relaxed">
                 {howToUse.map((step, idx) => (
                   <li key={idx}>{step}</li>
@@ -36,7 +36,7 @@ export function SeoArticle({ title, explanation, codeExamples, shortcuts, howToU
 
           {edgeCases && edgeCases.length > 0 && (
             <div className="mb-6">
-              <h3 className="text-sm font-semibold text-neutral-900 mb-2">Technical Considerations</h3>
+              <h2 className="text-sm font-semibold text-neutral-900 mb-2">Technical Considerations</h2>
               <ul className="list-disc pl-5 space-y-1 text-sm text-neutral-600 leading-relaxed">
                 {edgeCases.map((caseItem, idx) => (
                   <li key={idx}>{caseItem}</li>
@@ -51,10 +51,10 @@ export function SeoArticle({ title, explanation, codeExamples, shortcuts, howToU
 
           {codeExamples && codeExamples.length > 0 && (
             <div className="mt-8 space-y-4">
-              <h3 className="text-sm font-semibold text-neutral-900 flex items-center gap-2 border-b border-neutral-200 pb-2">
+              <h2 className="text-sm font-semibold text-neutral-900 flex items-center gap-2 border-b border-neutral-200 pb-2">
                 <Terminal className="w-4 h-4 text-neutral-500" />
                 CLI / API Equivalents
-              </h3>
+              </h2>
               <div className="space-y-3">
                 {codeExamples.map((ex, idx) => (
                   <div key={idx} className="border border-neutral-200 rounded overflow-hidden bg-neutral-50">
@@ -77,9 +77,9 @@ export function SeoArticle({ title, explanation, codeExamples, shortcuts, howToU
         <div className="w-full md:w-64 shrink-0">
           <div className="border border-neutral-200 divide-y divide-neutral-200 rounded bg-white">
             <div className="p-3 bg-neutral-50">
-              <h3 className="text-xs font-semibold text-neutral-900 uppercase tracking-wider">
+              <h2 className="text-xs font-semibold text-neutral-900 uppercase tracking-wider">
                 Keyboard Shortcuts
-              </h3>
+              </h2>
             </div>
             <ul className="divide-y divide-neutral-100">
               {shortcuts.map((shortcut, idx) => {

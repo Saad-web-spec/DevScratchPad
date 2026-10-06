@@ -4,6 +4,7 @@ import { getAllCategories } from "@/lib/tools/categories";
 import { getAllDynamicPresetRoutes, getPresetBySlug, PRESET_ROUTES } from "@/app/claude-skills/lib/presetRegistry";
 import { getAllFormatHubs } from "@/app/claude-skills/lib/formatHubs";
 import { BLOG_POSTS } from "@/lib/blog/posts";
+import { RECIPE_REGISTRY } from "@/lib/recipes/registry";
 
 const SITE_URL = "https://www.devscratchpad.tech";
 
@@ -55,6 +56,14 @@ export async function GET() {
 
   const presetsSection = presetsList.join("\n");
 
+  const recipes = Object.values(RECIPE_REGISTRY);
+  const recipesSection = recipes
+    .map(
+      (r) =>
+        `- [${r.title}](${SITE_URL}/recipes/${r.slug}): ${r.problem} (Target Tool: ${r.targetToolSlug})`
+    )
+    .join("\n");
+
   const engineeringGuidesSection = BLOG_POSTS.map(
     (p) => `- [${p.title}](${SITE_URL}/blog/${p.slug}): ${p.seoDescription || p.description} (${p.category})`
   ).join("\n");
@@ -67,8 +76,10 @@ DevScratchpad (${SITE_URL}) is an open developer utility suite built for securit
 ## Primary Platforms & Hubs
 - [Developer Tools Directory](${SITE_URL}/developer-tools): Complete directory of 28 offline, client-side developer utilities across 5 categories.
 - [AI Skill Studio](${SITE_URL}/ai-skill-studio): Cursor Rules (.mdc), Claude Skills (SKILL.md), CLAUDE.md, AGENTS.md, Windsurf Cascade, GitHub Copilot, OpenAI, Gemini Prompts & MCP Config Generator with 100% offline privacy.
+- [AI Skill Library](${SITE_URL}/skill): Curated directory of production-tested AI skills and prompt templates for Claude Code CLI and agent work.
 - [Universal Rules Converter](${SITE_URL}/ai-skill-studio/rules-converter): Migrate and convert legacy .cursorrules, .mdc, and prompts to Claude Code, Windsurf, Copilot, and Gemini rules client-side.
-- [Headless Terminal CLI](${SITE_URL}/ai-skill-studio): Zero-install command-line management (\`npx devscratchpad\`) for downloading, auditing, and scaffolding repository rulebooks.
+- [Headless Terminal CLI](${SITE_URL}/cli): Zero-install command-line management (\`npx devscratchpad\`) for downloading, auditing, and scaffolding repository rulebooks.
+- [Developer Troubleshooting Recipes](${SITE_URL}/recipes): Curated catalog of verified solutions for common developer exceptions, terminal errors, and format conversions.
 - [Developer Learning Hub](${SITE_URL}/blog): In-depth technical guides, cheat sheets, and architectural references for modern engineering teams.
 
 ## Headless Terminal CLI (\`npx devscratchpad\`)
@@ -88,6 +99,9 @@ ${categoryHubsSection}
 
 ## Developer Utilities
 ${toolsSection}
+
+## Developer Troubleshooting Recipes & Solutions
+${recipesSection}
 
 ## AI Skill Studio Format Hubs
 ${formatHubsSection}

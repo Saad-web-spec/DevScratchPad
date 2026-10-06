@@ -303,36 +303,36 @@ export default function RulesConverterPage() {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="p-4 bg-white dark:bg-zinc-900/60 border border-zinc-200 dark:border-zinc-800 rounded-xl space-y-1.5">
-                <h4 className="font-bold text-xs text-zinc-900 dark:text-zinc-100">
+                <h3 className="font-bold text-xs text-zinc-900 dark:text-zinc-100">
                   Can I convert .cursorrules to Claude Code SKILL.md?
-                </h4>
+                </h3>
                 <p className="text-xs text-zinc-600 dark:text-zinc-400 leading-relaxed">
                   Yes. The converter extracts your tech stack parameters, negative constraints, and procedures and outputs a standard Claude Code SKILL.md file with YAML frontmatter ready to drop into <code className="text-[11px]">.claude/skills/</code>.
                 </p>
               </div>
 
               <div className="p-4 bg-white dark:bg-zinc-900/60 border border-zinc-200 dark:border-zinc-800 rounded-xl space-y-1.5">
-                <h4 className="font-bold text-xs text-zinc-900 dark:text-zinc-100">
+                <h3 className="font-bold text-xs text-zinc-900 dark:text-zinc-100">
                   Does this converter upload code to any server?
-                </h4>
+                </h3>
                 <p className="text-xs text-zinc-600 dark:text-zinc-400 leading-relaxed">
                   Never. DevScratchpad executes 100% in your local browser memory using HTML5 File API and client-side JavaScript. Your code and prompts never touch our servers or any cloud telemetry.
                 </p>
               </div>
 
               <div className="p-4 bg-white dark:bg-zinc-900/60 border border-zinc-200 dark:border-zinc-800 rounded-xl space-y-1.5">
-                <h4 className="font-bold text-xs text-zinc-900 dark:text-zinc-100">
+                <h3 className="font-bold text-xs text-zinc-900 dark:text-zinc-100">
                   How do I install the converted rules into my repository?
-                </h4>
+                </h3>
                 <p className="text-xs text-zinc-600 dark:text-zinc-400 leading-relaxed">
                   Click &quot;Copy Converted Rule&quot; and paste it into the standard target file location (e.g. <code className="text-[11px]">.cursor/rules/my-rule.mdc</code> or <code className="text-[11px]">.claude/skills/my-skill/SKILL.md</code>). Alternatively, click &quot;Customize in AI Skill Studio&quot; to audit quality or export a full workspace zip.
                 </p>
               </div>
 
               <div className="p-4 bg-white dark:bg-zinc-900/60 border border-zinc-200 dark:border-zinc-800 rounded-xl space-y-1.5">
-                <h4 className="font-bold text-xs text-zinc-900 dark:text-zinc-100">
+                <h3 className="font-bold text-xs text-zinc-900 dark:text-zinc-100">
                   Does it support Windsurf Cascade and GitHub Copilot?
-                </h4>
+                </h3>
                 <p className="text-xs text-zinc-600 dark:text-zinc-400 leading-relaxed">
                   Yes! You can instantly convert legacy rules into Windsurf Cascade workflows (<code className="text-[11px]">.windsurf/rules/</code>) or GitHub Copilot repository instructions (<code className="text-[11px]">.github/copilot-instructions.md</code>).
                 </p>

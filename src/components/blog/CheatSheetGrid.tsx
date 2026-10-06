@@ -24,9 +24,9 @@ export function CheatSheetGrid({ cheats }: CheatSheetGridProps) {
     <div className="mb-14">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
-          <span className="text-[11px] font-mono uppercase tracking-widest text-zinc-500 font-semibold">
+          <h2 className="text-[11px] font-mono uppercase tracking-widest text-zinc-500 font-semibold">
             INSTANT CHEAT SHEETS & ONE-LINERS
-          </span>
+          </h2>
           <span className="text-[10px] font-mono px-1.5 py-0.5 bg-zinc-100 text-zinc-600 rounded">
             Copy-Paste Ready
           </span>
@@ -65,9 +65,9 @@ export function CheatSheetGrid({ cheats }: CheatSheetGridProps) {
                   )}
                 </div>
 
-                <h4 className="text-xs font-semibold text-zinc-900 tracking-tight mb-1">
+                <h3 className="text-xs font-semibold text-zinc-900 tracking-tight mb-1">
                   {cheat.title}
-                </h4>
+                </h3>
 
                 <p className="text-[11px] text-zinc-500 leading-relaxed mb-3">
                   {cheat.description}

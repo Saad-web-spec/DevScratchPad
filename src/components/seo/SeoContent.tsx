@@ -230,10 +230,10 @@ export function SeoContent({ tool }: { tool: ToolMeta }) {
         <div className="w-full bg-zinc-50 border-t border-zinc-200">
           <div className="max-w-4xl mx-auto px-6 py-12">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-6">
-              <h3 className="text-base font-semibold text-zinc-900 flex items-center gap-2">
+              <h2 className="text-base font-semibold text-zinc-900 flex items-center gap-2">
                 <Sparkles className="w-4 h-4 text-zinc-500" />
                 Related Developer Utilities
-              </h3>
+              </h2>
               {category && (
                 <Link
                   href={`/developer-tools/${category.slug}`}

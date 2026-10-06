@@ -2,7 +2,7 @@ import { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getFormatHub, getAllFormatSlugsWithAliases } from "../../claude-skills/lib/formatHubs";
 import { ClaudeSkillsClient } from "../../claude-skills/ClaudeSkillsClient";
-import { AiSkillStudioSeoContent } from "../AiSkillStudioSeoContent";
+import { FormatHubSeoContent } from "../components/FormatHubSeoContent";
 
 export function generateStaticParams() {
   return getAllFormatSlugsWithAliases().map((slug) => ({
@@ -105,6 +105,22 @@ export default async function FormatHubPage({
           },
         ],
       },
+      ...(hub.faqs && hub.faqs.length > 0
+        ? [
+            {
+              "@type": "FAQPage",
+              "@id": `https://www.devscratchpad.tech/ai-skill-studio/${hub.slug}#faq`,
+              mainEntity: hub.faqs.map((faq) => ({
+                "@type": "Question",
+                name: faq.question,
+                acceptedAnswer: {
+                  "@type": "Answer",
+                  text: faq.answer,
+                },
+              })),
+            },
+          ]
+        : []),
     ],
   };
 
@@ -118,7 +134,7 @@ export default async function FormatHubPage({
         initialFormat={hub.format}
         formatSlug={hub.slug}
       />
-      <AiSkillStudioSeoContent />
+      <FormatHubSeoContent hub={hub} />
     </>
   );
 }

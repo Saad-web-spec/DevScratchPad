@@ -28,9 +28,9 @@ export function LearningTracks({ tracks, allPosts }: LearningTracksProps) {
     <div className="mb-14">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
-          <span className="text-[11px] font-mono uppercase tracking-widest text-zinc-500 font-semibold">
+          <h2 className="text-[11px] font-mono uppercase tracking-widest text-zinc-500 font-semibold">
             CURATED LEARNING TRACKS
-          </span>
+          </h2>
           <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
         </div>
         <span className="text-xs font-mono text-zinc-400">Structured Deep Dives</span>

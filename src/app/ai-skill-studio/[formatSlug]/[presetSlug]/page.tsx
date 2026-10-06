@@ -44,8 +44,8 @@ export default async function ProgrammaticPresetPage({
   }
 
   // Canonicalize any alias URL request to the primary spoke URL
-  if (presetSlug !== route.presetSlug) {
-    permanentRedirect(`/ai-skill-studio/${formatSlug}/${route.presetSlug}`);
+  if (formatSlug !== route.formatSlug || presetSlug !== route.presetSlug) {
+    permanentRedirect(`/ai-skill-studio/${route.formatSlug}/${route.presetSlug}`);
   }
 
   const hub = getFormatHub(formatSlug);

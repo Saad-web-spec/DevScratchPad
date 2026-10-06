@@ -383,16 +383,15 @@ All AI agents operating in this repository MUST follow this 5-step loop:
   7. **Verification**: Passed `npm run validate-presets` (100/100), `npm run lint` (0 errors), `npm run build` (890 static routes exit 0).
 - **Status**: ✅ Complete (All verification gates passed)
 
-### Session: 2026-10-03 — The Graph Blueprint Multi-Agent Protocol Integration
+### Session: 2026-10-06 — Technical SEO Full Remediation Sprint
 - **Agent**: Antigravity (Gemini)
-- **Task**: Upgrade `AGENTS.md` and AI Skill Studio code generation with "The Graph Blueprint" multi-agent coordination protocol:
-  1. **Root `AGENTS.md` Upgrade**: Implemented the complete Graph Blueprint multi-agent topology: `Goal & Splitter ➔ Parallel Fan-out Workers [1-4] ➔ Independent Verifier [Fresh Context] ➔ Synthesizer / Merge`.
-  2. **Worker Fleet Specialization**: Defined orthogonal domain-isolated worker roles: Worker 1 (Research & Retrieval), Worker 2 (Comparative & Architecture), Worker 3 (Validation & Implementation), and Worker 4 (Gap Analysis & Security).
-  3. **Zero CoT Leakage & Anti-Hallucination Policy**: Enforced that the Independent Verifier must execute in a fresh context window without worker chain-of-thought contamination to eliminate confirmation bias.
-  4. **Standardized Graph Workflows**: Embedded high-frequency blueprint workflows: `pr-review-graph`, `rfc-discovery-graph`, and `bug-triaging-graph`.
-  5. **Studio Engine Alignment (`ruleGenerator.ts`)**: Upgraded `AGENTS.md` target format synthesis to include the Graph Blueprint topology, enabling users to generate production-grade multi-agent governance files directly from AI Skill Studio.
-  6. **Integrity Preservation**: Preserved the mandatory Next.js auto-generated block and non-negotiable constraints.
-  7. **Verification Gates**: Passed `npm run validate-presets` (100/100), `npm run lint` (0 errors), and `npm run build` (890 static export routes exit 0).
+- **Task**: Address and resolve all findings from the multi-agent Technical SEO Audit:
+  1. **Format Hub Content Deduping**: Replaced boilerplate `<AiSkillStudioSeoContent />` across all 17 `/ai-skill-studio/[formatSlug]` hubs with a new dynamic `<FormatHubSeoContent />` component rendering tailored syntax highlights, placement guides, best practices, and FAQs from `formatHubs.ts`. Injected `FAQPage` schema into root JSON-LD.
+  2. **URL Canonicalization & Redirects**: Decommissioned duplicate `/ai-skill-studio/skills` with a permanent redirect to `/skill`. Added `/skill` to `sitemap.ts`. Decommissioned orphaned `/workspace` with a permanent redirect to `/`. Enforced canonical format redirection on spoke preset URLs and resolved canonical generation in `presetRegistry.ts`.
+  3. **Crawl Budget Protection**: Added `Disallow: /api/` in `src/app/robots.ts` and injected `X-Robots-Tag: noindex, nofollow` headers on all 333+ raw code endpoints (`/api/raw/[formatSlug]/[presetSlug]`).
+  4. **Document Outline & Heading Sequentiality**: Normalized heading hierarchy (eliminating H1->H3 skips) across Homepage (`HomeSeoContent.tsx`), Recipes Index (`recipes/page.tsx` & `RecipeDirectory.tsx`), individual recipes, Blog Index (`LearningTracks.tsx`, `CheatSheetGrid.tsx`), Tools (`SeoArticle.tsx`), CLI (`cli/page.tsx`), Rules Converter, and Programmatic Spokes (`ProgrammaticSpokeSeoContent.tsx`).
+  5. **Schema & LLM Discovery**: Added `CollectionPage` and `ItemList` schema on `/recipes`. Fixed Headless Terminal CLI link in `llms.txt` and `llms-full.txt` to point to `/cli`, and added `/recipes` and `/skill` libraries.
+  6. **Verification Gates**: Passed `npm run validate-presets` (100/100), `npm run lint` (0 errors), and `npm run build` (890 static export routes exit 0).
 - **Status**: ✅ Complete (All verification gates passed)
 
 ---

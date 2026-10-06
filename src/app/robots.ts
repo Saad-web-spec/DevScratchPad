@@ -6,6 +6,7 @@ export default function robots(): MetadataRoute.Robots {
       {
         userAgent: "*",
         allow: "/",
+        disallow: ["/api/"],
       },
       {
         userAgent: [
@@ -28,6 +29,7 @@ export default function robots(): MetadataRoute.Robots {
           "LinkedInBot",
         ],
         allow: "/",
+        disallow: ["/api/"],
       },
     ],
     sitemap: "https://www.devscratchpad.tech/sitemap.xml",

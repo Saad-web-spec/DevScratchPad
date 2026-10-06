@@ -2038,7 +2038,8 @@ export function getPresetRouteMetadata(formatSlug: string, presetSlug: string): 
   const route = getPresetBySlug(formatSlug, presetSlug);
   if (!route) return null;
   
-  const canonicalPresetSlug = SLUG_ALIASES[presetSlug] || presetSlug;
+  const canonicalFormatSlug = route.formatSlug || FORMAT_SLUG_ALIASES[formatSlug.toLowerCase()] || formatSlug;
+  const canonicalPresetSlug = route.presetSlug || SLUG_ALIASES[presetSlug.toLowerCase()] || presetSlug;
 
   // Derive format label
   let formatSuffix = "Cursor Rules";
@@ -2099,7 +2100,7 @@ export function getPresetRouteMetadata(formatSlug: string, presetSlug: string): 
       type: "website",
       siteName: "DevScratchpad",
       locale: "en_US",
-      url: `https://www.devscratchpad.tech/ai-skill-studio/${formatSlug}/${canonicalPresetSlug}`,
+      url: `https://www.devscratchpad.tech/ai-skill-studio/${canonicalFormatSlug}/${canonicalPresetSlug}`,
       images: [
         {
           url: "https://www.devscratchpad.tech/og-ai-skill-studio.png",
@@ -2125,7 +2126,7 @@ export function getPresetRouteMetadata(formatSlug: string, presetSlug: string): 
       ],
     },
     alternates: {
-      canonical: `https://www.devscratchpad.tech/ai-skill-studio/${formatSlug}/${canonicalPresetSlug}`,
+      canonical: `https://www.devscratchpad.tech/ai-skill-studio/${canonicalFormatSlug}/${canonicalPresetSlug}`,
     },
   };
 }

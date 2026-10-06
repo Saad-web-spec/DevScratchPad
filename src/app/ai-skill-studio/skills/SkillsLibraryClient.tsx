@@ -407,9 +407,9 @@ export function SkillsLibraryClient() {
               
               {/* Mobile-Only Title Pair (Inline with logo) */}
               <div className="flex items-center gap-2 sm:hidden">
-                <h1 className="text-2xl font-extrabold tracking-tight text-zinc-950 font-gemini leading-none">
+                <span className="text-2xl font-extrabold tracking-tight text-zinc-950 font-gemini leading-none">
                   Skill
-                </h1>
+                </span>
                 <span className="bg-orange-50 border border-orange-200 text-orange-800 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider font-gemini">
                   HUB
                 </span>
@@ -420,16 +420,16 @@ export function SkillsLibraryClient() {
             <div className="flex flex-col min-w-0">
               {/* Desktop/Tablet Title Pair */}
               <div className="hidden sm:flex items-center gap-2.5">
-                <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-zinc-950 font-gemini leading-none">
+                <span className="text-2xl sm:text-3xl font-extrabold tracking-tight text-zinc-950 font-gemini leading-none">
                   Skill
-                </h1>
+                </span>
                 <span className="bg-orange-50 border border-orange-200 text-orange-800 text-[11px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider font-gemini">
                   HUB
                 </span>
               </div>
-              <p className="text-sm font-semibold text-zinc-800 sm:mt-1 font-gemini">
-                Multi-Platform Agent Skills
-              </p>
+              <h1 className="text-sm font-semibold text-zinc-800 sm:mt-1 font-gemini">
+                AI Skill Library &amp; Agent Rules Hub
+              </h1>
               <p className="text-xs text-zinc-500 max-w-xl mt-1 sm:mt-0.5 font-gemini leading-relaxed">
                 Curated, production-grade rules and skills across Cursor, Claude, Windsurf, Copilot, ChatGPT & Gemini.
               </p>

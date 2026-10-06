@@ -477,9 +477,9 @@ export default function CliPage() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="p-5 bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 space-y-2">
-              <h4 className="font-bold text-sm text-zinc-900 dark:text-zinc-100">
+              <h3 className="font-bold text-sm text-zinc-900 dark:text-zinc-100">
                 Do I need to install devscratchpad globally?
-              </h4>
+              </h3>
               <p className="text-xs text-zinc-600 dark:text-zinc-400 leading-relaxed">
                 No. Because <code>devscratchpad</code> is published as an executable on npm, you can run any command
                 directly via <code>npx devscratchpad &lt;command&gt;</code> without leaving permanent files on your machine.
@@ -487,9 +487,9 @@ export default function CliPage() {
             </div>
 
             <div className="p-5 bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 space-y-2">
-              <h4 className="font-bold text-sm text-zinc-900 dark:text-zinc-100">
+              <h3 className="font-bold text-sm text-zinc-900 dark:text-zinc-100">
                 How does the rule auditor evaluate my AI rules?
-              </h4>
+              </h3>
               <p className="text-xs text-zinc-600 dark:text-zinc-400 leading-relaxed">
                 The auditor scores your files against 4 static heuristics: Negative Guardrail Presence (banning antipatterns),
                 Rule Density (detecting monolithic prompt degradation over 300 lines), Trigger & Glob Specificity, and
@@ -498,9 +498,9 @@ export default function CliPage() {
             </div>
 
             <div className="p-5 bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 space-y-2">
-              <h4 className="font-bold text-sm text-zinc-900 dark:text-zinc-100">
+              <h3 className="font-bold text-sm text-zinc-900 dark:text-zinc-100">
                 Can I use this when developing air-gapped without internet?
-              </h4>
+              </h3>
               <p className="text-xs text-zinc-600 dark:text-zinc-400 leading-relaxed">
                 Yes. If internet connectivity is unavailable, the CLI automatically falls back to its bundled local
                 templates to scaffold your workspace rules without failing.
@@ -508,9 +508,9 @@ export default function CliPage() {
             </div>
 
             <div className="p-5 bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 space-y-2">
-              <h4 className="font-bold text-sm text-zinc-900 dark:text-zinc-100">
+              <h3 className="font-bold text-sm text-zinc-900 dark:text-zinc-100">
                 How do I migrate my legacy .cursorrules file?
-              </h4>
+              </h3>
               <p className="text-xs text-zinc-600 dark:text-zinc-400 leading-relaxed">
                 Visit the{" "}
                 <Link href="/ai-skill-studio/rules-converter" className="text-orange-600 underline font-semibold">
@@ -520,9 +520,9 @@ export default function CliPage() {
               </p>
             </div>
             <div className="p-5 bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 space-y-2">
-              <h4 className="font-bold text-sm text-zinc-900 dark:text-zinc-100">
+              <h3 className="font-bold text-sm text-zinc-900 dark:text-zinc-100">
                 Where can I read a complete guide or tutorial?
-              </h4>
+              </h3>
               <p className="text-xs text-zinc-600 dark:text-zinc-400 leading-relaxed">
                 Check out our in-depth engineering post:{" "}
                 <Link

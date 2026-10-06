@@ -213,10 +213,10 @@ export default async function RecipePage({
           <section className="rounded-xl border border-rose-200 bg-rose-50/40 p-6 space-y-4 flex flex-col justify-between shadow-2xs">
             <div className="space-y-3">
               <div className="flex items-center justify-between border-b border-rose-200/80 pb-3">
-                <span className="flex items-center gap-2 text-rose-800 font-semibold text-xs font-mono uppercase tracking-wider">
+                <h2 className="flex items-center gap-2 text-rose-800 font-semibold text-xs font-mono uppercase tracking-wider">
                   <AlertCircle className="w-4 h-4 text-rose-600" />
                   The Problem (Error Root Cause)
-                </span>
+                </h2>
                 <span className="text-[10px] font-mono text-rose-700 bg-rose-100 px-2 py-0.5 rounded border border-rose-300 uppercase font-semibold">
                   Exception
                 </span>
@@ -234,10 +234,10 @@ export default async function RecipePage({
           <section className="rounded-xl border border-orange-200 bg-orange-50/50 p-6 space-y-4 flex flex-col justify-between shadow-2xs">
             <div className="space-y-3">
               <div className="flex items-center justify-between border-b border-orange-200 pb-3">
-                <span className="flex items-center gap-2 text-orange-950 font-semibold text-xs font-mono uppercase tracking-wider">
+                <h2 className="flex items-center gap-2 text-orange-950 font-semibold text-xs font-mono uppercase tracking-wider">
                   <CheckCircle2 className="w-4 h-4 text-orange-600" />
                   The Solution (Step-by-Step Fix)
-                </span>
+                </h2>
                 <span className="text-[10px] font-mono text-orange-800 bg-orange-100 px-2 py-0.5 rounded border border-orange-200 uppercase font-semibold">
                   Verified
                 </span>
@@ -290,9 +290,9 @@ export default async function RecipePage({
               <Wrench className="w-6 h-6" />
             </div>
             <div className="space-y-1.5 max-w-lg mx-auto">
-              <h3 className="text-xl sm:text-2xl font-bold text-zinc-900">
+              <h2 className="text-xl sm:text-2xl font-bold text-zinc-900">
                 Test and resolve this using {targetTool.name}
-              </h3>
+              </h2>
               <p className="text-xs sm:text-sm text-zinc-600">
                 Execute directly in your browser memory. Zero API keys, zero network tracking, completely client-side.
               </p>
