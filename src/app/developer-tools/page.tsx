@@ -1,24 +1,42 @@
 import { Metadata } from "next";
 import Link from "next/link";
 import { TOOLS_REGISTRY } from "@/lib/tools/registry";
-import { ArrowUpRight } from "lucide-react";
+import { getCategoryByRegistryName } from "@/lib/tools/categories";
+import { ArrowUpRight, ArrowRight } from "lucide-react";
 import { SiteHeader } from "@/components/layout/SiteHeader";
 import { SiteFooter } from "@/components/layout/SiteFooter";
 
 export const metadata: Metadata = {
-  title: "Developer Tools Directory (20+ Offline Utilities)",
-  description: "Explore the complete directory of 100% offline, privacy-first developer utilities. JSON formatters, cURL converters, JWT decoders, and regex testers.",
+  title: "28 Offline Developer Tools Directory",
+  description: "Explore the complete directory of 28 free offline, privacy-first developer utilities across 5 categories with bidirectional technical guides. Zero server transmission.",
   alternates: {
     canonical: "https://www.devscratchpad.tech/developer-tools",
   },
   openGraph: {
-    title: "Developer Tools Directory (20+ Offline Utilities)",
-    description: "Explore the complete directory of 100% offline, privacy-first developer utilities. JSON formatters, cURL converters, JWT decoders, and regex testers.",
+    title: "28 Offline Developer Tools Directory | DevScratchpad",
+    description: "Explore the complete directory of 28 free offline, privacy-first developer utilities across 5 categories with bidirectional technical guides.",
     url: "https://www.devscratchpad.tech/developer-tools",
+    images: [
+      {
+        url: "https://www.devscratchpad.tech/opengraph-image",
+        width: 1200,
+        height: 630,
+        alt: "28 Offline Developer Tools Directory across 5 Categories — DevScratchpad",
+      },
+    ],
   },
   twitter: {
-    title: "Developer Tools Directory (20+ Offline Utilities)",
-    description: "Explore the complete directory of 100% offline, privacy-first developer utilities. JSON formatters, cURL converters, JWT decoders, and regex testers.",
+    card: "summary_large_image",
+    title: "28 Offline Developer Tools Directory | DevScratchpad",
+    description: "Explore the complete directory of 28 free offline, privacy-first developer utilities across 5 categories with bidirectional technical guides.",
+    images: [
+      {
+        url: "https://www.devscratchpad.tech/opengraph-image",
+        width: 1200,
+        height: 630,
+        alt: "28 Offline Developer Tools Directory across 5 Categories — DevScratchpad",
+      },
+    ],
   },
 };
 
@@ -35,8 +53,41 @@ export default function DeveloperToolsPage() {
 
   const categories = Object.keys(groupedTools).sort();
 
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "CollectionPage",
+        "@id": "https://www.devscratchpad.tech/developer-tools#webpage",
+        "url": "https://www.devscratchpad.tech/developer-tools",
+        "name": "Developer Tools Directory (28 Offline Utilities)",
+        "description": "Explore the complete directory of 100% offline, privacy-first developer utilities.",
+        "publisher": {
+          "@type": "Organization",
+          "@id": "https://www.devscratchpad.tech/#organization",
+          "name": "DevScratchpad",
+        },
+        "mainEntity": {
+          "@type": "ItemList",
+          "numberOfItems": allTools.length,
+          "itemListElement": allTools.map((t, idx) => ({
+            "@type": "ListItem",
+            "position": idx + 1,
+            "url": `https://www.devscratchpad.tech/tools/${t.slug}`,
+            "name": t.name,
+            "description": t.description,
+          })),
+        },
+      },
+    ],
+  };
+
   return (
     <div className="min-h-screen bg-zinc-50 flex flex-col font-sans selection:bg-zinc-900 selection:text-white">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c") }}
+      />
       <SiteHeader />
       
       <main className="flex-1 w-full max-w-5xl mx-auto px-4 sm:px-6 py-12 md:py-16">
@@ -54,17 +105,100 @@ export default function DeveloperToolsPage() {
           </p>
         </div>
 
-        <div className="space-y-12 mb-16">
-          {categories.map((category) => (
-            <section key={category} className="space-y-4">
-              <div className="flex items-center justify-between border-b border-zinc-200 pb-2.5">
-                <h2 className="text-sm font-mono font-semibold uppercase tracking-wider text-zinc-800">
-                  {category}
+        {/* Featured AI Agent Architecture Spotlight */}
+        <div className="mb-12">
+          <div className="border border-orange-200 bg-gradient-to-r from-orange-50/70 via-amber-50/40 to-white p-5 sm:p-6 rounded-xl relative overflow-hidden shadow-xs space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="space-y-1.5 max-w-xl">
+                <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-orange-100 text-orange-800 border border-orange-200">
+                  <img src="/orange-star.png" className="w-3.5 h-3.5 object-contain shrink-0" alt="Star" />
+                  <span>Featured AI Agent Studio</span>
+                </div>
+                <h2 className="text-lg sm:text-xl font-bold text-zinc-900 tracking-tight">
+                  AI Skill Studio — Cursor Rules (.mdc), Claude Skills &amp; MCP Configs
                 </h2>
-                <span className="text-xs font-mono text-zinc-400">
-                  {groupedTools[category].length} tools
-                </span>
+                <p className="text-xs sm:text-sm text-zinc-600 leading-relaxed">
+                  Generate production-grade Cursor <code className="font-mono text-xs bg-orange-100/60 px-1 py-0.5 rounded">.mdc</code> rules, Claude Code skills, and multi-agent directives for top frameworks. 100% client-side privacy with zero API keys required.
+                </p>
               </div>
+              <Link
+                href="/ai-skill-studio"
+                className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-white text-xs font-semibold tracking-wide transition-all shrink-0 shadow-sm"
+              >
+                <span>Launch AI Studio</span>
+                <ArrowUpRight className="w-4 h-4" />
+              </Link>
+            </div>
+
+            {/* Quick-links to High-Demand Tech Stack Presets */}
+            <div className="pt-3 border-t border-orange-200/60">
+              <div className="text-[11px] font-mono text-zinc-500 uppercase tracking-wider font-semibold mb-2">
+                Popular &amp; High-Demand Rulebook Presets:
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {[
+                  { name: "Django 5 & Ninja", href: "/ai-skill-studio/cursor-rules/python-django" },
+                  { name: "Bun & Elysia", href: "/ai-skill-studio/cursor-rules/bun-elysia" },
+                  { name: "Expo React Native", href: "/ai-skill-studio/cursor-rules/react-native-expo" },
+                  { name: "Flutter & Riverpod", href: "/ai-skill-studio/cursor-rules/flutter-dart" },
+                  { name: "Kubernetes & Helm", href: "/ai-skill-studio/cursor-rules/kubernetes-helm" },
+                  { name: "Terraform IaC", href: "/ai-skill-studio/cursor-rules/terraform-iac" },
+                  { name: "Playwright E2E", href: "/ai-skill-studio/cursor-rules/playwright-e2e" },
+                  { name: "Spring Boot 3", href: "/ai-skill-studio/cursor-rules/spring-boot-3" },
+                  { name: ".NET 8 / C# 12", href: "/ai-skill-studio/cursor-rules/csharp-dotnet-8" },
+                ].map((stack) => (
+                  <Link
+                    key={stack.href}
+                    href={stack.href}
+                    className="inline-flex items-center text-xs font-medium px-2.5 py-1 rounded-md bg-white border border-zinc-200 hover:border-orange-400 hover:text-orange-700 text-zinc-700 transition-colors shadow-2xs"
+                  >
+                    <span>{stack.name}</span>
+                    <ArrowRight className="w-3 h-3 ml-1 text-zinc-400" />
+                  </Link>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="space-y-12 mb-16">
+          {categories.map((category) => {
+            const catMeta = getCategoryByRegistryName(category);
+            const hubUrl = catMeta ? `/developer-tools/${catMeta.slug}` : undefined;
+
+            return (
+              <section key={category} className="space-y-4">
+                <div className="flex items-center justify-between border-b border-zinc-200 pb-2.5">
+                  <div className="flex items-center gap-2.5">
+                    {hubUrl ? (
+                      <Link
+                        href={hubUrl}
+                        className="group inline-flex items-center gap-1.5 hover:text-blue-600 transition-colors"
+                      >
+                        <h2 className="text-sm font-mono font-semibold uppercase tracking-wider text-zinc-800 group-hover:text-blue-600 transition-colors">
+                          {category}
+                        </h2>
+                      </Link>
+                    ) : (
+                      <h2 className="text-sm font-mono font-semibold uppercase tracking-wider text-zinc-800">
+                        {category}
+                      </h2>
+                    )}
+                    <span className="text-xs font-mono text-zinc-400">
+                      ({groupedTools[category].length} tools)
+                    </span>
+                  </div>
+
+                  {hubUrl && (
+                    <Link
+                      href={hubUrl}
+                      className="text-xs font-medium text-zinc-500 hover:text-zinc-900 flex items-center gap-1 group transition-colors"
+                    >
+                      <span>View Category Hub</span>
+                      <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
+                    </Link>
+                  )}
+                </div>
               
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
                 {groupedTools[category].map((tool) => (
@@ -86,7 +220,8 @@ export default function DeveloperToolsPage() {
                 ))}
               </div>
             </section>
-          ))}
+          );
+        })}
         </div>
       </main>
 

@@ -65,6 +65,9 @@ const ALL_TOOLS = [
   { id: "diff", name: "Diff Checker", category: "Utilities", icon: SplitSquareHorizontal },
   { id: "hash", name: "Hash Generator", category: "Security", icon: Hash },
   { id: "regex", name: "Regex Tester", category: "Utilities", icon: Regex },
+  { id: "json-schema-validator", name: "JSON Schema Validator", category: "Formatters", icon: ShieldCheck },
+  { id: "mock-data-generator", name: "Mock Data Generator", category: "Utilities", icon: Database },
+  { id: "epoch-converter", name: "Epoch / Unix Timestamp Converter", category: "Utilities", icon: Clock },
 ];
 
 export function CommandPalette({ isOpen, onClose, onSelectTool }: CommandPaletteProps) {
@@ -74,6 +77,7 @@ export function CommandPalette({ isOpen, onClose, onSelectTool }: CommandPalette
   const filteredTools = ALL_TOOLS.filter(
     (tool) =>
       tool.name.toLowerCase().includes(search.toLowerCase()) ||
+      tool.id.toLowerCase().includes(search.toLowerCase()) ||
       tool.category.toLowerCase().includes(search.toLowerCase())
   );
 

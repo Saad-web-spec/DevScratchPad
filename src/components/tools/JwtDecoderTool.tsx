@@ -1,228 +1,232 @@
 "use client";
 
-import { useState, useEffect } from"react";
-import { ShareButton } from"@/components/ShareButton";
-import { EmbedButton } from"@/components/EmbedButton";
-import { ExportImageButton } from"@/components/ExportImageButton";
-import { Copy, Trash2, Check, Key, Database, ShieldCheck, ShieldAlert } from"lucide-react";
-import { cn } from"@/lib/utils";
-import { addSnapshot } from"@/lib/storage";
-import { StatusBar } from"@/components/layout/StatusBar";
-import { formatDistanceToNow } from"date-fns";
+import { useState, useEffect } from "react";
+import { ShareButton } from "@/components/ShareButton";
+import { EmbedButton } from "@/components/EmbedButton";
+import { ExportImageButton } from "@/components/ExportImageButton";
+import { Copy, Trash2, Check, Key, Database, ShieldCheck, ShieldAlert } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { addSnapshot } from "@/lib/storage";
+import { StatusBar } from "@/components/layout/StatusBar";
+import { formatDistanceToNow } from "date-fns";
 
 interface JwtDecodeResult {
- valid: boolean;
- headerObj?: any;
- payloadObj?: any;
- signature?: string;
- error?: string;
+  valid: boolean;
+  headerObj?: any;
+  payloadObj?: any;
+  signature?: string;
+  error?: string;
 }
 
 function base64UrlDecode(str: string): string {
- let base64 = str.replace(/-/g, '+').replace(/_/g, '/');
- while (base64.length % 4 !== 0) {
- base64 += '=';
- }
- return decodeURIComponent(
- atob(base64)
- .split('')
- .map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
- .join('')
- );
+  let base64 = str.replace(/-/g, '+').replace(/_/g, '/');
+  while (base64.length % 4 !== 0) {
+    base64 += '=';
+  }
+  return decodeURIComponent(
+    atob(base64)
+      .split('')
+      .map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+      .join('')
+  );
 }
 
 function decodeJwt(token: string): JwtDecodeResult {
- if (!token || token.trim() === '') {
- return { valid: true };
- }
- const parts = token.trim().split('.');
- if (parts.length !== 3) {
- return { valid: false, error: 'Invalid JWT format (must have 3 parts separated by dots)' };
- }
- try {
- const rawHeader = base64UrlDecode(parts[0]);
- const rawPayload = base64UrlDecode(parts[1]);
- const headerObj = JSON.parse(rawHeader);
- const payloadObj = JSON.parse(rawPayload);
- return { valid: true, headerObj, payloadObj, signature: parts[2] };
- } catch (err: any) {
- return { valid: false, error: 'Failed to parse JWT: ' + err.message };
- }
+  if (!token || token.trim() === '') {
+    return { valid: true };
+  }
+  const parts = token.trim().split('.');
+  if (parts.length !== 3) {
+    return { valid: false, error: 'Invalid JWT format (must have 3 parts separated by dots)' };
+  }
+  try {
+    const rawHeader = base64UrlDecode(parts[0]);
+    const rawPayload = base64UrlDecode(parts[1]);
+    const headerObj = JSON.parse(rawHeader);
+    const payloadObj = JSON.parse(rawPayload);
+    return { valid: true, headerObj, payloadObj, signature: parts[2] };
+  } catch (err: any) {
+    return { valid: false, error: 'Failed to parse JWT: ' + err.message };
+  }
 }
 
 async function verifyHs256(token: string, secret: string): Promise<boolean> {
- try {
- const parts = token.trim().split('.');
- if (parts.length !== 3) return false;
- 
- const encoder = new TextEncoder();
- const data = encoder.encode(parts[0] + '.' + parts[1]);
- const key = await crypto.subtle.importKey(
- 'raw',
- encoder.encode(secret),
- { name: 'HMAC', hash: 'SHA-256' },
- false,
- ['verify']
- );
- 
- let base64 = parts[2].replace(/-/g, '+').replace(/_/g, '/');
- while (base64.length % 4) base64 += '=';
- const sigBytes = Uint8Array.from(atob(base64), c => c.charCodeAt(0));
- 
- return await crypto.subtle.verify('HMAC', key, sigBytes, data);
- } catch {
- return false;
- }
+  try {
+    const parts = token.trim().split('.');
+    if (parts.length !== 3) return false;
+    
+    const encoder = new TextEncoder();
+    const data = encoder.encode(parts[0] + '.' + parts[1]);
+    const key = await crypto.subtle.importKey(
+      'raw',
+      encoder.encode(secret),
+      { name: 'HMAC', hash: 'SHA-256' },
+      false,
+      ['verify']
+    );
+    
+    let base64 = parts[2].replace(/-/g, '+').replace(/_/g, '/');
+    while (base64.length % 4) base64 += '=';
+    const sigBytes = Uint8Array.from(atob(base64), c => c.charCodeAt(0));
+    
+    return await crypto.subtle.verify('HMAC', key, sigBytes, data);
+  } catch {
+    return false;
+  }
 }
 
 // A simple recursive JSON viewer with smart claim badges
 const JsonViewer = ({ data, level = 0, isLast = true }: { data: any, level?: number, isLast?: boolean }) => {
- if (data === null) return <span className="text-zinc-500">null{isLast ? '' : ','}</span>;
- if (typeof data === 'boolean') return <span className="text-blue-500">{data ? 'true' : 'false'}{isLast ? '' : ','}</span>;
- if (typeof data === 'number') return <span className="text-blue-500">{data}{isLast ? '' : ','}</span>;
- if (typeof data === 'string') return <span className="text-amber-500">"{data}"{isLast ? '' : ','}</span>;
+  if (data === null) return <span className="text-zinc-500">null{isLast ? '' : ','}</span>;
+  if (typeof data === 'boolean') return <span className="text-blue-500">{data ? 'true' : 'false'}{isLast ? '' : ','}</span>;
+  if (typeof data === 'number') return <span className="text-blue-500">{data}{isLast ? '' : ','}</span>;
+  if (typeof data === 'string') return <span className="text-amber-500">&quot;{data}&quot;{isLast ? '' : ','}</span>;
 
- const indent = ' '.repeat(level);
- const nextIndent = ' '.repeat(level + 1);
+  const indent = ' '.repeat(level);
+  const nextIndent = ' '.repeat(level + 1);
 
- if (Array.isArray(data)) {
- if (data.length === 0) return <span>[]{isLast ? '' : ','}</span>;
- return (
- <span>
- [
- <br />
- {data.map((item, i) => (
- <span key={i}>
- {nextIndent}
- <JsonViewer data={item} level={level + 1} isLast={i === data.length - 1} />
- <br />
- </span>
- ))}
- {indent}]{isLast ? '' : ','}
- </span>
- );
- }
+  if (Array.isArray(data)) {
+    if (data.length === 0) return <span>[]{isLast ? '' : ','}</span>;
+    return (
+      <span>
+        [
+        <br />
+        {data.map((item, i) => (
+          <span key={i}>
+            {nextIndent}
+            <JsonViewer data={item} level={level + 1} isLast={i === data.length - 1} />
+            <br />
+          </span>
+        ))}
+        {indent}]{isLast ? '' : ','}
+      </span>
+    );
+  }
 
- const entries = Object.entries(data);
- if (entries.length === 0) return <span>{"{}"}{isLast ? '' : ','}</span>;
+  const entries = Object.entries(data);
+  if (entries.length === 0) return <span>{"{}"}{isLast ? '' : ','}</span>;
 
- return (
- <span>
- {"{"}
- <br />
- {entries.map(([key, val], i) => {
- const isTimeClaim = ['exp', 'iat', 'nbf'].includes(key) && typeof val === 'number';
- let badge = null;
- if (isTimeClaim) {
- try {
- const d = new Date((val as number) * 1000);
- const dist = formatDistanceToNow(d, { addSuffix: true });
- badge = (
- <span className="ml-2 inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-sans font-medium bg-zinc-200 text-zinc-600">
- {d.toLocaleString()} ({dist})
- </span>
- );
- } catch (e) {}
- }
- 
- return (
- <span key={key}>
- {nextIndent}
- <span className="text-indigo-400">"{key}"</span>
- <span className="text-zinc-400 mr-1">:</span>
- <JsonViewer data={val} level={level + 1} isLast={i === entries.length - 1} />
- {badge}
- <br />
- </span>
- );
- })}
- {indent}{"}"}{isLast ? '' : ','}
- </span>
- );
+  return (
+    <span>
+      {"{"}
+      <br />
+      {entries.map(([key, val], i) => {
+        const isTimeClaim = ['exp', 'iat', 'nbf'].includes(key) && typeof val === 'number';
+        let badge = null;
+        if (isTimeClaim) {
+          try {
+            const d = new Date((val as number) * 1000);
+            const dist = formatDistanceToNow(d, { addSuffix: true });
+            badge = (
+              <span className="ml-2 inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-sans font-medium bg-zinc-200 text-zinc-600">
+                {d.toLocaleString()} ({dist})
+              </span>
+            );
+          } catch (e) {}
+        }
+        
+        return (
+          <span key={key}>
+            {nextIndent}
+            <span className="text-indigo-400">&quot;{key}&quot;</span>
+            <span className="text-zinc-400 mr-1">:</span>
+            <JsonViewer data={val} level={level + 1} isLast={i === entries.length - 1} />
+            {badge}
+            <br />
+          </span>
+        );
+      })}
+      {indent}{"}"}{isLast ? '' : ','}
+    </span>
+  );
 };
 
 interface JwtDecoderToolProps {
- onValidationChange: (isValid: boolean, error?: string) => void;
- onStatsChange: (length: number, execMs: number) => void;
- restoredInput?: string | null;
+  onValidationChange: (isValid: boolean, error?: string) => void;
+  onStatsChange: (length: number, execMs: number) => void;
+  restoredInput?: string | null;
 }
 
 export function JwtDecoderTool({ onValidationChange, onStatsChange, restoredInput }: JwtDecoderToolProps) {
- const [input, setInput] = useState<string>("");
- const [headerObj, setHeaderObj] = useState<any>(null);
- const [payloadObj, setPayloadObj] = useState<any>(null);
- const [signature, setSignature] = useState<string>("");
- 
- const [secret, setSecret] = useState<string>("");
- const [sigStatus, setSigStatus] = useState<"unknown"|"valid"|"invalid">("unknown");
+  const [input, setInput] = useState<string>("");
+  const [headerObj, setHeaderObj] = useState<any>(null);
+  const [payloadObj, setPayloadObj] = useState<any>(null);
+  const [signature, setSignature] = useState<string>("");
+  
+  const [secret, setSecret] = useState<string>("");
+  const [sigStatus, setSigStatus] = useState<"unknown"|"valid"|"invalid">("unknown");
 
- const [copied, setCopied] = useState<string | null>(null);
- const [activeTab, setActiveTab] = useState<"input"|"output">("input");
- const [isValid, setIsValid] = useState(true);
- const [execMs, setExecMs] = useState(0);
+  const [copied, setCopied] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<"input"|"output">("input");
+  const [isValid, setIsValid] = useState(true);
+  const [execMs, setExecMs] = useState(0);
 
- // Restore from history
- useEffect(() => {
- if (restoredInput) setInput(restoredInput);
- }, [restoredInput]);
+  // Restore from history
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (restoredInput) setInput(restoredInput);
+  }, [restoredInput]);
 
- // Save workspace snapshot
- useEffect(() => {
- const handleSave = () => {
- addSnapshot("jwt","JWT Decoder", input, payloadObj ? JSON.stringify(payloadObj, null, 2) :"");
- };
- window.addEventListener("save-workspace", handleSave);
- return () => window.removeEventListener("save-workspace", handleSave);
- }, [input, payloadObj]);
+  // Save workspace snapshot
+  useEffect(() => {
+    const handleSave = () => {
+      addSnapshot("jwt","JWT Decoder", input, payloadObj ? JSON.stringify(payloadObj, null, 2) :"");
+    };
+    window.addEventListener("save-workspace", handleSave);
+    return () => window.removeEventListener("save-workspace", handleSave);
+  }, [input, payloadObj]);
 
- useEffect(() => {
- const start = performance.now();
- const result = decodeJwt(input);
- const end = performance.now();
- const ms = end - start;
- 
- setIsValid(result.valid);
- setExecMs(ms);
- onValidationChange(result.valid, result.error);
- onStatsChange(input.length, ms);
+  useEffect(() => {
+    const start = performance.now();
+    const result = decodeJwt(input);
+    const end = performance.now();
+    const ms = end - start;
+    
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setIsValid(result.valid);
+    setExecMs(ms);
+    onValidationChange(result.valid, result.error);
+    onStatsChange(input.length, ms);
 
- if (result.valid && result.headerObj) {
- setHeaderObj(result.headerObj);
- setPayloadObj(result.payloadObj);
- setSignature(result.signature ||"");
- } else {
- setHeaderObj(null);
- setPayloadObj(null);
- setSignature("");
- setSigStatus("unknown");
- }
- }, [input, onValidationChange, onStatsChange]);
+    if (result.valid && result.headerObj) {
+      setHeaderObj(result.headerObj);
+      setPayloadObj(result.payloadObj);
+      setSignature(result.signature ||"");
+    } else {
+      setHeaderObj(null);
+      setPayloadObj(null);
+      setSignature("");
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setSigStatus("unknown");
+    }
+  }, [input, onValidationChange, onStatsChange]);
 
- useEffect(() => {
- let active = true;
- if (!input || !signature || !secret || !headerObj || headerObj.alg !== 'HS256') {
- setSigStatus("unknown");
- return;
- }
- verifyHs256(input, secret).then(res => {
- if (active) {
- setSigStatus(res ?"valid":"invalid");
- }
- });
- return () => { active = false; };
- }, [input, signature, secret, headerObj]);
+  useEffect(() => {
+    let active = true;
+    if (!input || !signature || !secret || !headerObj || headerObj.alg !== 'HS256') {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setSigStatus("unknown");
+      return;
+    }
+    verifyHs256(input, secret).then(res => {
+      if (active) {
+        setSigStatus(res ?"valid":"invalid");
+      }
+    });
+    return () => { active = false; };
+  }, [input, signature, secret, headerObj]);
 
- const handleCopy = (text: string, id: string) => {
- if (!text) return;
- navigator.clipboard.writeText(text);
- setCopied(id);
- setTimeout(() => setCopied(null), 1500);
- };
+  const handleCopy = (text: string, id: string) => {
+    if (!text) return;
+    navigator.clipboard.writeText(text);
+    setCopied(id);
+    setTimeout(() => setCopied(null), 1500);
+  };
 
- const parts = input.split('.');
- const headerPart = parts[0] || '';
- const payloadPart = parts[1] !== undefined ? parts[1] : null;
- const signaturePart = parts[2] !== undefined ? parts[2] : null;
+  const parts = input.split('.');
+  const headerPart = parts[0] || '';
+  const payloadPart = parts[1] !== undefined ? parts[1] : null;
+  const signaturePart = parts[2] !== undefined ? parts[2] : null;
 
   return (
     <div className="flex flex-col h-full bg-white w-full overflow-y-auto relative">

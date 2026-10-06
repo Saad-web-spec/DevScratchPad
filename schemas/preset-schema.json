@@ -1,0 +1,119 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://www.devscratchpad.tech/schemas/preset-schema.json",
+  "title": "Universal AI Skill Studio Preset Schema",
+  "description": "Validation schema for community contributed AI presets, rules, and configurations in DevScratchpad.",
+  "type": "object",
+  "required": [
+    "id",
+    "name",
+    "badge",
+    "title",
+    "slug",
+    "description",
+    "role",
+    "framework",
+    "language",
+    "styling",
+    "database",
+    "philosophy",
+    "behaviors",
+    "conventions",
+    "procedures",
+    "customDirectives",
+    "exampleGood",
+    "exampleBad"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9-]+$",
+      "description": "Unique identifier for the preset in kebab-case."
+    },
+    "name": {
+      "type": "string",
+      "minLength": 3,
+      "maxLength": 60,
+      "description": "Human-readable label for selector chips and dropdowns."
+    },
+    "badge": {
+      "type": "string",
+      "minLength": 2,
+      "maxLength": 30,
+      "description": "Category badge label (e.g. 'Cursor Rules', 'Claude Skill', 'Fullstack')."
+    },
+    "title": {
+      "type": "string",
+      "minLength": 5,
+      "maxLength": 100,
+      "description": "Full formal title of the preset."
+    },
+    "slug": {
+      "type": "string",
+      "pattern": "^[a-z0-9-]+$",
+      "description": "URL-safe slug and exported filename identifier."
+    },
+    "description": {
+      "type": "string",
+      "minLength": 10,
+      "maxLength": 300,
+      "description": "Concise description of the preset purpose and agent behavior."
+    },
+    "role": {
+      "type": "string",
+      "minLength": 3,
+      "maxLength": 100,
+      "description": "Agent persona or role directive (e.g. 'Senior Security Auditor')."
+    },
+    "framework": {
+      "type": "string",
+      "description": "Target framework context (e.g. 'Next.js 15', 'FastAPI', 'Rust Axum')."
+    },
+    "language": {
+      "type": "string",
+      "description": "Programming language context (e.g. 'TypeScript 5.x', 'Python 3.12')."
+    },
+    "styling": {
+      "type": "string",
+      "description": "CSS / styling context or 'None / Headless'."
+    },
+    "database": {
+      "type": "string",
+      "description": "Database context or 'None'."
+    },
+    "philosophy": {
+      "type": "string",
+      "enum": ["pragmatic", "modern", "strict", "vibe", "architect"],
+      "description": "Architectural mindset guiding code synthesis."
+    },
+    "behaviors": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "List of active behavior tags controlling agent actions."
+    },
+    "conventions": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "List of architectural and code conventions to follow."
+    },
+    "procedures": {
+      "type": "string",
+      "minLength": 10,
+      "description": "Step-by-step workflow procedures for the agent."
+    },
+    "customDirectives": {
+      "type": "string",
+      "minLength": 5,
+      "description": "Negative guardrails and banned patterns (e.g. '- Banned: Never do X')."
+    },
+    "exampleGood": {
+      "type": "string",
+      "description": "Production-grade reference implementation code snippet."
+    },
+    "exampleBad": {
+      "type": "string",
+      "description": "Anti-pattern code snippet to avoid."
+    }
+  }
+}

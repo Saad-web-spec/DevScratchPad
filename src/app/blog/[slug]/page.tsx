@@ -1,14 +1,37 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, ChevronRight, Terminal, ArrowRight, ArrowUpRight } from "lucide-react";
-import { marked } from "marked";
+import { ArrowLeft, ArrowRight, ArrowUpRight, Clock } from "lucide-react";
+import { Marked } from "marked";
+import { markedHighlight } from "marked-highlight";
+import hljs from "highlight.js";
 import { getBlogPost, BLOG_SLUGS, BLOG_POSTS } from "@/lib/blog/posts";
 import { getToolMeta } from "@/lib/tools/registry";
 import { SiteHeader } from "@/components/layout/SiteHeader";
 import { SiteFooter } from "@/components/layout/SiteFooter";
+import { TableOfContents } from "@/components/blog/TableOfContents";
+import { InteractiveToolWidget } from "@/components/blog/InteractiveToolWidget";
+import { FaqAccordion } from "@/components/blog/FaqAccordion";
+import { CodeBlockEnricher } from "@/components/blog/CodeBlockEnricher";
+
+const marked = new Marked(
+  markedHighlight({
+    emptyLangClass: 'hljs',
+    langPrefix: 'hljs language-',
+    highlight(code, lang) {
+      const language = hljs.getLanguage(lang) ? lang : 'plaintext';
+      return hljs.highlight(code, { language }).value;
+    }
+  })
+);
 
 const SITE_URL = "https://www.devscratchpad.tech";
+
+function formatUtcDate(dateStr: string) {
+  const d = new Date(dateStr);
+  const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  return `${months[d.getUTCMonth()]} ${d.getUTCDate()}, ${d.getUTCFullYear()}`;
+}
 
 export async function generateStaticParams() {
   return BLOG_SLUGS.map((slug) => ({ slug }));
@@ -27,7 +50,7 @@ export async function generateMetadata({
   }
 
   return {
-    title: `${post.seoTitle} | DevScratchpad`,
+    title: post.seoTitle,
     description: post.seoDescription,
     alternates: {
       canonical: `${SITE_URL}/blog/${slug}`,
@@ -40,11 +63,28 @@ export async function generateMetadata({
       publishedTime: post.publishedAt,
       modifiedTime: post.updatedAt,
       siteName: "DevScratchpad",
+      tags: post.tags,
+      images: [
+        {
+          url: `${SITE_URL}/opengraph-image`,
+          width: 1200,
+          height: 630,
+          alt: `${post.title} — DevScratchpad Technical Guide`,
+        },
+      ],
     },
     twitter: {
       card: "summary_large_image",
       title: `${post.seoTitle} | DevScratchpad`,
       description: post.seoDescription,
+      images: [
+        {
+          url: `${SITE_URL}/opengraph-image`,
+          width: 1200,
+          height: 630,
+          alt: `${post.title} — DevScratchpad Technical Guide`,
+        },
+      ],
     },
   };
 }
@@ -63,33 +103,84 @@ export default async function BlogPostPage({
 
   const toolMeta = getToolMeta(post.relatedToolSlug);
   const htmlContent = await marked.parse(post.content);
-  const otherPosts = BLOG_POSTS.filter((p) => p.slug !== slug);
 
-  const jsonLd = {
+  // Determine related guides (from explicit list or same category)
+  const relatedPosts = BLOG_POSTS.filter(
+    (p) =>
+      p.slug !== slug &&
+      (post.relatedGuideSlugs?.includes(p.slug) || p.category === post.category)
+  ).slice(0, 4);
+
+  // Structured Data (Schema.org)
+  const articleSchema = {
     "@context": "https://schema.org",
-    "@type": "BlogPosting",
+    "@type": "TechArticle",
     "headline": post.title,
     "description": post.seoDescription,
     "datePublished": post.publishedAt,
     "dateModified": post.updatedAt,
     "image": `${SITE_URL}/opengraph-image`,
+    "articleSection": post.category,
+    "keywords": post.tags?.join(", "),
     "author": {
       "@type": "Organization",
-      "name": "DevScratchpad"
+      "name": "DevScratchpad",
+      "url": SITE_URL,
     },
     "publisher": {
       "@type": "Organization",
       "name": "DevScratchpad",
       "logo": {
         "@type": "ImageObject",
-        "url": `${SITE_URL}/favicon.ico`
-      }
+        "url": `${SITE_URL}/icon.png`,
+      },
     },
     "mainEntityOfPage": {
       "@type": "WebPage",
-      "@id": `${SITE_URL}/blog/${slug}`
-    }
+      "@id": `${SITE_URL}/blog/${slug}`,
+    },
   };
+
+  const breadcrumbSchema = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "position": 1,
+        "name": "Home",
+        "item": SITE_URL,
+      },
+      {
+        "@type": "ListItem",
+        "position": 2,
+        "name": "Learning Hub",
+        "item": `${SITE_URL}/blog`,
+      },
+      {
+        "@type": "ListItem",
+        "position": 3,
+        "name": post.title,
+        "item": `${SITE_URL}/blog/${slug}`,
+      },
+    ],
+  };
+
+  const faqSchema =
+    post.faqs && post.faqs.length > 0
+      ? {
+          "@context": "https://schema.org",
+          "@type": "FAQPage",
+          "mainEntity": post.faqs.map((faq) => ({
+            "@type": "Question",
+            "name": faq.question,
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": faq.answer,
+            },
+          })),
+        }
+      : null;
 
   return (
     <div className="min-h-screen bg-zinc-50 flex flex-col font-sans selection:bg-zinc-900 selection:text-white">
@@ -97,79 +188,161 @@ export default async function BlogPostPage({
 
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(articleSchema).replace(/</g, "\\u003c") }}
       />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema).replace(/</g, "\\u003c") }}
+      />
+      {faqSchema && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema).replace(/</g, "\\u003c") }}
+        />
+      )}
 
-      <main className="flex-1 w-full max-w-4xl mx-auto px-4 sm:px-6 py-8 md:py-12">
-        {/* Minimalist Breadcrumb */}
-        <div className="flex items-center gap-2 text-xs font-mono text-zinc-500 mb-6">
-          <Link href="/" className="hover:text-zinc-900 transition-colors">
-            root
-          </Link>
-          <span>/</span>
-          <Link href="/blog" className="hover:text-zinc-900 transition-colors">
-            guides
-          </Link>
-          <span>/</span>
-          <span className="text-zinc-800 truncate max-w-[200px] sm:max-w-none">
-            {post.slug}
-          </span>
-        </div>
-
-        {/* Back Link */}
-        <Link
-          href="/blog"
-          className="inline-flex items-center text-xs font-mono text-zinc-500 hover:text-zinc-900 transition-colors mb-6 group"
-        >
-          <ArrowLeft className="w-3.5 h-3.5 mr-1 group-hover:-translate-x-1 transition-transform" />
-          <span>all_guides.md</span>
-        </Link>
-
-        {/* Main Article Document Card */}
-        <article className="bg-white border border-zinc-200 rounded-xl p-6 sm:p-10 md:p-12 mb-12">
-          {/* Article Header Metadata */}
-          <header className="border-b border-zinc-200 pb-6 mb-8">
-            <div className="flex flex-wrap items-center gap-2.5 text-xs font-mono text-zinc-500 mb-4">
-              <span className="px-2 py-0.5 bg-zinc-100 border border-zinc-200 text-zinc-700 rounded font-medium">
-                REFERENCE GUIDE
+      <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 py-8 md:py-12">
+        <div className="flex flex-col lg:flex-row gap-8 items-start relative">
+          
+          {/* Left Column: Main Content */}
+          <div className="flex-1 w-full min-w-0">
+            {/* Minimalist Breadcrumb Navigation */}
+            <div className="flex flex-wrap items-center gap-2 text-xs font-mono text-zinc-500 mb-6">
+              <Link href="/" className="hover:text-zinc-900 transition-colors">
+                root
+              </Link>
+              <span>/</span>
+              <Link href="/blog" className="hover:text-zinc-900 transition-colors">
+                learning-hub
+              </Link>
+              <span>/</span>
+              <span className="text-zinc-500">{post.category.toLowerCase().replace(/[^a-z0-9]+/g, "-")}</span>
+              <span>/</span>
+              <span className="text-zinc-800 truncate max-w-[220px] sm:max-w-none">
+                {post.slug}
               </span>
-              <span>•</span>
-              <time>
-                {new Date(post.publishedAt).toLocaleDateString("en-US", {
-                  month: "short",
-                  day: "numeric",
-                  year: "numeric",
-                })}
-              </time>
-              <span>•</span>
-              <span>100% Client-Side Verified</span>
             </div>
 
-            <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight text-zinc-900 leading-tight mb-3">
-              {post.title}
-            </h1>
+            {/* Back Link */}
+            <Link
+              href="/blog"
+              className="inline-flex items-center text-xs font-mono text-zinc-500 hover:text-zinc-900 transition-colors mb-6 group"
+            >
+              <ArrowLeft className="w-3.5 h-3.5 mr-1 group-hover:-translate-x-1 transition-transform" />
+              <span>← Back to Learning Hub</span>
+            </Link>
 
-            <p className="text-sm sm:text-base text-zinc-600 leading-relaxed max-w-3xl">
-              {post.description}
-            </p>
-          </header>
+            {/* Main Article Document Card */}
+            <article className="bg-white border border-zinc-200 rounded-xl p-6 sm:p-10 md:p-12 mb-12 shadow-sm relative">
+              {/* Inject the Client Component to enrich code blocks with Copy buttons */}
+              <CodeBlockEnricher />
+
+              {/* Article Header Metadata */}
+              <header className="border-b border-zinc-200 pb-6 mb-8">
+                <div className="flex flex-wrap items-center gap-2 text-xs font-mono text-zinc-500 mb-4">
+                  <span className="px-2 py-0.5 bg-zinc-100 border border-zinc-200 text-zinc-700 rounded font-medium">
+                    {post.category.toUpperCase()}
+                  </span>
+                  {post.type === "cheat-sheet" && (
+                    <span className="px-2 py-0.5 bg-amber-50 border border-amber-200 text-amber-800 rounded font-medium">
+                      CHEAT SHEET
+                    </span>
+                  )}
+                  <span>•</span>
+                  <span className="flex items-center gap-1">
+                    <Clock className="w-3 h-3 text-zinc-400" />
+                    {post.readTime}
+                  </span>
+                  <span>•</span>
+                  <span>{post.difficulty}</span>
+                  <span>•</span>
+                  <time suppressHydrationWarning>
+                    {formatUtcDate(post.publishedAt)}
+                  </time>
+                  <span>•</span>
+                  <span className="text-emerald-700 font-medium">100% Client-Side Verified</span>
+                </div>
+
+                <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight text-zinc-900 leading-tight mb-3">
+                  {post.title}
+                </h1>
+
+                <p className="text-sm sm:text-base text-zinc-600 leading-relaxed max-w-3xl mb-4">
+                  {post.description}
+                </p>
+
+                {/* Tags list */}
+                {post.tags && post.tags.length > 0 && (
+                  <div className="flex flex-wrap items-center gap-1.5 pt-2">
+                    {post.tags.map((tag) => (
+                      <span
+                        key={tag}
+                        className="text-[10px] font-mono text-zinc-500 bg-zinc-50 border border-zinc-200 px-1.5 py-0.5 rounded"
+                      >
+                        #{tag}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </header>
+
+              {/* Mobile Table of Contents */}
+              <div className="block lg:hidden">
+                <TableOfContents isMobile />
+              </div>
+
+          {/* Interactive Preset Sandbox (if provided) */}
+          {post.interactivePreset && (
+            <InteractiveToolWidget
+              preset={post.interactivePreset}
+              toolMeta={toolMeta}
+            />
+          )}
 
           {/* Rendered Markdown Body */}
           <div className="prose max-w-none">
             <div dangerouslySetInnerHTML={{ __html: htmlContent }} />
           </div>
 
-          {/* Integrated Interactive Tool Card (Monochromatic IDE Style) */}
-          {toolMeta && (
+          {/* Integrated Interactive Tool Card (Monochromatic IDE Style or AI Studio Spotlight) */}
+          {post.relatedToolSlug === "ai-skill-studio" ? (
+            <div className="mt-12 p-6 bg-gradient-to-r from-orange-50/80 via-amber-50/40 to-white border border-orange-200 rounded-xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-5 shadow-xs">
+              <div className="space-y-1.5">
+                <div className="flex items-center gap-2">
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-orange-100 text-orange-800 border border-orange-200">
+                    <img src="/orange-star.png" className="w-3.5 h-3.5 object-contain shrink-0" alt="Star" />
+                    <span>Live Interactive Studio</span>
+                  </span>
+                  <span className="text-[10px] font-mono text-zinc-500 bg-white border border-zinc-200 px-1.5 py-0.5 rounded">
+                    100% Client-Side Privacy
+                  </span>
+                </div>
+                <h3 className="text-base font-bold text-zinc-900">
+                  Live Tool: AI Skill Studio — SKILL.md, CLAUDE.md & Cursor Rules
+                </h3>
+                <p className="text-xs text-zinc-600 leading-relaxed max-w-xl">
+                  Visually configure, preview in Monaco, and export production-ready Claude Code skills, Cursor <code className="font-mono text-xs bg-orange-100/60 px-1 py-0.5 rounded text-orange-900">.mdc</code> rules, and multi-agent directives in a single ZIP kit.
+                </p>
+              </div>
+
+              <Link
+                href="/ai-skill-studio"
+                className="px-4 py-2.5 bg-orange-600 hover:bg-orange-500 text-white font-semibold rounded-lg text-xs transition-all whitespace-nowrap shrink-0 flex items-center gap-2 shadow-sm"
+              >
+                <span>Launch AI Skill Studio</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </Link>
+            </div>
+          ) : toolMeta ? (
             <div className="mt-12 p-5 sm:p-6 bg-zinc-50 border border-zinc-200 rounded-xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
               <div className="space-y-1">
                 <div className="flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-zinc-400" />
+                  <span className="w-2 h-2 rounded-full bg-emerald-500" />
                   <h3 className="text-sm font-semibold text-zinc-900">
                     Live Tool: {toolMeta.name}
                   </h3>
                   <span className="text-[10px] font-mono text-zinc-500 bg-white border border-zinc-200 px-1.5 py-0.5 rounded">
-                    Client-Side
+                    Client-Side Engine
                   </span>
                 </div>
                 <p className="text-xs text-zinc-500 leading-relaxed max-w-lg">
@@ -181,33 +354,46 @@ export default async function BlogPostPage({
                 href={`/tools/${toolMeta.slug}`}
                 className="px-3.5 py-2 bg-zinc-900 hover:bg-zinc-800 text-white font-medium rounded-md text-xs transition-colors whitespace-nowrap shrink-0 flex items-center gap-1.5 shadow-none"
               >
-                <span>Launch Tool</span>
+                <span>Launch Tool Workspace</span>
                 <ArrowRight className="w-3.5 h-3.5" />
               </Link>
             </div>
+          ) : null}
+
+          {/* Interactive FAQ Accordion */}
+          {post.faqs && post.faqs.length > 0 && (
+            <FaqAccordion faqs={post.faqs} />
           )}
         </article>
 
-        {/* More Guides Section */}
-        {otherPosts.length > 0 && (
+        {/* Related Guides Section */}
+        {relatedPosts.length > 0 && (
           <div className="mb-12">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-sm font-mono uppercase tracking-wider text-zinc-500 font-semibold">
-                More Developer Guides
+                Related Guides & References
               </h3>
               <Link href="/blog" className="text-xs font-mono text-zinc-500 hover:text-zinc-900 transition-colors">
-                view all →
+                view learning hub →
               </Link>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {otherPosts.map((other) => (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+              {relatedPosts.map((other) => (
                 <Link
                   key={other.slug}
                   href={`/blog/${other.slug}`}
-                  className="group bg-white border border-zinc-200 rounded-lg p-4 hover:border-zinc-400 transition-all flex flex-col justify-between"
+                  className="group bg-white border border-zinc-200 rounded-xl p-4 hover:border-zinc-400 transition-all flex flex-col justify-between shadow-sm"
                 >
                   <div className="space-y-1">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="text-[10px] font-mono font-medium px-1.5 py-0.5 bg-zinc-100 text-zinc-600 rounded">
+                        {other.category}
+                      </span>
+                      <span className="text-[10px] font-mono text-zinc-400">
+                        {other.readTime}
+                      </span>
+                    </div>
                     <h4 className="font-semibold text-zinc-900 group-hover:text-zinc-600 transition-colors text-sm tracking-tight flex items-center justify-between">
                       <span className="line-clamp-1">{other.title}</span>
                       <ArrowUpRight className="w-3.5 h-3.5 text-zinc-400 group-hover:text-zinc-900 shrink-0 ml-1" />
@@ -221,6 +407,14 @@ export default async function BlogPostPage({
             </div>
           </div>
         )}
+          </div> {/* End Left Column */}
+
+          {/* Right Column: Sticky Sidebar TOC */}
+          <div className="hidden lg:block w-72 shrink-0 sticky top-20 self-start">
+            <TableOfContents />
+          </div>
+
+        </div> {/* End Flex Container */}
       </main>
 
       <SiteFooter />

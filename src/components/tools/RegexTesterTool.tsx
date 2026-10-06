@@ -60,6 +60,7 @@ export function RegexTesterTool({
  if (restoredInput) {
  try {
  const parsed = JSON.parse(restoredInput);
+ // eslint-disable-next-line react-hooks/set-state-in-effect
  if (parsed.pattern) setPattern(parsed.pattern);
  if (parsed.testString) setTestString(parsed.testString);
  } catch {
@@ -72,13 +73,14 @@ export function RegexTesterTool({
  useEffect(() => {
  const start = performance.now();
  const flagStr = Object.entries(flags)
- .filter(([_, active]) => active)
+ .filter(([, active]) => active)
  .map(([f]) => f)
  .join("");
 
  const result = testRegex(pattern, flagStr, testString);
 
  if (result.valid) {
+ // eslint-disable-next-line react-hooks/set-state-in-effect
  setMatches(result.matches || []);
  setRegexError(undefined);
  onValidationChange(true);
@@ -128,7 +130,7 @@ export function RegexTesterTool({
  <div className="min-h-14 border-b border-zinc-200 flex items-center justify-between gap-2 overflow-x-auto no-scrollbar py-2 px-3 md:px-4 bg-white shrink-0 sticky top-0 z-10">
  <div className="flex items-center gap-2">
  <RegexIcon className="w-4 h-4 text-zinc-900"/>
- <h1 className="text-sm font-semibold text-zinc-900">Regex Tester</h1>
+ <span className="text-sm font-semibold text-zinc-900">Regex Tester</span>
  </div>
 
  <div className="flex items-center gap-2 flex-wrap">

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
-import { ArrowRight, Lock } from "lucide-react";
+import { ArrowRight, Lock, Terminal, Zap } from "lucide-react";
 
 export function SiteHeader() {
   return (
@@ -31,8 +31,14 @@ export function SiteHeader() {
               Directory
             </Link>
             <Link
+              href="/recipes"
+              className="px-3 py-1.5 font-medium text-zinc-600 hover:text-zinc-900 hover:bg-zinc-100 rounded-md transition-colors"
+            >
+              Recipes & Fixes
+            </Link>
+            <Link
               href="/blog"
-              className="px-3 py-1.5 font-medium text-zinc-900 bg-zinc-100/80 rounded-md transition-colors"
+              className="px-3 py-1.5 font-medium text-zinc-600 hover:text-zinc-900 hover:bg-zinc-100 rounded-md transition-colors"
             >
               Guides & References
             </Link>
@@ -40,15 +46,48 @@ export function SiteHeader() {
         </div>
 
         {/* Right Side Actions */}
-        <div className="flex items-center gap-3">
-          <div className="hidden md:flex bg-neutral-900 text-neutral-100 text-xs px-2.5 py-1 rounded-md items-center gap-1.5"><Lock className="w-3 h-3" /> 100% Local</div>
+        <div className="flex items-center gap-2 sm:gap-3">
+          <Link
+            href="/cli"
+            className="hidden md:flex bg-zinc-100 hover:bg-zinc-200 text-zinc-800 border border-zinc-200 text-xs px-2.5 py-1 rounded-md items-center gap-1.5 transition-colors font-mono font-medium shadow-xs shrink-0"
+            title="DevScratchpad CLI (npx devscratchpad)"
+          >
+            <Terminal className="w-3.5 h-3.5 text-orange-600" />
+            <span>npx CLI</span>
+          </Link>
+
+          <Link
+            href="/ai-skill-studio"
+            className="flex bg-zinc-100 hover:bg-zinc-200 text-zinc-800 border border-zinc-200 text-xs px-2 sm:px-2.5 py-1 rounded-md items-center gap-1.5 transition-colors font-semibold shadow-xs hover:shadow-sm shrink-0"
+            title="AI Skill Studio (Editor)"
+          >
+            <Zap className="w-3.5 h-3.5 text-zinc-600" />
+            <span className="hidden xs:inline sm:inline">AI Studio</span>
+          </Link>
+
+          <Link
+            href="/skill"
+            className="p-1 hover:bg-zinc-100 rounded-md transition-colors flex items-center justify-center shrink-0"
+            title="AI Skill Hub & Library"
+            aria-label="AI Skill Hub & Library"
+          >
+            <img
+              src="/skill-folder-icon.png"
+              className="w-7 h-5.5 sm:w-8 sm:h-6 object-contain hover:scale-105 transition-transform"
+              alt="Skills"
+            />
+          </Link>
+
+
+          <div className="hidden lg:flex bg-neutral-900 text-neutral-100 text-xs px-2.5 py-1 rounded-md items-center gap-1.5"><Lock className="w-3 h-3" /> 100% Local</div>
 
           <Link
             href="/"
-            className="flex items-center gap-2 px-3.5 py-1.5 bg-zinc-900 hover:bg-zinc-800 text-white rounded-md text-xs font-medium transition-all shadow-none"
+            className="flex items-center gap-1.5 px-2.5 sm:px-3.5 py-1.5 bg-zinc-900 hover:bg-zinc-800 text-white rounded-md text-xs font-medium transition-all shadow-none shrink-0"
           >
-            <span>Open Tool Workspace</span>
-            <ArrowRight className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">Open Tool Workspace</span>
+            <span className="sm:hidden">Tools</span>
+            <ArrowRight className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
           </Link>
         </div>
       </div>

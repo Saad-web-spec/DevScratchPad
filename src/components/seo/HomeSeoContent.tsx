@@ -1,81 +1,67 @@
 import Link from"next/link";
-import { ShieldCheck, ArrowRight, HelpCircle, Sparkles, Zap } from"lucide-react";
+import { ShieldCheck, ArrowRight, HelpCircle, Sparkles } from "lucide-react";
 import { TOOLS_REGISTRY } from"@/lib/tools/registry";
 
 const CATEGORIES = [
   {
-  name:"Code Formatting",
-  tools: ["json-formatter", "json-validator", "xml-formatter", "sql-formatter", "graphql-formatter"],
+    name: "Code Formatting",
+    tools: ["json-formatter", "json-schema-validator", "xml-formatter", "sql-formatter", "graphql-formatter"],
   },
   {
-  name:"Security & Identifiers",
-  tools: ["uuid-generator", "jwt", "hash", "hmac-generator", "base64-inspector", "cert-decoder", "ssh-key-generator", "password-hash"],
+    name: "Security & Identifiers",
+    tools: ["uuid-generator", "jwt", "hash", "hmac-generator", "base64-inspector", "cert-decoder", "ssh-key-generator", "password-hash", "mock-data-generator"],
   },
   {
-  name:"Networking & Time",
-  tools: ["cron", "cidr-calculator"],
+    name: "Networking & Time",
+    tools: ["cron", "cidr-calculator", "epoch-converter"],
   },
   {
-  name:"Code Converters",
-  tools: ["json-to-ts", "json-to-zod", "json-to-go", "svg-to-jsx", "curl-to-javascript", "curl-to-python", "curl-to-fetch", "curl-to-go", "yaml", "yaml-to-json", "json-to-yaml"],
+    name: "Code Converters",
+    tools: ["json-to-ts", "json-to-zod", "json-to-go", "svg-to-jsx", "curl-to-python", "curl-to-fetch", "curl-to-go", "yaml"],
   },
   {
-  name:"Diff & Text Optimization",
-  tools: ["diff", "minifier", "regex"],
+    name: "Diff & Text Optimization",
+    tools: ["diff", "minifier", "regex"],
   },
 ];
 
 export function HomeSeoContent() {
  const allTools = Object.values(TOOLS_REGISTRY);
 
- const jsonLdGraph = {
-"@context":"https://schema.org",
-"@graph": [
- {
-"@type":"SoftwareApplication",
-"@id":"https://www.devscratchpad.tech/#webapp",
-"name":"DevScratchpad",
-"url":"https://www.devscratchpad.tech",
-"applicationCategory":"DeveloperApplication",
-"operatingSystem":"All",
-"browserRequirements":"Requires JavaScript",
-"offers": {
-"@type":"Offer",
-"price":"0",
-"priceCurrency":"USD"
- },
-"description":"Free online developer tools. 100% client-side and private.",
- },
- {
-"@type":"WebSite",
-"@id":"https://www.devscratchpad.tech/#website",
-"url":"https://www.devscratchpad.tech",
-"name":"DevScratchpad",
-"description":"22+ Free online developer tools for formatting, converting, and analyzing data securely.",
- },
- {
-"@type":"ItemList",
-"@id":"https://www.devscratchpad.tech/#tools",
-"name":"DevScratchpad Tools",
-"itemListElement": allTools.map((tool, idx) => ({
-"@type":"ListItem",
-"position": idx + 1,
-"url": `https://www.devscratchpad.tech/tools/${tool.slug}`,
-"name": tool.name
- }))
- },
- {
-"@type":"FAQPage",
-"@id":"https://www.devscratchpad.tech/#faq",
-"mainEntity": [
- {
-"@type":"Question",
-"name":"What tools does DevScratchpad offer?",
-"acceptedAnswer": {
-"@type":"Answer",
-"text":"DevScratchpad provides over 22 developer tools including JSON/XML/SQL/GraphQL formatters, JWT decoders, UUID/ULID generators, SVG to JSX converter, string case converter, Hash/HMAC generators, Base64/URL encoders, timestamp converters, CIDR calculators, diff checkers, and more."
- }
- },
+  const jsonLdGraph = {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "ItemList",
+        "@id": "https://www.devscratchpad.tech/#tools",
+        "name": "DevScratchpad Tools",
+        "itemListElement": [
+          {
+            "@type": "ListItem",
+            "position": 1,
+            "url": "https://www.devscratchpad.tech/ai-skill-studio",
+            "name": "AI Skill Studio"
+          },
+          ...allTools.map((tool, idx) => ({
+            "@type": "ListItem",
+            "position": idx + 2,
+            "url": `https://www.devscratchpad.tech/tools/${tool.slug}`,
+            "name": tool.name
+          }))
+        ]
+      },
+      {
+        "@type": "FAQPage",
+        "@id": "https://www.devscratchpad.tech/#faq",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "What tools does DevScratchpad offer?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "DevScratchpad provides 28 offline developer tools including SVG to JSX, JSON/XML/SQL formatters, JWT decoders, Hash/HMAC generators, Base64/URL encoders, timestamp converters, CIDR calculators, diff checkers, and more."
+            }
+          },
  {
 "@type":"Question",
 "name":"Is DevScratchpad really free?",
@@ -106,17 +92,64 @@ export function HomeSeoContent() {
  };
 
  return (
- <div className="mt-12 pt-8 border-t border-zinc-200 ] max-w-4xl pb-24 mx-auto px-4 w-full">
+ <div className="mt-12 pt-8 border-t border-zinc-200 max-w-4xl pb-24 mx-auto px-4 w-full">
  <script
  type="application/ld+json"
- dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLdGraph) }}
+ dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLdGraph).replace(/</g, "\\u003c") }}
  />
  <h1 className="mt-6 mb-3 text-3xl font-black text-zinc-900 tracking-tight">
  100% Offline, Private Developer Tools
  </h1>
   <p className="text-zinc-600 text-base leading-relaxed mb-6 font-medium">
-  DevScratchpad is a suite of 20+ privacy-first developer utilities. Every tool runs entirely within your browser using client-side processing. <strong className="text-zinc-900">Zero server transmission.</strong> Once loaded, it works entirely offline. Your data, payloads, and tokens never leave your machine.
+  DevScratchpad is a suite of 28 offline, privacy-first developer utilities. Every tool runs entirely within your browser using client-side processing. <strong className="text-zinc-900">Zero server transmission.</strong> Once loaded, it works entirely offline. Your data, payloads, and tokens never leave your machine.
   </p>
+
+  {/* Dedicated Homepage Feature Card: AI Skill Studio & 5-Layer AI Agent Suite */}
+  <Link
+    href="/ai-skill-studio"
+    className="mb-8 p-5 sm:p-6 bg-gradient-to-br from-orange-50/90 via-white to-amber-50/50 border border-orange-200 hover:border-orange-300 rounded-xl flex flex-col justify-between gap-4 transition-all shadow-2xs hover:shadow-xs group"
+  >
+    <div className="flex flex-col sm:flex-row items-start justify-between gap-4">
+      <div className="flex items-start gap-3.5">
+        <div className="w-10 h-10 rounded-lg bg-orange-600 text-white flex items-center justify-center shrink-0 shadow-xs group-hover:scale-105 transition-transform">
+          <Sparkles className="w-5 h-5 text-white" />
+        </div>
+        <div>
+          <div className="flex flex-wrap items-center gap-2">
+            <h2 className="text-base font-bold text-zinc-900 group-hover:text-orange-600 transition-colors">
+              AI Skill Studio — 5-Layer AI Agent Suite
+            </h2>
+            <span className="text-[10px] font-mono font-bold tracking-wide px-2 py-0.5 bg-orange-100 text-orange-800 border border-orange-200 rounded-full">
+              New Editions • 100% Client-Side
+            </span>
+          </div>
+          <p className="text-xs text-zinc-600 mt-1.5 leading-relaxed max-w-2xl">
+            Everything your AI coding companion needs to operate reliably without hallucinations or context leaks. Generates all 5 critical layers in one place:
+          </p>
+        </div>
+      </div>
+      <div className="inline-flex items-center gap-1.5 text-xs font-semibold text-orange-600 group-hover:text-orange-700 whitespace-nowrap shrink-0 self-end sm:self-center">
+        <span>Launch Studio</span>
+        <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+      </div>
+    </div>
+
+    {/* 3-Tier Mini Pill Grid */}
+    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-3 border-t border-orange-100/80">
+      <div className="bg-white/80 border border-orange-200/60 rounded-lg p-2.5">
+        <span className="text-[11px] font-bold text-zinc-900 block mb-0.5">1. Rules &amp; Skills</span>
+        <span className="text-[11px] text-zinc-500 leading-tight block">Cursor (.mdc), Claude (SKILL.md), CLAUDE.md, AGENTS.md</span>
+      </div>
+      <div className="bg-white/80 border border-orange-200/60 rounded-lg p-2.5">
+        <span className="text-[11px] font-bold text-zinc-900 block mb-0.5">2. Context Shields</span>
+        <span className="text-[11px] text-zinc-500 leading-tight block">.cursorignore &amp; .claudeignore (mask secrets &amp; cut token bloat)</span>
+      </div>
+      <div className="bg-white/80 border border-orange-200/60 rounded-lg p-2.5">
+        <span className="text-[11px] font-bold text-zinc-900 block mb-0.5">3. Specs &amp; CLI</span>
+        <span className="text-[11px] text-zinc-500 leading-tight block">llms.txt, ARCHITECTURE.md, MCP &amp; `npx devscratchpad init`</span>
+      </div>
+    </div>
+  </Link>
 
   {/* Smart Paste (Auto-Detection) Professional Monochromatic Card */}
   <div className="mb-10 p-4 sm:p-5 bg-zinc-50 border border-zinc-200/90 rounded-xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 transition-all">
@@ -157,7 +190,7 @@ export function HomeSeoContent() {
  <Link
  key={tool.slug}
  href={`/tools/${tool.slug}`}
- className="group flex items-center justify-between p-3.5 bg-zinc-50 ] hover:bg-zinc-100 border border-zinc-200 ] rounded-xl transition-all"
+ className="group flex items-center justify-between p-3.5 bg-zinc-50 hover:bg-zinc-100 border border-zinc-200 rounded-xl transition-all"
  >
  <div>
  <h3 className="text-sm font-medium text-zinc-900 group-hover:text-blue-500 transition-colors">
@@ -204,7 +237,7 @@ export function HomeSeoContent() {
   What tools does DevScratchpad offer?
   </h3>
   <p className="text-xs text-zinc-600 leading-relaxed">
-  DevScratchpad provides over 20 developer tools including SVG to JSX, JSON/XML/SQL formatters, JWT decoders, Hash/HMAC generators, Base64/URL encoders, timestamp converters, CIDR calculators, diff checkers, and more.
+  DevScratchpad provides 28 offline developer tools including SVG to JSX, JSON/XML/SQL formatters, JWT decoders, Hash/HMAC generators, Base64/URL encoders, timestamp converters, CIDR calculators, diff checkers, and more.
   </p>
   </div>
   <div className="p-4 bg-zinc-50 border border-zinc-200 rounded-xl">
@@ -233,7 +266,7 @@ export function HomeSeoContent() {
   </div>
   </div>
 
- <div className="mt-8 flex items-start gap-3 p-4 bg-zinc-50 ] border border-zinc-200 ] rounded-xl mb-10">
+ <div className="mt-8 flex items-start gap-3 p-4 bg-zinc-50 border border-zinc-200 rounded-xl mb-10">
  <ShieldCheck className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5"/>
  <div>
  <p className="text-sm font-bold text-zinc-900 mb-1">

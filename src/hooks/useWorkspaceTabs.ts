@@ -21,6 +21,7 @@ export function useWorkspaceTabs(initialSidebarId: string) {
       if (stored) {
         const parsed = JSON.parse(stored) as WorkspaceTab[];
         if (Array.isArray(parsed) && parsed.length > 0) {
+          // eslint-disable-next-line react-hooks/set-state-in-effect
           setTabs(parsed);
           // If initial is set from URL, ensure it's in the tabs and active
           if (initialSidebarId) {
@@ -45,6 +46,7 @@ export function useWorkspaceTabs(initialSidebarId: string) {
       setTabs([{ id: initialSidebarId, lastAccessed: Date.now() }]);
     }
     setIsLoaded(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Save tabs to localStorage whenever they change

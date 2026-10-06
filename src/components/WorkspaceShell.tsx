@@ -33,6 +33,7 @@ const JsonSchemaValidatorTool = dynamic(() => import("@/components/tools/JsonSch
 const MockDataGeneratorTool = dynamic(() => import("@/components/tools/MockDataGeneratorTool").then(mod => mod.MockDataGeneratorTool), { ssr: false });
 const TimestampConverterTool = dynamic(() => import("@/components/tools/TimestampConverterTool").then(mod => mod.TimestampConverterTool), { ssr: false });
 
+
 import { CommandPalette } from "@/components/modals/CommandPalette";
 import { getToolMeta, type ToolMeta } from "@/lib/tools/registry";
 import { addHistoryEntry, type HistoryEntry } from "@/lib/storage";
@@ -40,6 +41,7 @@ import { X, Sparkles } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { decodeShareData } from "@/components/ShareButton";
 import { SIDEBAR_TO_SLUG, SLUG_TO_SIDEBAR, getToolUrl } from "@/lib/routes";
+import { useMagicPaste } from "@/hooks/useMagicPaste";
 
 const SIDEBAR_TO_NAME: Record<string, string> = {
   "json-formatter": "JSON Formatter",
@@ -84,6 +86,9 @@ interface WorkspaceShellProps {
 
 export function WorkspaceShell({ initialToolSlug, toolMeta, children }: WorkspaceShellProps) {
   const router = useRouter();
+  
+  // Enable global magic paste auto-detection
+  useMagicPaste();
 
   const initialSidebarId = initialToolSlug
     ? SLUG_TO_SIDEBAR[initialToolSlug] || "json-formatter"
@@ -101,6 +106,7 @@ export function WorkspaceShell({ initialToolSlug, toolMeta, children }: Workspac
     } else if (activeTool !== "json-formatter") {
       openTab("json-formatter");
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialToolSlug, openTab]);
 
   const [isCommandPaletteOpen, setCommandPaletteOpen] = useState(false);
@@ -108,8 +114,22 @@ export function WorkspaceShell({ initialToolSlug, toolMeta, children }: Workspac
   const [magicPasteToast, setMagicPasteToast] = useState<{ message: string; visible: boolean } | null>(null);
   const [restoredInput, setRestoredInput] = useState<string | null>(null);
 
+  // Global Ctrl+K / Cmd+K Command Palette Shortcut Listener
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && (e.key === "k" || e.key === "K")) {
+        e.preventDefault();
+        e.stopPropagation();
+        setCommandPaletteOpen((prev) => !prev);
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown, true);
+    return () => window.removeEventListener("keydown", handleKeyDown, true);
+  }, []);
+
   // Status Bar State
-  const [isValid, setIsValid] = useState(true);
+  const [, setIsValid] = useState(true);
   const [errorMsg, setErrorMsg] = useState<string | undefined>();
   const [errorLine, setErrorLine] = useState<number | undefined>();
   const [inputLength, setInputLength] = useState(0);
@@ -157,36 +177,15 @@ export function WorkspaceShell({ initialToolSlug, toolMeta, children }: Workspac
     ? getToolMeta(currentSlug)
     : toolMeta ?? undefined;
 
-  // Dynamically update document metadata on client-side tab change
+  // Dynamically update document title only on dedicated /tools/[tool-slug] pages during client tab switches
   useEffect(() => {
-    if (currentMeta && typeof document !== "undefined") {
+    if (initialToolSlug && currentMeta && typeof document !== "undefined") {
       const newTitle = `${currentMeta.seoTitle} | DevScratchpad`;
       if (document.title !== newTitle) {
         document.title = newTitle;
       }
-      
-      let metaDesc = document.querySelector('meta[name="description"]');
-      if (metaDesc) {
-        metaDesc.setAttribute("content", currentMeta.seoDescription);
-      } else {
-        metaDesc = document.createElement("meta");
-        metaDesc.setAttribute("name", "description");
-        metaDesc.setAttribute("content", currentMeta.seoDescription);
-        document.head.appendChild(metaDesc);
-      }
-      
-      let canonical = document.querySelector('link[rel="canonical"]');
-      const canonicalUrl = `https://www.devscratchpad.tech/tools/${currentSlug}`;
-      if (canonical) {
-        canonical.setAttribute("href", canonicalUrl);
-      } else {
-        canonical = document.createElement("link");
-        canonical.setAttribute("rel", "canonical");
-        canonical.setAttribute("href", canonicalUrl);
-        document.head.appendChild(canonical);
-      }
     }
-  }, [currentMeta, currentSlug]);
+  }, [initialToolSlug, currentMeta]);
 
   const handleValidationChange = useCallback(
     (valid: boolean, error?: string, line?: number) => {
@@ -578,6 +577,7 @@ export function WorkspaceShell({ initialToolSlug, toolMeta, children }: Workspac
                         restoredInput={isActive ? restoredInput : null}
                       />
                     )}
+
                     {!IMPLEMENTED_TOOLS.includes(tab.id) && (
                       <div className="flex flex-col items-center justify-center h-full text-zinc-400">
                         <p className="text-lg font-medium text-zinc-500 mb-2">Coming Soon</p>

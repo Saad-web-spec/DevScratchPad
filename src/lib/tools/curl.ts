@@ -63,7 +63,7 @@ export function parseCurlCommand(curlStr: string): ParsedCurl {
   const ignoreFlags = ['-s', '-S', '-L', '-k', '--insecure', '-i', '-v', '--compressed'];
 
   for (let i = 1; i < args.length; i++) {
-    let arg = args[i];
+    const arg = args[i];
     
     if (ignoreFlags.includes(arg) || (arg.startsWith('-') && ignoreFlags.includes(arg.substring(0, 2)))) {
       continue;

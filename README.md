@@ -5,16 +5,104 @@
 **The privacy-first developer utility suite & scratchpad with zero server transmission.**
 
 [![Live Demo](https://img.shields.io/badge/Live%20Demo-devscratchpad.tech-2563EB?style=for-the-badge&logo=vercel&logoColor=white)](https://devscratchpad.tech)
+[![npm version](https://img.shields.io/npm/v/devscratchpad?style=for-the-badge&logo=npm&color=CB3837)](https://www.npmjs.com/package/devscratchpad)
+[![CLI Terminal](https://img.shields.io/badge/CLI-npx%20devscratchpad-2DD4BF?style=for-the-badge&logo=gnubash&logoColor=white)](https://devscratchpad.tech/cli)
 [![Next.js 16](https://img.shields.io/badge/Next.js-16.3.3-black?style=for-the-badge&logo=next.js&logoColor=white)](https://nextjs.org/)
 [![React 19](https://img.shields.io/badge/React-19.2.8-61DAFB?style=for-the-badge&logo=react&logoColor=black)](https://react.dev/)
 [![Tailwind CSS v4](https://img.shields.io/badge/Tailwind_CSS-v4.0-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-emerald?style=for-the-badge)](./LICENSE)
+[![License: BSL 1.1](https://img.shields.io/badge/License-BSL%201.1%20(Source--Available)-orange?style=for-the-badge)](./LICENSE)
 
 <br/>
 
-[**Explore 23+ Tools**](https://devscratchpad.tech) • [**Report a Bug**](https://github.com/Saad-web-spec/DevScratchPad/issues/new) • [**Request a Feature**](https://github.com/Saad-web-spec/DevScratchPad/issues/new) • [**Submit a PR**](./CONTRIBUTING.md)
+[**Headless CLI (`npx devscratchpad`)**](https://devscratchpad.tech/cli) • [**AI Skill Studio**](https://devscratchpad.tech/ai-skill-studio) • [**Explore 28+ Tools**](https://devscratchpad.tech) • [**Engineering Blog**](https://devscratchpad.tech/blog) • [**Report a Bug**](https://github.com/Saad-web-spec/DevScratchPad/issues/new) • [**Submit a PR**](./CONTRIBUTING.md)
 
 </div>
+
+---
+
+## 🤖 Flagship: AI Skill Studio & Rule Architect
+
+> **[Open AI Skill Studio in Browser →](https://devscratchpad.tech/ai-skill-studio)**  
+> The premier 100% offline builder to configure, audit, and export production-grade steering instructions for Claude Code (`SKILL.md`), Cursor IDE (`.cursor/rules/*.mdc`), Anthropic (`CLAUDE.md`), and Multi-Agent frameworks (`AGENTS.md`).
+
+### Target Format Specifications
+| Format | Target Platform | Output Directory | Description |
+| :--- | :--- | :--- | :--- |
+| **`SKILL.md`** | Claude Code & Agentic CLI | `.claude/skills/<name>/SKILL.md` | Packaged modular skills with YAML frontmatter and dynamic context loading. |
+| **`.mdc`** | Cursor IDE (Modern Standard) | `.cursor/rules/<name>.mdc` | Modular Cursor rulebooks scoped with globs and `alwaysApply` flags. |
+| **`CLAUDE.md`** | Anthropic Root Guidelines | `/CLAUDE.md` | Repository-wide instructions using token-dense semantic XML tags. |
+| **`AGENTS.md`** | Multi-Agent Frameworks | `/AGENTS.md` | Demarcated rule blocks for Antigravity, CrewAI, and AutoGen systems. |
+| **`claude.json`** | MCP Runtime | `~/.claude.json` | Executable commands and environment bindings for Model Context Protocol servers. |
+
+### Key Studio Capabilities
+- 📦 **Manifest Auto-Detection:** Drop your `package.json`, `Cargo.toml`, `pyproject.toml`, or `go.mod` to auto-detect your stack and generate tailored rules in seconds.
+- 🩺 **Static Analysis Audit Panel:** Real-time scoring across 5 critical dimensions (Trigger Specificity, Rule Density, Negative Guardrails, Format Compliance, Architectural Boundaries) with one-click ⚡ Auto-Fix.
+- 🏷️ **Trigger Tagging & Heuristic Validation:** Real-time activation trigger chips with heuristic warning feedback for broad catch-all words to prevent context token bloat.
+- 💻 **Terminal One-Liner Stream:** Native `curl`, `PowerShell`, `wget`, and CLI installation endpoints (`/api/raw/[formatSlug]/[presetSlug]`) to install rule files directly from terminal into local project roots.
+- ⚡ **Curated Production Presets:** Statically pre-rendered presets ready for immediate use:
+  - [Next.js 15 App Router Cursor Rules](https://devscratchpad.tech/ai-skill-studio/cursor-rules/nextjs-15)
+  - [.NET 8 & C# 12 Minimal APIs Rules](https://devscratchpad.tech/ai-skill-studio/cursor-rules/csharp-dotnet-8)
+  - [Spring Boot 3 & Java 21 Rules](https://devscratchpad.tech/ai-skill-studio/cursor-rules/spring-boot-3)
+  - [Django 5 & Ninja Cursor Rules](https://devscratchpad.tech/ai-skill-studio/cursor-rules/python-django)
+  - [Bun & Elysia TypeBox Rules](https://devscratchpad.tech/ai-skill-studio/cursor-rules/bun-elysia)
+  - [Playwright E2E Browser Testing Rules](https://devscratchpad.tech/ai-skill-studio/cursor-rules/playwright-e2e)
+  - [Expo & React Native Rules](https://devscratchpad.tech/ai-skill-studio/cursor-rules/react-native-expo)
+  - [Kubernetes & Helm Manifest Rules](https://devscratchpad.tech/ai-skill-studio/cursor-rules/kubernetes-helm)
+  - [Terraform & OpenTofu IaC Rules](https://devscratchpad.tech/ai-skill-studio/cursor-rules/terraform-iac)
+  - [Cursor Rules Pro (.mdc)](https://devscratchpad.tech/ai-skill-studio/cursor-rules/cursor-rules-pro)
+  - [React 19 SPA Cursor Rules](https://devscratchpad.tech/ai-skill-studio/cursor-rules/react-19)
+  - [FastAPI Python Cursor Rules](https://devscratchpad.tech/ai-skill-studio/cursor-rules/fastapi)
+  - [Codebase Auditor Claude Skill](https://devscratchpad.tech/ai-skill-studio/claude-skills/codebase-auditor)
+  - [Security Vulnerability Guard](https://devscratchpad.tech/ai-skill-studio/claude-skills/security-guard)
+- 🔗 **Zero-Backend State Sharing:** Ultra-compact permalink generation with LZ compression or canonical SEO URLs with zero server storage.
+- 🗜️ **Export Unified AI Kit (.zip):** Download an all-in-one ZIP archive pre-structured for immediate placement into your project's repository.
+
+---
+
+## 💻 Zero-Install CLI: `npx devscratchpad`
+
+> **[Interactive Web Simulator & Documentation →](https://devscratchpad.tech/cli)**  
+> Scaffold, audit, and install battle-tested AI agent and IDE rulebooks into your project workspace with zero npm dependencies and 100% offline privacy.
+
+### Quick Start (No Installation Needed)
+
+```bash
+# Browse all available formats and tech presets
+npx devscratchpad list
+
+# Install Next.js 15 App Router rules for Cursor (.cursor/rules/nextjs-15.mdc)
+npx devscratchpad add cursor-rules/nextjs-15
+
+# Install FastAPI & Pydantic v2 skill for Claude Code (.claude/skills/fastapi/SKILL.md)
+npx devscratchpad add fastapi -f claude-skills
+
+# Scan and score repository AI rule health (0-100)
+npx devscratchpad audit
+
+# Scaffold universal multi-agent starter guidelines (.mdc + CLAUDE.md)
+npx devscratchpad init
+
+# Modern package runners are fully supported:
+pnpm dlx devscratchpad add tailwind-v4 -f windsurf
+bunx devscratchpad add typescript-strict -f copilot
+```
+
+### Supported Formats & Target Outputs
+
+| Format | Target Assistant / IDE | Target Filesystem Output | Flag Syntax |
+| :--- | :--- | :--- | :--- |
+| **Cursor Rules** | Cursor IDE | `.cursor/rules/<preset>.mdc` | `-f cursor-rules` |
+| **Claude Skill** | Claude Code CLI | `.claude/skills/<preset>/SKILL.md` | `-f claude-skills` |
+| **Windsurf Cascade** | Windsurf Editor | `.windsurf/rules/<preset>.md` | `-f windsurf` |
+| **GitHub Copilot** | Copilot Chat | `.github/copilot-instructions.md` | `-f copilot` |
+| **OpenAI Instructions** | ChatGPT / Codex | `.openai/system-instructions.md` | `-f openai` |
+| **Google Gemini** | Gemini Structured Specs | `.gemini/<preset>.json` | `-f gemini` |
+
+### Key CLI Capabilities
+- 🚀 **Zero Dependency Bloat**: Operates purely on native Node.js standard libraries (`node:fs`, `node:path`, `node:https`). Installs in under 1.5s via `npx`.
+- 🩺 **Static Rule Quality Audit**: `npx devscratchpad audit` statically scans existing repository rules for missing negative guardrails, broad globs, and token density issues.
+- 🔒 **100% Client-Side Confined**: Zero telemetry, zero analytics, zero prompt tracking. Run with `--dry-run` to inspect exact local filesystem actions.
+- 🔄 **Reciprocal Studio Integration**: Every CLI command outputs deep links to the visual [AI Skill Studio](https://devscratchpad.tech/ai-skill-studio) for interactive editing.
 
 ---
 
@@ -25,7 +113,7 @@
 **DevScratchpad is 100% client-side:**
 - **Zero API Endpoints:** Every formatter, parser, hash generator, and converter executes in pure browser JavaScript & WASM.
 - **Zero Telemetry on Payloads:** Your inputs never touch a server or database.
-- **Auditable & Open-Source:** Inspect the network tab or the source code in this repository to verify that no network requests leave your machine.
+- **Auditable & Source-Available:** Inspect the network tab or the source code in this repository to verify that no network requests leave your machine.
 
 ---
 
@@ -41,10 +129,11 @@
 
 ---
 
-## 🛠️ The 23+ Developer Utilities Matrix
+## 🛠️ The 28 Developer Utilities Matrix
 
 | Category | Tool Name | Route | What It Does |
 | :--- | :--- | :--- | :--- |
+| **AI & Agentic Tools** | [AI Skill Studio](https://devscratchpad.tech/ai-skill-studio) | `/ai-skill-studio` | Configure, audit, and export production skills (`SKILL.md`, `.mdc`, `CLAUDE.md`, `AGENTS.md`, MCP). |
 | **Code Formatting** | [JSON Formatter](https://devscratchpad.tech/tools/json-formatter) | `/tools/json-formatter` | Multi-indent formatting, minification, and real-time syntax error line tracking. |
 | | [JSON Validator](https://devscratchpad.tech/tools/json-validator) | `/tools/json-validator` | Secure, strict JSON syntax validator to catch missing commas and string issues. |
 | | [XML Formatter](https://devscratchpad.tech/tools/xml-formatter) | `/tools/xml-formatter` | Format, beautify, and minify XML data structures with indentation controls. |
@@ -98,11 +187,16 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 ---
 
-## 🚢 One-Click Deployment
+## 💻 Local Development & Verification
 
-Deploy your own private, customized instance of DevScratchpad for your team on Vercel:
+Run DevScratchpad locally on your machine for personal use and security verification:
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/Saad-web-spec/DevScratchPad)
+```bash
+git clone https://github.com/Saad-web-spec/DevScratchPad.git
+cd DevScratchPad
+npm install
+npm run dev
+```
 
 ---
 
@@ -124,9 +218,13 @@ If DevScratchpad has saved you time or improved your workflow, consider starring
 
 ---
 
-## 📄 License
+## 📄 License & Commercial Protection
 
-Distributed under the MIT License. See [`LICENSE`](./LICENSE) for more information.
+DevScratchpad is distributed under the **Business Source License 1.1 (BSL 1.1)**.
+
+- ✅ **Free for Personal, Research & Educational Use:** Anyone may view, audit, run locally, and contribute to the source code.
+- 🛡️ **Commercial & Competitor Restrictions:** Publicly hosting DevScratchpad (or any derivative) as a competing website, SaaS, API, or commercial platform is strictly prohibited without prior written commercial licensing agreement.
+- See the full legal terms in [`LICENSE`](./LICENSE).
 
 <div align="center">
   <sub>Built with ❤️ by <a href="https://saadengineer.works">Saad</a> &bull; Powered by Next.js 16 &amp; Monaco Editor</sub>

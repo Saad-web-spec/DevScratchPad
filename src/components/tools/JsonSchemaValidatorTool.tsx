@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
-import Editor from "@monaco-editor/react";
+import { MonacoEditor } from "@/components/MonacoEditor";
 import { CheckCircle2, AlertTriangle, XCircle, Check } from "lucide-react";
 import Ajv from "ajv";
 import addFormats from "ajv-formats";
@@ -109,12 +109,11 @@ export function JsonSchemaValidatorTool({ onValidationChange, restoredInput }: J
             <span className="text-xs font-semibold text-zinc-600 uppercase tracking-wider">JSON Data</span>
           </div>
           <div className="flex-1 relative">
-            <Editor
+            <MonacoEditor
               height="100%"
               language="json"
               value={jsonText}
               onChange={(val) => setJsonText(val || "")}
-              theme="light"
               options={{ minimap: { enabled: false }, tabSize: 2, wordWrap: "on" }}
             />
           </div>
@@ -124,12 +123,11 @@ export function JsonSchemaValidatorTool({ onValidationChange, restoredInput }: J
             <span className="text-xs font-semibold text-zinc-600 uppercase tracking-wider">JSON Schema (Draft 07)</span>
           </div>
           <div className="flex-1 relative">
-            <Editor
+            <MonacoEditor
               height="100%"
               language="json"
               value={schemaText}
               onChange={(val) => setSchemaText(val || "")}
-              theme="light"
               options={{ minimap: { enabled: false }, tabSize: 2, wordWrap: "on" }}
             />
           </div>

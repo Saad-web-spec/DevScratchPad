@@ -23,8 +23,9 @@ export function encodeBase64(
  }
 
  return encoded;
- } catch (error: any) {
- throw new Error(error.message ||"Failed to encode string to Base64");
+ } catch (error: unknown) {
+ const message = error instanceof Error && error.message ? error.message : "Failed to encode string to Base64";
+ throw new Error(message);
  }
 }
 
@@ -53,8 +54,9 @@ export function decodeBase64(
 
  const decoder = new TextDecoder("utf-8", { fatal: true });
  return decoder.decode(bytes);
- } catch (error: any) {
- throw new Error(error.message ||"Invalid Base64 string");
+ } catch (error: unknown) {
+ const message = error instanceof Error && error.message ? error.message : "Invalid Base64 string";
+ throw new Error(message);
  }
 }
 
@@ -74,10 +76,10 @@ export function validateBase64(
  try {
  decodeBase64(input, urlSafe);
  return { valid: true };
- } catch (error: any) {
+ } catch (error: unknown) {
  return {
  valid: false,
- error: error.message ||"Invalid Base64 string format",
+ error: error instanceof Error && error.message ? error.message : "Invalid Base64 string format",
  };
  }
 }

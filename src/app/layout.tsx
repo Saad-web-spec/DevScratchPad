@@ -1,21 +1,21 @@
 import type { Metadata } from "next";
-import { Analytics } from "@vercel/analytics/react";
+import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { ThemeProvider } from "@/lib/theme";
 import { Inter } from "next/font/google";
 import "./globals.css";
 
-const inter = Inter({ subsets: ["latin"] });
+const inter = Inter({ subsets: ["latin"], display: "swap", preload: true });
 
 const SITE_URL = "https://www.devscratchpad.tech";
 
 export const metadata: Metadata = {
   title: {
     template: "%s | DevScratchpad",
-    default: "DevScratchpad - 100% Offline, Privacy Backed Developer Tools",
+    default: "DevScratchpad — Free Offline Developer Tools",
   },
   description:
-    "Massive collection of free online developer tools that work 100% offline. JSON formatter, YAML to JSON, cURL to Go, JWT decoder, Base64 encoder, SSH key generator, Password hashing, and more. Zero server transmission, 100% client-side privacy backed scratch pad for developers.",
+    "28 free offline developer tools with 100% client-side privacy. Format JSON, convert code, decode JWTs, and generate keys locally with zero server transmission.",
   keywords: [
     "developer tools",
     "developers",
@@ -41,9 +41,13 @@ export const metadata: Metadata = {
   robots: {
     index: true,
     follow: true,
+    nocache: false,
     googleBot: {
       index: true,
       follow: true,
+      "max-video-preview": -1,
+      "max-image-preview": "large",
+      "max-snippet": -1,
     },
   },
   metadataBase: new URL(SITE_URL),
@@ -52,19 +56,99 @@ export const metadata: Metadata = {
     siteName: "DevScratchpad",
     locale: "en_US",
     url: SITE_URL,
-    title: "DevScratchpad - 100% Offline, Privacy Backed Developer Tools",
+    title: "DevScratchpad — Free Offline Developer Tools & AI Skill Studio",
     description:
-      "Massive collection of free online developer tools that work 100% offline. Zero server transmission. Privacy backed scratch pad for developers.",
+      "Massive collection of 28 free offline developer tools across 5 categories and AI Skill Studio supporting 13 formats and 5-layer AI agent suite. 100% client-side privacy, zero server transmission.",
+    images: [
+      {
+        url: `${SITE_URL}/opengraph-image`,
+        width: 1200,
+        height: 630,
+        alt: "DevScratchpad — Free Offline Developer Tools & AI Skill Studio (13 Formats, 5-Layer Agent Suite, 28 Tools)",
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "DevScratchpad - 100% Offline, Privacy Backed Developer Tools",
+    title: "DevScratchpad — Free Offline Developer Tools & AI Skill Studio",
     description:
-      "Massive collection of free online developer tools that work 100% offline. Zero server transmission. Privacy backed scratch pad for developers.",
+      "28 free offline developer tools across 5 categories and AI Skill Studio supporting 13 formats and 5-layer AI agent suite. Zero server transmission.",
+    images: [
+      {
+        url: `${SITE_URL}/opengraph-image`,
+        width: 1200,
+        height: 630,
+        alt: "DevScratchpad — Free Offline Developer Tools & AI Skill Studio (13 Formats, 5-Layer Agent Suite, 28 Tools)",
+      },
+    ],
   },
   alternates: {
     canonical: SITE_URL,
   },
+};
+
+const siteJsonLd = {
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "WebSite",
+      "@id": `${SITE_URL}/#website`,
+      "url": SITE_URL,
+      "name": "DevScratchpad",
+      "description":
+        "Massive collection of free online developer tools that work 100% offline. Zero server transmission, 100% client-side privacy backed scratch pad for developers.",
+      "publisher": {
+        "@id": `${SITE_URL}/#organization`,
+      },
+      "potentialAction": {
+        "@type": "SearchAction",
+        "target": `${SITE_URL}/developer-tools?q={search_term_string}`,
+        "query-input": "required name=search_term_string",
+      },
+    },
+    {
+      "@type": "Organization",
+      "@id": `${SITE_URL}/#organization`,
+      "name": "DevScratchpad",
+      "url": SITE_URL,
+      "logo": {
+        "@type": "ImageObject",
+        "url": `${SITE_URL}/icon.png`,
+      },
+      "knowsAbout": [
+        "Developer Utilities",
+        "Client-Side Cryptography",
+        "JSON Formatting & Validation",
+        "JWT Decoding",
+        "AI Agent Skills",
+        "Claude Code Rules",
+        "Cursor IDE Rules",
+      ],
+    },
+    {
+      "@type": "SoftwareApplication",
+      "@id": `${SITE_URL}/#software`,
+      "name": "DevScratchpad Suite",
+      "url": SITE_URL,
+      "applicationCategory": "DeveloperApplication",
+      "applicationSubCategory": "Developer Utilities & Cryptography",
+      "operatingSystem": "All (Web Browser, Chrome, Firefox, Safari, Edge)",
+      "browserRequirements": "Requires JavaScript, HTML5, Web Crypto API",
+      "isAccessibleForFree": true,
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "USD",
+      },
+      "featureList": [
+        "100% Client-Side In-Browser Processing",
+        "Zero Server Transmission Privacy Guarantee",
+        "Progressive Web App (PWA) Offline Support",
+        "Smart Clipboard Format Auto-Detection (Magic Paste)",
+        "AI Skill Studio & Coding Agent Preset Generator",
+      ],
+    },
+  ],
 };
 
 export default function RootLayout({
@@ -80,24 +164,32 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
         <link rel="preconnect" href="https://cdn.jsdelivr.net" crossOrigin="anonymous" />
         <link rel="dns-prefetch" href="https://cdn.jsdelivr.net" />
-        {process.env.NODE_ENV === "development" && (
-          <script
-            dangerouslySetInnerHTML={{
-              __html: `
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(siteJsonLd).replace(/</g, "\\u003c") }}
+        />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              try {
                 if ('serviceWorker' in navigator) {
                   navigator.serviceWorker.getRegistrations().then(function(registrations) {
-                    for(let registration of registrations) {
-                      registration.unregister();
+                    for (var i = 0; i < registrations.length; i++) {
+                      registrations[i].unregister();
                     }
-                  });
-                  caches.keys().then(function(names) {
-                    for (let name of names) caches.delete(name);
-                  });
+                  }).catch(function() {});
                 }
-              `,
-            }}
-          />
-        )}
+                if (typeof caches !== 'undefined') {
+                  caches.keys().then(function(names) {
+                    for (var i = 0; i < names.length; i++) {
+                      caches.delete(names[i]);
+                    }
+                  }).catch(function() {});
+                }
+              } catch (e) {}
+            `,
+          }}
+        />
       </head>
       <body
         className={`antialiased min-h-screen flex flex-col bg-white text-zinc-900 ${inter.className}`}

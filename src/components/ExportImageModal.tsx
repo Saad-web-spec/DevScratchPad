@@ -153,13 +153,14 @@ export function ExportImageModal({ isOpen, onClose, code, language }: ExportImag
  {/* Content Body - Responsive flex */}
  <div className="flex flex-col md:flex-row flex-1 overflow-y-auto md:overflow-hidden min-h-0">
  {/* Main Preview Area */}
- <div className="flex-1 p-3 sm:p-6 md:p-8 bg-zinc-100 flex flex-col items-center justify-center min-h-[220px] sm:min-h-[280px] md:overflow-auto overflow-hidden">
- <div className="w-full max-w-2xl flex items-center justify-center">
+ <div className="flex-1 p-3 sm:p-6 md:p-8 bg-zinc-100 flex flex-col items-center justify-center min-h-[220px] sm:min-h-[280px] md:overflow-auto overflow-hidden relative">
+ <div className="w-full flex justify-center items-center overflow-auto h-full touch-pan-x touch-pan-y">
  {/* Capture Target */}
  <div
  ref={captureRef}
  className={cn(
-"w-full flex flex-col items-center justify-center transition-all duration-300 relative rounded-xl select-none",
+"flex flex-col items-center justify-center transition-all duration-300 relative rounded-xl select-none w-full max-w-3xl",
+ "min-w-[700px]",
  activeBg.class,
  activePadding.value
  )}

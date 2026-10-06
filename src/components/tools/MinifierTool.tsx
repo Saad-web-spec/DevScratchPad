@@ -6,7 +6,7 @@ import { minifyCss, minifySvg, validateCss, validateSvg } from"@/lib/tools/minif
 import { ShareButton } from"@/components/ShareButton";
 import { EmbedButton } from"@/components/EmbedButton";
 import { ExportImageButton } from"@/components/ExportImageButton";
-import { Play, Copy, Trash2, Check, Zap, Minimize2 } from"lucide-react";
+import { Copy, Trash2, Check, Minimize2 } from "lucide-react";
 import { cn } from"@/lib/utils";
 import { StatusBar } from"@/components/layout/StatusBar";
 
@@ -62,6 +62,7 @@ export function MinifierTool({
 
  // Restore from history
  useEffect(() => {
+ // eslint-disable-next-line react-hooks/set-state-in-effect
  if (restoredInput) setInput(restoredInput);
  }, [restoredInput]);
 
@@ -72,6 +73,7 @@ export function MinifierTool({
  const end = performance.now();
  const ms = end - start;
 
+ // eslint-disable-next-line react-hooks/set-state-in-effect
  setIsValid(validation.valid);
  setExecMs(ms);
  onValidationChange(validation.valid, validation.error);
@@ -139,7 +141,7 @@ export function MinifierTool({
  <div className="min-h-14 border-b border-[#e2e8f0] flex items-center justify-between gap-2 overflow-x-auto no-scrollbar py-2 px-3 md:px-4 px-3 md:px-4 py-2 md:py-0 bg-[#f8fafc] shrink-0">
  <div className="flex items-center gap-2">
  <Minimize2 className="w-4 h-4 text-zinc-900"/>
- <h1 className="text-sm font-semibold text-zinc-800">CSS & SVG Minifier</h1>
+ <span className="text-sm font-semibold text-zinc-800">CSS & SVG Minifier</span>
  </div>
 
  <div className="flex items-center gap-2">

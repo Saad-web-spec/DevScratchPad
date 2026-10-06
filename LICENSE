@@ -1,21 +1,71 @@
-MIT License
+Business Source License 1.1
 
-Copyright (c) 2026 Saad (https://saadengineer.works)
+Parameters
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+Licensor: 
+    Saad (https://saadengineer.works / https://github.com/Saad-web-spec)
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
+Licensed Work: 
+    DevScratchpad, including all source code, AI Skill Studio algorithms,
+    prompt generation engines, preset registries, documentation, design systems,
+    and developer utility components.
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+Additional Use Grant: 
+    You are granted the right to view, inspect, audit, fork, copy, modify, and 
+    run the Licensed Work locally for personal, educational, research, and 
+    non-commercial evaluation purposes. 
+
+    The following uses are STRICTLY PROHIBITED without prior written permission
+    and an explicit commercial license agreement from the Licensor:
+    1. Making the Licensed Work, or any substantially similar or derivative work,
+       available to third parties as a publicly hosted web service, website, 
+       Software-as-a-Service (SaaS), API endpoint, or cloud service.
+    2. Deploying a public competing developer tooling website or service based on 
+       or derived from the Licensed Work.
+    3. Commercial redistribution, relicensing, sublicensing, or sale of the 
+       Licensed Work or any portion thereof.
+
+Change Date: 
+    2030-01-01
+
+Change License: 
+    GNU General Public License v2.0 or later (GPL-2.0-or-later)
+
+----------------------------------------------------------------------
+
+Terms
+
+The Licensor hereby grants you the right to copy, modify, create derivative
+works, redistribute, and make non-production use of the Licensed Work. The 
+Licensor may make an Additional Use Grant, above, permitting limited 
+production and commercial use.
+
+Effective on the Change Date, or the fourth anniversary of the first publicly
+available distribution of a specific version of the Licensed Work under this
+License, whichever comes first, the Licensor hereby grants you rights under
+the terms of the Change License, and the rights granted in the original License,
+above, terminate.
+
+If your use of the Licensed Work does not comply with the requirements 
+currently in effect as described in this License, you must purchase a commercial
+license from the Licensor, its affiliated entities, or authorized resellers, or
+you must refrain from using the Licensed Work.
+
+All copies of original and modified Licensed Work, and accompanying 
+documentation, must be accompanied by this License and prominent copyright
+notices acknowledging the Licensor as the creator and owner.
+
+You cannot combine or distribute the Licensed Work with other software 
+licensed under terms that conflict with or restrict the terms of this License.
+
+TO THE EXTENT PERMITTED BY APPLICABLE LAW, THE LICENSED WORK (IN ALL FORMS)
+IS PROVIDED "AS IS" BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY
+EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.

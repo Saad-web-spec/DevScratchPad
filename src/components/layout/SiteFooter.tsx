@@ -36,7 +36,7 @@ export function SiteFooter() {
               <li><Link href="/tools/curl-to-fetch" className="hover:text-zinc-900 transition-colors">cURL to Fetch</Link></li>
               <li><Link href="/tools/json-to-ts" className="hover:text-zinc-900 transition-colors">JSON to TypeScript</Link></li>
               <li><Link href="/tools/json-to-zod" className="hover:text-zinc-900 transition-colors">JSON to Zod Schema</Link></li>
-              <li><Link href="/tools/yaml-to-json" className="hover:text-zinc-900 transition-colors">YAML to JSON</Link></li>
+              <li><Link href="/tools/yaml" className="hover:text-zinc-900 transition-colors">YAML to JSON</Link></li>
               <li><Link href="/tools/svg-to-jsx" className="hover:text-zinc-900 transition-colors">SVG to JSX (React)</Link></li>
             </ul>
           </div>
@@ -46,11 +46,12 @@ export function SiteFooter() {
             <h4 className="text-xs font-mono font-semibold text-zinc-900 uppercase tracking-wider">Utilities</h4>
             <ul className="space-y-1.5 text-xs text-zinc-600">
               <li><Link href="/tools/json-formatter" className="hover:text-zinc-900 transition-colors">JSON Formatter</Link></li>
-              <li><Link href="/tools/json-validator" className="hover:text-zinc-900 transition-colors">JSON Syntax Validator</Link></li>
+              <li><Link href="/tools/json-schema-validator" className="hover:text-zinc-900 transition-colors">JSON Syntax Validator</Link></li>
               <li><Link href="/tools/jwt" className="hover:text-zinc-900 transition-colors">JWT Token Decoder</Link></li>
               <li><Link href="/tools/uuid-generator" className="hover:text-zinc-900 transition-colors">UUID v4 Generator</Link></li>
               <li><Link href="/tools/cron" className="hover:text-zinc-900 transition-colors">Cron Schedule Visualizer</Link></li>
-              <li><Link href="/developer-tools" className="font-medium text-zinc-900 hover:text-zinc-600 transition-colors">All 20+ Utilities →</Link></li>
+              <li><Link href="/ai-skill-studio" className="font-medium text-zinc-900 hover:text-zinc-600 transition-colors flex items-center gap-1.5"><span className="w-1.5 h-1.5 rounded-full bg-orange-500 animate-pulse"></span>AI Skill Studio (SKILL.md & Cursor)</Link></li>
+              <li><Link href="/developer-tools" className="font-medium text-zinc-900 hover:text-zinc-600 transition-colors">All 28 Developer Tools →</Link></li>
             </ul>
           </div>
 
@@ -61,6 +62,7 @@ export function SiteFooter() {
               <li><Link href="/blog/cron-expression-cheat-sheet" className="hover:text-zinc-900 transition-colors">Cron Expression Cheat Sheet</Link></li>
               <li><Link href="/blog/convert-curl-to-python" className="hover:text-zinc-900 transition-colors">cURL to Python requests</Link></li>
               <li><Link href="/blog/jwt-token-decode-guide" className="hover:text-zinc-900 transition-colors">JWT Token Security Guide</Link></li>
+              <li><Link href="/recipes" className="hover:text-zinc-900 transition-colors">Troubleshooting Recipes</Link></li>
               <li><Link href="/blog" className="font-medium text-zinc-900 hover:text-zinc-600 transition-colors">View All Guides →</Link></li>
             </ul>
           </div>
@@ -68,8 +70,10 @@ export function SiteFooter() {
 
         {/* Bottom copyright */}
         <div className="pt-6 border-t border-zinc-100 flex flex-col sm:flex-row items-center justify-between text-xs font-mono text-zinc-400 gap-3">
-          <p>© {new Date().getFullYear()} DevScratchpad. MIT Licensed.</p>
+          <p>© {new Date().getFullYear()} DevScratchpad. Source-Available (BSL 1.1).</p>
           <div className="flex items-center gap-4">
+            <Link href="/about" className="hover:text-zinc-700 transition-colors">about</Link>
+            <Link href="/ai-skill-studio" className="text-zinc-600 hover:text-zinc-900 font-medium transition-colors">ai-skill-studio</Link>
             <Link href="/developer-tools" className="hover:text-zinc-700 transition-colors">directory</Link>
             <Link href="/blog" className="hover:text-zinc-700 transition-colors">guides</Link>
             <a href="https://github.com/Saad-web-spec/DevScratchPad" target="_blank" rel="noopener noreferrer" className="hover:text-zinc-700 transition-colors">github</a>
