@@ -1,116 +1,172 @@
-"use client";
-
-import { useState, useEffect } from "react";
-import { parseTimestamp, TimestampResult } from "@/lib/tools/timestamp";
-import { Clock, Calendar, Copy, Check, Link as LinkIcon } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { addSnapshot } from "@/lib/storage";
+import React, { useState, useEffect } from "react";
+import { Copy, Check, Clock, Calendar } from "lucide-react";
+import { format, formatDistanceToNow, fromUnixTime } from "date-fns";
 
 interface TimestampConverterToolProps {
-  onValidationChange: (isValid: boolean, error?: string) => void;
-  onStatsChange: (length: number, execMs: number) => void;
+  restoredInput?: string | null;
 }
 
-export function TimestampConverterTool({ onValidationChange, onStatsChange }: TimestampConverterToolProps) {
-  const [input, setInput] = useState<string>(Math.floor(Date.now() / 1000).toString());
-  const [result, setResult] = useState<TimestampResult>({ valid: true });
-  const [copied, setCopied] = useState<string | null>(null);
-
-  // Save workspace snapshot
-  useEffect(() => {
-    const handleSave = () => {
-      addSnapshot("timestamp", "Unix Timestamp", input, JSON.stringify(result, null, 2));
-    };
-    window.addEventListener("save-workspace", handleSave);
-    return () => window.removeEventListener("save-workspace", handleSave);
-  }, [input, result]);
+export function TimestampConverterTool({ restoredInput }: TimestampConverterToolProps) {
+  const parsedInput = restoredInput ? JSON.parse(restoredInput) : null;
+  const [inputValue, setInputValue] = useState(() => parsedInput?.timestamp || Math.floor(Date.now() / 1000).toString());
+  const [isMillis, setIsMillis] = useState(false);
+  
+  const [parsedDate, setParsedDate] = useState<Date | null>(null);
+  const [copiedField, setCopiedField] = useState<string | null>(null);
 
   useEffect(() => {
-    const start = performance.now();
-    const parsed = parseTimestamp(input);
-    const end = performance.now();
-    
-    setResult(parsed);
-    onValidationChange(parsed.valid, parsed.error);
-    onStatsChange(input.length, end - start);
-  }, [input, onValidationChange, onStatsChange]);
+    let num = Number(inputValue.trim());
+    if (isNaN(num) || inputValue.trim() === "") {
+      setParsedDate(null);
+      return;
+    }
 
-  const handleCopy = (text: string, id: string) => {
-    if (!text) return;
+    // Auto-detect if it's likely milliseconds
+    if (!isMillis && inputValue.trim().length >= 13) {
+      setIsMillis(true);
+      num = Math.floor(num / 1000);
+    } else if (isMillis && inputValue.trim().length <= 10) {
+      setIsMillis(false);
+    } else if (isMillis) {
+      num = Math.floor(num / 1000);
+    }
+
+    try {
+      setParsedDate(fromUnixTime(num));
+    } catch (e) {
+      setParsedDate(null);
+    }
+  }, [inputValue, isMillis]);
+
+  const handleCopy = (text: string, field: string) => {
     navigator.clipboard.writeText(text);
-    setCopied(id);
-    setTimeout(() => setCopied(null), 2000);
+    setCopiedField(field);
+    setTimeout(() => setCopiedField(null), 2000);
   };
 
-  const ResultCard = ({ title, value, id }: { title: string; value?: string | number; id: string }) => (
-    <div className="bg-[#f8fafc] border border-[#e2e8f0] rounded-lg p-4 flex items-center justify-between group hover:border-slate-200 transition-colors">
-      <div className="flex flex-col gap-1">
-        <span className="text-xs font-medium text-slate-400 uppercase tracking-wider">{title}</span>
-        <span className="text-sm font-mono text-slate-800">{value !== undefined ? value : "-"}</span>
-      </div>
-      <button 
-        onClick={() => value && handleCopy(value.toString(), id)} 
-        className={cn("p-2 rounded-md transition-colors", copied === id ? "bg-emerald-50 text-emerald-600" : "bg-[#f8fafc] text-slate-500 hover:text-slate-800 hover:bg-slate-100 opacity-0 group-hover:opacity-100 focus:opacity-100")}
-      >
-        {copied === id ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-      </button>
-    </div>
-  );
+  const handleNow = () => {
+    setInputValue(Math.floor(Date.now() / (isMillis ? 1 : 1000)).toString());
+  };
 
   return (
-    <div className="flex flex-col h-full bg-white overflow-y-auto">
-      <div className="h-14 border-b border-[#e2e8f0] flex items-center justify-between px-4 bg-[#f8fafc] shrink-0">
-        <div>
-          <h2 className="text-sm font-semibold text-slate-800">Unix Timestamp Converter</h2>
-          <p className="text-[11px] text-slate-400">Convert Epoch to human-readable dates and vice versa</p>
-        </div>
-        
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => {
-              try {
-                window.location.hash = 'data=' + btoa(input);
-              } catch {}
-            }}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-slate-50 text-slate-700 rounded text-xs font-medium transition-colors border border-[#e2e8f0] shadow-sm"
-          >
-            <LinkIcon className="w-3.5 h-3.5" />
-            Share
-          </button>
-        </div>
-      </div>
-
-      <div className="p-6 max-w-4xl mx-auto w-full flex flex-col gap-8">
+    <div className="flex flex-col h-full bg-white w-full overflow-y-auto">
+      <div className="max-w-4xl mx-auto w-full p-6 space-y-8">
         
         {/* Input Section */}
-        <div className="bg-white border border-[#e2e8f0] rounded-xl p-1">
-          <div className="flex items-center bg-[#f8fafc] rounded-lg p-2 px-4 gap-4">
-            <Clock className="w-5 h-5 text-blue-600" />
-            <input 
-              type="text" 
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              placeholder="Enter epoch (1770000000) or date string (2025-01-01)"
-              className="flex-1 bg-transparent text-slate-800 font-mono text-lg focus:outline-none"
+        <div className="space-y-4">
+          <h2 className="text-sm font-semibold text-zinc-900 flex items-center gap-2">
+            <Clock className="w-4 h-4 text-zinc-500" />
+            Enter Timestamp
+          </h2>
+          <div className="flex gap-4 items-center">
+            <input
+              type="text"
+              value={inputValue}
+              onChange={(e) => setInputValue(e.target.value)}
+              className="flex-1 px-4 py-3 bg-zinc-50 border border-zinc-200 rounded-lg text-lg font-mono focus:outline-none focus:border-blue-500 transition-colors"
+              placeholder="e.g. 1672531200"
             />
-            <button 
-              onClick={() => setInput(Math.floor(Date.now() / 1000).toString())}
-              className="px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-600 rounded-md text-xs font-medium transition-colors"
+            <button
+              onClick={handleNow}
+              className="px-6 py-3 bg-zinc-900 text-white font-medium rounded-lg hover:bg-zinc-800 transition-colors"
             >
-              Now
+              Current Time
             </button>
+          </div>
+          <div className="flex items-center gap-4">
+            <label className="flex items-center gap-2 cursor-pointer text-sm text-zinc-600">
+              <input 
+                type="radio" 
+                checked={!isMillis} 
+                onChange={() => setIsMillis(false)}
+                className="accent-blue-600"
+              />
+              Seconds (Unix Epoch)
+            </label>
+            <label className="flex items-center gap-2 cursor-pointer text-sm text-zinc-600">
+              <input 
+                type="radio" 
+                checked={isMillis} 
+                onChange={() => setIsMillis(true)}
+                className="accent-blue-600"
+              />
+              Milliseconds (JS)
+            </label>
           </div>
         </div>
 
-        {/* Results Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <ResultCard title="Relative Time" value={result.relativeString} id="relative" />
-          <ResultCard title="Local Time" value={result.localString} id="local" />
-          <ResultCard title="UTC Time" value={result.utcString} id="utc" />
-          <ResultCard title="ISO 8601" value={result.isoString} id="iso" />
-          <ResultCard title="Unix Epoch (Seconds)" value={result.unixSeconds} id="seconds" />
-          <ResultCard title="Unix Epoch (Milliseconds)" value={result.unixMs} id="milliseconds" />
+        {/* Results Section */}
+        {parsedDate ? (
+          <div className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <ResultCard 
+                label="Local Time" 
+                value={format(parsedDate, "PPpp")}
+                subValue={format(parsedDate, "OOOO")}
+                onCopy={() => handleCopy(format(parsedDate, "PPpp"), "local")}
+                copied={copiedField === "local"}
+              />
+              <ResultCard 
+                label="UTC / GMT Time" 
+                value={parsedDate.toUTCString()}
+                onCopy={() => handleCopy(parsedDate.toUTCString(), "utc")}
+                copied={copiedField === "utc"}
+              />
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <ResultCard 
+                label="Relative Time" 
+                value={formatDistanceToNow(parsedDate, { addSuffix: true })}
+                onCopy={() => handleCopy(formatDistanceToNow(parsedDate, { addSuffix: true }), "relative")}
+                copied={copiedField === "relative"}
+              />
+              <ResultCard 
+                label="ISO 8601" 
+                value={parsedDate.toISOString()}
+                onCopy={() => handleCopy(parsedDate.toISOString(), "iso")}
+                copied={copiedField === "iso"}
+                isCode
+              />
+              <ResultCard 
+                label="Unix Timestamp" 
+                value={Math.floor(parsedDate.getTime() / 1000).toString()}
+                onCopy={() => handleCopy(Math.floor(parsedDate.getTime() / 1000).toString(), "unix")}
+                copied={copiedField === "unix"}
+                isCode
+              />
+            </div>
+          </div>
+        ) : (
+          <div className="p-8 border-2 border-dashed border-zinc-200 rounded-lg text-center text-zinc-500 flex flex-col items-center justify-center gap-2">
+            <Calendar className="w-8 h-8 text-zinc-300" />
+            <p>Enter a valid timestamp to view conversions.</p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function ResultCard({ label, value, subValue, onCopy, copied, isCode }: any) {
+  return (
+    <div className="border border-zinc-200 rounded-lg bg-white p-4 flex flex-col justify-between group hover:border-zinc-300 transition-colors">
+      <div className="mb-2">
+        <span className="text-xs font-semibold text-zinc-500 uppercase tracking-wider">{label}</span>
+      </div>
+      <div className="flex items-end justify-between gap-4">
+        <div className="min-w-0 flex-1">
+          <div className={`text-base font-medium text-zinc-900 truncate ${isCode ? "font-mono" : ""}`}>
+            {value}
+          </div>
+          {subValue && <div className="text-xs text-zinc-500 mt-1">{subValue}</div>}
         </div>
+        <button
+          onClick={onCopy}
+          className="shrink-0 p-1.5 text-zinc-400 hover:bg-zinc-100 hover:text-zinc-900 rounded transition-colors"
+          title="Copy"
+        >
+          {copied ? <Check className="w-4 h-4 text-emerald-500" /> : <Copy className="w-4 h-4" />}
+        </button>
       </div>
     </div>
   );

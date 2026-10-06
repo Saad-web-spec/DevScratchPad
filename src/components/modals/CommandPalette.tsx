@@ -18,6 +18,14 @@ import {
   Calendar,
   ArrowLeftRight,
   Minimize2,
+  Sparkles,
+  FileText,
+  Shield,
+  Network,
+  Fingerprint,
+  ShieldCheck,
+  KeyRound,
+  Lock,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -29,20 +37,37 @@ interface CommandPaletteProps {
 
 const ALL_TOOLS = [
   { id: "json-formatter", name: "JSON Formatter", category: "Formatters", icon: FileJson },
+  { id: "json-validator", name: "JSON Validator", category: "Formatters", icon: FileJson },
   { id: "xml-formatter", name: "XML Formatter", category: "Formatters", icon: Code },
   { id: "sql-formatter", name: "SQL Formatter", category: "Formatters", icon: Database },
+  { id: "graphql-formatter", name: "GraphQL Formatter", category: "Formatters", icon: Sparkles },
   { id: "minifier", name: "CSS/SVG Minifier", category: "Formatters", icon: Minimize2 },
-  { id: "curl", name: "cURL Converter", category: "Formatters", icon: Terminal },
-  { id: "base64", name: "Base64 Decoder", category: "Decoders", icon: Binary },
-  { id: "jwt", name: "JWT Decoder", category: "Decoders", icon: Key },
-  { id: "url", name: "URL Encoder", category: "Decoders", icon: Type },
+  { id: "curl-to-fetch", name: "cURL to Fetch", category: "Network", icon: Terminal },
+  { id: "curl-to-python", name: "cURL to Python", category: "Network", icon: Terminal },
+  { id: "curl-to-go", name: "cURL to Go", category: "Network", icon: Terminal },
+  { id: "curl-to-javascript", name: "cURL to JavaScript (Node)", category: "Network", icon: Terminal },
   { id: "json-to-ts", name: "JSON to TypeScript", category: "Converters", icon: FileCode },
+  { id: "json-to-zod", name: "JSON to Zod", category: "Converters", icon: FileCode },
+  { id: "json-to-go", name: "JSON to Go Struct", category: "Converters", icon: FileCode },
+  { id: "svg-to-jsx", name: "SVG to JSX", category: "Converters", icon: FileCode },
   { id: "yaml", name: "YAML / JSON Converter", category: "Converters", icon: ArrowLeftRight },
-  { id: "timestamp", name: "Unix Timestamp", category: "Converters", icon: Clock },
-  { id: "cron", name: "Cron Visualizer", category: "Utilities", icon: Calendar },
+  { id: "yaml-to-json", name: "YAML to JSON", category: "Converters", icon: ArrowLeftRight },
+  { id: "json-to-yaml", name: "JSON to YAML", category: "Converters", icon: ArrowLeftRight },
+  { id: "base64-inspector", name: "Base64 & Hex Inspector", category: "Security", icon: Binary },
+  { id: "jwt", name: "JWT Decoder", category: "Security", icon: Key },
+  { id: "cert-decoder", name: "X.509 Certificate Decoder", category: "Security", icon: ShieldCheck },
+  { id: "ssh-key-generator", name: "SSH Key Generator", category: "Security", icon: KeyRound },
+  { id: "password-hash", name: "Password Hash & Verifier", category: "Security", icon: Lock },
+  { id: "uuid-generator", name: "UUID / ULID Generator", category: "Security", icon: Fingerprint },
+  { id: "hmac-generator", name: "HMAC Generator", category: "Security", icon: Shield },
+  { id: "cidr-calculator", name: "CIDR Calculator", category: "Network", icon: Network },
+  { id: "cron", name: "Cron Visualizer", category: "Network", icon: Calendar },
   { id: "diff", name: "Diff Checker", category: "Utilities", icon: SplitSquareHorizontal },
-  { id: "hash", name: "Hash Generator", category: "Utilities", icon: Hash },
+  { id: "hash", name: "Hash Generator", category: "Security", icon: Hash },
   { id: "regex", name: "Regex Tester", category: "Utilities", icon: Regex },
+  { id: "json-schema-validator", name: "JSON Schema Validator", category: "Formatters", icon: ShieldCheck },
+  { id: "mock-data-generator", name: "Mock Data Generator", category: "Utilities", icon: Database },
+  { id: "epoch-converter", name: "Epoch / Unix Timestamp Converter", category: "Utilities", icon: Clock },
 ];
 
 export function CommandPalette({ isOpen, onClose, onSelectTool }: CommandPaletteProps) {
@@ -52,6 +77,7 @@ export function CommandPalette({ isOpen, onClose, onSelectTool }: CommandPalette
   const filteredTools = ALL_TOOLS.filter(
     (tool) =>
       tool.name.toLowerCase().includes(search.toLowerCase()) ||
+      tool.id.toLowerCase().includes(search.toLowerCase()) ||
       tool.category.toLowerCase().includes(search.toLowerCase())
   );
 
@@ -98,28 +124,28 @@ export function CommandPalette({ isOpen, onClose, onSelectTool }: CommandPalette
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-center pt-[15vh]">
       <div
-        className="absolute inset-0 bg-black/20 backdrop-blur-sm"
+        className="absolute inset-0 bg-black/30 backdrop-blur-xs transition-opacity"
         onClick={onClose}
       />
-      <div className="relative w-full max-w-xl bg-white border border-[#e2e8f0] rounded-xl shadow-2xl shadow-slate-200/60 overflow-hidden flex flex-col">
-        <div className="flex items-center px-4 border-b border-[#e2e8f0]">
-          <Search className="w-5 h-5 text-slate-400" />
+      <div className="relative w-full max-w-xl bg-white border border-zinc-200 rounded-xl shadow-none shadow-zinc-200/60 overflow-hidden flex flex-col animate-in fade-in zoom-in-95 duration-150">
+        <div className="flex items-center px-4 border-b border-zinc-200">
+          <Search className="w-5 h-5 text-zinc-400" />
           <input
             autoFocus
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search tools... (e.g. JWT, JSON, TypeScript, Cron, YAML)"
-            className="flex-1 bg-transparent border-none text-slate-900 placeholder:text-slate-400 h-14 px-4 focus:outline-none focus:ring-0 text-lg"
+            placeholder="Search tools... (e.g. JWT, JSON, TypeScript, Cron, SVG)"
+            className="flex-1 bg-transparent border-none text-zinc-900 placeholder:text-zinc-400 h-14 px-4 focus:outline-none focus:ring-0 text-base sm:text-lg"
           />
-          <kbd className="hidden sm:inline-block px-1.5 py-0.5 rounded bg-slate-100 border border-slate-200 text-[10px] font-medium text-slate-400">
+          <kbd className="hidden sm:inline-block px-1.5 py-0.5 rounded bg-zinc-100 border border-zinc-200 text-[10px] font-medium text-zinc-400">
             ESC
           </kbd>
         </div>
 
         <div className="max-h-[60vh] overflow-y-auto p-2">
           {filteredTools.length === 0 ? (
-            <div className="px-4 py-8 text-center text-slate-400">
+            <div className="px-4 py-8 text-center text-zinc-400 text-sm">
               No tools found matching &ldquo;{search}&rdquo;
             </div>
           ) : (
@@ -133,29 +159,29 @@ export function CommandPalette({ isOpen, onClose, onSelectTool }: CommandPalette
                     }}
                     onMouseEnter={() => setSelectedIndex(index)}
                     className={cn(
-                      "w-full flex items-center justify-between px-4 py-3 rounded-lg text-left transition-colors",
+                      "w-full flex items-center justify-between px-4 py-2.5 rounded-lg text-left transition-all",
                       selectedIndex === index
-                        ? "bg-blue-50 text-blue-600"
-                        : "text-slate-700 hover:bg-slate-50"
+                        ? "bg-blue-50 text-blue-600 font-medium"
+                        : "text-zinc-700 hover:bg-zinc-50"
                     )}
                   >
                     <div className="flex items-center gap-3">
                       <tool.icon
                         className={cn(
-                          "w-5 h-5",
+                          "w-4 h-4 transition-colors",
                           selectedIndex === index
                             ? "text-blue-600"
-                            : "text-slate-400"
+                            : "text-zinc-400"
                         )}
                       />
-                      <span className="font-medium">{tool.name}</span>
+                      <span className="text-sm font-medium">{tool.name}</span>
                     </div>
                     <span
                       className={cn(
-                        "text-xs",
+                        "text-xs font-mono",
                         selectedIndex === index
                           ? "text-blue-500"
-                          : "text-slate-400"
+                          : "text-zinc-400"
                       )}
                     >
                       {tool.category}
@@ -165,6 +191,19 @@ export function CommandPalette({ isOpen, onClose, onSelectTool }: CommandPalette
               ))}
             </ul>
           )}
+        </div>
+
+        {/* Modal Footer */}
+        <div className="px-4 py-2.5 bg-zinc-50 border-t border-zinc-200 flex items-center justify-between text-xs text-zinc-500">
+          <span className="flex items-center gap-2">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5 text-zinc-700">
+              <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" />
+              <rect x="8" y="2" width="8" height="4" rx="1" ry="1" />
+              <path d="M12 11l-2 3h3l-1 4 4-5h-3l1-2z" fill="currentColor" />
+            </svg>
+            <span>Press <kbd className="px-1 py-0.5 bg-white border border-zinc-200 rounded font-mono text-[10px] text-zinc-800 font-medium shadow-none">Ctrl + V</kbd> anywhere to auto-detect tools</span>
+          </span>
+          <span className="text-[11px] text-zinc-400 hidden sm:inline">Use ↑↓ to navigate, Enter to select</span>
         </div>
       </div>
     </div>

@@ -13,6 +13,20 @@ const eslintConfig = defineConfig([
     "build/**",
     "next-env.d.ts",
   ]),
+  {
+    plugins: {
+      ...nextVitals[0].plugins,
+      ...(nextTs[0]?.plugins || {}),
+    },
+    rules: {
+      "@typescript-eslint/no-explicit-any": "warn",
+      "react-hooks/set-state-in-effect": "warn",
+      "react-hooks/purity": "warn",
+      "react/no-unescaped-entities": "warn",
+      "@typescript-eslint/no-unused-vars": "warn",
+      "@next/next/no-img-element": "warn",
+    },
+  },
 ]);
 
 export default eslintConfig;

@@ -21,10 +21,20 @@ function getHistory(): HistoryEntry[] {
 
 function saveHistory(entries: HistoryEntry[]): void {
   if (typeof window === "undefined") return;
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(entries));
-  } catch {
-    // Storage full or unavailable — silently fail
+  const currentEntries = [...entries];
+  while (currentEntries.length > 0) {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(currentEntries));
+      return; // Success
+    } catch (e: unknown) {
+      const err = e as { name?: string; message?: string };
+      if (err?.name === "QuotaExceededError" || (typeof err?.message === "string" && err.message.includes("quota"))) {
+        // Evict oldest entry (last element) and try again
+        currentEntries.pop();
+      } else {
+        break; // Stop on unknown errors
+      }
+    }
   }
 }
 
@@ -101,10 +111,19 @@ export function getSnapshots(): WorkspaceSnapshot[] {
 
 export function saveSnapshots(snapshots: WorkspaceSnapshot[]): void {
   if (typeof window === "undefined") return;
-  try {
-    localStorage.setItem(SNAPSHOTS_KEY, JSON.stringify(snapshots));
-  } catch {
-    // Silently fail on storage limit
+  const currentSnapshots = [...snapshots];
+  while (currentSnapshots.length > 0) {
+    try {
+      localStorage.setItem(SNAPSHOTS_KEY, JSON.stringify(currentSnapshots));
+      return;
+    } catch (e: unknown) {
+      const err = e as { name?: string; message?: string };
+      if (err?.name === "QuotaExceededError" || (typeof err?.message === "string" && err.message.includes("quota"))) {
+        currentSnapshots.pop();
+      } else {
+        break;
+      }
+    }
   }
 }
 
@@ -123,7 +142,7 @@ export function addSnapshot(
     hour: "2-digit",
     minute: "2-digit",
   });
-  
+
   const snapshot: WorkspaceSnapshot = {
     id: `snap-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
     name: `${toolName} Snapshot (${dateStr})`,
@@ -134,7 +153,7 @@ export function addSnapshot(
     timestamp: Date.now(),
   };
 
-  const updated = [snapshot, ...snapshots]; // No arbitrary hard limit for now
+  const updated = [snapshot, ...snapshots];
   saveSnapshots(updated);
   return snapshot;
 }
@@ -142,4 +161,151 @@ export function addSnapshot(
 export function deleteSnapshot(id: string): void {
   const snapshots = getSnapshots().filter((s) => s.id !== id);
   saveSnapshots(snapshots);
+}
+
+// --- VERSIONED STORAGE ENVELOPE (v2) ---
+
+export interface StorageEnvelope<T> {
+  schemaVersion: number;
+  updatedAt: string;
+  payload: T;
+}
+
+export const STORAGE_KEY_V2 = "ai_skill_studio_state_v2";
+export const STORAGE_KEY_V1_LEGACY = "ai-skill-studio-state";
+export const CURRENT_SCHEMA_VERSION = 2;
+
+/**
+ * Saves arbitrary studio state wrapped in a versioned envelope schema (v2).
+ * Safely handles QuotaExceededError across browsers with multi-tier cache eviction.
+ */
+export function saveToStorageEnvelope<T>(
+  key: string = STORAGE_KEY_V2,
+  payload: T
+): { success: boolean; error?: string } {
+  if (typeof window === "undefined" || !window.localStorage) {
+    return { success: false, error: "localStorage is unavailable" };
+  }
+
+  const envelope: StorageEnvelope<T> = {
+    schemaVersion: CURRENT_SCHEMA_VERSION,
+    updatedAt: new Date().toISOString(),
+    payload,
+  };
+
+  try {
+    localStorage.setItem(key, JSON.stringify(envelope));
+    return { success: true };
+  } catch (err: unknown) {
+    const isQuotaError =
+      err instanceof DOMException &&
+      (err.name === "QuotaExceededError" ||
+        err.name === "NS_ERROR_DOM_QUOTA_REACHED" ||
+        err.code === 22 ||
+        err.code === 1014);
+
+    if (isQuotaError) {
+      // Tier 1: Clear legacy unversioned studio draft and retry
+      try {
+        localStorage.removeItem(STORAGE_KEY_V1_LEGACY);
+        localStorage.setItem(key, JSON.stringify(envelope));
+        return { success: true };
+      } catch {}
+
+      // Tier 2: Truncate history and snapshots to recover space
+      try {
+        const history = getHistory();
+        if (history.length > 3) {
+          saveHistory(history.slice(0, 3));
+        }
+        const snapshots = getSnapshots();
+        if (snapshots.length > 2) {
+          saveSnapshots(snapshots.slice(0, 2));
+        }
+        localStorage.setItem(key, JSON.stringify(envelope));
+        return { success: true };
+      } catch {}
+
+      // Tier 3: Clear workspace tabs if still full
+      try {
+        localStorage.removeItem("devscratchpad_workspace_tabs");
+        localStorage.setItem(key, JSON.stringify(envelope));
+        return { success: true };
+      } catch {}
+
+      return {
+        success: false,
+        error: "LocalStorage quota exceeded. Please export your kit to prevent data loss.",
+      };
+    }
+
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : "Unknown storage error",
+    };
+  }
+}
+
+/**
+ * Reads state from a versioned envelope with defensive backwards-compatible migration.
+ */
+export function loadFromStorageEnvelope<T>(
+  key: string = STORAGE_KEY_V2,
+  legacyKey: string = STORAGE_KEY_V1_LEGACY
+): T | null {
+  if (typeof window === "undefined" || !window.localStorage) {
+    return null;
+  }
+
+  // 1. Read v2 envelope
+  try {
+    const v2Raw = localStorage.getItem(key);
+    if (v2Raw) {
+      const parsed = JSON.parse(v2Raw) as StorageEnvelope<T>;
+      if (parsed && typeof parsed === "object") {
+        if (parsed.schemaVersion === CURRENT_SCHEMA_VERSION && "payload" in parsed) {
+          return parsed.payload;
+        }
+        if ("payload" in parsed) {
+          return parsed.payload;
+        }
+        return parsed as unknown as T;
+      }
+    }
+  } catch (e) {
+    console.warn("[StorageEnvelope] Error parsing v2 envelope:", e);
+  }
+
+  // 2. Defensive fallback & migration: Read legacy v1 unversioned data
+  try {
+    const legacyRaw = localStorage.getItem(legacyKey);
+    if (legacyRaw) {
+      const parsedLegacy = JSON.parse(legacyRaw) as T;
+      if (parsedLegacy && typeof parsedLegacy === "object") {
+        // Upgrade legacy data to v2 envelope immediately
+        saveToStorageEnvelope(key, parsedLegacy);
+        return parsedLegacy;
+      }
+    }
+  } catch (e) {
+    console.error("[StorageEnvelope] Error migrating legacy storage state:", e);
+  }
+
+  return null;
+}
+
+/**
+ * Completely wipes all client-side history, snapshots, and studio state.
+ */
+export function clearAllLocalData(): void {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.removeItem(STORAGE_KEY);
+    localStorage.removeItem(SNAPSHOTS_KEY);
+    localStorage.removeItem("devscratchpad_workspace_tabs");
+    localStorage.removeItem(STORAGE_KEY_V1_LEGACY);
+    localStorage.removeItem(STORAGE_KEY_V2);
+  } catch {
+    // Gracefully handle storage errors
+  }
 }

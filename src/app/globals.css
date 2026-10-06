@@ -1,13 +1,208 @@
 @import "tailwindcss";
+@import "highlight.js/styles/github-dark.css";
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Google+Sans:wght@400;500;700&display=swap');
+
+.font-gemini {
+  font-family: 'Google Sans', 'Google Sans Text', 'Google Sans Flex', 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+}
+
+/* High-craft monochromatic typography for engineering blog & articles */
+@layer utilities {
+  .prose {
+    color: #3f3f46;
+    line-height: 1.75;
+    font-size: 0.9375rem;
+  }
+  .prose p {
+    margin-top: 1.25em;
+    margin-bottom: 1.25em;
+    color: #3f3f46;
+  }
+  .prose h1 {
+    font-size: 2rem;
+    margin-top: 0;
+    margin-bottom: 0.75em;
+    line-height: 1.2;
+    font-weight: 700;
+    letter-spacing: -0.025em;
+    color: #09090b;
+  }
+  .prose h2 {
+    font-size: 1.375rem;
+    margin-top: 2em;
+    margin-bottom: 0.75em;
+    line-height: 1.35;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    color: #09090b;
+    border-bottom: 1px solid #f4f4f5;
+    padding-bottom: 0.4em;
+    scroll-margin-top: 5.5rem;
+  }
+  .prose h3 {
+    font-size: 1.125rem;
+    margin-top: 1.6em;
+    margin-bottom: 0.5em;
+    line-height: 1.4;
+    font-weight: 600;
+    letter-spacing: -0.015em;
+    color: #18181b;
+    scroll-margin-top: 5.5rem;
+  }
+  .prose h4 {
+    font-size: 1rem;
+    margin-top: 1.4em;
+    margin-bottom: 0.4em;
+    font-weight: 600;
+    color: #18181b;
+    scroll-margin-top: 5.5rem;
+  }
+  .prose ul {
+    margin-top: 0.8em;
+    margin-bottom: 1.2em;
+    padding-left: 1.25em;
+    list-style-type: disc;
+  }
+  .prose ol {
+    margin-top: 0.8em;
+    margin-bottom: 1.2em;
+    padding-left: 1.25em;
+    list-style-type: decimal;
+  }
+  .prose li {
+    margin-top: 0.35em;
+    margin-bottom: 0.35em;
+    line-height: 1.65;
+  }
+  .prose blockquote {
+    border-left: 2px solid #18181b;
+    background-color: #fafafa;
+    padding: 0.75rem 1rem;
+    margin: 1.5em 0;
+    border-radius: 0 0.375rem 0.375rem 0;
+    color: #52525b;
+    font-style: normal;
+    font-size: 0.875rem;
+  }
+  .prose blockquote p {
+    margin: 0;
+    color: inherit;
+  }
+  .prose table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 1.5em;
+    margin-bottom: 1.5em;
+    font-size: 0.8125rem;
+    line-height: 1.5;
+    border: 1px solid #e4e4e7;
+    border-radius: 0.375rem;
+    overflow: hidden;
+  }
+  .prose thead {
+    background-color: #f4f4f5;
+    border-bottom: 1px solid #e4e4e7;
+  }
+  .prose th {
+    padding: 0.625rem 0.875rem;
+    font-weight: 600;
+    text-align: left;
+    color: #18181b;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  .prose td {
+    padding: 0.625rem 0.875rem;
+    border-bottom: 1px solid #f4f4f5;
+    color: #3f3f46;
+  }
+  .prose tr:nth-child(even) {
+    background-color: #fafafa;
+  }
+  .prose tr:last-child td {
+    border-bottom: none;
+  }
+  .prose pre {
+    background-color: #09090b;
+    color: #fafafa;
+    border: 1px solid #27272a;
+    overflow-x: auto;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-size: 0.8125rem;
+    line-height: 1.65;
+    margin-top: 1.25em;
+    margin-bottom: 1.25em;
+    border-radius: 0.5rem;
+    padding: 0.875rem 1.125rem;
+  }
+  .prose code {
+    color: #09090b;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-size: 0.8125em;
+    font-weight: 500;
+    background-color: #f4f4f5;
+    padding: 0.15em 0.35em;
+    border-radius: 0.25rem;
+    border: 1px solid #e4e4e7;
+  }
+  .prose pre code {
+    background-color: transparent !important;
+    border: none;
+    padding: 0;
+    font-size: inherit;
+    color: inherit;
+    line-height: inherit;
+  }
+  .prose a {
+    color: #09090b;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    font-weight: 500;
+    transition: opacity 0.15s ease;
+  }
+  .prose a:hover {
+    opacity: 0.75;
+  }
+  .prose strong {
+    font-weight: 600;
+    color: #09090b;
+  }
+  .prose hr {
+    border-color: #e4e4e7;
+    margin-top: 2em;
+    margin-bottom: 2em;
+  }
+  .prose kbd {
+    font-family: ui-monospace, monospace;
+    font-size: 0.75em;
+    padding: 0.15em 0.35em;
+    background-color: #f4f4f5;
+    border: 1px solid #d4d4d8;
+    border-radius: 0.25rem;
+  }
+}
+
+@custom-variant dark (&:where(.dark, .dark *));
 
 :root {
   --background: #ffffff;
-  --foreground: #0f172a;
-  --surface: #f8fafc;
-  --border: #e2e8f0;
-  --text-secondary: #64748b;
+  --foreground: #09090b;
+  --surface: #fafafa;
+  --border: #e4e4e7;
+  --text-secondary: #71717a;
   --accent: #2563eb;
-  --active: #1e293b;
+  --active: #18181b;
+}
+
+.dark {
+  --background: #09090b;
+  --foreground: #fafafa;
+  --surface: #18181b;
+  --border: #27272a;
+  --text-secondary: #a1a1aa;
+  --accent: #fafafa;
+  --active: #fafafa;
 }
 
 body {
@@ -21,18 +216,136 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Crisp light scrollbars */
+/* Crisp scrollbars — adapt to theme */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 7px;
+  height: 7px;
 }
 ::-webkit-scrollbar-track {
-  background: #f1f5f9;
+  background: #f4f4f5;
 }
 ::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
+  background: #d4d4d8;
   border-radius: 4px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
+  background: #a1a1aa;
 }
+
+.dark ::-webkit-scrollbar-track {
+  background: #09090b;
+}
+.dark ::-webkit-scrollbar-thumb {
+  background: #27272a;
+  border-radius: 4px;
+}
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: #3f3f46;
+}
+
+
+
+/* Glass Terminal (Ported from my website with Fox-Orange glow) */
+.glass-terminal {
+  background: rgba(10, 10, 18, 0.82);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7), 0 0 45px rgba(234, 88, 12, 0.08);
+  overflow: hidden;
+  text-align: left;
+  width: 100%;
+}
+
+.terminal-header {
+  background: rgba(255, 255, 255, 0.03);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  display: flex;
+  align-items: center;
+  padding: 0.65rem 1rem;
+  gap: 6px;
+  position: relative;
+}
+
+.terminal-header .dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.dot-red { background: #ff5f56; }
+.dot-yellow { background: #ffbd2e; }
+.dot-green { background: #27c93f; }
+
+.terminal-title {
+  color: #71717a;
+  font-size: 0.75rem;
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  font-family: monospace;
+}
+
+.terminal-body {
+  padding: 1.25rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.85rem;
+  line-height: 1.65;
+  min-height: 160px;
+  color: #d4d4d8;
+}
+
+.terminal-line {
+  margin-bottom: 0.5rem;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.command-color {
+  color: #fb923c;
+}
+
+.success-color {
+  color: #4ade80;
+}
+
+.cursor-block {
+  display: inline-block;
+  color: #f97316;
+  font-weight: bold;
+}
+
+.cursor-block.blink {
+  animation: cursor-blink 1s step-end infinite;
+}
+
+@keyframes cursor-blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+/* AI Skill Studio — Sleek White Marker in Monaco Editor */
+.monaco-editor .monaco-white-marker-line,
+.monaco-white-marker-line {
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.02) 50%, transparent 100%) !important;
+  border-left: 3px solid #ffffff !important;
+  border-top: none !important;
+  border-bottom: none !important;
+  border-right: none !important;
+  box-shadow: none !important;
+  pointer-events: none;
+}
+
+.monaco-editor .view-overlays .monaco-white-marker-line {
+  z-index: 0 !important;
+}
+
+.monaco-editor .view-lines {
+  z-index: 1 !important;
+}
+
+
+
+
