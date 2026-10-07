@@ -2294,23 +2294,11 @@ export function ClaudeSkillsClient({
       {/* Top Navigation Bar */}
       <header className="sticky top-0 z-40 w-full bg-white border-b border-zinc-200 shadow-xs">
         <div className="max-w-7xl mx-auto px-3 sm:px-6 h-14 flex items-center justify-between gap-2">
-          {/* Left: Back button & Title */}
+          {/* Left: AI Skill Studio Title */}
           <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-            <Link
-              href="/"
-              className="flex items-center gap-1.5 px-2 py-1.5 sm:px-2.5 sm:py-1.5 rounded-lg text-xs font-semibold text-zinc-700 hover:text-zinc-900 bg-zinc-100 hover:bg-zinc-200 transition-all border border-zinc-200/80 active:scale-95 shrink-0"
-              title="Open Developer Tools Workspace"
-            >
-              <ArrowLeft className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Developer Tools </span>
-              <span>Workspace</span>
-            </Link>
-
-            <div className="h-4 w-px bg-zinc-200 shrink-0 hidden sm:block" />
-
             <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
               <Image src="/ai-skill-icon.png" width={24} height={20} priority alt="AI Skill Studio" className="w-5 h-4 sm:w-6 sm:h-5 object-contain shrink-0" />
-              <span className="text-xs sm:text-base font-bold text-zinc-900 tracking-tight truncate">
+              <span className="text-sm sm:text-base font-bold text-zinc-900 tracking-tight truncate">
                 AI Skill Studio
               </span>
             </div>

@@ -66,7 +66,19 @@ export function TopBar({ onOpenCommandPalette, onOpenMobileMenu }: TopBarProps) 
 
       {/* Right side: Actions */}
       <div className="flex items-center gap-1.5 sm:gap-2">
-        {/* Mobile visible Skill Icon (1-tap, icon only) */}
+        {/* Mobile visible AI Studio & Skill Icons (1-tap) */}
+        <Link
+          href="/ai-skill-studio"
+          className="flex md:hidden p-1.5 hover:bg-zinc-100 active:bg-zinc-200 rounded-md transition-colors items-center justify-center shrink-0"
+          title="AI Skill Studio"
+          aria-label="AI Skill Studio"
+        >
+          <img
+            src="/ai-skill-icon.png"
+            className="w-5 h-4 object-contain"
+            alt="AI Skill Studio"
+          />
+        </Link>
         <Link
           href="/skill"
           className="flex md:hidden p-1.5 hover:bg-zinc-100 active:bg-zinc-200 rounded-md transition-colors items-center justify-center shrink-0"
