@@ -424,6 +424,15 @@ All AI agents operating in this repository MUST follow this 5-step loop:
      - Root cause: Synthesized routes copied identical descriptions, `whyNeeded`, and FAQs across all formats, triggering near-duplicate detection. In addition, `ClaudeSkillsClient.tsx` had `if (!isMounted) return null;`, completely wiping server-side prerendered HTML during SSG/build and serving empty shells to crawlers.
      - Fix: Removed `if (!isMounted) return null;` from `ClaudeSkillsClient.tsx` so SSG prerenders the full static HTML markup and `<pre>` code preview for search crawlers. Added format-specialized descriptions, `whyNeeded`, and custom FAQs across all 12 code formats in `synthesizeRouteForFormat`.
 
+### Session: 2026-10-08 — Full-Width Minimalist AI Skill Studio Support Section (`support@devscratchpad.tech`)
+- **Agent**: Antigravity (Gemini)
+- **Task**: Streamlined support email integration per user request by removing scattered triggers from header, editor column, and secondary spokes, concentrating support into a single minimalist, white-themed section at the end of AI Skill Studio, and expanding it to full container width:
+  1. **Full-Width Minimalist Copy-Only Section (`StudioSupportSection.tsx`)**: Built a full-width container card (`w-full` across `max-w-7xl` layout, removing narrow `max-w-2xl` center restriction) matching the width of Section 6 and other content blocks. Features high-definition typography (`font-mono` text-xs font-semibold for the address and crisp tracking), subtle orange hairline top accent line, zero `mailto:` triggers (no external mail client or Outlook launches), and an interactive one-click copy pill providing instant 'Copied!' confirmation.
+  2. **Removed from Elsewhere**: Cleaned up `ClaudeSkillsClient.tsx` (header button and in-editor card removed), `FormatHubSeoContent.tsx`, `ProgrammaticSpokeSeoContent.tsx`, and `rules-converter/page.tsx` so support is strictly concentrated in the end section.
+  3. **Structured Data & FAQ (`page.tsx` & `AiSkillStudioSeoContent.tsx`)**: Maintained official customer support `contactPoint` and FAQ item for SEO clarity.
+  4. **Verification Gates**: Passed `npm run validate-presets` (100/100), `npm run lint` (0 errors), and `npm run build` (869 static export routes exit 0). Active server live on `http://localhost:3000`.
+- **Status**: ✅ Complete (All verification gates passed)
+
 ---
 
 *This document is updated by AI agents after significant sessions. Human maintainers should review and correct any inaccuracies periodically.*

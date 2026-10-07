@@ -11,6 +11,7 @@ import {
   FileText,
   Cpu,
 } from "lucide-react";
+import { StudioSupportSection } from "./components/StudioSupportSection";
 
 export function AiSkillStudioSeoContent() {
   return (
@@ -658,6 +659,20 @@ export function AiSkillStudioSeoContent() {
                 Run <code className="font-mono bg-zinc-100 px-1 py-0.5 rounded text-zinc-800">npx devscratchpad init</code> in your terminal. It installs the universal 17-file 4-layer suite into your repository with zero setup, completely offline.
               </p>
             </details>
+
+            <details className="group border border-zinc-200 rounded-lg bg-white p-4 open:bg-zinc-50/50 transition-colors">
+              <summary className="font-medium text-sm text-zinc-900 cursor-pointer list-none flex items-center justify-between">
+                <span>How can I get support or request custom AI skill presets?</span>
+                <span className="text-xs font-mono text-zinc-400 group-open:rotate-90 transition-transform">▸</span>
+              </summary>
+              <p className="mt-3 text-xs text-zinc-600 leading-relaxed">
+                If you encounter any issues, need assistance configuring multi-agent governance, or want custom presets tailored for your engineering team, copy or email our support team directly at{" "}
+                <code className="text-zinc-900 bg-zinc-100 px-1.5 py-0.5 rounded font-mono text-[11px] font-semibold border border-zinc-200 break-all">
+                  support@devscratchpad.tech
+                </code>
+                .
+              </p>
+            </details>
           </div>
         </section>
 
@@ -679,6 +694,9 @@ export function AiSkillStudioSeoContent() {
             <ArrowRight className="w-3.5 h-3.5" />
           </Link>
         </section>
+
+        {/* 7. Dedicated Developer Support & Assistance */}
+        <StudioSupportSection />
 
       </div>
     </article>

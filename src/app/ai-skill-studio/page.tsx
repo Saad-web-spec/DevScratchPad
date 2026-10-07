@@ -107,6 +107,11 @@ const jsonLdGraph = {
         "Package manifest ingestion for package.json, Cargo.toml, pyproject.toml, and go.mod",
         "Unified 17-file 4-layer AI suite ZIP archive exporter and terminal CLI",
       ],
+      contactPoint: {
+        "@type": "ContactPoint",
+        email: "support@devscratchpad.tech",
+        contactType: "customer support",
+      },
     },
     {
       "@type": "FAQPage",
@@ -150,6 +155,14 @@ const jsonLdGraph = {
           acceptedAnswer: {
             "@type": "Answer",
             text: "Exporting the AI Kit ZIP will automatically arrange the files in the correct directory structure: Cursor rules go to .cursor/rules/<name>.mdc, Claude skills go to .claude/skills/<name>/SKILL.md, Anthropic guidelines go to CLAUDE.md, multi-agent protocol goes to AGENTS.md, governance documents (PRD.md, DESIGN.md, TASK.md, MEMORY.md) go to repository root, and context shields go to .cursorignore and .claudeignore.",
+          },
+        },
+        {
+          "@type": "Question",
+          name: "How can I get support or request custom AI skill presets?",
+          acceptedAnswer: {
+            "@type": "Answer",
+            text: "Contact our support team directly at support@devscratchpad.tech for assistance with multi-agent governance, custom MCP integrations, or tailored rulebooks.",
           },
         },
       ],
