@@ -1,4 +1,4 @@
-import { PRESET_ROUTES } from "./presetRegistry";
+import { PRESET_ROUTES, FORMAT_TO_URL_SLUG, OutputFormat } from "./presetRegistry";
 
 export interface StudioWorkspaceState {
   skillName?: string;
@@ -134,7 +134,11 @@ export async function createShareableUrl(state: Partial<StudioWorkspaceState>): 
   );
 
   if (isPresetOnly && state.selectedPresetId) {
-    const fmt = (state.format || "skill_md") as any;
+    const fmt = (state.format || "skill_md") as OutputFormat;
+    if (fmt === "prd_md" || fmt === "design_md" || fmt === "task_md" || fmt === "memory_md") {
+      const formatSlug = FORMAT_TO_URL_SLUG[fmt] || "prd-md";
+      return `${window.location.origin}/ai-skill-studio/${formatSlug}`;
+    }
     const canonicalRoute = PRESET_ROUTES.find(
       (r) => r.presetId === state.selectedPresetId && r.format === fmt
     );

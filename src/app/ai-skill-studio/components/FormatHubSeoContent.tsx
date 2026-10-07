@@ -12,9 +12,11 @@ import {
   Terminal,
 } from "lucide-react";
 import { FormatHubMeta, getAllFormatHubs } from "@/app/claude-skills/lib/formatHubs";
+import { getPresetsByFormat } from "@/app/claude-skills/lib/presetRegistry";
 
 export function FormatHubSeoContent({ hub }: { hub: FormatHubMeta }) {
   const otherHubs = getAllFormatHubs().filter((h) => h.slug !== hub.slug);
+  const presets = getPresetsByFormat(hub.slug);
 
   return (
     <article className="w-full bg-white border-t border-zinc-200 mt-8 py-16 px-4 sm:px-6 lg:px-8 text-zinc-800 font-sans selection:bg-orange-500 selection:text-white">
@@ -69,6 +71,53 @@ export function FormatHubSeoContent({ hub }: { hub: FormatHubMeta }) {
             </div>
           </div>
         </section>
+
+        {/* 2. Tech Stack Presets Showcase Grid */}
+        {presets.length > 0 && (
+          <section className="space-y-6">
+            <div className="space-y-2">
+              <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-zinc-900 flex items-center gap-2">
+                <FileCode className="w-5 h-5 text-orange-600" />
+                Available {hub.name} Stack Presets
+              </h2>
+              <p className="text-xs sm:text-sm text-zinc-600">
+                Generate production-ready {hub.name} configurations customized for your framework, database, and tooling:
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {presets.map((preset) => (
+                <Link
+                  key={preset.presetSlug}
+                  href={`/ai-skill-studio/${hub.slug}/${preset.presetSlug}`}
+                  className="rounded-xl border border-zinc-200 bg-white p-5 space-y-3 shadow-2xs hover:border-orange-300 hover:shadow-xs transition-all flex flex-col justify-between group text-inherit no-underline"
+                >
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-zinc-100 text-zinc-700 border border-zinc-200 uppercase tracking-wider group-hover:bg-orange-50 group-hover:border-orange-200 group-hover:text-orange-900 transition-colors">
+                        {preset.category}
+                      </span>
+                      <code className="text-[11px] font-mono text-zinc-400 group-hover:text-orange-600 transition-colors">
+                        {preset.targetFile}
+                      </code>
+                    </div>
+                    <h3 className="text-sm font-bold text-zinc-900 group-hover:text-orange-600 transition-colors">
+                      {preset.techName}
+                    </h3>
+                    <p className="text-xs text-zinc-500 line-clamp-2 leading-relaxed">
+                      {preset.description}
+                    </p>
+                  </div>
+
+                  <div className="pt-2 border-t border-zinc-100 flex items-center justify-between text-xs font-semibold text-orange-600 group-hover:translate-x-0.5 transition-transform">
+                    <span>Configure Preset</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </section>
+        )}
 
         {/* 2. File Placement Guide */}
         {hub.filePlacementGuide && hub.filePlacementGuide.length > 0 && (

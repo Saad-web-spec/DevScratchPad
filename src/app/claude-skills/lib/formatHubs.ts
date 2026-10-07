@@ -872,8 +872,8 @@ export const FORMAT_SLUG_ALIASES: Record<string, string> = {
 export const FORMAT_TO_URL_SLUG: Record<OutputFormat, string> = {
   cursor_mdc: "cursor-rules",
   skill_md: "claude-skills",
-  claude_md: "claude.md",
-  agents_md: "agents.md",
+  claude_md: "claude-md",
+  agents_md: "agents-md",
   mcp_json: "mcp-config",
   windsurf_cascade: "windsurf-rules",
   copilot_instructions: "copilot-instructions",
@@ -881,11 +881,11 @@ export const FORMAT_TO_URL_SLUG: Record<OutputFormat, string> = {
   gemini_prompts: "gemini-prompts",
   cursorignore: "cursorignore",
   claudeignore: "claudeignore",
-  llms_txt: "llms.txt",
-  architecture_md: "architecture.md",
-  prd_md: "prd.md",
-  design_md: "design.md",
-  task_md: "task.md",
+  llms_txt: "llms-txt",
+  architecture_md: "architecture-md",
+  prd_md: "prd-md",
+  design_md: "design-md",
+  task_md: "task-md",
   memory_md: "memory-md",
 };
 

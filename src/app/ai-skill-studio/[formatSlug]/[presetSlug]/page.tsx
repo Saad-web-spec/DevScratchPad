@@ -40,6 +40,14 @@ export default async function ProgrammaticPresetPage({
   const route = getPresetBySlug(formatSlug, presetSlug);
 
   if (!route) {
+    if (
+      ["prd-md", "design-md", "task-md", "memory-md", "prd.md", "design.md", "task.md", "memory.md"].includes(
+        formatSlug.toLowerCase()
+      )
+    ) {
+      const canonicalHub = formatSlug.toLowerCase().replace(/\.md$/, "-md");
+      permanentRedirect(`/ai-skill-studio/${canonicalHub}`);
+    }
     notFound();
   }
 
@@ -215,7 +223,11 @@ export default async function ProgrammaticPresetPage({
         <div className="max-w-7xl mx-auto flex flex-wrap items-center gap-2">
           <span className="text-xs font-medium text-zinc-500 mr-1">Also available for:</span>
           {getAllFormatHubs()
-            .filter((h) => getPresetBySlug(h.slug, route.presetSlug) !== null)
+            .filter(
+              (h) =>
+                !["prd-md", "design-md", "task-md", "memory-md"].includes(h.slug) &&
+                getPresetBySlug(h.slug, route.presetSlug) !== null
+            )
             .map((h) => {
               const isCurrent = h.slug === formatSlug;
               return (

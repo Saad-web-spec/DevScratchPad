@@ -151,6 +151,106 @@ export function AiSkillStudioSeoContent() {
                   <span className="truncate">/AGENTS.md (Root)</span>
                 </div>
               </Link>
+
+              {/* Windsurf Cascade */}
+              <Link
+                href="/ai-skill-studio/windsurf-rules"
+                className="flex flex-col justify-between border border-zinc-200/90 rounded-xl p-4 bg-white shadow-2xs hover:shadow-xs hover:border-zinc-300 transition-all text-inherit no-underline group"
+              >
+                <div className="space-y-2.5">
+                  <div className="flex items-center justify-between">
+                    <span className="font-mono text-xs font-bold text-teal-600 bg-teal-50 border border-teal-200/80 px-2 py-0.5 rounded-md">
+                      .windsurf/rules/*.md
+                    </span>
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">Windsurf IDE</span>
+                  </div>
+                  <h4 className="font-semibold text-zinc-900 text-sm group-hover:text-orange-600 transition-colors">
+                    Windsurf Cascade Rules
+                  </h4>
+                  <p className="text-xs text-zinc-600 leading-relaxed">
+                    Targeted rules for Codeium&apos;s Windsurf Cascade. Steers Supercomplete and chat with project idioms and framework constraints.
+                  </p>
+                </div>
+                <div className="mt-3 pt-2.5 border-t border-zinc-100 flex items-center gap-1.5 text-[11px] font-mono text-zinc-500">
+                  <FileCode className="w-3.5 h-3.5 text-teal-500 shrink-0" />
+                  <span className="truncate">.windsurf/rules/&lt;name&gt;.md</span>
+                </div>
+              </Link>
+
+              {/* GitHub Copilot Instructions */}
+              <Link
+                href="/ai-skill-studio/copilot-instructions"
+                className="flex flex-col justify-between border border-zinc-200/90 rounded-xl p-4 bg-white shadow-2xs hover:shadow-xs hover:border-zinc-300 transition-all text-inherit no-underline group"
+              >
+                <div className="space-y-2.5">
+                  <div className="flex items-center justify-between">
+                    <span className="font-mono text-xs font-bold text-sky-600 bg-sky-50 border border-sky-200/80 px-2 py-0.5 rounded-md">
+                      copilot-instructions.md
+                    </span>
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">GitHub Copilot</span>
+                  </div>
+                  <h4 className="font-semibold text-zinc-900 text-sm group-hover:text-orange-600 transition-colors">
+                    Copilot Instructions
+                  </h4>
+                  <p className="text-xs text-zinc-600 leading-relaxed">
+                    Grounds GitHub Copilot chat and completions in VS Code and JetBrains to your team&apos;s architecture, avoiding deprecated patterns.
+                  </p>
+                </div>
+                <div className="mt-3 pt-2.5 border-t border-zinc-100 flex items-center gap-1.5 text-[11px] font-mono text-zinc-500">
+                  <FileCode className="w-3.5 h-3.5 text-sky-500 shrink-0" />
+                  <span className="truncate">.github/copilot-instructions.md</span>
+                </div>
+              </Link>
+
+              {/* OpenAI Custom Instructions */}
+              <Link
+                href="/ai-skill-studio/openai-instructions"
+                className="flex flex-col justify-between border border-zinc-200/90 rounded-xl p-4 bg-white shadow-2xs hover:shadow-xs hover:border-zinc-300 transition-all text-inherit no-underline group"
+              >
+                <div className="space-y-2.5">
+                  <div className="flex items-center justify-between">
+                    <span className="font-mono text-xs font-bold text-violet-600 bg-violet-50 border border-violet-200/80 px-2 py-0.5 rounded-md">
+                      openai-instructions
+                    </span>
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">ChatGPT &amp; API</span>
+                  </div>
+                  <h4 className="font-semibold text-zinc-900 text-sm group-hover:text-orange-600 transition-colors">
+                    OpenAI Custom Instructions
+                  </h4>
+                  <p className="text-xs text-zinc-600 leading-relaxed">
+                    Directives tailored for GPT-4o, o1, and Playground. Enforces concise code diffs, typed schemas, and zero conversational filler.
+                  </p>
+                </div>
+                <div className="mt-3 pt-2.5 border-t border-zinc-100 flex items-center gap-1.5 text-[11px] font-mono text-zinc-500">
+                  <FileCode className="w-3.5 h-3.5 text-violet-500 shrink-0" />
+                  <span className="truncate">prompts/openai-custom-instructions.md</span>
+                </div>
+              </Link>
+
+              {/* Gemini System Prompts */}
+              <Link
+                href="/ai-skill-studio/gemini-prompts"
+                className="flex flex-col justify-between border border-zinc-200/90 rounded-xl p-4 bg-white shadow-2xs hover:shadow-xs hover:border-zinc-300 transition-all text-inherit no-underline group"
+              >
+                <div className="space-y-2.5">
+                  <div className="flex items-center justify-between">
+                    <span className="font-mono text-xs font-bold text-indigo-600 bg-indigo-50 border border-indigo-200/80 px-2 py-0.5 rounded-md">
+                      gemini-prompts
+                    </span>
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">Google AI Studio</span>
+                  </div>
+                  <h4 className="font-semibold text-zinc-900 text-sm group-hover:text-orange-600 transition-colors">
+                    Gemini System Instructions
+                  </h4>
+                  <p className="text-xs text-zinc-600 leading-relaxed">
+                    Structured system instructions for Google AI Studio, Gemini 2.0, and Gemini SDK with strict role definitions and structured JSON outputs.
+                  </p>
+                </div>
+                <div className="mt-3 pt-2.5 border-t border-zinc-100 flex items-center gap-1.5 text-[11px] font-mono text-zinc-500">
+                  <FileCode className="w-3.5 h-3.5 text-indigo-500 shrink-0" />
+                  <span className="truncate">prompts/gemini-system-instructions.json</span>
+                </div>
+              </Link>
             </div>
           </div>
 
@@ -311,7 +411,10 @@ export function AiSkillStudioSeoContent() {
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               {/* PRD.md */}
-              <div className="flex flex-col justify-between border border-zinc-200/90 rounded-xl p-4 bg-white shadow-2xs hover:shadow-xs hover:border-zinc-300 transition-all text-inherit group">
+              <Link
+                href="/ai-skill-studio/prd-md"
+                className="flex flex-col justify-between border border-zinc-200/90 rounded-xl p-4 bg-white shadow-2xs hover:shadow-xs hover:border-zinc-300 transition-all text-inherit no-underline group"
+              >
                 <div className="space-y-2.5">
                   <div className="flex items-center justify-between">
                     <span className="font-mono text-xs font-bold text-blue-600 bg-blue-50 border border-blue-200/80 px-2 py-0.5 rounded-md">
@@ -330,10 +433,13 @@ export function AiSkillStudioSeoContent() {
                   <FileText className="w-3.5 h-3.5 text-blue-500 shrink-0" />
                   <span className="truncate">/PRD.md (Repository Root)</span>
                 </div>
-              </div>
+              </Link>
 
               {/* DESIGN.md */}
-              <div className="flex flex-col justify-between border border-zinc-200/90 rounded-xl p-4 bg-white shadow-2xs hover:shadow-xs hover:border-zinc-300 transition-all text-inherit group">
+              <Link
+                href="/ai-skill-studio/design-md"
+                className="flex flex-col justify-between border border-zinc-200/90 rounded-xl p-4 bg-white shadow-2xs hover:shadow-xs hover:border-zinc-300 transition-all text-inherit no-underline group"
+              >
                 <div className="space-y-2.5">
                   <div className="flex items-center justify-between">
                     <span className="font-mono text-xs font-bold text-indigo-600 bg-indigo-50 border border-indigo-200/80 px-2 py-0.5 rounded-md">
@@ -352,10 +458,13 @@ export function AiSkillStudioSeoContent() {
                   <Layers className="w-3.5 h-3.5 text-indigo-500 shrink-0" />
                   <span className="truncate">/DESIGN.md (Repository Root)</span>
                 </div>
-              </div>
+              </Link>
 
               {/* TASK.md */}
-              <div className="flex flex-col justify-between border border-zinc-200/90 rounded-xl p-4 bg-white shadow-2xs hover:shadow-xs hover:border-zinc-300 transition-all text-inherit group">
+              <Link
+                href="/ai-skill-studio/task-md"
+                className="flex flex-col justify-between border border-zinc-200/90 rounded-xl p-4 bg-white shadow-2xs hover:shadow-xs hover:border-zinc-300 transition-all text-inherit no-underline group"
+              >
                 <div className="space-y-2.5">
                   <div className="flex items-center justify-between">
                     <span className="font-mono text-xs font-bold text-emerald-600 bg-emerald-50 border border-emerald-200/80 px-2 py-0.5 rounded-md">
@@ -374,10 +483,13 @@ export function AiSkillStudioSeoContent() {
                   <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
                   <span className="truncate">/TASK.md (Repository Root)</span>
                 </div>
-              </div>
+              </Link>
 
               {/* MEMORY.md */}
-              <div className="flex flex-col justify-between border border-zinc-200/90 rounded-xl p-4 bg-white shadow-2xs hover:shadow-xs hover:border-zinc-300 transition-all text-inherit group">
+              <Link
+                href="/ai-skill-studio/memory-md"
+                className="flex flex-col justify-between border border-zinc-200/90 rounded-xl p-4 bg-white shadow-2xs hover:shadow-xs hover:border-zinc-300 transition-all text-inherit no-underline group"
+              >
                 <div className="space-y-2.5">
                   <div className="flex items-center justify-between">
                     <span className="font-mono text-xs font-bold text-amber-600 bg-amber-50 border border-amber-200/80 px-2 py-0.5 rounded-md">
@@ -396,7 +508,7 @@ export function AiSkillStudioSeoContent() {
                   <Cpu className="w-3.5 h-3.5 text-amber-500 shrink-0" />
                   <span className="truncate">/MEMORY.md (Repository Root)</span>
                 </div>
-              </div>
+              </Link>
             </div>
           </div>
         </section>

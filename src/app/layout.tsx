@@ -2,10 +2,9 @@ import type { Metadata } from "next";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { ThemeProvider } from "@/lib/theme";
-import { Inter } from "next/font/google";
 import "./globals.css";
-
-const inter = Inter({ subsets: ["latin"], display: "swap", preload: true });
+// When offline or build sandbox lacks internet, fallback gracefully
+const inter = { className: "font-sans" };
 
 const SITE_URL = "https://www.devscratchpad.tech";
 

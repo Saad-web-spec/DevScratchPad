@@ -234,7 +234,7 @@ export async function getAccount(id: any) {
     name: "Next.js 15 Fullstack",
     badge: "Web App",
     title: "Next.js 15 App Router & Server Actions Specialist",
-    slug: "nextjs-fullstack-pro",
+    slug: "nextjs-15",
     description:
       "Production guidelines for Next.js App Router. Enforces React Server Components (RSC) by default, Server Actions for mutations with Zod validation, and Tailwind CSS v4 styling.",
     role: "Lead Fullstack Next.js Engineer",
@@ -280,7 +280,7 @@ export function SubmitUser() {
     name: "React 19 SPA",
     badge: "Frontend",
     title: "React 19 + TypeScript SPA Specialist",
-    slug: "react-modern-spa",
+    slug: "react-19",
     description:
       "Modern React 19 SPA standards. Prioritizes custom hooks, TanStack Query for server state caching, Vite bundling, and avoiding redundant useEffect cycles.",
     role: "Senior Frontend Engineer",
@@ -320,7 +320,7 @@ export function BadFilteredList({ items, query }: any) {
     name: "FastAPI & AI Agent",
     badge: "Backend",
     title: "Python FastAPI & AI Agent Service Architecture",
-    slug: "fastapi-ai-backend",
+    slug: "fastapi",
     description:
       "Production standards for Python 3.12+, FastAPI, async I/O, Pydantic v2 schemas, LangChain/LlamaIndex integration, and defensive error propagation.",
     role: "Senior AI Systems Backend Engineer",
@@ -366,7 +366,7 @@ def generate(data: dict):
     name: "Pragmatic Vibe Coder",
     badge: "High Velocity",
     title: "High-Velocity Pragmatic Builder",
-    slug: "pragmatic-vibe-builder",
+    slug: "vibe-coder",
     description:
       "High-speed developer instructions. Prioritizes immediate working solutions, readable standard code over abstract architecture, and minimal ceremony.",
     role: "Pragmatic Full-Stack Maker",
@@ -402,7 +402,7 @@ export class UserQueryFactoryProviderService {
     name: "Security Guard",
     badge: "Claude Code Skill",
     title: "Security & Zero-Trust Vulnerability Guard",
-    slug: "security-vulnerability-guard",
+    slug: "security-guard",
     description:
       "Specialist skill for identifying security vulnerabilities, API key leaks, SQL injection, XSS attack surfaces, and insecure deserialization.",
     role: "Principal Security Architect",
@@ -436,7 +436,7 @@ const user = await db.query(
     name: "Tailwind CSS v4",
     badge: "Frontend",
     title: "Tailwind CSS v4 & CSS-First Styling Specialist",
-    slug: "tailwind-v4-styling",
+    slug: "tailwind-v4",
     description:
       "Modern Tailwind CSS v4 conventions. Enforces CSS-first @theme configuration, zero tailwind.config.js, and strict class ordering.",
     role: "Lead UI & Design Systems Engineer",
@@ -469,7 +469,7 @@ module.exports = {
     name: "Supabase & Postgres",
     badge: "Fullstack",
     title: "Supabase Architecture & Row-Level Security Specialist",
-    slug: "supabase-postgres-security",
+    slug: "supabase",
     description:
       "Production standards for Supabase. Mandates Row-Level Security (RLS) on all tables, typed database client, and secure SSR cookie auth.",
     role: "Senior Fullstack & Database Security Engineer",
@@ -505,7 +505,7 @@ create table profiles (
     name: "Prisma ORM",
     badge: "Database",
     title: "Prisma ORM & PostgreSQL Schema Architecture",
-    slug: "prisma-orm-performance",
+    slug: "prisma",
     description:
       "Production guidelines for Prisma ORM. Enforces selective field fetching, batch transactions, explicit indexing, and singleton client patterns.",
     role: "Database Systems Architect",
@@ -537,7 +537,7 @@ const users = await db.user.findMany({
     name: "Drizzle ORM",
     badge: "Database",
     title: "Drizzle ORM & Type-Safe SQL Specialist",
-    slug: "drizzle-orm-typesafe",
+    slug: "drizzle",
     description:
       "Production guidelines for Drizzle ORM. Enforces relational schema modeling, parameterized SQL templates, and zero-runtime overhead.",
     role: "TypeScript Data Engineer",
@@ -565,7 +565,7 @@ await db.execute(\`SELECT * FROM users WHERE status = '\${status}'\`);`,
     name: "Go Fiber API",
     badge: "Backend",
     title: "High-Performance Go & Fiber API Specialist",
-    slug: "go-fiber-backend",
+    slug: "go-fiber",
     description:
       "Production standards for Go Fiber microservices. Enforces explicit error handling, context propagation, and clean layered architecture.",
     role: "Senior Go Systems Engineer",
@@ -606,7 +606,7 @@ func GetUser(c *fiber.Ctx) error {
     name: "Rust Axum Service",
     badge: "Backend",
     title: "Idiomatic Rust & Axum Microservice Specialist",
-    slug: "rust-axum-service",
+    slug: "rust-axum",
     description:
       "Idiomatic Rust standards with Axum, Tokio runtime, typed extractors, and zero-unwrap error handling.",
     role: "Principal Rust Systems Architect",
@@ -642,7 +642,7 @@ pub async fn create_user(Json(payload): Json<CreateUserRequest>) -> Json<UserRes
     name: "Vue 3 & Nuxt 3",
     badge: "Frontend",
     title: "Vue 3 & Nuxt 3 Composition API Specialist",
-    slug: "vue-nuxt-composition",
+    slug: "vue-nuxt",
     description:
       "Modern Vue 3 and Nuxt 3 fullstack standards. Enforces <script setup lang='ts'>, useFetch, and Nitro server endpoints.",
     role: "Senior Vue & Nuxt Engineer",
@@ -678,7 +678,7 @@ export default {
     name: "SvelteKit 5",
     badge: "Frontend",
     title: "SvelteKit 5 & Svelte 5 Runes Specialist",
-    slug: "sveltekit-runes",
+    slug: "sveltekit",
     description:
       "Modern SvelteKit 5 standards enforcing Svelte 5 Runes ($state, $derived, $props), server load functions, and form actions.",
     role: "Senior Svelte Engineer",
@@ -715,7 +715,7 @@ $: double = count * 2;
     name: "Docker & CI/CD",
     badge: "DevOps",
     title: "Production Docker & Containerization Engineer",
-    slug: "docker-containerization",
+    slug: "docker-devops",
     description:
       "Production containerization standards. Enforces multi-stage builds, non-root runtime users, layer caching, and health checks.",
     role: "DevOps & Infrastructure Engineer",
@@ -760,7 +760,7 @@ CMD ["npm", "start"]`,
     name: "TDD & Testing",
     badge: "Testing",
     title: "Test-Driven Development & Automation Specialist",
-    slug: "tdd-testing-automation",
+    slug: "tdd-specialist",
     description:
       "TDD and test automation standards. Enforces unit testing, edge-case coverage, Vitest/Playwright patterns, and mock isolation.",
     role: "Lead QA & Test Automation Architect",

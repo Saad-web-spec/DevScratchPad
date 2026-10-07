@@ -48,8 +48,8 @@ export const FORMAT_SLUG_ALIASES: Record<string, string> = {
 export const FORMAT_TO_URL_SLUG: Record<OutputFormat, string> = {
   cursor_mdc: "cursor-rules",
   skill_md: "claude-skills",
-  claude_md: "claude.md",
-  agents_md: "agents.md",
+  claude_md: "claude-md",
+  agents_md: "agents-md",
   mcp_json: "mcp-config",
   windsurf_cascade: "windsurf-rules",
   copilot_instructions: "copilot-instructions",
@@ -57,11 +57,11 @@ export const FORMAT_TO_URL_SLUG: Record<OutputFormat, string> = {
   gemini_prompts: "gemini-prompts",
   cursorignore: "cursorignore",
   claudeignore: "claudeignore",
-  llms_txt: "llms.txt",
-  architecture_md: "architecture.md",
-  prd_md: "prd.md",
-  design_md: "design.md",
-  task_md: "task.md",
+  llms_txt: "llms-txt",
+  architecture_md: "architecture-md",
+  prd_md: "prd-md",
+  design_md: "design-md",
+  task_md: "task-md",
   memory_md: "memory-md",
 };
 
@@ -1820,6 +1820,7 @@ namespace App.Controllers
 ];
 
 export const SLUG_ALIASES: Record<string, string> = {
+  // Legacy preset slugs mapped to canonical BASE_CODE_SLUGS
   "fastapi-ai": "fastapi",
   "fastapi-ai-backend": "fastapi",
   "claude-auditor": "codebase-auditor",
@@ -1831,6 +1832,17 @@ export const SLUG_ALIASES: Record<string, string> = {
   "tailwind-v4-styling": "tailwind-v4",
   "cursor-pro": "cursor-rules-pro",
   "postgresql": "postgres",
+  "pragmatic-vibe-builder": "vibe-coder",
+  "security-vulnerability-guard": "security-guard",
+  "supabase-postgres-security": "supabase",
+  "prisma-orm-performance": "prisma",
+  "drizzle-orm-typesafe": "drizzle",
+  "go-fiber-backend": "go-fiber",
+  "rust-axum-service": "rust-axum",
+  "vue-nuxt-composition": "vue-nuxt",
+  "sveltekit-runes": "sveltekit",
+  "docker-containerization": "docker-devops",
+  "tdd-testing-automation": "tdd-specialist",
   "django": "python-django",
   "elysia": "bun-elysia",
   "expo": "react-native-expo",
@@ -1879,6 +1891,21 @@ const BASE_CODE_SLUGS = [
   "csharp-dotnet-8",
 ];
 
+export const CODE_FORMAT_SLUGS = [
+  "cursor-rules",
+  "claude-skills",
+  "claude-md",
+  "agents-md",
+  "windsurf-rules",
+  "copilot-instructions",
+  "openai-instructions",
+  "gemini-prompts",
+  "cursorignore",
+  "claudeignore",
+  "llms-txt",
+  "architecture-md",
+] as const;
+
 const MCP_SLUGS = [
   "github",
   "postgres",
@@ -1895,8 +1922,19 @@ function synthesizeRouteForFormat(
   formatSlug: string,
   presetSlug: string
 ): ProgrammaticPresetRoute | null {
+  const canonicalFormat = FORMAT_SLUG_ALIASES[formatSlug.toLowerCase()] || formatSlug;
   const lowerPreset = presetSlug.toLowerCase();
   const normalizedPreset = SLUG_ALIASES[lowerPreset] || lowerPreset;
+
+  // Strict check: Governance formats (prd-md, design-md, task-md, memory-md) do NOT have code preset spokes
+  if (
+    canonicalFormat === "prd-md" ||
+    canonicalFormat === "design-md" ||
+    canonicalFormat === "task-md" ||
+    canonicalFormat === "memory-md"
+  ) {
+    return null;
+  }
 
   // Find any route with this presetSlug across the registry as a template
   const baseRoute = PRESET_ROUTES.find(
@@ -1905,7 +1943,7 @@ function synthesizeRouteForFormat(
 
   if (!baseRoute) return null;
 
-  if (formatSlug === "mcp-config") {
+  if (canonicalFormat === "mcp-config") {
     if (baseRoute.format === "mcp_json") {
       return { ...baseRoute, formatSlug: "mcp-config", presetSlug: normalizedPreset };
     }
@@ -1916,77 +1954,217 @@ function synthesizeRouteForFormat(
     return null;
   }
 
-  // Synthesis for code rule formats: cursor-rules, claude-skills, claude-md, agents-md
+  // Must be one of the recognized code rule formats
+  const validCodeFormats: readonly string[] = CODE_FORMAT_SLUGS;
+  if (!validCodeFormats.includes(canonicalFormat)) {
+    return null;
+  }
+
+  // Synthesis for code rule formats with format-specialized descriptions, whyNeeded & FAQs
   let format: OutputFormat = "cursor_mdc";
   let targetFile = `.cursor/rules/${normalizedPreset}.mdc`;
   let title = `${baseRoute.techName} Cursor Rules (.mdc)`;
-  let desc = `Generate production-grade Cursor rules (.mdc) for ${baseRoute.techName}.`;
+  let desc = `Generate production-grade Cursor rules (.mdc) for ${baseRoute.techName} with glob scoping and strict guardrails.`;
+  let whyNeeded = `${baseRoute.techName} applications require strict, glob-scoped Cursor rules (.cursor/rules/*.mdc) with alwaysApply: false frontmatter. Without explicit project rules, Cursor Composer frequently hallucinates legacy conventions and produces oversized diffs. This rulebook anchors the model to modern ${baseRoute.techName} idiomatic standards.`;
+  let faqs = [
+    {
+      question: `Where should this ${baseRoute.techName} rule be placed?`,
+      answer: `Save to .cursor/rules/${normalizedPreset}.mdc in your project root. Cursor IDE automatically discovers and scopes it based on file globs.`,
+    },
+    {
+      question: `Does this rule support Cursor Composer?`,
+      answer: `Yes. Composer parses .cursor/rules/*.mdc to generate surgical multi-file diffs adhering strictly to ${baseRoute.techName} conventions.`,
+    },
+  ];
 
-  if (formatSlug === "claude-skills") {
+  if (canonicalFormat === "claude-skills") {
     format = "skill_md";
     targetFile = `.claude/skills/${normalizedPreset}/SKILL.md`;
     title = `${baseRoute.techName} Claude Skill (SKILL.md)`;
-    desc = `Generate a specialized Claude Code skill (SKILL.md) for ${baseRoute.techName}.`;
-  } else if (formatSlug === "claude-md") {
+    desc = `Generate a specialized Claude Code skill (SKILL.md) for ${baseRoute.techName} with automated review workflows.`;
+    whyNeeded = `Claude Code CLI dynamically discovers on-demand capabilities packaged in SKILL.md. Equipping Claude with this ${baseRoute.techName} skill provides verified procedures, automated checklists, and specialized commands whenever working in your project directory.`;
+    faqs = [
+      {
+        question: `How does Claude Code discover this ${baseRoute.techName} skill?`,
+        answer: `Claude Code scans .claude/skills/${normalizedPreset}/SKILL.md and indexes its frontmatter description to activate it automatically when relevant tasks are requested.`,
+      },
+      {
+        question: `Can I invoke this skill manually?`,
+        answer: `Yes. You can trigger the skill via slash commands or natural language requests like "Apply ${baseRoute.techName} standards".`,
+      },
+    ];
+  } else if (canonicalFormat === "claude-md") {
     format = "claude_md";
     targetFile = "CLAUDE.md";
     title = `${baseRoute.techName} CLAUDE.md Guide`;
-    desc = `Generate a ${baseRoute.techName} CLAUDE.md repository guideline for Claude Code.`;
-  } else if (formatSlug === "agents-md") {
+    desc = `Generate a ${baseRoute.techName} CLAUDE.md repository onboarding guide for Anthropic Claude Code CLI.`;
+    whyNeeded = `A repository-level CLAUDE.md file is the primary onboarding manual parsed by Anthropic's Claude Code CLI upon launch. Documenting ${baseRoute.techName} build commands, testing gates, and invariant architectural principles prevents context drift and ensures zero-guess command execution.`;
+    faqs = [
+      {
+        question: `Where does CLAUDE.md belong?`,
+        answer: `Save CLAUDE.md directly at your repository root. Claude Code parses it on startup before executing any commands.`,
+      },
+      {
+        question: `Can I combine CLAUDE.md with Cursor rules?`,
+        answer: `Yes. CLAUDE.md acts as the repository overview manual, while .cursor/rules/*.mdc provides granular file-glob editing rules.`,
+      },
+    ];
+  } else if (canonicalFormat === "agents-md") {
     format = "agents_md";
     targetFile = "AGENTS.md";
     title = `${baseRoute.techName} AGENTS.md Protocol`;
-    desc = `Generate an AGENTS.md multi-agent specification for ${baseRoute.techName}.`;
-  } else if (formatSlug === "windsurf-rules" || formatSlug === "windsurf") {
+    desc = `Generate an AGENTS.md multi-agent specification for ${baseRoute.techName} with autonomous verification gates.`;
+    whyNeeded = `Autonomous coding agents operating on ${baseRoute.techName} codebases require unambiguous operating protocols. This AGENTS.md specification defines role boundaries, required verification commands, and non-negotiable architectural guardrails for multi-agent workflows.`;
+    faqs = [
+      {
+        question: `What agents read AGENTS.md?`,
+        answer: `Antigravity, Codex, Devin, Claude, and custom multi-agent orchestration frameworks read AGENTS.md at repository root.`,
+      },
+      {
+        question: `How are verification gates enforced?`,
+        answer: `AGENTS.md defines required command exit codes (e.g. build and lint must exit 0) that autonomous agents must prove before completing tasks.`,
+      },
+    ];
+  } else if (canonicalFormat === "windsurf-rules" || canonicalFormat === "windsurf") {
     format = "windsurf_cascade";
     targetFile = `.windsurf/rules/${normalizedPreset}.md`;
     title = `${baseRoute.techName} Windsurf Cascade Rules`;
-    desc = `Generate production Windsurf Cascade rules for ${baseRoute.techName}.`;
-  } else if (formatSlug === "copilot-instructions" || formatSlug === "copilot") {
+    desc = `Generate production Windsurf Cascade rules for ${baseRoute.techName} with Supercomplete steering.`;
+    whyNeeded = `Windsurf Cascade leverages targeted rules in .windsurf/rules/ to steer Supercomplete and terminal workflows. This rulebook constrains ${baseRoute.techName} code suggestions to production patterns, avoiding deprecated syntax and unstable package imports.`;
+    faqs = [
+      {
+        question: `Where do I save this Windsurf rule?`,
+        answer: `Place this file in .windsurf/rules/${normalizedPreset}.md at your repository root. Windsurf Cascade automatically applies it during pair programming.`,
+      },
+      {
+        question: `Does this rule work with Windsurf Supercomplete?`,
+        answer: `Yes, Windsurf uses these architectural directives to improve both Cascade chat generation and inline code autocompletions.`,
+      },
+    ];
+  } else if (canonicalFormat === "copilot-instructions" || canonicalFormat === "copilot") {
     format = "copilot_instructions";
     targetFile = ".github/copilot-instructions.md";
     title = `${baseRoute.techName} GitHub Copilot Instructions`;
-    desc = `Generate .github/copilot-instructions.md rules for ${baseRoute.techName}.`;
-  } else if (formatSlug === "openai-instructions" || formatSlug === "openai") {
+    desc = `Generate .github/copilot-instructions.md repository rules for ${baseRoute.techName}.`;
+    whyNeeded = `GitHub Copilot in VS Code and JetBrains references .github/copilot-instructions.md to shape chat responses and inline completions. Defining ${baseRoute.techName} architectural boundaries guarantees that suggested snippets adhere to your repository's conventions.`;
+    faqs = [
+      {
+        question: `Where should this Copilot instruction file be stored?`,
+        answer: `Save this file to .github/copilot-instructions.md in your repository. GitHub Copilot uses it to ground all chat responses and completions.`,
+      },
+      {
+        question: `Does this apply to all team members?`,
+        answer: `Yes, once committed to Git, anyone opening the repository with GitHub Copilot will have these guidelines applied automatically.`,
+      },
+    ];
+  } else if (canonicalFormat === "openai-instructions" || canonicalFormat === "openai") {
     format = "openai_instructions";
     targetFile = "prompts/openai-custom-instructions.md";
     title = `${baseRoute.techName} OpenAI Custom Instructions`;
     desc = `Generate OpenAI ChatGPT and Playground custom instructions for ${baseRoute.techName}.`;
-  } else if (formatSlug === "gemini-prompts" || formatSlug === "gemini") {
+    whyNeeded = `Custom system instructions for OpenAI ChatGPT and the API playground anchor model behavior to strict ${baseRoute.techName} standards, enforcing concise diffs, schema validation, and defensive error handling.`;
+    faqs = [
+      {
+        question: `Where do I apply these OpenAI instructions?`,
+        answer: `Paste this content into ChatGPT Custom Instructions or into the system parameter of the OpenAI API and Playground.`,
+      },
+      {
+        question: `Can I use this with GPT-4o and o1 reasoning models?`,
+        answer: `Yes, these directives are optimized for OpenAI reasoning models and enforce structured, hallucination-free code diffs.`,
+      },
+    ];
+  } else if (canonicalFormat === "gemini-prompts" || canonicalFormat === "gemini") {
     format = "gemini_prompts";
     targetFile = "prompts/gemini-system-instructions.json";
     title = `${baseRoute.techName} Gemini System Prompt`;
     desc = `Generate Google AI Studio and Gemini SDK system instructions for ${baseRoute.techName}.`;
-  } else if (formatSlug === "cursorignore") {
+    whyNeeded = `Google AI Studio and Gemini SDK system instructions steer Gemini models with explicit ${baseRoute.techName} roles, input constraints, and output formats, maximizing reasoning reliability and code fidelity.`;
+    faqs = [
+      {
+        question: `How do I use this prompt in Google AI Studio?`,
+        answer: `Import this JSON into Google AI Studio as System Instructions, or load it via the system_instruction parameter in the Gemini SDK.`,
+      },
+      {
+        question: `Which Gemini models support these instructions?`,
+        answer: `Gemini 1.5 Pro, Gemini 1.5 Flash, and Gemini 2.0 all support system instructions and structured JSON output.`,
+      },
+    ];
+  } else if (canonicalFormat === "cursorignore") {
     format = "cursorignore";
     targetFile = ".cursorignore";
     title = `${baseRoute.techName} .cursorignore Shield`;
     desc = `Generate an optimized .cursorignore for ${baseRoute.techName} to mask secrets and stop token bloat.`;
-  } else if (formatSlug === "claudeignore") {
+    whyNeeded = `Preventing oversized data files, build artifacts, and environment secrets from polluting Cursor IDE context is critical. This .cursorignore shield keeps context windows lean, reduces token consumption, and protects credentials.`;
+    faqs = [
+      {
+        question: `How is .cursorignore different from .gitignore?`,
+        answer: `.gitignore hides files from git commits, while .cursorignore stops Cursor from indexing them into its AI vector database and prompt context.`,
+      },
+      {
+        question: `Does .cursorignore prevent token waste?`,
+        answer: `Yes, masking large build artifacts, locks, and logs prevents accidental context window overflow and speeds up AI generation.`,
+      },
+    ];
+  } else if (canonicalFormat === "claudeignore") {
     format = "claudeignore";
     targetFile = ".claudeignore";
     title = `${baseRoute.techName} .claudeignore Shield`;
     desc = `Generate a .claudeignore boundary configuration for ${baseRoute.techName} in Claude Code CLI.`;
-  } else if (formatSlug === "llms-txt") {
+    whyNeeded = `Claude Code CLI inspects local files during reasoning. A dedicated .claudeignore excludes large binaries, temporary directories, and sensitive logs from entering the model context, maximizing speed and privacy.`;
+    faqs = [
+      {
+        question: `Where should .claudeignore be located?`,
+        answer: `Place .claudeignore in your repository root. Claude Code CLI honors it when searching files and constructing reasoning context.`,
+      },
+      {
+        question: `What should I put in .claudeignore?`,
+        answer: `Exclude large build caches, minified bundles, lockfiles, and environment files containing sensitive credentials.`,
+      },
+    ];
+  } else if (canonicalFormat === "llms-txt") {
     format = "llms_txt";
     targetFile = "llms.txt";
     title = `${baseRoute.techName} llms.txt Roadmap`;
     desc = `Generate a standardized machine-readable llms.txt codebase index for ${baseRoute.techName}.`;
-  } else if (formatSlug === "architecture-md") {
+    whyNeeded = `The /llms.txt standard provides a machine-readable directory map of your ${baseRoute.techName} codebase for AI crawlers, developer tooling, and automated indexers, ensuring accurate architectural discovery.`;
+    faqs = [
+      {
+        question: `What is llms.txt?`,
+        answer: `llms.txt is an open proposal for organizing codebase and documentation links into a concise markdown format for AI tools and web crawlers.`,
+      },
+      {
+        question: `Where should llms.txt be deployed?`,
+        answer: `Host it at /llms.txt at the root of your web documentation or repository to allow AI scrapers to ingest your architecture rapidly.`,
+      },
+    ];
+  } else if (canonicalFormat === "architecture-md") {
     format = "architecture_md";
     targetFile = "ARCHITECTURE.md";
     title = `${baseRoute.techName} ARCHITECTURE.md Specification`;
     desc = `Generate an AI-optimized ARCHITECTURE.md invariant specification for ${baseRoute.techName}.`;
+    whyNeeded = `Documenting module responsibilities, state boundaries, and data flow in ARCHITECTURE.md provides autonomous coding assistants with high-level structural invariants before any code modifications begin.`;
+    faqs = [
+      {
+        question: `What belongs in ARCHITECTURE.md?`,
+        answer: `High-level component relationships, state flow, dependency graphs, and technical invariants that AI agents must never violate.`,
+      },
+      {
+        question: `How does ARCHITECTURE.md prevent technical debt?`,
+        answer: `By defining subsystem boundaries, it prevents AI models from introducing circular dependencies or violating layer isolation.`,
+      },
+    ];
   }
 
   return {
     ...baseRoute,
-    formatSlug,
+    formatSlug: canonicalFormat,
     presetSlug: normalizedPreset,
     format,
     targetFile,
     title,
     description: desc,
+    whyNeeded,
+    faqs,
   };
 }
 
@@ -2007,21 +2185,7 @@ export function getAllDynamicPresetRoutes(): { formatSlug: string; presetSlug: s
     addRoute(r.formatSlug, r.presetSlug);
   }
 
-  const codeFormats = [
-    "cursor-rules",
-    "claude-skills",
-    "claude-md",
-    "agents-md",
-    "windsurf-rules",
-    "copilot-instructions",
-    "openai-instructions",
-    "gemini-prompts",
-    "cursorignore",
-    "claudeignore",
-    "llms-txt",
-    "architecture-md",
-  ];
-  for (const fmt of codeFormats) {
+  for (const fmt of CODE_FORMAT_SLUGS) {
     for (const slug of BASE_CODE_SLUGS) {
       addRoute(fmt, slug);
     }

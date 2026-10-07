@@ -94,7 +94,214 @@ const nextConfig: NextConfig = {
         destination: "/ai-skill-studio/:format/postgres",
         permanent: true,
       },
-
+      {
+        source: "/ai-skill-studio/:format/pragmatic-vibe-builder",
+        destination: "/ai-skill-studio/:format/vibe-coder",
+        permanent: true,
+      },
+      {
+        source: "/ai-skill-studio/:format/security-vulnerability-guard",
+        destination: "/ai-skill-studio/:format/security-guard",
+        permanent: true,
+      },
+      {
+        source: "/ai-skill-studio/:format/supabase-postgres-security",
+        destination: "/ai-skill-studio/:format/supabase",
+        permanent: true,
+      },
+      {
+        source: "/ai-skill-studio/:format/prisma-orm-performance",
+        destination: "/ai-skill-studio/:format/prisma",
+        permanent: true,
+      },
+      {
+        source: "/ai-skill-studio/:format/drizzle-orm-typesafe",
+        destination: "/ai-skill-studio/:format/drizzle",
+        permanent: true,
+      },
+      {
+        source: "/ai-skill-studio/:format/go-fiber-backend",
+        destination: "/ai-skill-studio/:format/go-fiber",
+        permanent: true,
+      },
+      {
+        source: "/ai-skill-studio/:format/rust-axum-service",
+        destination: "/ai-skill-studio/:format/rust-axum",
+        permanent: true,
+      },
+      {
+        source: "/ai-skill-studio/:format/vue-nuxt-composition",
+        destination: "/ai-skill-studio/:format/vue-nuxt",
+        permanent: true,
+      },
+      {
+        source: "/ai-skill-studio/:format/sveltekit-runes",
+        destination: "/ai-skill-studio/:format/sveltekit",
+        permanent: true,
+      },
+      {
+        source: "/ai-skill-studio/:format/docker-containerization",
+        destination: "/ai-skill-studio/:format/docker-devops",
+        permanent: true,
+      },
+      {
+        source: "/ai-skill-studio/:format/tdd-testing-automation",
+        destination: "/ai-skill-studio/:format/tdd-specialist",
+        permanent: true,
+      },
+      // Decommissioned & Legacy Aliases
+      {
+        source: "/skills",
+        destination: "/skill",
+        permanent: true,
+      },
+      {
+        source: "/claude-skills",
+        destination: "/ai-skill-studio",
+        permanent: true,
+      },
+      {
+        source: "/ai-skill-studio/skills",
+        destination: "/skill",
+        permanent: true,
+      },
+      {
+        source: "/ai-skill-studio/skill",
+        destination: "/skill",
+        permanent: true,
+      },
+      // Dot-extension format redirects (Hubs & Spokes)
+      {
+        source: "/ai-skill-studio/claude.md",
+        destination: "/ai-skill-studio/claude-md",
+        permanent: true,
+      },
+      {
+        source: "/ai-skill-studio/claude.md/:preset*",
+        destination: "/ai-skill-studio/claude-md/:preset*",
+        permanent: true,
+      },
+      {
+        source: "/ai-skill-studio/agents.md",
+        destination: "/ai-skill-studio/agents-md",
+        permanent: true,
+      },
+      {
+        source: "/ai-skill-studio/agents.md/:preset*",
+        destination: "/ai-skill-studio/agents-md/:preset*",
+        permanent: true,
+      },
+      // Governance formats (single documents - any spoke sub-path redirects to canonical hub)
+      {
+        source: "/ai-skill-studio/prd.md",
+        destination: "/ai-skill-studio/prd-md",
+        permanent: true,
+      },
+      {
+        source: "/ai-skill-studio/prd.md/:preset*",
+        destination: "/ai-skill-studio/prd-md",
+        permanent: true,
+      },
+      {
+        source: "/ai-skill-studio/prd-md/:preset+",
+        destination: "/ai-skill-studio/prd-md",
+        permanent: true,
+      },
+      {
+        source: "/ai-skill-studio/design.md",
+        destination: "/ai-skill-studio/design-md",
+        permanent: true,
+      },
+      {
+        source: "/ai-skill-studio/design.md/:preset*",
+        destination: "/ai-skill-studio/design-md",
+        permanent: true,
+      },
+      {
+        source: "/ai-skill-studio/design-md/:preset+",
+        destination: "/ai-skill-studio/design-md",
+        permanent: true,
+      },
+      {
+        source: "/ai-skill-studio/task.md",
+        destination: "/ai-skill-studio/task-md",
+        permanent: true,
+      },
+      {
+        source: "/ai-skill-studio/task.md/:preset*",
+        destination: "/ai-skill-studio/task-md",
+        permanent: true,
+      },
+      {
+        source: "/ai-skill-studio/task-md/:preset+",
+        destination: "/ai-skill-studio/task-md",
+        permanent: true,
+      },
+      {
+        source: "/ai-skill-studio/memory.md",
+        destination: "/ai-skill-studio/memory-md",
+        permanent: true,
+      },
+      {
+        source: "/ai-skill-studio/memory.md/:preset*",
+        destination: "/ai-skill-studio/memory-md",
+        permanent: true,
+      },
+      {
+        source: "/ai-skill-studio/memory-md/:preset+",
+        destination: "/ai-skill-studio/memory-md",
+        permanent: true,
+      },
+      {
+        source: "/ai-skill-studio/llms.txt",
+        destination: "/ai-skill-studio/llms-txt",
+        permanent: true,
+      },
+      {
+        source: "/ai-skill-studio/llms.txt/:preset*",
+        destination: "/ai-skill-studio/llms-txt/:preset*",
+        permanent: true,
+      },
+      {
+        source: "/ai-skill-studio/architecture.md",
+        destination: "/ai-skill-studio/architecture-md",
+        permanent: true,
+      },
+      {
+        source: "/ai-skill-studio/architecture.md/:preset*",
+        destination: "/ai-skill-studio/architecture-md/:preset*",
+        permanent: true,
+      },
+      {
+        source: "/ai-skill-studio/cursor.mdc",
+        destination: "/ai-skill-studio/cursor-rules",
+        permanent: true,
+      },
+      {
+        source: "/ai-skill-studio/cursor.mdc/:preset*",
+        destination: "/ai-skill-studio/cursor-rules/:preset*",
+        permanent: true,
+      },
+      {
+        source: "/ai-skill-studio/cursorrules",
+        destination: "/ai-skill-studio/cursor-rules",
+        permanent: true,
+      },
+      {
+        source: "/ai-skill-studio/cursorrules/:preset*",
+        destination: "/ai-skill-studio/cursor-rules/:preset*",
+        permanent: true,
+      },
+      {
+        source: "/ai-skill-studio/mcp.json",
+        destination: "/ai-skill-studio/mcp-config",
+        permanent: true,
+      },
+      {
+        source: "/ai-skill-studio/mcp.json/:preset*",
+        destination: "/ai-skill-studio/mcp-config/:preset*",
+        permanent: true,
+      },
     ];
   },
   async rewrites() {
@@ -118,16 +325,6 @@ const nextConfig: NextConfig = {
         { source: "/tools/text-diff", destination: "/tools/diff" },
         { source: "/tools/code-diff", destination: "/tools/diff" },
         { source: "/tools/diff-checker", destination: "/tools/diff" },
-        { source: "/ai-skill-studio/claude.md/:preset", destination: "/ai-skill-studio/claude-md/:preset" },
-        { source: "/ai-skill-studio/agents.md/:preset", destination: "/ai-skill-studio/agents-md/:preset" },
-        { source: "/ai-skill-studio/cursor.mdc/:preset", destination: "/ai-skill-studio/cursor-rules/:preset" },
-        { source: "/ai-skill-studio/prd.md/:preset", destination: "/ai-skill-studio/prd-md/:preset" },
-        { source: "/ai-skill-studio/design.md/:preset", destination: "/ai-skill-studio/design-md/:preset" },
-        { source: "/ai-skill-studio/task.md/:preset", destination: "/ai-skill-studio/task-md/:preset" },
-        { source: "/ai-skill-studio/memory.md/:preset", destination: "/ai-skill-studio/memory-md/:preset" },
-        { source: "/ai-skill-studio/llms.txt/:preset", destination: "/ai-skill-studio/llms-txt/:preset" },
-        { source: "/ai-skill-studio/architecture.md/:preset", destination: "/ai-skill-studio/architecture-md/:preset" },
-        { source: "/ai-skill-studio/mcp.json/:preset", destination: "/ai-skill-studio/mcp-config/:preset" },
       ],
     };
   },

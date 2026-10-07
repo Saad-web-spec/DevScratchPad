@@ -107,6 +107,12 @@ The FIFO workspace history buffer and tool state persistence use `localStorage`,
 ### ⚠️ Build Command Uses Webpack Mode
 The build command in `package.json` is `next build --webpack` (not Turbopack). This is intentional for production build stability. Development uses `next dev --webpack` as well. Agents should use these exact commands.
 
+### ⚠️ Next.js `beforeFiles` Rewrites Shadow `redirects()`
+Next.js processes `rewrites.beforeFiles` before `redirects()`. If a path pattern is declared in `beforeFiles`, Next.js internally rewrites it without issuing the intended HTTP 308 redirect header to web crawlers. For SEO canonicalization, handle redirect patterns via `redirects()` and never mirror them in `beforeFiles`.
+
+### ⚠️ Governance Formats Are Format-Wide Singletons
+Governance and project-level formats (`prd_md`, `design_md`, `task_md`, `memory_md`) describe entire repository frameworks, not individual framework presets. They do NOT have preset spoke pages. Any request to `/ai-skill-studio/<governance-format>/<preset>` must permanently redirect (HTTP 308) to the canonical hub `/ai-skill-studio/<governance-format>`.
+
 ### ⚠️ CLI Zero Dependencies
 The CLI (`cli/bin/devscratchpad.mjs`) operates on zero npm dependencies — it uses only Node.js standard libraries (`node:fs`, `node:path`, `node:https`). Never add external package imports to CLI code.
 
@@ -401,6 +407,22 @@ All AI agents operating in this repository MUST follow this 5-step loop:
   2. **Main Page Navigation (`TopBar.tsx`)**: Maintained desktop entry point to `/ai-skill-studio` and added a direct 1-tap mobile action icon next to Skill Hub so users on all form factors can navigate effortlessly from `/` to `/ai-skill-studio`.
   3. **Verification**: Passed `npm run validate-presets` (100/100), `npm run lint` (0 errors), and `npm run build` (890 static export routes exit 0).
 - **Status**: ✅ Complete (All verification gates passed)
+
+### Session: 2026-10-07 — Google Search Console (GSC) Indexing Remediation
+- **Agent**: Antigravity (Gemini)
+- **Task**: Eliminate root causes of 4 GSC indexing issue categories from Search Console report:
+  1. **Not Found (404)**:
+     - Root cause: `synthesizeRouteForFormat` fell through without checking format validity. For governance formats (`prd-md`, `design-md`, `task-md`, `memory-md`), it synthesized non-existent routes, producing 4 dead links on all ~336 spoke pages (~1,344 dead links). Also, 11 presets had legacy unmapped slugs in `ruleGenerator.ts`.
+     - Fix: `synthesizeRouteForFormat` strictly returns `null` for governance formats and unrecognized formats. Added all 11 legacy slugs (`pragmatic-vibe-builder` -> `vibe-coder`, `security-vulnerability-guard` -> `security-guard`, etc.) to `SLUG_ALIASES` in `presetRegistry.ts`. Updated `PRESETS` array in `ruleGenerator.ts` to match canonical `BASE_CODE_SLUGS`.
+  2. **Page with Redirect (308)**:
+     - Root cause: `FORMAT_TO_URL_SLUG` mapped formats to dot-extension slugs (`claude.md`, etc.). `ClaudeSkillsClient.tsx` pushed dot-extension URLs to browser history (`pushState`). When visited or crawled, spoke pages hit 308 permanent redirect. Also, 21 duplicate alias pages were statically exported in `[formatSlug]/page.tsx`.
+     - Fix: Updated `FORMAT_TO_URL_SLUG` across `presetRegistry.ts` and `formatHubs.ts` to canonical hyphenated slugs. Replaced `"claude.md"` fallback in `ClaudeSkillsClient.tsx` with `"claude-md"`. Statically generate only the 17 canonical hubs in `[formatSlug]/page.tsx`. Added 308 permanent redirects in `next.config.ts` for all dot-extension format hubs and spokes and all legacy preset slugs.
+  3. **Discovered - Currently Not Indexed**:
+     - Root cause: Programmatic spoke pages were orphaned: format hub pages (`FormatHubSeoContent.tsx`) had NO internal links to their own presets, leaving ~330 spoke URLs only in `sitemap.xml` with zero inbound HTML links. In addition, 4 format hubs were unlinked from `AiSkillStudioSeoContent.tsx`.
+     - Fix: Added a responsive preset showcase grid in `FormatHubSeoContent.tsx` using `getPresetsByFormat(hub.slug)`, creating direct contextual HTML links to every child spoke. Added cards for all missing formats in Layer 1 and converted Layer 4 cards in `AiSkillStudioSeoContent.tsx` to clickable `<Link>`s.
+  4. **Crawled - Currently Not Indexed**:
+     - Root cause: Synthesized routes copied identical descriptions, `whyNeeded`, and FAQs across all formats, triggering near-duplicate detection. In addition, `ClaudeSkillsClient.tsx` had `if (!isMounted) return null;`, completely wiping server-side prerendered HTML during SSG/build and serving empty shells to crawlers.
+     - Fix: Removed `if (!isMounted) return null;` from `ClaudeSkillsClient.tsx` so SSG prerenders the full static HTML markup and `<pre>` code preview for search crawlers. Added format-specialized descriptions, `whyNeeded`, and custom FAQs across all 12 code formats in `synthesizeRouteForFormat`.
 
 ---
 

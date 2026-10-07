@@ -837,7 +837,16 @@ export function ClaudeSkillsClient({
 
     const formatSlug = FORMAT_TO_URL_SLUG[targetFormat] || "cursor-rules";
     const presetSlug = SLUG_ALIASES[preset.slug] || preset.slug;
-    syncUrl(`/ai-skill-studio/${formatSlug}/${presetSlug}`);
+    if (
+      targetFormat === "prd_md" ||
+      targetFormat === "design_md" ||
+      targetFormat === "task_md" ||
+      targetFormat === "memory_md"
+    ) {
+      syncUrl(`/ai-skill-studio/${formatSlug}`);
+    } else {
+      syncUrl(`/ai-skill-studio/${formatSlug}/${presetSlug}`);
+    }
   };
 
   // Apply parsed manifest metadata to studio
@@ -954,7 +963,7 @@ export function ClaudeSkillsClient({
     setEditorContent(newContent);
     setIsManuallyEdited(false);
 
-    const formatSlug = FORMAT_TO_URL_SLUG[activeFmt] || "claude.md";
+    const formatSlug = FORMAT_TO_URL_SLUG[activeFmt] || "claude-md";
     syncUrl(`/ai-skill-studio/${formatSlug}`);
   };
 
@@ -1055,7 +1064,7 @@ export function ClaudeSkillsClient({
     setEditorContent(newContent);
     setIsManuallyEdited(false);
 
-    const formatSlug = FORMAT_TO_URL_SLUG[activeFmt] || "claude.md";
+    const formatSlug = FORMAT_TO_URL_SLUG[activeFmt] || "claude-md";
     syncUrl(`/ai-skill-studio/${formatSlug}`);
   };
 
@@ -1134,7 +1143,7 @@ export function ClaudeSkillsClient({
     setEditorContent(newContent);
     setIsManuallyEdited(false);
 
-    const formatSlug = FORMAT_TO_URL_SLUG[activeFmt] || "claude.md";
+    const formatSlug = FORMAT_TO_URL_SLUG[activeFmt] || "claude-md";
     syncUrl(`/ai-skill-studio/${formatSlug}`);
   };
 
@@ -1223,7 +1232,7 @@ export function ClaudeSkillsClient({
     setEditorContent(newContent);
     setIsManuallyEdited(false);
 
-    const formatSlug = FORMAT_TO_URL_SLUG[activeFmt] || "claude.md";
+    const formatSlug = FORMAT_TO_URL_SLUG[activeFmt] || "claude-md";
     syncUrl(`/ai-skill-studio/${formatSlug}`);
   };
 
@@ -2286,8 +2295,6 @@ export function ClaudeSkillsClient({
     if (format === "memory_md") return "MEMORY.md";
     return "AGENTS.md";
   }, [format, skillName]);
-
-  if (!isMounted) return null;
 
   return (
     <div suppressHydrationWarning className="min-h-screen bg-zinc-50 flex flex-col font-sans selection:bg-orange-500 selection:text-white">

@@ -1,12 +1,12 @@
 import { Metadata } from "next";
-import { notFound } from "next/navigation";
-import { getFormatHub, getAllFormatSlugsWithAliases } from "../../claude-skills/lib/formatHubs";
+import { notFound, permanentRedirect } from "next/navigation";
+import { getFormatHub, getAllFormatHubs } from "../../claude-skills/lib/formatHubs";
 import { ClaudeSkillsClient } from "../../claude-skills/ClaudeSkillsClient";
 import { FormatHubSeoContent } from "../components/FormatHubSeoContent";
 
 export function generateStaticParams() {
-  return getAllFormatSlugsWithAliases().map((slug) => ({
-    formatSlug: slug,
+  return getAllFormatHubs().map((hub) => ({
+    formatSlug: hub.slug,
   }));
 }
 
@@ -19,9 +19,12 @@ export async function generateMetadata({
   const hub = getFormatHub(formatSlug);
   if (!hub) return { title: "Format Not Found" };
 
+  const isAlias = formatSlug.toLowerCase() !== hub.slug;
+
   return {
     title: hub.seoTitle,
     description: hub.seoDescription,
+    ...(isAlias ? { robots: { index: false, follow: true } } : {}),
     openGraph: {
       title: `${hub.seoTitle} | DevScratchpad`,
       description: hub.seoDescription,
@@ -69,6 +72,11 @@ export default async function FormatHubPage({
 
   if (!hub) {
     notFound();
+  }
+
+  // Redirect legacy dot-extension or short aliases to canonical hyphenated URL
+  if (formatSlug.toLowerCase() !== hub.slug) {
+    permanentRedirect(`/ai-skill-studio/${hub.slug}`);
   }
 
   const jsonLdGraph = {
