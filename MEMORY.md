@@ -433,6 +433,17 @@ All AI agents operating in this repository MUST follow this 5-step loop:
   4. **Verification Gates**: Passed `npm run validate-presets` (100/100), `npm run lint` (0 errors), and `npm run build` (869 static export routes exit 0). Active server live on `http://localhost:3000`.
 - **Status**: ✅ Complete (All verification gates passed)
 
+### Session: 2026-10-09 — Security & Safety Engine Hardening (TAR Engine / Instructor Audit Learnings)
+- **Agent**: Antigravity (Gemini)
+- **Task**: Absorb security findings from TAR Engine's audit of `instructor` into DevScratchpad's core rule auditor (`ruleAuditor.ts`), generator (`ruleGenerator.ts`), and UI quick fixes (`ClaudeSkillsClient.tsx`):
+  1. **Credential Exposure / Mock Secret Linter (`CE-001` / `SEM-006`)**: Added detection for hardcoded mock credentials (`api_key="your-api-key"`, `ghp_...`, `sk-...`, literal authorization tokens). Deducts 25 points from Guardrails and warns that LLMs/developers leak mock keys into production.
+  2. **Untrusted Input XML Boundary Armor (`SEM-004` / `SEM-008`)**: Added linter check for raw user/external content interpolation (`{text}`, `[article text]`, `$INPUT`) lacking XML boundary delimiters or data-isolation directives.
+  3. **Obfuscated & Leetspeak Prompt Injection (`AR-003` / `AR-004`)**: Added regex heuristics catching token-level evasion patterns (`1gn0r3 4ll...`, `d15r3g4rd`, adversarial persona hijacking).
+  4. **Supply Chain & Reliability Linters (`SUP-003` / `QL-001` / `QL-002`)**: Added unpinned package installation detection (`pip install pkg` without `==`, `npm install pkg` without `@`) and shell block error-trapping check (`set -euo pipefail`).
+  5. **MCP Presets & Behavior Hardening**: Sanitized all MCP presets to use dynamic `${ENV_VAR}` references instead of mock strings; added `meta-prompt-shield` and `credential-safety` to `BEHAVIOR_OPTIONS`; fortified `handleInjectNegativeGuardrails` quick-fix button with zero-hardcoded secrets and XML boundary armor.
+  6. **Verification Gates**: Passed `npm run validate-presets` (100/100), `npm run lint` (0 errors), and `npm run build` (869 static export routes exit 0). Active server live on `http://localhost:3000`.
+- **Status**: ✅ Complete (All verification gates passed)
+
 ---
 
 *This document is updated by AI agents after significant sessions. Human maintainers should review and correct any inaccuracies periodically.*
