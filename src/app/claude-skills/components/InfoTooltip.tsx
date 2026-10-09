@@ -18,6 +18,7 @@ interface Coords {
   bottom?: number;
   left: number;
   width: number;
+  maxHeight: number;
 }
 
 export function InfoTooltip({
@@ -63,18 +64,20 @@ export function InfoTooltip({
     left = Math.max(padding, Math.min(left, viewportWidth - maxWidth - padding));
 
     // Vertical positioning: default below the button with a 6px gap
-    const spaceBelow = viewportHeight - rect.bottom;
-    const spaceAbove = rect.top;
+    const spaceBelow = viewportHeight - rect.bottom - padding;
+    const spaceAbove = rect.top - padding;
     let top: number | undefined = rect.bottom + 6;
     let bottom: number | undefined = undefined;
+    let maxHeight = Math.min(440, Math.max(160, spaceBelow - 6));
 
-    // If bottom space is tight (< 160px) and there's more room above, flip above button
-    if (spaceBelow < 160 && spaceAbove > spaceBelow) {
+    // If bottom space is tight (< 180px) and there's more room above, flip above button
+    if (spaceBelow < 180 && spaceAbove > spaceBelow) {
       top = undefined;
       bottom = viewportHeight - rect.top + 6;
+      maxHeight = Math.min(440, Math.max(160, spaceAbove - 6));
     }
 
-    setCoords({ top, bottom, left, width: maxWidth });
+    setCoords({ top, bottom, left, width: maxWidth, maxHeight });
   }, [align]);
 
   // Recalculate position when opened or when scrolling / resizing
@@ -156,10 +159,10 @@ export function InfoTooltip({
         aria-label={`${title}: ${description}`}
         aria-expanded={isOpen}
         className={cn(
-          "w-4 h-4 rounded-full inline-flex items-center justify-center transition-colors cursor-pointer border shrink-0 focus:outline-none focus:ring-1 focus:ring-orange-500/40",
+          "w-4 h-4 rounded-full inline-flex items-center justify-center transition-all cursor-pointer border shrink-0 focus:outline-none focus:ring-2 focus:ring-orange-500/25 touch-manipulation",
           isOpen
-            ? "bg-zinc-800 text-orange-400 border-zinc-700 shadow-xs"
-            : "bg-zinc-100 hover:bg-zinc-200 text-zinc-400 hover:text-zinc-700 border-zinc-200/90"
+            ? "bg-orange-100 text-orange-700 border-orange-300 ring-2 ring-orange-500/20 shadow-2xs"
+            : "bg-zinc-100 hover:bg-orange-50 text-zinc-400 hover:text-orange-600 border-zinc-200/90 hover:border-orange-200/90 shadow-2xs"
         )}
       >
         <Info className="w-2.5 h-2.5" />
@@ -178,29 +181,32 @@ export function InfoTooltip({
             left: `${coords.left}px`,
             width: `${coords.width}px`,
             maxWidth: "calc(100vw - 24px)",
+            maxHeight: `${coords.maxHeight}px`,
           }}
-          className="z-[9999] p-3 bg-zinc-900 border border-zinc-700/90 rounded-xl shadow-2xl text-left animate-in fade-in zoom-in-95 duration-100 pointer-events-auto select-text font-sans"
+          className="z-[9999] p-3.5 sm:p-4 bg-white/98 backdrop-blur-xl border border-zinc-200/90 rounded-xl shadow-[0_16px_36px_rgba(0,0,0,0.12),0_2px_10px_rgba(234,88,12,0.06)] text-left animate-in fade-in zoom-in-95 duration-150 pointer-events-auto select-text font-sans overflow-y-auto overscroll-contain"
         >
-          <div className="flex items-center justify-between pb-1.5 border-b border-zinc-800 gap-2">
-            <div className="flex items-center gap-1.5 min-w-0">
-              <Info className="w-3.5 h-3.5 text-orange-400 shrink-0" />
-              <span className="text-xs font-bold text-zinc-100 truncate">{title}</span>
+          <div className="flex items-center justify-between pb-2 border-b border-zinc-100 gap-2">
+            <div className="flex items-center gap-2 min-w-0">
+              <div className="w-5 h-5 rounded-md bg-orange-100/90 border border-orange-200/80 flex items-center justify-center shrink-0 text-orange-600 shadow-2xs">
+                <Info className="w-3 h-3" />
+              </div>
+              <span className="text-xs font-bold text-zinc-900 tracking-tight truncate">{title}</span>
             </div>
-            <span className="text-[10px] font-mono text-orange-400 bg-orange-950/80 border border-orange-800/80 px-1.5 py-0.5 rounded shrink-0">
+            <span className="text-[10px] font-medium tracking-tight text-orange-800 bg-orange-50 border border-orange-200/80 px-2 py-0.5 rounded-full shrink-0 whitespace-nowrap">
               How to edit
             </span>
           </div>
 
-          <p className="text-[11px] text-zinc-300 leading-relaxed mt-2 whitespace-pre-line">
+          <p className="text-xs text-zinc-600 leading-relaxed font-sans mt-2.5 whitespace-pre-line">
             {description}
           </p>
 
           {example && (
-            <div className="mt-2.5 pt-2 border-t border-zinc-800/80">
-              <span className="text-[10px] font-mono uppercase tracking-wider text-zinc-500 block mb-1 font-semibold">
-                Format Guide:
+            <div className="mt-3 pt-2.5 border-t border-zinc-100">
+              <span className="text-[10px] font-semibold uppercase tracking-wider text-zinc-400 block mb-1.5 font-sans">
+                Format Guide
               </span>
-              <pre className="p-2 bg-zinc-950/90 rounded-md border border-zinc-800 text-[10px] font-mono text-zinc-300 overflow-x-auto whitespace-pre-wrap leading-tight max-h-32 overflow-y-auto">
+              <pre className="p-2.5 bg-zinc-50 rounded-lg border border-zinc-200/80 text-[11px] font-mono text-zinc-800 overflow-x-auto whitespace-pre-wrap leading-relaxed max-h-36 overflow-y-auto select-all shadow-2xs">
                 {example}
               </pre>
             </div>

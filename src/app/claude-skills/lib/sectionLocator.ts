@@ -300,14 +300,62 @@ const SECTION_RULES: SearchRule[] = [
     label: "MCP Server Configuration",
     headerPatterns: [/"mcpServers":/m, /"command":/m],
   },
+
+  // Ignore Shield (.cursorignore & .claudeignore) sections
+  {
+    fieldKeys: ["ignoreSecrets", "secrets"],
+    label: "Secrets & Local Credentials",
+    headerPatterns: [/^#\s+---.*(Secrets|Credentials)/i, /^#\s+.*Secrets/i],
+  },
+  {
+    fieldKeys: ["ignoreDependencies", "dependencies"],
+    label: "Dependencies & Package Lockfiles",
+    headerPatterns: [/^#\s+---.*(Dependency|Dependencies|Lockfiles)/i, /^#\s+.*Dependencies/i],
+  },
+  {
+    fieldKeys: ["ignoreBuild", "build"],
+    label: "Build Outputs & Framework Caches",
+    headerPatterns: [/^#\s+---.*(Build|Bundler|Caches|Artifacts)/i, /^#\s+.*Build Outputs/i],
+  },
+  {
+    fieldKeys: ["ignoreMedia", "media"],
+    label: "Media & Large Binary Assets",
+    headerPatterns: [/^#\s+---.*(Media|Binary Assets|Large Binary)/i, /^#\s+.*Media/i],
+  },
+  {
+    fieldKeys: ["ignoreLogs", "logs"],
+    label: "Logs & Diagnostic Traces",
+    headerPatterns: [/^#\s+---.*(Logs|Diagnostics|Test Coverage)/i, /^#\s+.*Logs/i],
+  },
+  {
+    fieldKeys: ["ignoreIde", "ide"],
+    label: "IDE Configurations & OS Metadata",
+    headerPatterns: [/^#\s+---.*(Editor Metadata|IDE|OS Caches)/i, /^#\s+.*IDE/i],
+  },
+  {
+    fieldKeys: ["ignoreDatabase", "database"],
+    label: "Database Dumps & Local Storage",
+    headerPatterns: [/^#\s+---.*(Database|SQLite|Storage)/i, /^#\s+.*Database/i],
+  },
+  {
+    fieldKeys: ["ignoreFixtures", "fixtures", "test-fixtures"],
+    label: "Test Fixtures & Heavy Snapshots",
+    headerPatterns: [/^#\s+---.*(Fixtures|Snapshots|Test Data)/i, /^#\s+.*Fixtures/i],
+  },
+  {
+    fieldKeys: ["customIgnoreRules"],
+    label: "Custom Rules & Negate Exceptions",
+    headerPatterns: [/^#\s+---.*(Custom Rules|Custom Project Rules|Exceptions|Overrides)/i, /^#\s+.*Custom Rules/i],
+  },
 ];
 
 /**
  * Universal boundary patterns that signal the start of a new section
  * across Markdown, OpenAI system prompts, Gemini configs, and CLAUDE.md XML.
+ * Note: Heading boundaries are dynamically matched based on the section's start level
+ * (e.g. ## sections only terminate at ## or #, not ### subheadings).
  */
 const SECTION_BOUNDARY_PATTERNS = [
-  /^#{1,3}\s+/,
   /^---\s*$/,
   /^<!--\s*END/i,
   /^<[a-zA-Z_]+>/,
@@ -580,15 +628,58 @@ export function findSectionLineRange(
 
   if (startLine === -1) return null;
 
+  // For ignore files (.cursorignore and .claudeignore), sections are delimited by `# ---` headers
+  if (_format === "cursorignore" || _format === "claudeignore") {
+    let endLine = lines.length;
+    for (let i = startLine; i < lines.length; i++) {
+      const line = lines[i];
+      if (/^#\s+---/.test(line)) {
+        let prev = i;
+        while (prev > startLine - 1 && lines[prev - 1].trim() === "") {
+          prev--;
+        }
+        endLine = Math.max(startLine, prev);
+        break;
+      }
+    }
+    while (endLine > startLine && lines[endLine - 1]?.trim() === "") {
+      endLine--;
+    }
+    return {
+      startLine,
+      endLine,
+      label: rule.label,
+    };
+  }
+
   // Determine endLine: find the next section boundary
+  const startLineText = lines[startLine - 1] ?? "";
+  const startsWithH2 = /^##\s+/.test(startLineText);
+  const startsWithH1 = /^#\s+/.test(startLineText);
+
+  // A section starting with ## (or composite multi-phase task sections / ADRs)
+  // only terminates at ## or # (or markdown dividers), not ### subheadings
+  const isCompositeSection =
+    fieldKey === "taskPhases" ||
+    fieldKey === "prdFunctionalReqs" ||
+    fieldKey === "memoryAdrs";
+
+  const headingBoundaryPattern = startsWithH1
+    ? /^#\s+/
+    : startsWithH2 || isCompositeSection
+    ? /^#{1,2}\s+/
+    : /^#{1,3}\s+/;
+
   let endLine = lines.length;
   for (let i = startLine; i < lines.length; i++) {
     const line = lines[i];
-    let isBoundary = false;
-    for (const bPat of SECTION_BOUNDARY_PATTERNS) {
-      if (bPat.test(line)) {
-        isBoundary = true;
-        break;
+    let isBoundary = headingBoundaryPattern.test(line);
+    if (!isBoundary) {
+      for (const bPat of SECTION_BOUNDARY_PATTERNS) {
+        if (bPat.test(line)) {
+          isBoundary = true;
+          break;
+        }
       }
     }
     if (isBoundary) {
@@ -599,6 +690,13 @@ export function findSectionLineRange(
       }
       endLine = Math.max(startLine, prev);
       break;
+    }
+  }
+
+  // If section extends to end of file, trim trailing blank lines
+  if (endLine === lines.length) {
+    while (endLine > startLine && lines[endLine - 1]?.trim() === "") {
+      endLine--;
     }
   }
 

@@ -90,7 +90,10 @@ export function DiffCheckerTool({ restoredInput }: DiffCheckerToolProps) {
  minimap: { enabled: false },
  fontSize: 13,
  renderSideBySide: !isMobile,
- wordWrap:"on",
+ wordWrap: "on",
+ diffWordWrap: "on",
+ automaticLayout: true,
+ smoothScrolling: true,
  readOnly: false,
  originalEditable: true
  }}

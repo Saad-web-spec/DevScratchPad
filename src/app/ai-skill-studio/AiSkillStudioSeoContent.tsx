@@ -27,9 +27,11 @@ export function AiSkillStudioSeoContent() {
           <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-zinc-900">
             AI Skill Studio — 17 Formats &amp; 4-Layer AI Agent Operating Suite
           </h1>
-          <p className="text-sm sm:text-base text-zinc-600 max-w-4xl leading-relaxed">
-            Autonomous coding assistants (Cursor IDE, Claude Code, Windsurf, Copilot, Antigravity, Devin) are only as dependable as their operational boundaries. <strong>AI Skill Studio</strong> is a 100% client-side workbench that generates, validates, and exports every critical artifact an AI agent requires: IDE rulebooks, privacy-first context shields, machine-readable architectural blueprints, and multi-agent governance documents (<strong>PRD.md</strong>, <strong>DESIGN.md</strong>, <strong>TASK.md</strong>, and <strong>MEMORY.md</strong>). Zero telemetry, zero server uploads, completely private.
-          </p>
+          <div className="p-4 sm:p-5 rounded-xl border border-orange-200/80 bg-gradient-to-b from-orange-50/50 via-white to-orange-50/20 shadow-2xs max-w-4xl space-y-2">
+            <p className="text-sm sm:text-base text-zinc-700 leading-relaxed font-sans">
+              Autonomous coding assistants (Cursor IDE, Claude Code, Windsurf, Copilot, Antigravity, Devin) are only as dependable as their operational boundaries. <strong className="text-zinc-900 font-semibold">AI Skill Studio</strong> is a 100% client-side workbench that generates, validates, and exports every critical artifact an AI agent requires: IDE rulebooks, privacy-first context shields, machine-readable architectural blueprints, and multi-agent governance documents (<code className="px-1.5 py-0.5 rounded-md bg-white border border-orange-200 text-orange-950 font-mono text-xs font-semibold shadow-2xs">PRD.md</code>, <code className="px-1.5 py-0.5 rounded-md bg-white border border-orange-200 text-orange-950 font-mono text-xs font-semibold shadow-2xs">DESIGN.md</code>, <code className="px-1.5 py-0.5 rounded-md bg-white border border-orange-200 text-orange-950 font-mono text-xs font-semibold shadow-2xs">TASK.md</code>, and <code className="px-1.5 py-0.5 rounded-md bg-white border border-orange-200 text-orange-950 font-mono text-xs font-semibold shadow-2xs">MEMORY.md</code>). Zero telemetry, zero server uploads, completely private.
+            </p>
+          </div>
         </section>
 
         {/* 2. 4-Layer System Architecture Matrix */}

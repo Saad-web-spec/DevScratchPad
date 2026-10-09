@@ -2,7 +2,7 @@ import { Metadata } from "next";
 import { notFound, permanentRedirect } from "next/navigation";
 import { getFormatHub, getAllFormatHubs } from "../../claude-skills/lib/formatHubs";
 import { ClaudeSkillsClient } from "../../claude-skills/ClaudeSkillsClient";
-import { FormatHubSeoContent } from "../components/FormatHubSeoContent";
+import { AiSkillStudioSeoContent } from "../AiSkillStudioSeoContent";
 
 export function generateStaticParams() {
   return getAllFormatHubs().map((hub) => ({
@@ -142,7 +142,7 @@ export default async function FormatHubPage({
         initialFormat={hub.format}
         formatSlug={hub.slug}
       />
-      <FormatHubSeoContent hub={hub} />
+      <AiSkillStudioSeoContent />
     </>
   );
 }

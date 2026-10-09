@@ -1393,146 +1393,445 @@ export function deduceLangTag(language?: string): string {
   return "ts";
 }
 
-export function buildCursorIgnoreContent(framework: string, language: string): string {
+export const DEFAULT_IGNORE_CATEGORIES = [
+  "secrets",
+  "dependencies",
+  "build",
+  "media",
+  "logs",
+  "ide",
+];
+
+export function buildCursorIgnoreContent(
+  framework: string,
+  language: string,
+  categories?: string[],
+  customRules?: string
+): string {
   const fw = (framework || "").toLowerCase();
   const lang = (language || "").toLowerCase();
+  const cats = categories ?? DEFAULT_IGNORE_CATEGORIES;
 
-  const specificIgnores: string[] = [];
+  const sections: string[] = [];
 
-  if (
-    fw.includes("next") ||
-    fw.includes("react") ||
-    fw.includes("vue") ||
-    fw.includes("nuxt") ||
-    fw.includes("svelte") ||
-    fw.includes("hono") ||
-    fw.includes("express") ||
-    lang.includes("typescript") ||
-    lang.includes("javascript")
-  ) {
-    specificIgnores.push(
-      "# --- Web Bundler, Framework & TypeScript Caches ---",
-      ".next/",
-      ".turbo/",
-      "out/",
+  if (cats.includes("secrets")) {
+    sections.push(
+      [
+        "# --- Critical: Secrets & Local Credentials ---",
+        ".env",
+        ".env.*",
+        "!.env.example",
+        "*.pem",
+        "*.key",
+        "*.cert",
+        "*.crt",
+        "id_rsa*",
+        "secrets/",
+        "credentials/",
+        "service-account*.json",
+        "*.p12",
+        "*.pfx",
+        "*.keystore",
+      ].join("\n")
+    );
+  }
+
+  if (cats.includes("dependencies")) {
+    sections.push(
+      [
+        "# --- Dependency Bloat & Massive Lockfiles (Saves 50k+ tokens) ---",
+        "node_modules/",
+        "vendor/",
+        "package-lock.json",
+        "pnpm-lock.yaml",
+        "yarn.lock",
+        "bun.lockb",
+        "poetry.lock",
+        "Pipfile.lock",
+        "Cargo.lock",
+        "composer.lock",
+        "go.sum",
+      ].join("\n")
+    );
+  }
+
+  if (cats.includes("build")) {
+    const buildLines: string[] = [
+      "# --- Build Artifacts, Bundler & Framework Caches ---",
       "dist/",
       "build/",
-      ".vercel/",
-      "coverage/",
-      "*.tsbuildinfo"
+      "out/",
+      ".cache/",
+      "*.tsbuildinfo",
+    ];
+
+    if (
+      fw.includes("next") ||
+      fw.includes("react") ||
+      fw.includes("vue") ||
+      fw.includes("nuxt") ||
+      fw.includes("svelte") ||
+      fw.includes("hono") ||
+      fw.includes("express") ||
+      lang.includes("typescript") ||
+      lang.includes("javascript")
+    ) {
+      buildLines.push(
+        ".next/",
+        ".turbo/",
+        ".vercel/",
+        ".nuxt/",
+        ".output/",
+        ".svelte-kit/",
+        "coverage/"
+      );
+    }
+
+    if (
+      fw.includes("python") ||
+      fw.includes("fastapi") ||
+      fw.includes("django") ||
+      lang.includes("python")
+    ) {
+      buildLines.push(
+        "__pycache__/",
+        "*.py[cod]",
+        "*$py.class",
+        ".venv/",
+        "venv/",
+        "env/",
+        ".pytest_cache/",
+        ".mypy_cache/",
+        ".ruff_cache/",
+        "*.egg-info/"
+      );
+    }
+
+    if (fw.includes("rust") || lang.includes("rust")) {
+      buildLines.push("target/", "**/*.rs.bk");
+    }
+
+    if (fw.includes("go") || lang.includes("go")) {
+      buildLines.push("bin/", "*.test", "*.prof");
+    }
+
+    sections.push(buildLines.join("\n"));
+  }
+
+  if (cats.includes("media")) {
+    sections.push(
+      [
+        "# --- Large Binary Files & Media (Never needed by LLM) ---",
+        "*.png",
+        "*.jpg",
+        "*.jpeg",
+        "*.gif",
+        "*.ico",
+        "*.webp",
+        "*.mp4",
+        "*.webm",
+        "*.mp3",
+        "*.wav",
+        "*.zip",
+        "*.tar.gz",
+        "*.tgz",
+        "*.rar",
+        "*.7z",
+        "*.pdf",
+        "*.wasm",
+      ].join("\n")
     );
   }
 
-  if (
-    fw.includes("python") ||
-    fw.includes("fastapi") ||
-    fw.includes("django") ||
-    lang.includes("python")
-  ) {
-    specificIgnores.push(
-      "# --- Python Bytecode & Virtual Environments ---",
-      "__pycache__/",
-      "*.py[cod]",
-      "*$py.class",
-      ".venv/",
-      "venv/",
-      "env/",
-      ".pytest_cache/",
-      ".mypy_cache/",
-      ".ruff_cache/",
-      "*.egg-info/",
-      "dist/",
-      "build/"
+  if (cats.includes("logs")) {
+    sections.push(
+      [
+        "# --- Test Coverage & Debug Logs ---",
+        "coverage/",
+        ".nyc_output/",
+        "*.lcov",
+        "*.log",
+        "npm-debug.log*",
+        "yarn-debug.log*",
+        "pnpm-debug.log*",
+        "yarn-error.log*",
+      ].join("\n")
     );
   }
 
-  if (fw.includes("rust") || lang.includes("rust")) {
-    specificIgnores.push(
-      "# --- Rust Cargo Build Artifacts ---",
-      "target/",
-      "**/*.rs.bk"
+  if (cats.includes("ide")) {
+    sections.push(
+      [
+        "# --- Editor Metadata & OS Caches ---",
+        ".idea/",
+        ".vscode/",
+        "*.swp",
+        "*.swo",
+        "*~",
+        ".DS_Store",
+        "Thumbs.db",
+      ].join("\n")
     );
   }
 
-  if (fw.includes("go") || lang.includes("go")) {
-    specificIgnores.push(
-      "# --- Go Binaries & Test Artifacts ---",
-      "bin/",
-      "*.test",
-      "*.prof"
+  if (cats.includes("database")) {
+    sections.push(
+      [
+        "# --- Database Dumps & Local SQLite Storage ---",
+        "*.sql",
+        "*.dump",
+        "*.sqlite",
+        "*.sqlite3",
+        "*.db",
+        "*.db-shm",
+        "*.db-wal",
+      ].join("\n")
     );
   }
 
-  return `# .cursorignore - AI Context & Token Optimization
+  if (cats.includes("fixtures") || cats.includes("test-fixtures")) {
+    sections.push(
+      [
+        "# --- Heavy Test Fixtures & Snapshots ---",
+        "test/fixtures/large/",
+        "tests/fixtures/",
+        "__snapshots__/",
+        "fixtures/**/*.json",
+        "mock-data/**/*.json",
+      ].join("\n")
+    );
+  }
+
+  if (customRules && customRules.trim().length > 0) {
+    sections.push(
+      [
+        "# --- Custom Project Rules & Exceptions ---",
+        customRules.trim(),
+      ].join("\n")
+    );
+  }
+
+  const header = `# .cursorignore - AI Context & Token Optimization
 # Prevents Cursor from indexing sensitive credentials, build caches, and bulky lockfiles.
-# Keeping your AI context window clean improves reasoning quality and prevents data leaks.
+# Keeping your AI context window clean improves reasoning quality and prevents data leaks.`;
 
-# --- Critical: Secrets & Local Credentials ---
-.env
-.env.*
-!.env.example
-*.pem
-*.key
-*.cert
-*.crt
-id_rsa*
-secrets/
-credentials/
-service-account*.json
-
-${specificIgnores.length > 0 ? specificIgnores.join("\n") + "\n\n" : ""}# --- Dependency Bloat & Massive Lockfiles (Saves 50k+ tokens) ---
-node_modules/
-vendor/
-package-lock.json
-pnpm-lock.yaml
-yarn.lock
-bun.lockb
-poetry.lock
-Pipfile.lock
-Cargo.lock
-
-# --- Test Coverage & Debug Logs ---
-coverage/
-.nyc_output/
-*.log
-npm-debug.log*
-yarn-debug.log*
-pnpm-debug.log*
-
-# --- Editor Metadata & OS Caches ---
-.idea/
-.vscode/
-*.swp
-*.swo
-.DS_Store
-Thumbs.db
-
-# --- Large Binary Files & Media (Never needed by LLM) ---
-*.png
-*.jpg
-*.jpeg
-*.gif
-*.ico
-*.mp4
-*.webm
-*.zip
-*.tar.gz
-*.pdf
-*.wasm
-`;
+  return [header, ...sections].join("\n\n") + "\n";
 }
 
-export function buildClaudeIgnoreContent(framework: string, language: string): string {
-  const base = buildCursorIgnoreContent(framework, language);
-  return base
-    .replace(
-      "# .cursorignore - AI Context & Token Optimization",
-      "# .claudeignore - Claude Code CLI Privacy & Boundary Protection"
-    )
-    .replace(
-      "Prevents Cursor from indexing",
-      "Prevents Claude Code CLI from indexing and modifying"
+export function buildClaudeIgnoreContent(
+  framework: string,
+  language: string,
+  categories?: string[],
+  customRules?: string
+): string {
+  const fw = (framework || "").toLowerCase();
+  const lang = (language || "").toLowerCase();
+  const cats = categories ?? DEFAULT_IGNORE_CATEGORIES;
+
+  const sections: string[] = [];
+
+  if (cats.includes("secrets")) {
+    sections.push(
+      [
+        "# --- Critical: Secrets & Local Credentials ---",
+        ".env",
+        ".env.*",
+        "!.env.example",
+        "*.pem",
+        "*.key",
+        "*.cert",
+        "*.crt",
+        "id_rsa*",
+        "secrets/",
+        "credentials/",
+        "service-account*.json",
+        "*.p12",
+        "*.pfx",
+        "*.keystore",
+      ].join("\n")
     );
+  }
+
+  if (cats.includes("dependencies")) {
+    sections.push(
+      [
+        "# --- Dependency Bloat & Massive Lockfiles (Saves 50k+ tokens) ---",
+        "node_modules/",
+        "vendor/",
+        "package-lock.json",
+        "pnpm-lock.yaml",
+        "yarn.lock",
+        "bun.lockb",
+        "poetry.lock",
+        "Pipfile.lock",
+        "Cargo.lock",
+        "composer.lock",
+        "go.sum",
+      ].join("\n")
+    );
+  }
+
+  if (cats.includes("build")) {
+    const buildLines: string[] = [
+      "# --- Build Artifacts, Bundler & Framework Caches ---",
+      "dist/",
+      "build/",
+      "out/",
+      ".cache/",
+      "*.tsbuildinfo",
+    ];
+
+    if (
+      fw.includes("next") ||
+      fw.includes("react") ||
+      fw.includes("vue") ||
+      fw.includes("nuxt") ||
+      fw.includes("svelte") ||
+      fw.includes("hono") ||
+      fw.includes("express") ||
+      lang.includes("typescript") ||
+      lang.includes("javascript")
+    ) {
+      buildLines.push(
+        ".next/",
+        ".turbo/",
+        ".vercel/",
+        ".nuxt/",
+        ".output/",
+        ".svelte-kit/",
+        "coverage/"
+      );
+    }
+
+    if (
+      fw.includes("python") ||
+      fw.includes("fastapi") ||
+      fw.includes("django") ||
+      lang.includes("python")
+    ) {
+      buildLines.push(
+        "__pycache__/",
+        "*.py[cod]",
+        "*$py.class",
+        ".venv/",
+        "venv/",
+        "env/",
+        ".pytest_cache/",
+        ".mypy_cache/",
+        ".ruff_cache/",
+        "*.egg-info/"
+      );
+    }
+
+    if (fw.includes("rust") || lang.includes("rust")) {
+      buildLines.push("target/", "**/*.rs.bk");
+    }
+
+    if (fw.includes("go") || lang.includes("go")) {
+      buildLines.push("bin/", "*.test", "*.prof");
+    }
+
+    sections.push(buildLines.join("\n"));
+  }
+
+  if (cats.includes("media")) {
+    sections.push(
+      [
+        "# --- Large Binary Files & Media (Never needed by LLM) ---",
+        "*.png",
+        "*.jpg",
+        "*.jpeg",
+        "*.gif",
+        "*.ico",
+        "*.webp",
+        "*.mp4",
+        "*.webm",
+        "*.mp3",
+        "*.wav",
+        "*.zip",
+        "*.tar.gz",
+        "*.tgz",
+        "*.rar",
+        "*.7z",
+        "*.pdf",
+        "*.wasm",
+      ].join("\n")
+    );
+  }
+
+  if (cats.includes("logs")) {
+    sections.push(
+      [
+        "# --- Test Coverage & Debug Logs ---",
+        "coverage/",
+        ".nyc_output/",
+        "*.lcov",
+        "*.log",
+        "npm-debug.log*",
+        "yarn-debug.log*",
+        "pnpm-debug.log*",
+        "yarn-error.log*",
+      ].join("\n")
+    );
+  }
+
+  if (cats.includes("ide")) {
+    sections.push(
+      [
+        "# --- Editor Metadata & OS Caches ---",
+        ".idea/",
+        ".vscode/",
+        "*.swp",
+        "*.swo",
+        "*~",
+        ".DS_Store",
+        "Thumbs.db",
+      ].join("\n")
+    );
+  }
+
+  if (cats.includes("database")) {
+    sections.push(
+      [
+        "# --- Database Dumps & Local SQLite Storage ---",
+        "*.sql",
+        "*.dump",
+        "*.sqlite",
+        "*.sqlite3",
+        "*.db",
+        "*.db-shm",
+        "*.db-wal",
+      ].join("\n")
+    );
+  }
+
+  if (cats.includes("fixtures") || cats.includes("test-fixtures")) {
+    sections.push(
+      [
+        "# --- Heavy Test Fixtures & Snapshots ---",
+        "test/fixtures/large/",
+        "tests/fixtures/",
+        "__snapshots__/",
+        "fixtures/**/*.json",
+        "mock-data/**/*.json",
+      ].join("\n")
+    );
+  }
+
+  if (customRules && customRules.trim().length > 0) {
+    sections.push(
+      [
+        "# --- Custom Project Rules & Exceptions ---",
+        customRules.trim(),
+      ].join("\n")
+    );
+  }
+
+  const header = `# .claudeignore - Claude Code CLI Privacy & Boundary Protection
+# Prevents Claude Code CLI from indexing and modifying sensitive credentials, build caches, and bulky lockfiles.
+# Keeping your agent boundary clean improves reasoning quality and prevents data leaks.`;
+
+  return [header, ...sections].join("\n\n") + "\n";
 }
 
 export function buildLlmsTxtContent(
@@ -1966,6 +2265,10 @@ export interface RuleBuilderParams {
   memoryLoop?: string;
   memoryInvariants?: string;
   memorySessionHistory?: string;
+
+  // Ignore Files customization
+  ignoreCategories?: string[];
+  customIgnoreRules?: string;
 }
 
 export function buildRuleContent(params: RuleBuilderParams): string {
@@ -2009,11 +2312,11 @@ export function buildRuleContent(params: RuleBuilderParams): string {
     .map((c) => `- **${c!.label}**: ${c!.desc}`);
 
   if (targetFormat === "cursorignore") {
-    return buildCursorIgnoreContent(framework, language);
+    return buildCursorIgnoreContent(framework, language, params.ignoreCategories, params.customIgnoreRules);
   }
 
   if (targetFormat === "claudeignore") {
-    return buildClaudeIgnoreContent(framework, language);
+    return buildClaudeIgnoreContent(framework, language, params.ignoreCategories, params.customIgnoreRules);
   }
 
   if (targetFormat === "llms_txt") {

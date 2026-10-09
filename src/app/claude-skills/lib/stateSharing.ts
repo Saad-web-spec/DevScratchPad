@@ -29,6 +29,9 @@ export interface StudioWorkspaceState {
   editorContent?: string;
   isManuallyEdited?: boolean;
   selectedPresetId?: string;
+  ignoreCategories?: string[];
+  ignorePreset?: string;
+  customIgnoreRules?: string;
 }
 
 const KEY_MAP: Record<keyof StudioWorkspaceState, string> = {
@@ -60,6 +63,9 @@ const KEY_MAP: Record<keyof StudioWorkspaceState, string> = {
   editorContent: "z",
   isManuallyEdited: "M",
   selectedPresetId: "P",
+  ignoreCategories: "ic",
+  ignorePreset: "ip",
+  customIgnoreRules: "ir",
 };
 
 const REVERSE_MAP = Object.fromEntries(Object.entries(KEY_MAP).map(([k, v]) => [v, k]));
@@ -104,6 +110,9 @@ export async function decodeStudioState(hashStr: string): Promise<Partial<Studio
       if (params.has("a")) state.alwaysApply = params.get("a") === "1";
       if (params.has("sl")) state.isSlugLocked = params.get("sl") === "1";
       if (params.has("mcp")) state.mcpPresetId = params.get("mcp")!;
+      if (params.has("ic")) state.ignoreCategories = params.get("ic")!.split(",");
+      if (params.has("ip")) state.ignorePreset = params.get("ip")!;
+      if (params.has("ir")) state.customIgnoreRules = params.get("ir")!;
       return state;
     }
 
@@ -135,8 +144,17 @@ export async function createShareableUrl(state: Partial<StudioWorkspaceState>): 
 
   if (isPresetOnly && state.selectedPresetId) {
     const fmt = (state.format || "skill_md") as OutputFormat;
-    if (fmt === "prd_md" || fmt === "design_md" || fmt === "task_md" || fmt === "memory_md") {
-      const formatSlug = FORMAT_TO_URL_SLUG[fmt] || "prd-md";
+    if (
+      fmt === "prd_md" ||
+      fmt === "design_md" ||
+      fmt === "task_md" ||
+      fmt === "memory_md" ||
+      fmt === "cursorignore" ||
+      fmt === "claudeignore" ||
+      fmt === "llms_txt" ||
+      fmt === "architecture_md"
+    ) {
+      const formatSlug = FORMAT_TO_URL_SLUG[fmt] || "cursorignore";
       return `${window.location.origin}/ai-skill-studio/${formatSlug}`;
     }
     const canonicalRoute = PRESET_ROUTES.find(
@@ -155,6 +173,7 @@ export async function createShareableUrl(state: Partial<StudioWorkspaceState>): 
     state.exampleGood ||
     state.exampleBad ||
     state.editorContent ||
+    state.customIgnoreRules ||
     (state.behaviors && state.behaviors.length > 0) ||
     (state.conventions && state.conventions.length > 0)
   );
@@ -176,6 +195,8 @@ export async function createShareableUrl(state: Partial<StudioWorkspaceState>): 
     if (state.alwaysApply) params.set("a", "1");
     if (state.isSlugLocked) params.set("sl", "1");
     if (state.mcpPresetId && state.mcpPresetId !== "filesystem") params.set("mcp", state.mcpPresetId);
+    if (state.ignoreCategories && state.ignoreCategories.length > 0) params.set("ic", state.ignoreCategories.join(","));
+    if (state.ignorePreset && state.ignorePreset !== "full_shield") params.set("ip", state.ignorePreset);
 
     const qs = params.toString();
     if (qs.length > 0 && qs.length < 160) {

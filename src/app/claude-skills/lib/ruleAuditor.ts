@@ -321,8 +321,8 @@ export function auditRuleQuality(data: AuditInputData): RuleAuditReport {
   const guardrailIssues: AuditIssue[] = [];
   let guardrailScore = 50;
 
-  if (data.format === "mcp_json") {
-    // For MCP JSON configurations, standard natural language guardrails do not apply
+  if (data.format === "mcp_json" || data.format === "cursorignore" || data.format === "claudeignore") {
+    // For MCP JSON configurations and ignore boundary files, standard natural language guardrails do not apply
     guardrailScore = 100;
   } else {
     let negativeMatchCount = 0;
@@ -487,6 +487,8 @@ export function auditRuleQuality(data: AuditInputData): RuleAuditReport {
 
   const hasExamples =
     data.format === "mcp_json" ||
+    data.format === "cursorignore" ||
+    data.format === "claudeignore" ||
     Boolean(data.exampleGood?.trim() || data.exampleBad?.trim()) ||
     content.includes("```");
   if (!hasExamples && charCount > 300) {

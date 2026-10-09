@@ -10,7 +10,7 @@ import {
   Check,
   Download,
   ShieldCheck,
-  Zap,
+  Info,
   Terminal,
   Layers,
   BookOpen,
@@ -36,6 +36,9 @@ import {
   FolderOpen,
   Boxes,
   FolderTree,
+  Package,
+  FileArchive,
+  Filter,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { downloadAiKitZip } from "./lib/zipExporter";
@@ -103,6 +106,94 @@ import {
 import { PRESET_ROUTES, SLUG_ALIASES, FORMAT_TO_URL_SLUG } from "./lib/presetRegistry";
 import { getFormatHub } from "./lib/formatHubs";
 import { decodeStudioState, createShareableUrl } from "./lib/stateSharing";
+
+interface IgnoreCategoryItem {
+  id: string;
+  sectionKey: string;
+  name: string;
+  desc: string;
+  tokenSavings: number;
+  tokenLabel: string;
+  isSecret?: boolean;
+  icon: React.ComponentType<{ className?: string }>;
+}
+
+const IGNORE_CATEGORY_LIST: IgnoreCategoryItem[] = [
+  {
+    id: "secrets",
+    sectionKey: "ignoreSecrets",
+    name: "Secrets & Local Credentials",
+    desc: "Masks .env files, private keys, SSL certs, service accounts, and API credentials from AI indexers.",
+    tokenSavings: 5,
+    tokenLabel: "~5k tokens",
+    isSecret: true,
+    icon: ShieldCheck,
+  },
+  {
+    id: "dependencies",
+    sectionKey: "ignoreDependencies",
+    name: "Dependency Bloat & Lockfiles",
+    desc: "Excludes node_modules, vendor directories, and massive lockfiles (package-lock, yarn, pnpm, Cargo).",
+    tokenSavings: 60,
+    tokenLabel: "~60k tokens",
+    icon: Package,
+  },
+  {
+    id: "build",
+    sectionKey: "ignoreBuild",
+    name: "Build Outputs & Framework Caches",
+    desc: "Filters out dist/, build/, out/, .next/, .turbo/, .cache/, and compiled bytecode artifacts.",
+    tokenSavings: 35,
+    tokenLabel: "~35k tokens",
+    icon: Cpu,
+  },
+  {
+    id: "media",
+    sectionKey: "ignoreMedia",
+    name: "Media & Heavy Binary Blobs",
+    desc: "Omits raster images (png, jpg, webp), audio/video, fonts, zip archives, and wasm binaries.",
+    tokenSavings: 20,
+    tokenLabel: "~20k tokens",
+    icon: FileArchive,
+  },
+  {
+    id: "logs",
+    sectionKey: "ignoreLogs",
+    name: "Logs & Diagnostic Traces",
+    desc: "Blocks test coverage reports (coverage/, .nyc_output/) and verbose npm/yarn/pnpm debug logs.",
+    tokenSavings: 15,
+    tokenLabel: "~15k tokens",
+    icon: Sliders,
+  },
+  {
+    id: "ide",
+    sectionKey: "ignoreIde",
+    name: "IDE Configurations & OS Metadata",
+    desc: "Strips .idea/, .vscode/, editor swap files, .DS_Store, and Windows Thumbs.db files.",
+    tokenSavings: 5,
+    tokenLabel: "~5k tokens",
+    icon: FolderGit2,
+  },
+  {
+    id: "database",
+    sectionKey: "ignoreDatabase",
+    name: "Database Dumps & Local Storage",
+    desc: "Guards raw database dumps (*.sql, *.dump), SQLite database files, and journal files (*.db, *.db-wal).",
+    tokenSavings: 30,
+    tokenLabel: "~30k tokens",
+    isSecret: true,
+    icon: Database,
+  },
+  {
+    id: "fixtures",
+    sectionKey: "ignoreFixtures",
+    name: "Test Fixtures & Heavy Snapshots",
+    desc: "Skips bloated mock JSON payloads, large test fixture folders, and verbose test snapshots.",
+    tokenSavings: 20,
+    tokenLabel: "~20k tokens",
+    icon: CheckCircle2,
+  },
+];
 
 interface ClaudeSkillsClientProps {
   initialFormat?: OutputFormat;
@@ -209,19 +300,31 @@ export function ClaudeSkillsClient({
 
   // White Marker — tracks which form field is actively being edited and its corresponding line range
   const [activeFieldKey, setActiveFieldKey] = useState<string | null>(null);
-  const [markedRange, setMarkedRange] = useState<MarkedSectionRange | null>(null);
+  const activeFieldKeyRef = React.useRef<string | null>(null);
   const [scrollRequestId, setScrollRequestId] = useState(0);
   const [editorReady, setEditorReady] = useState(false);
+  const decorationsCollectionRef = React.useRef<any>(null);
   const markerDecorationsRef = React.useRef<string[]>([]);
   const previewContainerRef = React.useRef<HTMLPreElement>(null);
   const monacoInstanceRef = React.useRef<any>(null);
   const lastHandledScrollIdRef = React.useRef(0);
+  const lastHandledPreviewScrollIdRef = React.useRef(0);
+
+  // Synchronize activeFieldKeyRef whenever activeFieldKey changes
+  useEffect(() => {
+    activeFieldKeyRef.current = activeFieldKey;
+  }, [activeFieldKey]);
 
   const requestSectionScroll = useCallback((fieldKey?: string) => {
     if (fieldKey) {
-      setActiveFieldKey(fieldKey);
+      if (activeFieldKeyRef.current !== fieldKey) {
+        activeFieldKeyRef.current = fieldKey;
+        setActiveFieldKey(fieldKey);
+        setScrollRequestId((prev) => prev + 1);
+      }
+    } else {
+      setScrollRequestId((prev) => prev + 1);
     }
-    setScrollRequestId((prev) => prev + 1);
   }, []);
 
   // Synchronize browser address bar with current format and preset without re-rendering or wiping state
@@ -250,8 +353,8 @@ export function ClaudeSkillsClient({
   // Central format switcher — clears active markers, resets editor to top, updates format and syncs URL
   const handleSelectFormat = useCallback((newFormat: OutputFormat) => {
     setFormat(newFormat);
+    activeFieldKeyRef.current = null;
     setActiveFieldKey(null);
-    setMarkedRange(null);
     setIsManuallyEdited(false);
     if (editorRef.current) {
       try {
@@ -273,6 +376,52 @@ export function ClaudeSkillsClient({
 
   const isGovernanceFormat = format === "prd_md" || format === "design_md" || format === "task_md" || format === "memory_md";
   const isMcpFormat = format === "mcp_json";
+  const isIgnoreFormat = format === "cursorignore" || format === "claudeignore";
+
+  // Ignore Shield & Indexing Boundary Suite State
+  const [ignoreCategories, setIgnoreCategories] = useState<string[]>([
+    "secrets",
+    "dependencies",
+    "build",
+    "media",
+    "logs",
+    "ide",
+    "database",
+    "fixtures",
+  ]);
+  const [ignorePreset, setIgnorePreset] = useState<"full_shield" | "security_only" | "max_token_saver" | "custom">("full_shield");
+  const [customIgnoreRules, setCustomIgnoreRules] = useState<string>("");
+
+  const handleToggleCategory = (catId: string) => {
+    setIgnoreCategories((prev) => {
+      const next = prev.includes(catId) ? prev.filter((id) => id !== catId) : [...prev, catId];
+      return next;
+    });
+    setIgnorePreset("custom");
+    setIsManuallyEdited(false);
+  };
+
+  const handleSelectIgnoreProfile = (preset: "full_shield" | "security_only" | "max_token_saver" | "custom") => {
+    setIgnorePreset(preset);
+    setIsManuallyEdited(false);
+    if (preset === "full_shield") {
+      setIgnoreCategories(["secrets", "dependencies", "build", "media", "logs", "ide", "database", "fixtures"]);
+    } else if (preset === "security_only") {
+      setIgnoreCategories(["secrets", "database"]);
+    } else if (preset === "max_token_saver") {
+      setIgnoreCategories(["dependencies", "build", "media", "fixtures", "logs"]);
+    }
+  };
+
+  const estimatedTokensSaved = useMemo(() => {
+    return IGNORE_CATEGORY_LIST.reduce((acc, cat) => {
+      return ignoreCategories.includes(cat.id) ? acc + cat.tokenSavings : acc;
+    }, 0);
+  }, [ignoreCategories]);
+
+  const activeSecretMasks = useMemo(() => {
+    return IGNORE_CATEGORY_LIST.filter((cat) => cat.isSecret && ignoreCategories.includes(cat.id)).length;
+  }, [ignoreCategories]);
 
   // Slug lock & Static Analysis Audit Panel State
   const [isSlugLocked, setIsSlugLocked] = useState(false);
@@ -665,6 +814,9 @@ export function ClaudeSkillsClient({
             setEditorContent(s.editorContent);
             setIsManuallyEdited(true);
           }
+          if (Array.isArray(s.ignoreCategories)) setIgnoreCategories(s.ignoreCategories);
+          if (s.ignorePreset) setIgnorePreset(s.ignorePreset);
+          if (typeof s.customIgnoreRules === "string") setCustomIgnoreRules(s.customIgnoreRules);
         }
       } catch (e) {
         console.error(e);
@@ -711,6 +863,9 @@ export function ClaudeSkillsClient({
           mcpEnvValue,
           editorContent,
           isManuallyEdited,
+          ignoreCategories,
+          ignorePreset,
+          customIgnoreRules,
         });
         if (res.success) {
           const now = new Date();
@@ -758,6 +913,9 @@ export function ClaudeSkillsClient({
     mcpEnvValue,
     editorContent,
     isManuallyEdited,
+    ignoreCategories,
+    ignorePreset,
+    customIgnoreRules,
   ]);
 
   // Apply Preset with Intelligent Format Auto-Switch
@@ -830,7 +988,6 @@ export function ClaudeSkillsClient({
     // Reset manual edit flag and clear markers so the preset content takes over cleanly
     setIsManuallyEdited(false);
     setActiveFieldKey(null);
-    setMarkedRange(null);
     if (editorRef.current) {
       try { editorRef.current.setScrollTop(0); } catch { /* noop */ }
     }
@@ -958,6 +1115,8 @@ export function ClaudeSkillsClient({
       memoryLoop,
       memoryInvariants,
       memorySessionHistory,
+      ignoreCategories,
+      customIgnoreRules,
     });
 
     setEditorContent(newContent);
@@ -1059,6 +1218,8 @@ export function ClaudeSkillsClient({
       memoryLoop,
       memoryInvariants,
       memorySessionHistory,
+      ignoreCategories,
+      customIgnoreRules,
     });
 
     setEditorContent(newContent);
@@ -1138,6 +1299,8 @@ export function ClaudeSkillsClient({
       memoryLoop,
       memoryInvariants,
       memorySessionHistory,
+      ignoreCategories,
+      customIgnoreRules,
     });
 
     setEditorContent(newContent);
@@ -1227,6 +1390,8 @@ export function ClaudeSkillsClient({
       memoryLoop,
       memoryInvariants,
       memorySessionHistory,
+      ignoreCategories,
+      customIgnoreRules,
     });
 
     setEditorContent(newContent);
@@ -1476,6 +1641,8 @@ export function ClaudeSkillsClient({
         memoryLoop,
         memoryInvariants,
         memorySessionHistory,
+        ignoreCategories,
+        customIgnoreRules,
       });
     },
     [
@@ -1524,6 +1691,8 @@ export function ClaudeSkillsClient({
       memoryLoop,
       memoryInvariants,
       memorySessionHistory,
+      ignoreCategories,
+      customIgnoreRules,
     ]
   );
 
@@ -1542,29 +1711,53 @@ export function ClaudeSkillsClient({
   const activeContent = isManuallyEdited ? editorContent : generatedContent;
 
 
-  // White Marker — compute marked section range whenever a field is being edited or scrolled to
+  // White Marker — compute marked section range synchronously whenever activeFieldKey or content changes
+  const markedRange = useMemo(
+    () => (!activeFieldKey ? null : findSectionLineRange(activeContent, activeFieldKey, format)),
+    [activeContent, activeFieldKey, format]
+  );
+  const markedRangeRef = React.useRef<MarkedSectionRange | null>(null);
   useEffect(() => {
-    if (!activeFieldKey) {
-      setMarkedRange(null);
-      return;
-    }
-    const range = findSectionLineRange(activeContent, activeFieldKey, format);
-    setMarkedRange(range);
-  }, [activeFieldKey, activeContent, format]);
+    markedRangeRef.current = markedRange;
+  }, [markedRange]);
 
   // White Marker — apply Monaco decorations (updates on every markedRange change)
   useEffect(() => {
     const editor = editorRef.current;
     if (!editor) {
+      if (decorationsCollectionRef.current) {
+        try {
+          decorationsCollectionRef.current.clear();
+        } catch {
+          /* noop */
+        }
+        decorationsCollectionRef.current = null;
+      }
       markerDecorationsRef.current = [];
       return;
     }
 
+    if (!decorationsCollectionRef.current && typeof editor.createDecorationsCollection === "function") {
+      decorationsCollectionRef.current = editor.createDecorationsCollection();
+    }
+
     if (!markedRange) {
-      markerDecorationsRef.current = editor.deltaDecorations(
-        markerDecorationsRef.current,
-        []
-      );
+      if (decorationsCollectionRef.current) {
+        try {
+          decorationsCollectionRef.current.clear();
+        } catch {
+          /* noop */
+        }
+      } else if (typeof editor.deltaDecorations === "function") {
+        try {
+          markerDecorationsRef.current = editor.deltaDecorations(
+            markerDecorationsRef.current,
+            []
+          );
+        } catch {
+          /* noop */
+        }
+      }
       return;
     }
 
@@ -1588,42 +1781,75 @@ export function ClaudeSkillsClient({
       },
     ];
 
-    markerDecorationsRef.current = editor.deltaDecorations(
-      markerDecorationsRef.current,
-      newDecorations
-    );
+    if (decorationsCollectionRef.current) {
+      try {
+        decorationsCollectionRef.current.set(newDecorations);
+      } catch {
+        if (typeof editor.createDecorationsCollection === "function") {
+          decorationsCollectionRef.current = editor.createDecorationsCollection();
+          try {
+            decorationsCollectionRef.current.set(newDecorations);
+          } catch {
+            /* noop */
+          }
+        }
+      }
+    } else if (typeof editor.deltaDecorations === "function") {
+      try {
+        markerDecorationsRef.current = editor.deltaDecorations(
+          markerDecorationsRef.current,
+          newDecorations
+        );
+      } catch {
+        /* noop */
+      }
+    }
   }, [markedRange, editorReady]);
 
   // White Marker — auto-scroll editor ONLY on explicit user click/focus on form fields
   // NO window scroll listener and NO jump on format switching
   useEffect(() => {
-    const editor = editorRef.current;
-    if (!editor || !markedRange || !activeFieldKey) return;
     if (scrollRequestId === 0 || scrollRequestId === lastHandledScrollIdRef.current) return;
     lastHandledScrollIdRef.current = scrollRequestId;
 
     // Small delay to let Monaco and content layout settle
     const scrollTimer = setTimeout(() => {
+      const editor = editorRef.current;
+      const targetRange = markedRangeRef.current;
+      if (!editor || !targetRange) return;
       try {
-        editor.revealLineInCenter(markedRange.startLine, 0); // 0 = Smooth scroll
+        editor.revealLineInCenter(targetRange.startLine, 0); // 0 = Smooth scroll
       } catch {
-        try { editor.revealLine(markedRange.startLine); } catch { /* noop */ }
+        try {
+          editor.revealLine(targetRange.startLine);
+        } catch {
+          /* noop */
+        }
       }
     }, 40);
     return () => clearTimeout(scrollTimer);
-  }, [activeFieldKey, scrollRequestId, markedRange]);
+  }, [scrollRequestId]);
 
   // White Marker — also auto-scroll the static preview container if active (internal scroll ONLY, never window)
   useEffect(() => {
-    if (!shouldLoadEditor && previewContainerRef.current && markedRange && scrollRequestId > 0) {
-      const container = previewContainerRef.current;
-      const markedElem = container.querySelector<HTMLElement>(".marked-preview-line");
-      if (markedElem) {
-        const topPos = markedElem.offsetTop - container.clientHeight / 2;
-        container.scrollTo({ top: Math.max(0, topPos), behavior: "smooth" });
-      }
+    if (!shouldLoadEditor && scrollRequestId > 0 && scrollRequestId !== lastHandledPreviewScrollIdRef.current) {
+      lastHandledPreviewScrollIdRef.current = scrollRequestId;
+
+      const previewTimer = setTimeout(() => {
+        const container = previewContainerRef.current;
+        if (!container) return;
+        const markedElem = container.querySelector<HTMLElement>(".marked-preview-line");
+        if (markedElem) {
+          const containerRect = container.getBoundingClientRect();
+          const elemRect = markedElem.getBoundingClientRect();
+          const targetTop = elemRect.top - containerRect.top + container.scrollTop - container.clientHeight / 2;
+          container.scrollTo({ top: Math.max(0, targetTop), behavior: "smooth" });
+        }
+      }, 40);
+
+      return () => clearTimeout(previewTimer);
     }
-  }, [activeFieldKey, scrollRequestId, markedRange, shouldLoadEditor]);
+  }, [scrollRequestId, shouldLoadEditor]);
 
   // Real-time Rule Quality & Security Audit Engine (5 Core Dimensions)
   const auditReport = useMemo(() => {
@@ -2033,6 +2259,13 @@ export function ClaudeSkillsClient({
   // Determine if content is customized from default preset
   const isCustomEdited = useMemo(() => {
     if (isManuallyEdited) return true;
+    if (isIgnoreFormat) {
+      const defaultCategories = ["secrets", "dependencies", "build", "media", "logs", "ide", "database", "fixtures"];
+      const isCategoriesDefault =
+        ignoreCategories.length === defaultCategories.length &&
+        defaultCategories.every((cat) => ignoreCategories.includes(cat));
+      return !isCategoriesDefault || customIgnoreRules.trim() !== "" || ignorePreset !== "full_shield";
+    }
     if (format === "mcp_json") {
       const defaultMcp = MCP_PRESETS.find((p) => p.id === mcpPresetId) || MCP_PRESETS[0];
       const defaultArgs = defaultMcp.args.join("\n");
@@ -2063,6 +2296,10 @@ export function ClaudeSkillsClient({
     );
   }, [
     isManuallyEdited,
+    isIgnoreFormat,
+    ignoreCategories,
+    customIgnoreRules,
+    ignorePreset,
     format,
     mcpPresetId,
     mcpServerName,
@@ -2191,6 +2428,12 @@ export function ClaudeSkillsClient({
       if (customDirectives !== bestPreset.customDirectives) stateToShare.customDirectives = customDirectives;
       if (exampleGood !== bestPreset.exampleGood) stateToShare.exampleGood = exampleGood;
       if (exampleBad !== bestPreset.exampleBad) stateToShare.exampleBad = exampleBad;
+
+      if (isIgnoreFormat) {
+        if (ignoreCategories && ignoreCategories.length > 0) stateToShare.ignoreCategories = ignoreCategories;
+        if (ignorePreset && ignorePreset !== "full_shield") stateToShare.ignorePreset = ignorePreset;
+        if (customIgnoreRules) stateToShare.customIgnoreRules = customIgnoreRules;
+      }
 
       if (isManuallyEdited) {
         stateToShare.isManuallyEdited = true;
@@ -2338,7 +2581,7 @@ export function ClaudeSkillsClient({
         <div className="border-t border-zinc-100 bg-zinc-50/90 px-3 sm:px-6 py-1.5 overflow-x-auto scrollbar-none">
           <div className="max-w-7xl mx-auto flex items-center gap-2 min-w-max">
             <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider shrink-0 flex items-center gap-1">
-              <Zap className="w-3 h-3 text-zinc-800" /> Presets:
+              <Sliders className="w-3 h-3 text-zinc-800" /> Presets:
             </span>
             <div className="flex items-center gap-1.5 py-0.5">
               {PRESETS.map((preset) => {
@@ -2430,15 +2673,6 @@ export function ClaudeSkillsClient({
       <main className="flex-1 max-w-7xl w-full mx-auto p-3 sm:p-6 grid grid-cols-1 lg:grid-cols-12 gap-6 items-start pb-24 lg:pb-6">
         {/* Left Column: Generator Controls */}
         <div
-          onClick={(e) => {
-            const sec = (e.target as HTMLElement).closest<HTMLElement>("[data-section]");
-            if (sec) {
-              const sectionKey = sec.getAttribute("data-section");
-              if (sectionKey) {
-                requestSectionScroll(sectionKey);
-              }
-            }
-          }}
           onFocusCapture={(e) => {
             const sec = (e.target as HTMLElement).closest<HTMLElement>("[data-section]");
             if (sec) {
@@ -2804,11 +3038,11 @@ export function ClaudeSkillsClient({
               {/* Card 1: Executive Summary & Vision */}
               <div data-section="prdOverview" className="bg-white rounded-xl border border-zinc-200 p-4 sm:p-5 shadow-xs space-y-2.5">
                 <div className="flex items-center justify-between border-b border-zinc-100 pb-2 gap-2">
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 min-w-0">
                     <FileText className="w-4 h-4 text-blue-600 shrink-0" />
-                    <h3 className="text-sm font-bold text-zinc-900">1. Executive Summary &amp; Vision</h3>
+                    <h3 className="text-xs sm:text-sm font-bold text-zinc-900 truncate">1. Executive Summary &amp; Vision</h3>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 shrink-0">
                     <button
                       type="button"
                       onClick={() => {
@@ -2848,11 +3082,11 @@ export function ClaudeSkillsClient({
               {/* Card 2: Problem Statement */}
               <div data-section="prdProblemStatement" className="bg-white rounded-xl border border-zinc-200 p-4 sm:p-5 shadow-xs space-y-2.5">
                 <div className="flex items-center justify-between border-b border-zinc-100 pb-2 gap-2">
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 min-w-0">
                     <AlertCircle className="w-4 h-4 text-blue-600 shrink-0" />
-                    <h3 className="text-sm font-bold text-zinc-900">2. Problem Statement &amp; Scope Boundaries</h3>
+                    <h3 className="text-xs sm:text-sm font-bold text-zinc-900 truncate">2. Problem Statement &amp; Scope Boundaries</h3>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 shrink-0">
                     <button
                       type="button"
                       onClick={() => {
@@ -2891,11 +3125,11 @@ export function ClaudeSkillsClient({
               {/* Card 3: User Personas */}
               <div data-section="prdPersonas" className="bg-white rounded-xl border border-zinc-200 p-4 sm:p-5 shadow-xs space-y-2.5">
                 <div className="flex items-center justify-between border-b border-zinc-100 pb-2 gap-2">
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 min-w-0">
                     <Users className="w-4 h-4 text-blue-600 shrink-0" />
-                    <h3 className="text-sm font-bold text-zinc-900">3. Target User Personas</h3>
+                    <h3 className="text-xs sm:text-sm font-bold text-zinc-900 truncate">3. Target User Personas</h3>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 shrink-0">
                     <button
                       type="button"
                       onClick={() => {
@@ -2934,11 +3168,11 @@ export function ClaudeSkillsClient({
               {/* Card 4: Functional Requirements */}
               <div data-section="prdFunctionalReqs" className="bg-white rounded-xl border border-zinc-200 p-4 sm:p-5 shadow-xs space-y-2.5">
                 <div className="flex items-center justify-between border-b border-zinc-100 pb-2 gap-2">
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 min-w-0">
                     <CheckCircle2 className="w-4 h-4 text-blue-600 shrink-0" />
-                    <h3 className="text-sm font-bold text-zinc-900">4. Functional Requirements (FR)</h3>
+                    <h3 className="text-xs sm:text-sm font-bold text-zinc-900 truncate">4. Functional Requirements (FR)</h3>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 shrink-0">
                     <button
                       type="button"
                       onClick={() => {
@@ -2977,11 +3211,11 @@ export function ClaudeSkillsClient({
               {/* Card 5: Non-Functional Requirements */}
               <div data-section="prdNonFunctionalReqs" className="bg-white rounded-xl border border-zinc-200 p-4 sm:p-5 shadow-xs space-y-2.5">
                 <div className="flex items-center justify-between border-b border-zinc-100 pb-2 gap-2">
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 min-w-0">
                     <ShieldCheck className="w-4 h-4 text-blue-600 shrink-0" />
-                    <h3 className="text-sm font-bold text-zinc-900">5. Non-Functional SLAs &amp; Privacy</h3>
+                    <h3 className="text-xs sm:text-sm font-bold text-zinc-900 truncate">5. Non-Functional SLAs &amp; Privacy</h3>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 shrink-0">
                     <button
                       type="button"
                       onClick={() => {
@@ -3020,11 +3254,11 @@ export function ClaudeSkillsClient({
               {/* Card 6: Milestone Phasing */}
               <div data-section="prdMilestones" className="bg-white rounded-xl border border-zinc-200 p-4 sm:p-5 shadow-xs space-y-2.5">
                 <div className="flex items-center justify-between border-b border-zinc-100 pb-2 gap-2">
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 min-w-0">
                     <Layers className="w-4 h-4 text-blue-600 shrink-0" />
-                    <h3 className="text-sm font-bold text-zinc-900">6. Milestone Phasing &amp; Roadmap</h3>
+                    <h3 className="text-xs sm:text-sm font-bold text-zinc-900 truncate">6. Milestone Phasing &amp; Roadmap</h3>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 shrink-0">
                     <button
                       type="button"
                       onClick={() => {
@@ -3068,11 +3302,11 @@ export function ClaudeSkillsClient({
               {/* Card 1: Design Tokens & Palette */}
               <div data-section="designTokens" className="bg-white rounded-xl border border-zinc-200 p-4 sm:p-5 shadow-xs space-y-2.5">
                 <div className="flex items-center justify-between border-b border-zinc-100 pb-2 gap-2">
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 min-w-0">
                     <Layers className="w-4 h-4 text-indigo-600 shrink-0" />
-                    <h3 className="text-sm font-bold text-zinc-900">1. Visual Language &amp; Semantic Tokens</h3>
+                    <h3 className="text-xs sm:text-sm font-bold text-zinc-900 truncate">1. Visual Language &amp; Semantic Tokens</h3>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 shrink-0">
                     <button
                       type="button"
                       onClick={() => {
@@ -3110,11 +3344,11 @@ export function ClaudeSkillsClient({
               {/* Card 2: Single-Canvas Layout */}
               <div data-section="designLayout" className="bg-white rounded-xl border border-zinc-200 p-4 sm:p-5 shadow-xs space-y-2.5">
                 <div className="flex items-center justify-between border-b border-zinc-100 pb-2 gap-2">
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 min-w-0">
                     <Sliders className="w-4 h-4 text-indigo-600 shrink-0" />
-                    <h3 className="text-sm font-bold text-zinc-900">2. Component Hierarchy &amp; Single-Canvas Layout</h3>
+                    <h3 className="text-xs sm:text-sm font-bold text-zinc-900 truncate">2. Component Hierarchy &amp; Single-Canvas Layout</h3>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 shrink-0">
                     <button
                       type="button"
                       onClick={() => {
@@ -3152,11 +3386,11 @@ export function ClaudeSkillsClient({
               {/* Card 3: Conventions */}
               <div data-section="designConventions" className="bg-white rounded-xl border border-zinc-200 p-4 sm:p-5 shadow-xs space-y-2.5">
                 <div className="flex items-center justify-between border-b border-zinc-100 pb-2 gap-2">
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 min-w-0">
                     <Settings2 className="w-4 h-4 text-indigo-600 shrink-0" />
-                    <h3 className="text-sm font-bold text-zinc-900">3. Core Architectural &amp; UI Conventions</h3>
+                    <h3 className="text-xs sm:text-sm font-bold text-zinc-900 truncate">3. Core Architectural &amp; UI Conventions</h3>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 shrink-0">
                     <button
                       type="button"
                       onClick={() => {
@@ -3194,11 +3428,11 @@ export function ClaudeSkillsClient({
               {/* Card 4: Negative Guardrails */}
               <div data-section="designGuardrails" className="bg-white rounded-xl border border-zinc-200 p-4 sm:p-5 shadow-xs space-y-2.5">
                 <div className="flex items-center justify-between border-b border-zinc-100 pb-2 gap-2">
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 min-w-0">
                     <AlertTriangle className="w-4 h-4 text-indigo-600 shrink-0" />
-                    <h3 className="text-sm font-bold text-zinc-900">4. Negative Design Guardrails</h3>
+                    <h3 className="text-xs sm:text-sm font-bold text-zinc-900 truncate">4. Negative Design Guardrails</h3>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 shrink-0">
                     <button
                       type="button"
                       onClick={() => {
@@ -3236,11 +3470,11 @@ export function ClaudeSkillsClient({
               {/* Card 5: StitchMCP & Design Verification */}
               <div data-section="designVerification" className="bg-white rounded-xl border border-zinc-200 p-4 sm:p-5 shadow-xs space-y-2.5">
                 <div className="flex items-center justify-between border-b border-zinc-100 pb-2 gap-2">
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 min-w-0">
                     <CheckCircle2 className="w-4 h-4 text-indigo-600 shrink-0" />
-                    <h3 className="text-sm font-bold text-zinc-900">5. StitchMCP Compatibility &amp; Design QA Gate</h3>
+                    <h3 className="text-xs sm:text-sm font-bold text-zinc-900 truncate">5. StitchMCP Compatibility &amp; Design QA Gate</h3>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 shrink-0">
                     <button
                       type="button"
                       onClick={() => {
@@ -3283,11 +3517,11 @@ export function ClaudeSkillsClient({
               {/* Card 1: Sprint Status Dashboard */}
               <div data-section="taskDashboard" className="bg-white rounded-xl border border-zinc-200 p-4 sm:p-5 shadow-xs space-y-2.5">
                 <div className="flex items-center justify-between border-b border-zinc-100 pb-2 gap-2">
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 min-w-0">
                     <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                    <h3 className="text-sm font-bold text-zinc-900">1. Sprint Dashboard &amp; Active Milestone</h3>
+                    <h3 className="text-xs sm:text-sm font-bold text-zinc-900 truncate">1. Sprint Dashboard &amp; Active Milestone</h3>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 shrink-0">
                     <button
                       type="button"
                       onClick={() => {
@@ -3325,11 +3559,11 @@ export function ClaudeSkillsClient({
               {/* Card 2: Active Phase Checklists */}
               <div data-section="taskPhases" className="bg-white rounded-xl border border-zinc-200 p-4 sm:p-5 shadow-xs space-y-2.5">
                 <div className="flex items-center justify-between border-b border-zinc-100 pb-2 gap-2">
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 min-w-0">
                     <Terminal className="w-4 h-4 text-emerald-600 shrink-0" />
-                    <h3 className="text-sm font-bold text-zinc-900">2. Active Sprint Task Checklists</h3>
+                    <h3 className="text-xs sm:text-sm font-bold text-zinc-900 truncate">2. Active Sprint Task Checklists</h3>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 shrink-0">
                     <button
                       type="button"
                       onClick={() => {
@@ -3367,11 +3601,11 @@ export function ClaudeSkillsClient({
               {/* Card 3: Verification Commands & Quality Gates */}
               <div data-section="taskVerification" className="bg-white rounded-xl border border-zinc-200 p-4 sm:p-5 shadow-xs space-y-2.5">
                 <div className="flex items-center justify-between border-b border-zinc-100 pb-2 gap-2">
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 min-w-0">
                     <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
-                    <h3 className="text-sm font-bold text-zinc-900">3. Verification Commands &amp; Quality Gates</h3>
+                    <h3 className="text-xs sm:text-sm font-bold text-zinc-900 truncate">3. Verification Commands &amp; Quality Gates</h3>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 shrink-0">
                     <button
                       type="button"
                       onClick={() => {
@@ -3409,11 +3643,11 @@ export function ClaudeSkillsClient({
               {/* Card 4: Agent Session Audit Log */}
               <div data-section="taskSessionLog" className="bg-white rounded-xl border border-zinc-200 p-4 sm:p-5 shadow-xs space-y-2.5">
                 <div className="flex items-center justify-between border-b border-zinc-100 pb-2 gap-2">
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 min-w-0">
                     <FileText className="w-4 h-4 text-emerald-600 shrink-0" />
-                    <h3 className="text-sm font-bold text-zinc-900">4. Autonomous Agent Session Audit Log</h3>
+                    <h3 className="text-xs sm:text-sm font-bold text-zinc-900 truncate">4. Autonomous Agent Session Audit Log</h3>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 shrink-0">
                     <button
                       type="button"
                       onClick={() => {
@@ -3451,11 +3685,11 @@ export function ClaudeSkillsClient({
               {/* Card 5: Sprint Directives */}
               <div data-section="taskDirectives" className="bg-white rounded-xl border border-zinc-200 p-4 sm:p-5 shadow-xs space-y-2.5">
                 <div className="flex items-center justify-between border-b border-zinc-100 pb-2 gap-2">
-                  <div className="flex items-center gap-2">
-                    <Zap className="w-4 h-4 text-emerald-600 shrink-0" />
-                    <h3 className="text-sm font-bold text-zinc-900">5. Sprint Directives &amp; Scope Constraints</h3>
+                  <div className="flex items-center gap-2 min-w-0">
+                    <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <h3 className="text-xs sm:text-sm font-bold text-zinc-900 truncate">5. Sprint Directives &amp; Scope Constraints</h3>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 shrink-0">
                     <button
                       type="button"
                       onClick={() => {
@@ -3499,11 +3733,11 @@ export function ClaudeSkillsClient({
               {/* Card 1: Technology Context Matrix */}
               <div data-section="memoryContext" className="bg-white rounded-xl border border-zinc-200 p-4 sm:p-5 shadow-xs space-y-2.5">
                 <div className="flex items-center justify-between border-b border-zinc-100 pb-2 gap-2">
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 min-w-0">
                     <Cpu className="w-4 h-4 text-amber-600 shrink-0" />
-                    <h3 className="text-sm font-bold text-zinc-900">1. Persistent Technology Context Matrix</h3>
+                    <h3 className="text-xs sm:text-sm font-bold text-zinc-900 truncate">1. Persistent Technology Context Matrix</h3>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 shrink-0">
                     <button
                       type="button"
                       onClick={() => {
@@ -3541,11 +3775,11 @@ export function ClaudeSkillsClient({
               {/* Card 2: Architectural Decision Records (ADRs) */}
               <div data-section="memoryAdrs" className="bg-white rounded-xl border border-zinc-200 p-4 sm:p-5 shadow-xs space-y-2.5">
                 <div className="flex items-center justify-between border-b border-zinc-100 pb-2 gap-2">
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 min-w-0">
                     <BookOpen className="w-4 h-4 text-amber-600 shrink-0" />
-                    <h3 className="text-sm font-bold text-zinc-900">2. Architectural Decision Records (ADRs)</h3>
+                    <h3 className="text-xs sm:text-sm font-bold text-zinc-900 truncate">2. Architectural Decision Records (ADRs)</h3>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 shrink-0">
                     <button
                       type="button"
                       onClick={() => {
@@ -3583,11 +3817,11 @@ export function ClaudeSkillsClient({
               {/* Card 3: Operational Gotchas & Pitfalls */}
               <div data-section="memoryGotchas" className="bg-white rounded-xl border border-zinc-200 p-4 sm:p-5 shadow-xs space-y-2.5">
                 <div className="flex items-center justify-between border-b border-zinc-100 pb-2 gap-2">
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 min-w-0">
                     <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
-                    <h3 className="text-sm font-bold text-zinc-900">3. Operational Gotchas &amp; Pitfalls</h3>
+                    <h3 className="text-xs sm:text-sm font-bold text-zinc-900 truncate">3. Operational Gotchas &amp; Pitfalls</h3>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 shrink-0">
                     <button
                       type="button"
                       onClick={() => {
@@ -3625,11 +3859,11 @@ export function ClaudeSkillsClient({
               {/* Card 4: 5-Step Agent Loop */}
               <div data-section="memoryLoop" className="bg-white rounded-xl border border-zinc-200 p-4 sm:p-5 shadow-xs space-y-2.5">
                 <div className="flex items-center justify-between border-b border-zinc-100 pb-2 gap-2">
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 min-w-0">
                     <Terminal className="w-4 h-4 text-amber-600 shrink-0" />
-                    <h3 className="text-sm font-bold text-zinc-900">4. 5-Step Agent Execution Loop Protocol</h3>
+                    <h3 className="text-xs sm:text-sm font-bold text-zinc-900 truncate">4. 5-Step Agent Execution Loop Protocol</h3>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 shrink-0">
                     <button
                       type="button"
                       onClick={() => {
@@ -3667,11 +3901,11 @@ export function ClaudeSkillsClient({
               {/* Card 5: Domain Invariants & Anchors */}
               <div data-section="memoryInvariants" className="bg-white rounded-xl border border-zinc-200 p-4 sm:p-5 shadow-xs space-y-2.5">
                 <div className="flex items-center justify-between border-b border-zinc-100 pb-2 gap-2">
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 min-w-0">
                     <Layers className="w-4 h-4 text-amber-600 shrink-0" />
-                    <h3 className="text-sm font-bold text-zinc-900">5. Domain Invariants &amp; Key File Anchors</h3>
+                    <h3 className="text-xs sm:text-sm font-bold text-zinc-900 truncate">5. Domain Invariants &amp; Key File Anchors</h3>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 shrink-0">
                     <button
                       type="button"
                       onClick={() => {
@@ -3710,11 +3944,11 @@ export function ClaudeSkillsClient({
               {/* Card 6: Session History */}
               <div data-section="memorySessionHistory" className="bg-white rounded-xl border border-zinc-200 p-4 sm:p-5 shadow-xs space-y-2.5">
                 <div className="flex items-center justify-between border-b border-zinc-100 pb-2 gap-2">
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 min-w-0">
                     <FileText className="w-4 h-4 text-amber-600 shrink-0" />
-                    <h3 className="text-sm font-bold text-zinc-900">6. Session History</h3>
+                    <h3 className="text-xs sm:text-sm font-bold text-zinc-900 truncate">6. Session History</h3>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 shrink-0">
                     <button
                       type="button"
                       onClick={() => {
@@ -4117,7 +4351,7 @@ export function ClaudeSkillsClient({
                         ) : issue.type === "warning" ? (
                           <AlertTriangle className="w-3.5 h-3.5 text-amber-600 shrink-0 mt-0.5" />
                         ) : (
-                          <Zap className="w-3.5 h-3.5 text-orange-600 shrink-0 mt-0.5" />
+                          <Info className="w-3.5 h-3.5 text-orange-600 shrink-0 mt-0.5" />
                         )}
                         <span className="text-[11px] flex-1">{issue.message}</span>
                       </div>
@@ -4135,7 +4369,291 @@ export function ClaudeSkillsClient({
             </div>
           )}
 
-          {!isGovernanceFormat && !isMcpFormat && (
+          {isIgnoreFormat && (
+            <div className="space-y-4">
+              {/* Card 1: Shield Protection Profile & Overview */}
+              <div data-section="ignoreProfile" className="bg-white rounded-xl border border-zinc-200 p-4 sm:p-5 shadow-xs space-y-4">
+                <div className="flex items-center justify-between border-b border-zinc-100 pb-2.5 gap-2">
+                  <div className="flex items-center gap-2">
+                    <ShieldCheck className="w-4 h-4 text-orange-600 shrink-0" />
+                    <h3 className="text-sm font-bold text-zinc-900">
+                      {format === "cursorignore" ? ".cursorignore Shield" : ".claudeignore Shield"}
+                    </h3>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        handleSelectIgnoreProfile("full_shield");
+                        setCustomIgnoreRules("");
+                        setIsManuallyEdited(false);
+                      }}
+                      className="text-[10px] text-zinc-500 hover:text-zinc-700 transition-colors font-mono cursor-pointer"
+                      title="Reset to preset default"
+                    >
+                      Reset
+                    </button>
+                    <InfoTooltip
+                      title={format === "cursorignore" ? ".cursorignore Shield" : ".claudeignore Shield"}
+                      description={
+                        format === "cursorignore"
+                          ? "Controls what files Cursor's AI model indexes into its vector database and prompt context. Placed in repository root."
+                          : "Controls what files Claude Code CLI scans when exploring repository directories. Placed in repository root."
+                      }
+                      example=".env*\nnode_modules/\n*.lock\ncoverage/"
+                      align="right"
+                    />
+                  </div>
+                </div>
+
+                <p className="text-xs text-zinc-500 leading-relaxed">
+                  {format === "cursorignore"
+                    ? "Prevent Cursor AI from indexing secrets, build caches, and bulky lockfiles to save context window tokens:"
+                    : "Define boundary exclusions for Claude Code CLI to guard credentials and reduce prompt bloat:"}
+                </p>
+
+                {/* Profile Selector Buttons in orange theme */}
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-semibold text-zinc-700">Shield Protection Profile</label>
+                    <span className="text-[10px] text-zinc-400 font-mono">
+                      {ignorePreset === "full_shield"
+                        ? "Full Protection"
+                        : ignorePreset === "security_only"
+                        ? "Security Focused"
+                        : ignorePreset === "max_token_saver"
+                        ? "Token Saver"
+                        : "Custom Selection"}
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => handleSelectIgnoreProfile("full_shield")}
+                      className={cn(
+                        "p-2 sm:px-3 sm:py-2 text-left rounded-lg border text-xs font-medium transition-all flex flex-col gap-0.5 cursor-pointer min-w-0",
+                        ignorePreset === "full_shield"
+                          ? "border-orange-500 bg-orange-50/60 text-orange-950 font-semibold ring-1 ring-orange-500/20"
+                          : "border-zinc-200 bg-white hover:bg-zinc-50 text-zinc-700"
+                      )}
+                    >
+                      <div className="flex items-center gap-1.5 min-w-0">
+                        <ShieldCheck className={cn("w-3.5 h-3.5 shrink-0", ignorePreset === "full_shield" ? "text-orange-600" : "text-zinc-400")} />
+                        <span className="truncate text-xs font-semibold">Full Shield</span>
+                      </div>
+                      <span className="text-[10px] text-zinc-500 font-normal truncate">All 8 categories</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => handleSelectIgnoreProfile("security_only")}
+                      className={cn(
+                        "p-2 sm:px-3 sm:py-2 text-left rounded-lg border text-xs font-medium transition-all flex flex-col gap-0.5 cursor-pointer min-w-0",
+                        ignorePreset === "security_only"
+                          ? "border-orange-500 bg-orange-50/60 text-orange-950 font-semibold ring-1 ring-orange-500/20"
+                          : "border-zinc-200 bg-white hover:bg-zinc-50 text-zinc-700"
+                      )}
+                    >
+                      <div className="flex items-center gap-1.5 min-w-0">
+                        <Lock className={cn("w-3.5 h-3.5 shrink-0", ignorePreset === "security_only" ? "text-orange-600" : "text-zinc-400")} />
+                        <span className="truncate text-xs font-semibold">Security Only</span>
+                      </div>
+                      <span className="text-[10px] text-zinc-500 font-normal truncate">Secrets &amp; DB leaks</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => handleSelectIgnoreProfile("max_token_saver")}
+                      className={cn(
+                        "p-2 sm:px-3 sm:py-2 text-left rounded-lg border text-xs font-medium transition-all flex flex-col gap-0.5 cursor-pointer min-w-0",
+                        ignorePreset === "max_token_saver"
+                          ? "border-orange-500 bg-orange-50/60 text-orange-950 font-semibold ring-1 ring-orange-500/20"
+                          : "border-zinc-200 bg-white hover:bg-zinc-50 text-zinc-700"
+                      )}
+                    >
+                      <div className="flex items-center gap-1.5 min-w-0">
+                        <Package className={cn("w-3.5 h-3.5 shrink-0", ignorePreset === "max_token_saver" ? "text-orange-600" : "text-zinc-400")} />
+                        <span className="truncate text-xs font-semibold">Max Token Saver</span>
+                      </div>
+                      <span className="text-[10px] text-zinc-500 font-normal truncate">Deps, build &amp; media</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => handleSelectIgnoreProfile("custom")}
+                      className={cn(
+                        "p-2 sm:px-3 sm:py-2 text-left rounded-lg border text-xs font-medium transition-all flex flex-col gap-0.5 cursor-pointer min-w-0",
+                        ignorePreset === "custom"
+                          ? "border-orange-500 bg-orange-50/60 text-orange-950 font-semibold ring-1 ring-orange-500/20"
+                          : "border-zinc-200 bg-white hover:bg-zinc-50 text-zinc-700"
+                      )}
+                    >
+                      <div className="flex items-center gap-1.5 min-w-0">
+                        <Sliders className={cn("w-3.5 h-3.5 shrink-0", ignorePreset === "custom" ? "text-orange-600" : "text-zinc-400")} />
+                        <span className="truncate text-xs font-semibold">Custom</span>
+                      </div>
+                      <span className="text-[10px] text-zinc-500 font-normal truncate">Manual rules</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Impact Summary HUD in warm orange theme */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 p-3 rounded-lg bg-orange-50/30 border border-orange-200/50">
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <div className="w-8 h-8 rounded-md bg-orange-100/80 flex items-center justify-center shrink-0">
+                      <Package className="w-4 h-4 text-orange-700" />
+                    </div>
+                    <div className="min-w-0">
+                      <div className="text-[11px] font-medium text-zinc-500 leading-tight truncate">Tokens Saved / Turn</div>
+                      <div className="text-xs font-bold text-zinc-900 tracking-tight truncate">~{estimatedTokensSaved}k tokens</div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <div className="w-8 h-8 rounded-md bg-orange-100/80 flex items-center justify-center shrink-0">
+                      <ShieldCheck className="w-4 h-4 text-orange-700" />
+                    </div>
+                    <div className="min-w-0">
+                      <div className="text-[11px] font-medium text-zinc-500 leading-tight truncate">Secret Leak Guards</div>
+                      <div className="text-xs font-bold text-zinc-900 tracking-tight truncate">{activeSecretMasks} Active Guards</div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <div className="w-8 h-8 rounded-md bg-orange-100/80 flex items-center justify-center shrink-0">
+                      <Sliders className="w-4 h-4 text-orange-700" />
+                    </div>
+                    <div className="min-w-0">
+                      <div className="text-[11px] font-medium text-zinc-500 leading-tight truncate">Shield Categories</div>
+                      <div className="text-xs font-bold text-zinc-900 tracking-tight truncate">
+                        {ignoreCategories.length} of {IGNORE_CATEGORY_LIST.length} Enabled
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Card 2: Indexing Boundary Categories — Exact fashion and orange theme as other tweak cards */}
+              <div className="bg-white rounded-xl border border-zinc-200 p-4 sm:p-5 shadow-xs space-y-3">
+                <div className="flex items-center justify-between border-b border-zinc-100 pb-2.5 gap-2">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <Sliders className="w-4 h-4 text-orange-600 shrink-0" />
+                    <h3 className="text-sm font-bold text-zinc-900 truncate">Indexing Boundary Categories</h3>
+                    <InfoTooltip
+                      title="Indexing Boundary Categories"
+                      description="Select specific categories of files to shield from AI context. Click any card to toggle and highlight its section in the editor."
+                      example="Secrets, Lockfiles, Build Outputs, Media"
+                      align="left"
+                    />
+                  </div>
+                  <span className="text-[11px] text-zinc-500 shrink-0 hidden sm:inline">Select active exclusions</span>
+                </div>
+
+                <p className="text-xs text-zinc-500 leading-relaxed">
+                  Toggle specific categories to mask secrets and exclude heavy artifacts:
+                </p>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {IGNORE_CATEGORY_LIST.map((cat) => {
+                    const isSelected = ignoreCategories.includes(cat.id);
+                    return (
+                      <label
+                        key={cat.id}
+                        data-section={cat.sectionKey}
+                        onClick={() => {
+                          handleToggleCategory(cat.id);
+                          requestSectionScroll(cat.sectionKey);
+                        }}
+                        className={cn(
+                          "p-2.5 rounded-lg border text-left cursor-pointer transition-all flex items-start gap-2.5 select-none",
+                          isSelected
+                            ? "border-orange-200 bg-orange-50/40 text-zinc-900 shadow-2xs"
+                            : "border-zinc-200 bg-white text-zinc-500 hover:border-zinc-300 hover:bg-zinc-50/60"
+                        )}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={isSelected}
+                          onChange={() => {}}
+                          className="mt-0.5 w-3.5 h-3.5 rounded border-zinc-300 accent-orange-600 cursor-pointer shrink-0"
+                        />
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-start sm:items-center justify-between gap-1.5 mb-0.5">
+                            <span className="text-xs font-semibold text-zinc-900 leading-snug break-words">{cat.name}</span>
+                            <span
+                              className={cn(
+                                "text-[10px] sm:text-[11px] font-medium leading-none px-2 py-0.5 rounded-full border shrink-0 tracking-tight whitespace-nowrap mt-0.5 sm:mt-0",
+                                isSelected
+                                  ? "bg-orange-100 text-orange-800 border-orange-200/80 font-semibold"
+                                  : "bg-zinc-100 text-zinc-600 border-zinc-200"
+                              )}
+                            >
+                              {cat.tokenLabel}
+                            </span>
+                          </div>
+                          <span className="text-xs leading-relaxed text-zinc-500 block break-words">{cat.desc}</span>
+                        </div>
+                      </label>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Card 3: Custom Project Rules & Negate Exceptions */}
+              <div
+                data-section="customIgnoreRules"
+                className="bg-white rounded-xl border border-zinc-200 p-4 sm:p-5 shadow-xs space-y-2.5"
+              >
+                <div className="flex items-center justify-between border-b border-zinc-100 pb-2.5 gap-2">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <FileText className="w-4 h-4 text-orange-600 shrink-0" />
+                    <h3 className="text-xs sm:text-sm font-bold text-zinc-900 truncate">Custom Rules &amp; Negate Exceptions</h3>
+                    <InfoTooltip
+                      title="Custom Ignore Rules & Negations"
+                      description="Add custom paths or globs to ignore, or prefix with '!' to re-include files that were excluded by broader category rules (e.g. '!packages/schema/types.d.ts')."
+                      example="!dist/types.d.ts\nscratch/\n*.tmp"
+                      align="left"
+                    />
+                  </div>
+                  {customIgnoreRules.trim().length > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setCustomIgnoreRules("");
+                        setIsManuallyEdited(false);
+                      }}
+                      className="text-[10px] text-zinc-500 hover:text-zinc-700 transition-colors font-mono cursor-pointer shrink-0"
+                      title="Clear custom rules"
+                    >
+                      Clear
+                    </button>
+                  )}
+                </div>
+
+                <p className="text-xs text-zinc-500 leading-relaxed">
+                  Append repo-specific file globs or re-include allowed files with negation patterns (<code className="font-mono text-zinc-700">!path</code>):
+                </p>
+
+                <textarea
+                  value={customIgnoreRules}
+                  onFocus={() => {
+                    setActiveFieldKey("customIgnoreRules");
+                    requestSectionScroll("customIgnoreRules");
+                  }}
+                  onChange={(e) => {
+                    setCustomIgnoreRules(e.target.value);
+                    setActiveFieldKey("customIgnoreRules");
+                    setIsManuallyEdited(false);
+                  }}
+                  rows={4}
+                  placeholder={`# Custom project rules\nprivate/\ninternal-docs/\n!public/logo.svg`}
+                  className="w-full p-2.5 border border-zinc-200 rounded-lg text-xs font-mono leading-relaxed focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 resize-y"
+                />
+              </div>
+            </div>
+          )}
+
+          {!isGovernanceFormat && !isMcpFormat && !isIgnoreFormat && (
             <>
               {/* Identity & Trigger Configuration */}
               <div data-section="identity" className="bg-white rounded-xl border border-zinc-200 p-4 sm:p-5 shadow-xs space-y-4">
@@ -4157,7 +4675,7 @@ export function ClaudeSkillsClient({
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div className="space-y-1.5">
+              <div data-section="skillName" className="space-y-1.5">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-1.5">
                     <label className="text-xs font-semibold text-zinc-700">Skill Identifier (Kebab Case)</label>
@@ -4205,7 +4723,7 @@ export function ClaudeSkillsClient({
                 />
               </div>
 
-              <div className="space-y-1.5">
+              <div data-section="skillTitle" className="space-y-1.5">
                 <div className="flex items-center gap-1.5">
                   <label className="text-xs font-semibold text-zinc-700">Display Title</label>
                   <InfoTooltip
@@ -4327,7 +4845,7 @@ export function ClaudeSkillsClient({
               </div>
 
               {/* Detailed Activation Description */}
-              <div className="space-y-1 pt-1">
+              <div data-section="description" className="space-y-1 pt-1">
                 <div className="flex items-center gap-1.5">
                   <label className="text-xs font-semibold text-zinc-700">Activation Description &amp; Conditions</label>
                   <InfoTooltip
@@ -4391,7 +4909,7 @@ export function ClaudeSkillsClient({
               )}
             </div>
 
-            <div className="space-y-1.5">
+            <div data-section="role" className="space-y-1.5">
               <div className="flex items-center gap-1.5">
                 <label className="text-xs font-semibold text-zinc-700">Agent Persona / Role</label>
                 <InfoTooltip
@@ -4404,8 +4922,8 @@ export function ClaudeSkillsClient({
               <input
                 type="text"
                 value={role}
-                onFocus={() => setActiveFieldKey("techStack")}
-                onChange={(e) => { setRole(e.target.value); setActiveFieldKey("techStack"); setIsManuallyEdited(false); }}
+                onFocus={() => setActiveFieldKey("role")}
+                onChange={(e) => { setRole(e.target.value); setActiveFieldKey("role"); setIsManuallyEdited(false); }}
                 placeholder="e.g. Senior Security & Systems Auditor"
                 className="w-full px-3 py-1.5 border border-zinc-200 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500"
               />
@@ -5029,7 +5547,7 @@ export function ClaudeSkillsClient({
               >
                 <pre
                   ref={previewContainerRef}
-                  className="p-4 font-mono text-xs text-zinc-300 whitespace-pre-wrap overflow-y-auto h-full select-text bg-zinc-950"
+                  className="relative p-4 font-mono text-xs text-zinc-300 whitespace-pre-wrap overflow-y-auto h-full select-text bg-zinc-950"
                 >
                   {activeContent.split("\n").map((line, idx) => {
                     const lineNum = idx + 1;
@@ -5069,8 +5587,24 @@ export function ClaudeSkillsClient({
                     onMount={(editor, monaco) => {
                       editorRef.current = editor;
                       monacoInstanceRef.current = monaco;
+                      decorationsCollectionRef.current = null;
                       setEditorReady(true);
-                      editor.setScrollTop(0);
+                      const currentRange = markedRangeRef.current;
+                      if (currentRange) {
+                        setTimeout(() => {
+                          try {
+                            editor.revealLineInCenter(currentRange.startLine, 0); // 0 = Smooth scroll
+                          } catch {
+                            try {
+                              editor.revealLine(currentRange.startLine);
+                            } catch {
+                              /* noop */
+                            }
+                          }
+                        }, 50);
+                      } else {
+                        editor.setScrollTop(0);
+                      }
                     }}
                     onChange={(val) => {
                       if (val !== undefined) {
@@ -5517,127 +6051,135 @@ export function ClaudeSkillsClient({
             </div>
           </div>
 
-          {/* Instructional Target Location Card (Compact) */}
-          <div suppressHydrationWarning className="bg-white rounded-xl border border-zinc-200 p-3 shadow-xs text-xs space-y-1.5 shrink-0">
-            <div className="flex items-center gap-1.5 font-semibold text-zinc-900">
-              {format === "cursor_mdc" ? (
-                <Image src="/cursor-icon.png" width={14} height={14}  alt="Cursor" className="w-3.5 h-3.5 object-contain" />
-              ) : format === "claude_md" ? (
-                <Image src="/claude-icon.png" width={14} height={14}  alt="Claude" className="w-3.5 h-3.5 object-contain" />
-              ) : format === "mcp_json" ? (
-                <Server className="w-3.5 h-3.5 text-orange-600" />
-              ) : format === "windsurf_cascade" ? (
-                <WindsurfIcon className="w-3.5 h-3.5 text-teal-700" />
-              ) : format === "copilot_instructions" ? (
-                <CopilotIcon className="w-3.5 h-3.5 text-sky-600" />
-              ) : format === "openai_instructions" ? (
-                <OpenAIIcon className="w-3.5 h-3.5 text-purple-700 dark:text-purple-300" />
-              ) : format === "gemini_prompts" ? (
-                <GeminiIcon className="w-3.5 h-3.5" />
-              ) : format === "cursorignore" ? (
-                <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
-              ) : format === "claudeignore" ? (
-                <ShieldCheck className="w-3.5 h-3.5 text-amber-600" />
-              ) : format === "llms_txt" ? (
-                <FileText className="w-3.5 h-3.5 text-indigo-600" />
-              ) : format === "architecture_md" ? (
-                <Layers className="w-3.5 h-3.5 text-purple-600" />
-              ) : format === "prd_md" ? (
-                <FileText className="w-3.5 h-3.5 text-blue-600" />
-              ) : format === "design_md" ? (
-                <Layers className="w-3.5 h-3.5 text-indigo-600" />
-              ) : format === "task_md" ? (
-                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-              ) : format === "memory_md" ? (
-                <Cpu className="w-3.5 h-3.5 text-amber-600" />
-              ) : (
-                <FolderGit2 className={cn("w-3.5 h-3.5", format === "skill_md" ? "text-orange-500" : "text-zinc-800")} />
-              )}
-              <span>Target File Location</span>
+          {/* Instructional Target Location Card (Redesigned with warm orange palette & sleek typography) */}
+          <div
+            suppressHydrationWarning
+            className="rounded-xl border border-orange-200/80 bg-gradient-to-b from-orange-50/60 via-white to-orange-50/30 p-3.5 sm:p-4 shadow-2xs space-y-2 shrink-0 transition-all"
+          >
+            <div className="flex items-center justify-between gap-2 border-b border-orange-100 pb-2">
+              <div className="flex items-center gap-2 min-w-0">
+                <div className="w-6 h-6 rounded-md bg-orange-100/90 border border-orange-200/80 flex items-center justify-center shrink-0 text-orange-700 shadow-2xs">
+                  {format === "cursor_mdc" ? (
+                    <Image src="/cursor-icon.png" width={14} height={14} alt="Cursor" className="w-3.5 h-3.5 object-contain" />
+                  ) : format === "claude_md" ? (
+                    <Image src="/claude-icon.png" width={14} height={14} alt="Claude" className="w-3.5 h-3.5 object-contain" />
+                  ) : format === "mcp_json" ? (
+                    <Server className="w-3.5 h-3.5 text-orange-600" />
+                  ) : format === "windsurf_cascade" ? (
+                    <WindsurfIcon className="w-3.5 h-3.5 text-teal-700" />
+                  ) : format === "copilot_instructions" ? (
+                    <CopilotIcon className="w-3.5 h-3.5 text-sky-600" />
+                  ) : format === "openai_instructions" ? (
+                    <OpenAIIcon className="w-3.5 h-3.5 text-purple-700 dark:text-purple-300" />
+                  ) : format === "gemini_prompts" ? (
+                    <GeminiIcon className="w-3.5 h-3.5" />
+                  ) : format === "llms_txt" ? (
+                    <FileText className="w-3.5 h-3.5 text-indigo-600" />
+                  ) : format === "architecture_md" ? (
+                    <Layers className="w-3.5 h-3.5 text-purple-600" />
+                  ) : format === "prd_md" ? (
+                    <FileText className="w-3.5 h-3.5 text-blue-600" />
+                  ) : format === "design_md" ? (
+                    <Layers className="w-3.5 h-3.5 text-indigo-600" />
+                  ) : format === "task_md" ? (
+                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                  ) : format === "memory_md" ? (
+                    <Cpu className="w-3.5 h-3.5 text-amber-600" />
+                  ) : format === "cursorignore" || format === "claudeignore" ? (
+                    <ShieldCheck className="w-3.5 h-3.5 text-orange-600" />
+                  ) : (
+                    <FolderGit2 className={cn("w-3.5 h-3.5", format === "skill_md" ? "text-orange-500" : "text-zinc-800")} />
+                  )}
+                </div>
+                <h4 className="text-xs font-bold text-zinc-900 tracking-tight truncate">Target File Location</h4>
+              </div>
+              <span className="text-[10px] font-medium tracking-tight text-orange-800 bg-orange-100/80 border border-orange-200/70 px-2 py-0.5 rounded-full shrink-0 whitespace-nowrap">
+                Project Placement
+              </span>
             </div>
             {format === "skill_md" && (
-              <p className="text-zinc-500 text-xs leading-relaxed">
-                Save as <code className="bg-zinc-100 px-1 py-0.5 rounded text-zinc-800 font-mono text-[11px]">.claude/skills/{(skillName || "skill").replace(/[^a-zA-Z0-9._-]/g, "-")}/SKILL.md</code> in project root, or in <code className="bg-zinc-100 px-1 py-0.5 rounded text-zinc-800 font-mono text-[11px]">~/.claude/skills/{(skillName || "skill").replace(/[^a-zA-Z0-9._-]/g, "-")}/SKILL.md</code> for global Claude Code availability.
+              <p className="text-xs text-zinc-600 leading-relaxed font-sans">
+                Save as <code className="px-1.5 py-0.5 rounded-md bg-white border border-orange-200 text-orange-950 font-mono text-[11px] font-semibold shadow-2xs break-all sm:break-normal">.claude/skills/{(skillName || "skill").replace(/[^a-zA-Z0-9._-]/g, "-")}/SKILL.md</code> in project root, or in <code className="px-1.5 py-0.5 rounded-md bg-white border border-orange-200 text-orange-950 font-mono text-[11px] font-semibold shadow-2xs break-all sm:break-normal">~/.claude/skills/{(skillName || "skill").replace(/[^a-zA-Z0-9._-]/g, "-")}/SKILL.md</code> for global Claude Code availability.
               </p>
             )}
             {format === "claude_md" && (
-              <p className="text-zinc-500 text-xs leading-relaxed">
-                Save as <code className="bg-zinc-100 px-1 py-0.5 rounded text-zinc-800 font-mono text-[11px]">CLAUDE.md</code> directly in the root directory. Parsed automatically at the start of every session.
+              <p className="text-xs text-zinc-600 leading-relaxed font-sans">
+                Save as <code className="px-1.5 py-0.5 rounded-md bg-white border border-orange-200 text-orange-950 font-mono text-[11px] font-semibold shadow-2xs break-all sm:break-normal">CLAUDE.md</code> directly in the root directory. Parsed automatically at the start of every session.
               </p>
             )}
             {format === "cursor_mdc" && (
-              <p className="text-zinc-500 text-xs leading-relaxed">
-                Save in <code className="bg-zinc-100 px-1 py-0.5 rounded text-zinc-800 font-mono text-[11px]">.cursor/rules/{(skillName || "rule").replace(/[^a-zA-Z0-9._-]/g, "-")}.mdc</code>. Evaluated via glob patterns for targeted context.
+              <p className="text-xs text-zinc-600 leading-relaxed font-sans">
+                Save in <code className="px-1.5 py-0.5 rounded-md bg-white border border-orange-200 text-orange-950 font-mono text-[11px] font-semibold shadow-2xs break-all sm:break-normal">.cursor/rules/{(skillName || "rule").replace(/[^a-zA-Z0-9._-]/g, "-")}.mdc</code>. Evaluated via glob patterns for targeted context.
               </p>
             )}
             {format === "agents_md" && (
-              <p className="text-zinc-500 text-xs leading-relaxed">
-                Save as <code className="bg-zinc-100 px-1 py-0.5 rounded text-zinc-800 font-mono text-[11px]">AGENTS.md</code> in your root directory. Multi-agent workflows load this spec to coordinate tasks.
+              <p className="text-xs text-zinc-600 leading-relaxed font-sans">
+                Save as <code className="px-1.5 py-0.5 rounded-md bg-white border border-orange-200 text-orange-950 font-mono text-[11px] font-semibold shadow-2xs break-all sm:break-normal">AGENTS.md</code> in your root directory. Multi-agent workflows load this spec to coordinate tasks.
               </p>
             )}
             {format === "mcp_json" && (
-              <p className="text-zinc-500 text-xs leading-relaxed">
-                Save as <code className="bg-zinc-100 px-1 py-0.5 rounded text-zinc-800 font-mono text-[11px]">claude.json</code> in project root or merge its <code className="bg-zinc-100 px-1 py-0.5 rounded text-zinc-800 font-mono text-[11px]">mcpServers</code> block into Claude Desktop <code className="bg-zinc-100 px-1 py-0.5 rounded text-zinc-800 font-mono text-[11px]">claude_desktop_config.json</code>.
+              <p className="text-xs text-zinc-600 leading-relaxed font-sans">
+                Save as <code className="px-1.5 py-0.5 rounded-md bg-white border border-orange-200 text-orange-950 font-mono text-[11px] font-semibold shadow-2xs break-all sm:break-normal">claude.json</code> in project root or merge its <code className="px-1.5 py-0.5 rounded-md bg-white border border-orange-200 text-orange-950 font-mono text-[11px] font-semibold shadow-2xs break-all sm:break-normal">mcpServers</code> block into Claude Desktop <code className="px-1.5 py-0.5 rounded-md bg-white border border-orange-200 text-orange-950 font-mono text-[11px] font-semibold shadow-2xs break-all sm:break-normal">claude_desktop_config.json</code>.
               </p>
             )}
             {format === "windsurf_cascade" && (
-              <p className="text-zinc-500 text-xs leading-relaxed">
-                Save as <code className="bg-zinc-100 px-1 py-0.5 rounded text-zinc-800 font-mono text-[11px]">.windsurf/rules/{(skillName || "rule").replace(/[^a-zA-Z0-9._-]/g, "-")}.md</code> in project root. Windsurf Cascade automatically injects this rule when executing flows.
+              <p className="text-xs text-zinc-600 leading-relaxed font-sans">
+                Save as <code className="px-1.5 py-0.5 rounded-md bg-white border border-orange-200 text-orange-950 font-mono text-[11px] font-semibold shadow-2xs break-all sm:break-normal">.windsurf/rules/{(skillName || "rule").replace(/[^a-zA-Z0-9._-]/g, "-")}.md</code> in project root. Windsurf Cascade automatically injects this rule when executing flows.
               </p>
             )}
             {format === "copilot_instructions" && (
-              <p className="text-zinc-500 text-xs leading-relaxed">
-                Save as <code className="bg-zinc-100 px-1 py-0.5 rounded text-zinc-800 font-mono text-[11px]">.github/copilot-instructions.md</code> in repository root. Read by GitHub Copilot chat and code completions.
+              <p className="text-xs text-zinc-600 leading-relaxed font-sans">
+                Save as <code className="px-1.5 py-0.5 rounded-md bg-white border border-orange-200 text-orange-950 font-mono text-[11px] font-semibold shadow-2xs break-all sm:break-normal">.github/copilot-instructions.md</code> in repository root. Read by GitHub Copilot chat and code completions.
               </p>
             )}
             {format === "openai_instructions" && (
-              <p className="text-zinc-500 text-xs leading-relaxed">
-                Save in <code className="bg-zinc-100 px-1 py-0.5 rounded text-zinc-800 font-mono text-[11px]">prompts/openai-custom-instructions.md</code> or paste directly into ChatGPT Custom Instructions / OpenAI Playground System Prompt.
+              <p className="text-xs text-zinc-600 leading-relaxed font-sans">
+                Save in <code className="px-1.5 py-0.5 rounded-md bg-white border border-orange-200 text-orange-950 font-mono text-[11px] font-semibold shadow-2xs break-all sm:break-normal">prompts/openai-custom-instructions.md</code> or paste directly into ChatGPT Custom Instructions / OpenAI Playground System Prompt.
               </p>
             )}
             {format === "gemini_prompts" && (
-              <p className="text-zinc-500 text-xs leading-relaxed">
-                Save in <code className="bg-zinc-100 px-1 py-0.5 rounded text-zinc-800 font-mono text-[11px]">prompts/gemini-system-instructions.json</code> for Google AI Studio / Gemini API SDK system instructions configuration.
+              <p className="text-xs text-zinc-600 leading-relaxed font-sans">
+                Save in <code className="px-1.5 py-0.5 rounded-md bg-white border border-orange-200 text-orange-950 font-mono text-[11px] font-semibold shadow-2xs break-all sm:break-normal">prompts/gemini-system-instructions.json</code> for Google AI Studio / Gemini API SDK system instructions configuration.
               </p>
             )}
             {format === "cursorignore" && (
-              <p className="text-zinc-500 text-xs leading-relaxed">
-                Save as <code className="bg-zinc-100 px-1 py-0.5 rounded text-zinc-800 font-mono text-[11px]">.cursorignore</code> in project root. Masks credentials and excludes build caches and bulky lockfiles to save 50k+ tokens.
+              <p className="text-xs text-zinc-600 leading-relaxed font-sans">
+                Save as <code className="px-1.5 py-0.5 rounded-md bg-white border border-orange-200 text-orange-950 font-mono text-[11px] font-semibold shadow-2xs break-all sm:break-normal">.cursorignore</code> in project root. Masks credentials and excludes build caches and bulky lockfiles to save 50k+ tokens.
               </p>
             )}
             {format === "claudeignore" && (
-              <p className="text-zinc-500 text-xs leading-relaxed">
-                Save as <code className="bg-zinc-100 px-1 py-0.5 rounded text-zinc-800 font-mono text-[11px]">.claudeignore</code> in project root. Prevents Claude Code CLI from reading or modifying restricted directories.
+              <p className="text-xs text-zinc-600 leading-relaxed font-sans">
+                Save as <code className="px-1.5 py-0.5 rounded-md bg-white border border-orange-200 text-orange-950 font-mono text-[11px] font-semibold shadow-2xs break-all sm:break-normal">.claudeignore</code> in project root. Prevents Claude Code CLI from reading or modifying restricted directories.
               </p>
             )}
             {format === "llms_txt" && (
-              <p className="text-zinc-500 text-xs leading-relaxed">
-                Save as <code className="bg-zinc-100 px-1 py-0.5 rounded text-zinc-800 font-mono text-[11px]">llms.txt</code> in project root or domain root. Standardized machine-readable orientation for LLMs and autonomous agents.
+              <p className="text-xs text-zinc-600 leading-relaxed font-sans">
+                Save as <code className="px-1.5 py-0.5 rounded-md bg-white border border-orange-200 text-orange-950 font-mono text-[11px] font-semibold shadow-2xs break-all sm:break-normal">llms.txt</code> in project root or domain root. Standardized machine-readable orientation for LLMs and autonomous agents.
               </p>
             )}
             {format === "architecture_md" && (
-              <p className="text-zinc-500 text-xs leading-relaxed">
-                Save as <code className="bg-zinc-100 px-1 py-0.5 rounded text-zinc-800 font-mono text-[11px]">ARCHITECTURE.md</code> in repository root. Establishes non-negotiable data flow and system state invariants.
+              <p className="text-xs text-zinc-600 leading-relaxed font-sans">
+                Save as <code className="px-1.5 py-0.5 rounded-md bg-white border border-orange-200 text-orange-950 font-mono text-[11px] font-semibold shadow-2xs break-all sm:break-normal">ARCHITECTURE.md</code> in repository root. Establishes non-negotiable data flow and system state invariants.
               </p>
             )}
             {format === "prd_md" && (
-              <p className="text-zinc-500 text-xs leading-relaxed">
-                Save as <code className="bg-zinc-100 px-1 py-0.5 rounded text-zinc-800 font-mono text-[11px]">PRD.md</code> in repository root. Authoritative product requirements, user personas, and milestone roadmap.
+              <p className="text-xs text-zinc-600 leading-relaxed font-sans">
+                Save as <code className="px-1.5 py-0.5 rounded-md bg-white border border-orange-200 text-orange-950 font-mono text-[11px] font-semibold shadow-2xs break-all sm:break-normal">PRD.md</code> in repository root. Authoritative product requirements, user personas, and milestone roadmap.
               </p>
             )}
             {format === "design_md" && (
-              <p className="text-zinc-500 text-xs leading-relaxed">
-                Save as <code className="bg-zinc-100 px-1 py-0.5 rounded text-zinc-800 font-mono text-[11px]">DESIGN.md</code> in repository root. UI/UX design tokens, single-canvas layout rules, and negative guardrails.
+              <p className="text-xs text-zinc-600 leading-relaxed font-sans">
+                Save as <code className="px-1.5 py-0.5 rounded-md bg-white border border-orange-200 text-orange-950 font-mono text-[11px] font-semibold shadow-2xs break-all sm:break-normal">DESIGN.md</code> in repository root. UI/UX design tokens, single-canvas layout rules, and negative guardrails.
               </p>
             )}
             {format === "task_md" && (
-              <p className="text-zinc-500 text-xs leading-relaxed">
-                Save as <code className="bg-zinc-100 px-1 py-0.5 rounded text-zinc-800 font-mono text-[11px]">TASK.md</code> in repository root. Active sprint tracker, mandatory verification gates, and agent session log.
+              <p className="text-xs text-zinc-600 leading-relaxed font-sans">
+                Save as <code className="px-1.5 py-0.5 rounded-md bg-white border border-orange-200 text-orange-950 font-mono text-[11px] font-semibold shadow-2xs break-all sm:break-normal">TASK.md</code> in repository root. Active sprint tracker, mandatory verification gates, and agent session log.
               </p>
             )}
             {format === "memory_md" && (
-              <p className="text-zinc-500 text-xs leading-relaxed">
-                Save as <code className="bg-zinc-100 px-1 py-0.5 rounded text-zinc-800 font-mono text-[11px]">MEMORY.md</code> in repository root. Persistent agent brain: tech context, ADRs, operational gotchas, and 5-step loop.
+              <p className="text-xs text-zinc-600 leading-relaxed font-sans">
+                Save as <code className="px-1.5 py-0.5 rounded-md bg-white border border-orange-200 text-orange-950 font-mono text-[11px] font-semibold shadow-2xs break-all sm:break-normal">MEMORY.md</code> in repository root. Persistent agent brain: tech context, ADRs, operational gotchas, and 5-step loop.
               </p>
             )}
           </div>

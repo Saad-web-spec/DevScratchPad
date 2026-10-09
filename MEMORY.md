@@ -80,6 +80,11 @@
 - **Context**: Static boilerplate presets are dead templates. Transforming presets into living, authentic project rules requires deep structural awareness of real codebases, databases, and local paths without violating ADR-001 (Zero Server Transmission).
 - **Consequences**: Developers can ingest any public or private GitHub repository, inspect schemas, and pick local directories without security risks or token leaks. Manifests and git trees are parsed in milliseconds directly on the client, synthesizing tailored directives, procedures, and safety guardrails.
 
+### ADR-012: Dedicated Ignore Shield & Indexing Boundary Architecture (.cursorignore & .claudeignore)
+- **Decision**: Provide dedicated interactive boundary controls (8 specialized exclusion categories, 4 protection profiles: Full Shield, Security Only, Max Token Saver, Custom, real-time token savings and secret leak telemetry HUD, and custom negate exception textarea) exclusively when `.cursorignore` or `.claudeignore` is selected. Automatically suppress generic natural-language prompt cards (Persona, Triggers, Procedures, Guardrails) that have zero effect on ignore outputs.
+- **Context**: Selecting `.cursorignore` or `.claudeignore` previously rendered generic prompt cards, which confused developers and provided no interface for controlling ignore patterns, token savings, or credentials masking.
+- **Consequences**: Ignore formats now enjoy 100% reactive category synchronization with Monaco Editor via `sectionLocator.ts` `# ---` headers, White Marker highlighting, storage envelope persistence, and zero-server URL hash state sharing. Strict prohibition on lightning (`Zap`) icons in the ignore shield suite to preserve utilitarian security semantics.
+
 ---
 
 ## 3. Operational Gotchas & Known Constraints
@@ -442,6 +447,54 @@ All AI agents operating in this repository MUST follow this 5-step loop:
   4. **Supply Chain & Reliability Linters (`SUP-003` / `QL-001` / `QL-002`)**: Added unpinned package installation detection (`pip install pkg` without `==`, `npm install pkg` without `@`) and shell block error-trapping check (`set -euo pipefail`).
   5. **MCP Presets & Behavior Hardening**: Sanitized all MCP presets to use dynamic `${ENV_VAR}` references instead of mock strings; added `meta-prompt-shield` and `credential-safety` to `BEHAVIOR_OPTIONS`; fortified `handleInjectNegativeGuardrails` quick-fix button with zero-hardcoded secrets and XML boundary armor.
   6. **Verification Gates**: Passed `npm run validate-presets` (100/100), `npm run lint` (0 errors), and `npm run build` (869 static export routes exit 0). Active server live on `http://localhost:3000`.
+- **Status**: ✅ Complete (All verification gates passed)
+
+### Session: 2026-10-09 — Editor Highlight & Smooth Sync Optimization (Round 2 Hardening)
+- **Agent**: Antigravity (Gemini)
+- **Task**: Deep-dive review and fix subtle race conditions, event storms, truncation, and editor snapping in the AI Skill Studio highlight/sync engine:
+  1. **State-Tearing Race Condition Fix**: Converted `markedRange` from asynchronous `useEffect` to synchronous `useMemo(() => (!activeFieldKey ? null : findSectionLineRange(activeContent, activeFieldKey, format)), [activeContent, activeFieldKey, format])`, ensuring auto-scroll never executes with stale section coordinates. Cached latest range in `markedRangeRef` to decouple scroll triggers from render churn.
+  2. **Event Listener Storm & Pure State Transitions**: Guarded `requestSectionScroll` to only increment `scrollRequestId` when section changes (`activeFieldKeyRef.current !== fieldKey`). Eliminated illegal `setState` inside `setState` updater callback, preventing double-increments in Strict Mode. Removed redundant `onClick` handler on the container div to prevent duplicate scroll resets.
+  3. **Auto-Scroll Cancellation Bug Fix**: Decoupled Monaco auto-scroll `useEffect` to depend strictly on `[scrollRequestId]`. Fixed the critical bug where rapid focus/typing triggered effect cleanup that called `clearTimeout(scrollTimer)` and prematurely marked `lastHandledScrollIdRef` as handled, dropping the scroll permanently.
+  4. **Static Preview Keystroke Jitter Elimination**: Added `lastHandledPreviewScrollIdRef` guard to static preview auto-scrolling, ensuring the container scrolls smoothly only on explicit section changes, not on every character typed in the form.
+  5. **Composite Section & EOF Truncation Fix (`sectionLocator.ts`)**: Differentiated section boundary detection so `## ` sections only terminate at `## ` or `# ` (or markdown dividers `---`), preventing `### ` subheadings in Functional Requirements, Task Phases, and ADRs from prematurely truncating the section highlight. Added `isCompositeSection` flag so sections starting with `### Phase 1` include Phase 2 and Phase 3. Trimmed trailing blank lines for EOF sections.
+  6. **Static Preview Relative Offset Calculation**: Added `relative` styling to the preview `<pre>` element and switched scroll calculation to bounding client rects (`elemRect.top - containerRect.top + container.scrollTop - container.clientHeight / 2`) for exact smooth centering.
+  7. **Monaco Mount Viewport Reset & Layout Settling**: Removed hardcoded `editor.setScrollTop(0)` on `onMount` when `markedRange` exists, smoothly revealing the marked line range via `markedRangeRef` after a 50ms layout settling delay. Reset `decorationsCollectionRef.current = null` on mount and added try-catch recovery against disposed models.
+  8. **Modernized Monaco Line Markers**: Replaced deprecated `editor.deltaDecorations` with `editor.createDecorationsCollection()`. Aligned sub-field `data-section` attributes for `skillName`, `skillTitle`, `description`, and `role`.
+  9. **Monaco Diff Editor Configuration (`DiffCheckerTool.tsx`)**: Configured `diffWordWrap: "on"`, `automaticLayout: true`, and `smoothScrolling: true`.
+  10. **Verification Gates**: Validated comprehensive test scenarios across PRD, Task, Memory, and Skill formats.
+- **Status**: ✅ Complete (All verification gates passed)
+
+### Session: 2026-10-09 — Dedicated Ignore Shield & Indexing Boundary Suite (.cursorignore & .claudeignore)
+- **Agent**: Antigravity (Gemini)
+- **Task**: Replace generic prompt cards with dedicated Ignore Shield & Indexing Boundary Suite for `.cursorignore` and `.claudeignore`:
+  1. **Dedicated UI Suite**: Conditioned generic prompt cards on `!isGovernanceFormat && !isMcpFormat && !isIgnoreFormat`. Rendered Profile Selector (Full Shield, Security Only, Max Token Saver, Custom), Impact HUD (`~{tokens}k tokens saved`, Secret Leak Guards, Active Categories using `Package`, `ShieldCheck`, `Sliders` with strictly zero `Zap` lightning icons), interactive category toggle cards with clean icons and token savings badges, and custom rules & negate exceptions textarea (`data-section="customIgnoreRules"`).
+  2. **Rule Generation**: Upgraded `buildCursorIgnoreContent` and `buildClaudeIgnoreContent` in `ruleGenerator.ts` to generate formatted `# ---` delimited sections based on active categories and framework/language context. Supported `test-fixtures` alias alongside `fixtures`.
+  3. **Section Locator**: Added `headerPatterns` in `sectionLocator.ts` for `# ---` headers, enabling Monaco White Marker live highlighting and smooth scroll navigation when clicking or hovering category cards.
+  4. **State Persistence & Sharing**: Added `ignoreCategories`, `ignorePreset`, and `customIgnoreRules` to storage envelope and URL state sharing (`ic`, `ip`, `ir` query params and LZ-compressed payloads). Enabled direct canonical hub URLs for unedited `.cursorignore` and `.claudeignore` shares.
+  5. **Static Auditor**: Exempted ignore files from natural language negative guardrails and code block requirements in `ruleAuditor.ts`.
+### Session: 2026-10-09 — Ignore Shield Token Typography & Pill Badge Refinement
+- **Agent**: Antigravity (Gemini)
+- **Task**: Eliminate wide, mechanical monospace font on Ignore Shield token savings badges and Impact Summary HUD:
+  1. **Proportional Typography**: Removed `font-mono` from category pill badges and HUD metrics (`~{estimatedTokensSaved}k tokens`, active secret masks, shield categories count). Switched to clean, proportional sans typography (`text-[10px] sm:text-[11px] font-medium leading-none px-2 py-0.5 rounded-full tracking-tight` for badges; `text-xs font-bold text-zinc-900 tracking-tight` for HUD metrics).
+  2. **Streamlined Token Strings**: Shortened verbose token labels in `IGNORE_CATEGORY_LIST` (`~60k+ tokens saved` -> `~60k tokens`, `~5k tokens (Leak Guard)` -> `~5k tokens`, etc.) so that category titles (`Secrets & Local Credentials`, `Dependency Bloat & Lockfiles`, etc.) render fully without getting truncated with ellipses.
+  3. **Verification Gates**: Passed `npm run validate-presets` (100/100), `npm run lint` (0 errors), and `npm run build` (869 routes exit 0). Fresh server running on `http://localhost:3000`.
+### Session: 2026-10-09 — Reverted Format Page Bottom Content to Unified Single-Heading Suite
+- **Agent**: Antigravity (Gemini)
+- **Task**: Revert format hub bottom reference content in `src/app/ai-skill-studio/[formatSlug]/page.tsx` from `FormatHubSeoContent` back to `AiSkillStudioSeoContent`:
+  1. **Eliminated Massive Card Barrage**: Removed the multi-card placement guide, stack preset card matrix, and redundant subheadings.
+  2. **Unified Single-Heading Reference**: Restored the clean single main heading layout (`AI Skill Studio — 17 Formats & 4-Layer AI Agent Operating Suite`) with organized separate links for all 17 formats divided into the 4 architectural layers.
+  3. **Verification Gates**: Passed `npm run validate-presets` (100/100), `npm run lint` (0 errors), and `npm run build` (869 routes exit 0). Fresh server running on `http://localhost:3000`.
+### Session: 2026-10-09 — Minimalist InfoTooltip Redesign & Mobile View Card Hardening
+- **Agent**: Antigravity (Gemini)
+- **Task**: Overhaul `InfoTooltip.tsx` into a minimal, elevated light surface and guarantee all studio cards render cleanly without truncation or overflow on mobile:
+  1. **Minimal Elevated Aesthetic & Typography**: Replaced harsh dark container (`bg-zinc-900 border-zinc-700/90 text-zinc-300`) with an elevated white surface (`bg-white/98 backdrop-blur-xl border border-zinc-200/90 shadow-[0_16px_36px_rgba(0,0,0,0.12),0_2px_10px_rgba(234,88,12,0.06)] rounded-xl`). Replaced clunky brown monospace badge with a sleek warm orange pill badge (`bg-orange-50 border-orange-200/80 text-orange-800 font-medium rounded-full`). Upgraded header with clean `w-5 h-5 rounded-md bg-orange-100/90 text-orange-600` icon chip and `text-xs font-bold text-zinc-900 tracking-tight` title. Upgraded body description to `text-xs text-zinc-600 leading-relaxed font-sans` and format example to a clean `bg-zinc-50 border-zinc-200/80 text-[11px] font-mono text-zinc-800` code block.
+  2. **Mobile Viewport Clamping & Touch-Safe Scrolling**: Added dynamic `maxHeight` clamping (`Math.min(440, space-6)`) with internal scrolling (`overflow-y-auto overscroll-contain`) so tooltips never clip off top/bottom on mobile. Clamped width to `Math.min(320, viewportWidth - 24)` and added `touch-manipulation` with warm orange ring states on trigger buttons.
+  3. **Mobile View Card Usability Hardening (`ClaudeSkillsClient.tsx`)**:
+     - **Category Cards**: Replaced rigid `truncate` with `break-words leading-snug` and responsive `items-start sm:items-center` flex wrapping, eliminating ellipses truncation on mobile viewports.
+     - **Ignore Profile Buttons & Impact HUD**: Added `min-w-0` and responsive padding (`p-2 sm:px-3 sm:py-2`), ensuring all 4 buttons and the 3 HUD stat cards fit gracefully without stretching cards.
+     - **Target File Location Card**: Added `break-all sm:break-normal` across all 13 format file path `<code>` blocks and clamped header with `min-w-0 truncate` and `shrink-0 whitespace-nowrap`.
+     - **Governance Card Headers**: Added `min-w-0` and `shrink-0` across all 22 governance card headers (PRD, Design, Task, Memory) preventing flex collision on narrow mobile viewports.
+  4. **Verification Gates**: Passed `npm run validate-presets` (100/100), `npm run lint` (0 errors), and `npm run build` (869 routes exit 0). Fresh production server live on `http://localhost:3000`.
 - **Status**: ✅ Complete (All verification gates passed)
 
 ---
