@@ -1,9 +1,12 @@
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Google+Sans:wght@400;500;700&display=swap');
 @import "tailwindcss";
 @import "highlight.js/styles/github-dark.css";
+/* Self-hosted OFL fonts (bundled from npm): no runtime request to fonts.googleapis.com, which CSP style-src blocks,
+   and no network needed at build time. Files load only where `.font-gemini` text renders. */
+@import "@fontsource-variable/google-sans";
+@import "@fontsource-variable/plus-jakarta-sans";
 
 .font-gemini {
-  font-family: 'Google Sans', 'Google Sans Text', 'Google Sans Flex', 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  font-family: 'Google Sans Variable', 'Google Sans', 'Plus Jakarta Sans Variable', system-ui, -apple-system, sans-serif;
 }
 
 /* High-craft monochromatic typography for engineering blog & articles */
@@ -329,12 +332,20 @@ body {
 /* AI Skill Studio — Sleek White Marker in Monaco Editor */
 .monaco-editor .monaco-white-marker-line,
 .monaco-white-marker-line {
-  background: linear-gradient(90deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.02) 50%, transparent 100%) !important;
-  border-left: 3px solid #ffffff !important;
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.07) 0%, rgba(255, 255, 255, 0.025) 60%, transparent 100%) !important;
+  border-left: none !important;
   border-top: none !important;
   border-bottom: none !important;
   border-right: none !important;
   box-shadow: none !important;
+  pointer-events: none;
+}
+
+/* Solid marker bar rendered in the line-decorations gutter (left of the text, never on top of it) */
+.monaco-editor .margin-view-overlays .monaco-white-marker-gutter {
+  width: 3px !important;
+  margin-left: 5px;
+  background: #ffffff;
   pointer-events: none;
 }
 

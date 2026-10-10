@@ -12,6 +12,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Vendored Monaco build copied by scripts/copy-monaco.mjs (minified third-party code)
+    "public/monaco/**",
   ]),
   {
     plugins: {

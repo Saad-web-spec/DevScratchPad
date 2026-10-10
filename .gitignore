@@ -39,3 +39,17 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# self-hosted Monaco build, copied from node_modules by scripts/copy-monaco.mjs
+/public/monaco/
+
+# local-only files (kept on disk, untracked)
+/.idea/
+*.log
+/push.ps1
+/add_embed_buttons.js
+/add_export_buttons.js
+/fix_embed.js
+/fix_exports.js
+/*.mp4
+/WhatsApp Image *

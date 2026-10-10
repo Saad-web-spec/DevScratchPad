@@ -201,7 +201,6 @@ const SECTION_RULES: SearchRule[] = [
       /^##\s+Execution Procedures/i,
       /^##\s+Standard Operating Procedures/i,
       /^##\s+2\.\s+Cascade Execution Workflow/i,
-      /^##\s+Instructions for Copilot/i,
       /^3\.\s+Execution Procedures:/i,
       /^##\s+Verification Commands & Workflows/i,
       /^##\s+7\.\s+Verification Protocol/i,
@@ -378,6 +377,51 @@ const SECTION_BOUNDARY_PATTERNS = [
 export function findSectionLineRange(
   content: string,
   fieldKey: string | null | undefined,
+  format: OutputFormat,
+  fieldValue?: string
+): MarkedSectionRange | null {
+  const section = locateSection(content, fieldKey, format);
+  if (!section || !fieldValue) return section;
+  return narrowToFieldValue(content, section, fieldValue);
+}
+
+/**
+ * Narrows a section range to the lines that actually contain the focused field's text,
+ * so the marker follows the exact paragraph being edited instead of the whole parent section.
+ * Falls back to the full section when the value is not found verbatim (e.g. JSON-escaped output).
+ */
+function narrowToFieldValue(content: string, section: MarkedSectionRange, fieldValue: string): MarkedSectionRange {
+  const valueLines = fieldValue.split("\n").map((l) => l.trim()).filter(Boolean);
+  if (valueLines.length === 0) return section;
+
+  const lines = content.split("\n");
+  const first = valueLines[0];
+  const last = valueLines[valueLines.length - 1];
+  let start = -1;
+  for (let i = section.startLine - 1; i < Math.min(section.endLine, lines.length); i++) {
+    if (lines[i].includes(first)) {
+      start = i;
+      break;
+    }
+  }
+  if (start === -1) return section;
+
+  let end = start;
+  if (valueLines.length > 1) {
+    for (let i = start + 1; i < Math.min(section.endLine, lines.length); i++) {
+      if (lines[i].includes(last)) {
+        end = i;
+        break;
+      }
+    }
+    if (end === start) end = Math.min(section.endLine - 1, start + valueLines.length - 1);
+  }
+  return { startLine: start + 1, endLine: end + 1, label: section.label };
+}
+
+function locateSection(
+  content: string,
+  fieldKey: string | null | undefined,
   _format: OutputFormat
 ): MarkedSectionRange | null {
   if (!content || !fieldKey) return null;
@@ -444,7 +488,7 @@ export function findSectionLineRange(
         (fieldKey === "mcpCommand" && line.includes('"command":')) ||
         (fieldKey === "mcpArgs" && line.includes('"args":')) ||
         ((fieldKey === "mcpEnvKey" || fieldKey === "mcpEnvValue") && line.includes('"env":')) ||
-        ((fieldKey === "mcpServerName" || fieldKey === "mcpPresetId") && line.includes('"mcpServers":'))
+        ((fieldKey === "mcpServerName" || fieldKey === "mcpPresetId" || fieldKey === "mcpConfig") && line.includes('"mcpServers":'))
       ) {
         const startLine = i + 1;
         let endLine = startLine;
@@ -664,9 +708,7 @@ export function findSectionLineRange(
     fieldKey === "prdFunctionalReqs" ||
     fieldKey === "memoryAdrs";
 
-  const headingBoundaryPattern = startsWithH1
-    ? /^#\s+/
-    : startsWithH2 || isCompositeSection
+  const headingBoundaryPattern = (startsWithH1 || startsWithH2 || isCompositeSection)
     ? /^#{1,2}\s+/
     : /^#{1,3}\s+/;
 

@@ -2599,7 +2599,7 @@ ${description.trim() || "Repository architectural guidelines and coding standard
 When generating completions, chat responses, or pull request suggestions:
 1. Always follow ${framework} and ${language} idioms.
 2. Maintain strict type safety across all function signatures and public APIs.
-${procedures.trim() ? `3. Execution Procedures:\n${procedures.trim()}` : ""}
+${procedures.trim() ? `3. Execution Procedures:\n${procedures.trim().split("\n").map((p) => `   ${p}`).join("\n")}` : ""}
 
 ## Code Conventions
 ${selectedConventionTexts.length > 0 ? selectedConventionTexts.join("\n") : "- Use strict typing and maintain modular structure."}

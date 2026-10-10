@@ -161,8 +161,6 @@ export default function RootLayout({
         <meta name="theme-color" content="#ffffff" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-        <link rel="preconnect" href="https://cdn.jsdelivr.net" crossOrigin="anonymous" />
-        <link rel="dns-prefetch" href="https://cdn.jsdelivr.net" />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(siteJsonLd).replace(/</g, "\\u003c") }}
@@ -189,8 +187,39 @@ export default function RootLayout({
             `,
           }}
         />
+        {/* Hydration guard: browser extensions (form fillers, password managers, Grammarly)
+            inject attributes like `fdprocessedid` into every <button>/<input> before React
+            hydrates, causing attribute-mismatch errors. Strip them as they appear. */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function () {
+                try {
+                  var ATTRS = ['fdprocessedid', 'bis_skin_checked', 'bis_register', 'data-new-gr-c-s-check-loaded', 'data-gr-ext-installed', 'cz-shortcut-listen', 'data-lt-installed'];
+                  var strip = function (el) {
+                    for (var i = 0; i < ATTRS.length; i++) {
+                      if (el.hasAttribute && el.hasAttribute(ATTRS[i])) el.removeAttribute(ATTRS[i]);
+                    }
+                  };
+                  var sweep = function () {
+                    var sel = ATTRS.map(function (a) { return '[' + a + ']'; }).join(',');
+                    var nodes = document.querySelectorAll(sel);
+                    for (var i = 0; i < nodes.length; i++) strip(nodes[i]);
+                  };
+                  var obs = new MutationObserver(function (records) {
+                    for (var i = 0; i < records.length; i++) strip(records[i].target);
+                  });
+                  obs.observe(document.documentElement, { attributes: true, subtree: true, attributeFilter: ATTRS });
+                  document.addEventListener('DOMContentLoaded', sweep);
+                  setTimeout(function () { sweep(); obs.disconnect(); }, 10000);
+                } catch (e) {}
+              })();
+            `,
+          }}
+        />
       </head>
       <body
+        suppressHydrationWarning
         className={`antialiased min-h-screen flex flex-col bg-white text-zinc-900 ${inter.className}`}
       >
         <ThemeProvider>{children}</ThemeProvider>

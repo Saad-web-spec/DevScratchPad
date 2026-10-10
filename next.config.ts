@@ -331,11 +331,11 @@ const nextConfig: NextConfig = {
   async headers() {
     const commonCspDirectives = [
       "default-src 'self'",
-      "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://cdn.jsdelivr.net https://va.vercel-scripts.com https://*.vercel-scripts.com",
-      "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net",
+      "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://va.vercel-scripts.com https://*.vercel-scripts.com",
+      "style-src 'self' 'unsafe-inline'",
       "img-src 'self' data: blob: https:",
-      "font-src 'self' data: https://cdn.jsdelivr.net",
-      "connect-src 'self' https://vitals.vercel-insights.com https://*.vercel-insights.com https://va.vercel-scripts.com https://*.vercel-scripts.com https://cdn.jsdelivr.net https://api.github.com https://raw.githubusercontent.com",
+      "font-src 'self' data:",
+      "connect-src 'self' https://vitals.vercel-insights.com https://*.vercel-insights.com https://va.vercel-scripts.com https://*.vercel-scripts.com https://api.github.com https://raw.githubusercontent.com",
       "worker-src 'self' blob: data:",
       "object-src 'none'",
       "base-uri 'self'",

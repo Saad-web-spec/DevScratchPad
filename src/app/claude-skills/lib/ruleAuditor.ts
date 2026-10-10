@@ -110,7 +110,8 @@ const PROMPT_INJECTION_PATTERNS = [
     label: "Prompt Extraction Directive",
   },
   {
-    pattern: /<script\b|javascript:\s*|\bonerror\s*=/i,
+    // Bare or remote-loading script tags; framework SFC blocks like Vue's `<script setup lang="ts">` are legitimate
+    pattern: /<script(?:\s[^>]*\bsrc\s*=|\s*>)|javascript:[^\s]|\bonerror\s*=/i,
     label: "Embedded Script / Markup Injection",
   },
   {
@@ -126,6 +127,14 @@ const PROMPT_INJECTION_PATTERNS = [
     label: "Adversarial Persona Hijacking (AR-004)",
   },
 ];
+
+// A bullet or sentence that opens with a prohibition, optionally after a bold label ("- **Secrets**: Never ...")
+const NEGATED_LINE_PATTERN =
+  /^\s*(?:[-*+]\s+|\d+\.\s+)?(?:\*\*[^*]+\*\*:?\s*)?(?:never|do\s+not|don't|must\s+not|should\s+not|avoid|prohibit|forbid|no\s+)\b/i;
+
+function stripFencedCodeBlocks(text: string): string {
+  return text.replace(/^(```|~~~)[^\n]*\n[\s\S]*?^\1\s*$/gm, "").replace(/`[^`\n]+`/g, "");
+}
 
 const CREDENTIAL_PLACEHOLDER_PATTERNS = [
   {
@@ -360,8 +369,13 @@ export function auditRuleQuality(data: AuditInputData): RuleAuditReport {
     }
   }
 
+  // Scan prose only, line by line: fenced code examples (e.g. Vue `<script setup>`) are illustrative, and
+  // negated guardrails ("Never send tokens to logs") are defenses rather than injection attempts.
+  const injectionScanLines = stripFencedCodeBlocks(content)
+    .split("\n")
+    .filter((line) => !NEGATED_LINE_PATTERN.test(line));
   for (const { pattern, label } of PROMPT_INJECTION_PATTERNS) {
-    if (pattern.test(content)) {
+    if (injectionScanLines.some((line) => pattern.test(line))) {
       guardrailScore = Math.max(10, guardrailScore - 30);
       guardrailIssues.push({
         id: `security-prompt-injection-${label.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`,

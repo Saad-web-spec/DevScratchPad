@@ -2,6 +2,7 @@
 
 import dynamic from "next/dynamic";
 import type { EditorProps, DiffEditorProps } from "@monaco-editor/react";
+import { configureMonacoLoader } from "@/lib/monacoLoader";
 
 const LoadingPlaceholder = () => (
   <div className="flex items-center justify-center h-full bg-white">
@@ -13,12 +14,20 @@ const LoadingPlaceholder = () => (
 );
 
 const InternalEditor = dynamic(
-  () => import("@monaco-editor/react").then((mod) => mod.default),
+  () =>
+    import("@monaco-editor/react").then((mod) => {
+      configureMonacoLoader(mod.loader);
+      return mod.default;
+    }),
   { ssr: false, loading: LoadingPlaceholder }
 ) as React.ComponentType<EditorProps>;
 
 const InternalDiffEditor = dynamic(
-  () => import("@monaco-editor/react").then((mod) => mod.DiffEditor),
+  () =>
+    import("@monaco-editor/react").then((mod) => {
+      configureMonacoLoader(mod.loader);
+      return mod.DiffEditor;
+    }),
   { ssr: false, loading: LoadingPlaceholder }
 ) as React.ComponentType<DiffEditorProps>;
 

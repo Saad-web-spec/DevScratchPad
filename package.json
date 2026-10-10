@@ -7,14 +7,19 @@
     "devscratchpad": "./cli/bin/devscratchpad.mjs"
   },
   "scripts": {
+    "predev": "node ./scripts/copy-monaco.mjs",
     "dev": "next dev --webpack",
+    "prebuild": "node ./scripts/copy-monaco.mjs",
     "build": "next build --webpack",
     "start": "next start",
     "lint": "eslint",
-    "validate-presets": "node ./scripts/validate-presets.mjs"
+    "validate-presets": "node ./scripts/validate-presets.mjs",
+    "test": "vitest run"
   },
   "dependencies": {
     "@faker-js/faker": "^10.6.0",
+    "@fontsource-variable/google-sans": "^5.3.1",
+    "@fontsource-variable/plus-jakarta-sans": "^5.3.0",
     "@monaco-editor/react": "^4.7.0",
     "@noble/hashes": "^2.4.0",
     "@peculiar/x509": "^2.0.0",
@@ -65,7 +70,9 @@
     "cross-env": "^10.1.0",
     "eslint": "^9",
     "eslint-config-next": "16.3.3",
+    "monaco-editor": "^0.55.1",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^3.2.7"
   }
 }

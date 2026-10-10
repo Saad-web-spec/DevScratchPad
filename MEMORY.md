@@ -121,6 +121,16 @@ Governance and project-level formats (`prd_md`, `design_md`, `task_md`, `memory_
 ### ⚠️ CLI Zero Dependencies
 The CLI (`cli/bin/devscratchpad.mjs`) operates on zero npm dependencies — it uses only Node.js standard libraries (`node:fs`, `node:path`, `node:https`). Never add external package imports to CLI code.
 
+### ⚠️ Monaco `onChange` Must Commit Synchronously
+Monaco fires `onChange` outside React's event system, so state updates render deferred. `@monaco-editor/react` overwrites the model whenever the `value` prop differs from it, so a stale `value` drops keystrokes (typing "MANUAL" became "MNA"). The studio wraps the editor's `onChange` state updates in `flushSync`. Keep it that way, or make the editor uncontrolled.
+
+### ⚠️ White Marker Bar Belongs in the Gutter
+A `border-left` on a whole-line `className` decoration paints on top of column 1 and covers each line's first character. The marker uses `linesDecorationsClassName` (the bar, in the `lineDecorationsWidth: 14` gutter) and a borderless `className` tint. `findSectionLineRange` takes the focused field's value to narrow the range to that field's own lines.
+Auto-follow lives in one effect, and the geometry is in `lib/markerScroll.ts` (unit-tested). On focus, it centers the marked range, or pins it near the top if the range is taller than the view. While the user types in the form, it follows the first changed line inside the range, but only once that line leaves the view. It never scrolls while Monaco has text focus. It measures after one `requestAnimationFrame`, so wrapped-line heights are current. The effect does not cancel the queued frame on re-render: the latest target wins, so fast typing never drops a scroll.
+
+### ⚠️ Manual Edit State Lives in Refs Too
+`ClaudeSkillsClient.tsx` keeps manual editor edits per format (`stashedEdits` + active `editorContent`). Change the flag only through `setIsManuallyEdited` (it records a restorable `discardedEdit`), and switch formats only through `handleSelectFormat` (it stashes and restores edits). Effects that run in the mount flush must read `isManuallyEditedRef`, not the render-time flag, or they overwrite the restored draft.
+
 ### ⚠️ Preset Schema Validation
 All community presets in `/community-presets/` must validate against `schemas/preset-schema.json`. Run `npm run validate-presets` before committing any preset changes.
 
@@ -138,7 +148,10 @@ When adding live features, ingestion capabilities, or protocol enhancements to p
 | `src/app/claude-skills/lib/ruleAuditor.ts` | Static quality scoring engine (0-100) |
 | `src/app/claude-skills/lib/manifestParser.ts` | Auto-detect stack from package.json / Cargo.toml |
 | `src/app/claude-skills/lib/formatHubs.ts` | Format hub metadata for 13 target formats |
-| `src/app/claude-skills/ClaudeSkillsClient.tsx` | Main AI Skill Studio UI component (180KB) |
+| `src/app/claude-skills/ClaudeSkillsClient.tsx` | Main AI Skill Studio UI component (state, editor panel, standard skill form) |
+| `src/app/claude-skills/components/` | Studio sections: `FormatSelector`, `GovernanceSections`, `IgnoreShieldSuite`, `McpServerConfigCard`, `TargetLocationCard`, modals |
+| `src/app/claude-skills/lib/__tests__/` | Vitest suite for generator, section locator, auditor (`npm test`) |
+| `scripts/copy-monaco.mjs` | Copies Monaco into `public/monaco/vs` (same-origin editor; runs on predev/prebuild) |
 | `src/lib/tools/registry.ts` | Tool registry for all 28+ developer utilities |
 | `src/lib/storage.ts` | LocalStorage abstraction with quota protection |
 | `cli/bin/devscratchpad.mjs` | Headless CLI entry point (26KB) |
@@ -496,6 +509,23 @@ All AI agents operating in this repository MUST follow this 5-step loop:
      - **Governance Card Headers**: Added `min-w-0` and `shrink-0` across all 22 governance card headers (PRD, Design, Task, Memory) preventing flex collision on narrow mobile viewports.
   4. **Verification Gates**: Passed `npm run validate-presets` (100/100), `npm run lint` (0 errors), and `npm run build` (869 routes exit 0). Fresh production server live on `http://localhost:3000`.
 - **Status**: ✅ Complete (All verification gates passed)
+
+### Session: 2026-10-10 — AI Skill Studio Data-Loss Fixes, Token Hygiene & Test Suite
+- **Agent**: Claude Code (Opus)
+- **Fixes**: Manual Monaco edits are now kept per format (stashed on switch, restored on return, exported in ZIP, persisted). Form `onFocus` no longer wipes them, and a "Restore edits" notice appears when a form change or Reset replaces them. Fixed dropped keystrokes (`flushSync` in the editor's `onChange`) and the mount-time draft restore being overwritten by the content-sync effect. Format deep links beat the saved draft's format. The 23 governance section fields are now persisted (previously lost on reload).
+- **Security**: The MCP env value input is masked and never persisted as a literal (only `${VAR}` references), and unedited editor content is not persisted. GitHub ingestion writes `${GITHUB_PERSONAL_ACCESS_TOKEN}` into the MCP config instead of the PAT. The PAT link now points to fine-grained read-only tokens instead of `repo` scope.
+- **Engines**: Auditor injection checks skip fenced and inline code and negated guardrail lines; the markup rule no longer flags Vue `<script setup>`. Copilot procedures render as a nested list. Fixed section locator misses for Copilot procedures and `mcpConfig`.
+- **Tests**: Added a Vitest suite under `src/app/claude-skills/lib/__tests__` (562 tests: every preset × format, JSON validity, locator ranges, auditor false positives and negatives, slug and share utils, committed snapshots), run with `npm test`.
+- **Status**: ✅ Complete (validate-presets pass, lint 0 errors, 562 tests, build 869 routes exit 0, 19/19 Playwright checks on localhost:3000)
+
+### Session: 2026-10-11 — Self-Hosted Monaco & Fonts, Studio Component Split, Repo Hygiene
+- **Agent**: Claude Code (Opus)
+- **Fonts**: Replaced the CSP-blocked Google Fonts `@import` with `@fontsource-variable/google-sans` and `@fontsource-variable/plus-jakarta-sans`, bundled from npm, so builds still work offline (`next/font/google` fetches at build time, which a comment says the build sandbox can't do).
+- **Monaco**: Monaco is now served same-origin from `public/monaco/vs` (gitignored, copied by `scripts/copy-monaco.mjs` on `predev`/`prebuild`); the loader is pointed there via `src/lib/monacoLoader.ts`. Removed `cdn.jsdelivr.net` from the CSP and the preconnect hints. Editor mount went from 17.3s to 1.5s locally.
+- **Component split**: `ClaudeSkillsClient.tsx` went from 6,334 to 4,363 lines. New: `components/GovernanceSections.tsx` (22 governance cards, now data-driven; parsed from the old JSX and verified lossless), `IgnoreShieldSuite.tsx`, `McpServerConfigCard.tsx` (with its validation memo), `FormatSelector.tsx`, and `TargetLocationCard.tsx` (moved verbatim).
+- **Bug fixed during the split**: Ignore Shield category cards toggled twice per click (label `onClick` plus the label re-dispatching the click to its checkbox), so clicking a card did nothing. Toggles now live on the input's `onChange`; the conventions and behaviors tiles got the same fix.
+- **Hygiene**: Untracked (kept on disk, now gitignored) `.idea/`, `install.log`, `push.ps1`, the one-off `add_*`/`fix_*` codemods, a personal video and a personal photo. `cli/bin/devscratchpad.js` is kept because it is the published CLI package's bin. Added `.github/workflows/studio-tests.yml` (runs `npm test` on studio changes). ESLint ignores `public/monaco/**`; linting it ran ESLint out of memory.
+- **Status**: ✅ Complete (validate-presets pass, lint 0 errors, 562 tests, build 869 routes exit 0, 26/26 Playwright checks on localhost:3000)
 
 ---
 

@@ -259,7 +259,7 @@ export function GitHubRepoModal({
                   <div className="flex items-center justify-between text-[11px]">
                     <label className="text-zinc-600 font-medium">Personal Access Token</label>
                     <a
-                      href="https://github.com/settings/tokens/new?description=DevScratchpad+Skill+Studio&scopes=repo,read:org,read:user"
+                      href="https://github.com/settings/personal-access-tokens/new"
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-[10px] font-semibold text-orange-600 hover:text-orange-700 inline-flex items-center gap-0.5"
@@ -277,7 +277,7 @@ export function GitHubRepoModal({
                   />
                 </div>
                 <p className="text-[10px] text-zinc-500 leading-relaxed">
-                  Authentication increases rate limits from 60 to 5,000 req/hr and enables private repository access. Handled purely in browser memory.
+                  Use a fine-grained token with read-only Contents and Metadata access. It raises the rate limit from 60 to 5,000 req/hr, stays in this tab&apos;s session storage, and is sent only to api.github.com.
                 </p>
               </div>
             ) : (
@@ -291,7 +291,7 @@ export function GitHubRepoModal({
                 </span>
                 {!isTokenPresent && (
                   <a
-                    href="https://github.com/settings/tokens/new?description=DevScratchpad+Skill+Studio&scopes=repo,read:org,read:user"
+                    href="https://github.com/settings/personal-access-tokens/new"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-[10px] font-semibold text-zinc-700 hover:text-orange-600 inline-flex items-center gap-0.5 shrink-0 self-start sm:self-auto sm:ml-2 mt-0.5 sm:mt-0"

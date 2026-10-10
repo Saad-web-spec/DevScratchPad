@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useMemo, useCallback } from "react";
+import { flushSync } from "react-dom";
 import Link from "next/link";
 import Image from "next/image";
 import dynamic from "next/dynamic";
@@ -10,7 +11,6 @@ import {
   Check,
   Download,
   ShieldCheck,
-  Info,
   Terminal,
   Layers,
   BookOpen,
@@ -22,29 +22,19 @@ import {
   FolderGit2,
   UploadCloud,
   Archive,
-  Server,
   AlertTriangle,
-  AlertCircle,
   ExternalLink,
   Lock,
   Unlock,
   X,
-  Bot,
   FileText,
-  Users,
-  Database,
-  FolderOpen,
-  Boxes,
   FolderTree,
-  Package,
-  FileArchive,
   Filter,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { downloadAiKitZip } from "./lib/zipExporter";
 import { ParsedManifestResult } from "./lib/manifestParser";
 import { ConvertedRulesIR } from "./lib/rulesConverter";
-import { WindsurfIcon, OpenAIIcon, GeminiIcon, CopilotIcon, GitHubIcon } from "@/components/icons/AssistantBrandIcons";
 import { InfoTooltip } from "./components/InfoTooltip";
 import { DownloadAuditHud, DownloadHudPayload } from "./components/DownloadAuditHud";
 
@@ -80,11 +70,28 @@ import { generateSafeSlug, validateTriggerPhrase } from "./lib/slugUtils";
 import { saveToStorageEnvelope, loadFromStorageEnvelope, STORAGE_KEY_V2 } from "./lib/storageEnvelope";
 import { auditRuleQuality, AuditDimension } from "./lib/ruleAuditor";
 import { findSectionLineRange, MarkedSectionRange } from "./lib/sectionLocator";
+import { computeFollowScrollTop, findFirstChangedLine } from "./lib/markerScroll";
+import { configureMonacoLoader } from "@/lib/monacoLoader";
+import {
+  GovernanceSections,
+  type GovernanceFieldKey,
+  type GovernanceFormat,
+  type GovernanceValues,
+} from "./components/GovernanceSections";
+import { IgnoreShieldSuite } from "./components/IgnoreShieldSuite";
+import { McpServerConfigCard } from "./components/McpServerConfigCard";
+import { FormatSelector } from "./components/FormatSelector";
+import { TargetLocationCard } from "./components/TargetLocationCard";
 
 // Dynamically import Monaco Editor to prevent SSR issues
-const Editor = dynamic(() => import("@monaco-editor/react"), {
-  ssr: false,
-});
+const Editor = dynamic(
+  () =>
+    import("@monaco-editor/react").then((mod) => {
+      configureMonacoLoader(mod.loader);
+      return mod.default;
+    }),
+  { ssr: false }
+);
 
 import {
   OutputFormat,
@@ -106,94 +113,6 @@ import {
 import { PRESET_ROUTES, SLUG_ALIASES, FORMAT_TO_URL_SLUG } from "./lib/presetRegistry";
 import { getFormatHub } from "./lib/formatHubs";
 import { decodeStudioState, createShareableUrl } from "./lib/stateSharing";
-
-interface IgnoreCategoryItem {
-  id: string;
-  sectionKey: string;
-  name: string;
-  desc: string;
-  tokenSavings: number;
-  tokenLabel: string;
-  isSecret?: boolean;
-  icon: React.ComponentType<{ className?: string }>;
-}
-
-const IGNORE_CATEGORY_LIST: IgnoreCategoryItem[] = [
-  {
-    id: "secrets",
-    sectionKey: "ignoreSecrets",
-    name: "Secrets & Local Credentials",
-    desc: "Masks .env files, private keys, SSL certs, service accounts, and API credentials from AI indexers.",
-    tokenSavings: 5,
-    tokenLabel: "~5k tokens",
-    isSecret: true,
-    icon: ShieldCheck,
-  },
-  {
-    id: "dependencies",
-    sectionKey: "ignoreDependencies",
-    name: "Dependency Bloat & Lockfiles",
-    desc: "Excludes node_modules, vendor directories, and massive lockfiles (package-lock, yarn, pnpm, Cargo).",
-    tokenSavings: 60,
-    tokenLabel: "~60k tokens",
-    icon: Package,
-  },
-  {
-    id: "build",
-    sectionKey: "ignoreBuild",
-    name: "Build Outputs & Framework Caches",
-    desc: "Filters out dist/, build/, out/, .next/, .turbo/, .cache/, and compiled bytecode artifacts.",
-    tokenSavings: 35,
-    tokenLabel: "~35k tokens",
-    icon: Cpu,
-  },
-  {
-    id: "media",
-    sectionKey: "ignoreMedia",
-    name: "Media & Heavy Binary Blobs",
-    desc: "Omits raster images (png, jpg, webp), audio/video, fonts, zip archives, and wasm binaries.",
-    tokenSavings: 20,
-    tokenLabel: "~20k tokens",
-    icon: FileArchive,
-  },
-  {
-    id: "logs",
-    sectionKey: "ignoreLogs",
-    name: "Logs & Diagnostic Traces",
-    desc: "Blocks test coverage reports (coverage/, .nyc_output/) and verbose npm/yarn/pnpm debug logs.",
-    tokenSavings: 15,
-    tokenLabel: "~15k tokens",
-    icon: Sliders,
-  },
-  {
-    id: "ide",
-    sectionKey: "ignoreIde",
-    name: "IDE Configurations & OS Metadata",
-    desc: "Strips .idea/, .vscode/, editor swap files, .DS_Store, and Windows Thumbs.db files.",
-    tokenSavings: 5,
-    tokenLabel: "~5k tokens",
-    icon: FolderGit2,
-  },
-  {
-    id: "database",
-    sectionKey: "ignoreDatabase",
-    name: "Database Dumps & Local Storage",
-    desc: "Guards raw database dumps (*.sql, *.dump), SQLite database files, and journal files (*.db, *.db-wal).",
-    tokenSavings: 30,
-    tokenLabel: "~30k tokens",
-    isSecret: true,
-    icon: Database,
-  },
-  {
-    id: "fixtures",
-    sectionKey: "ignoreFixtures",
-    name: "Test Fixtures & Heavy Snapshots",
-    desc: "Skips bloated mock JSON payloads, large test fixture folders, and verbose test snapshots.",
-    tokenSavings: 20,
-    tokenLabel: "~20k tokens",
-    icon: CheckCircle2,
-  },
-];
 
 interface ClaudeSkillsClientProps {
   initialFormat?: OutputFormat;
@@ -280,12 +199,68 @@ export function ClaudeSkillsClient({
   const [memoryInvariants, setMemoryInvariants] = useState(() => initialMemory.memoryInvariants);
   const [memorySessionHistory, setMemorySessionHistory] = useState(() => initialMemory.memorySessionHistory);
 
+  // Governance section values and setters keyed by section, consumed by <GovernanceSections />
+  const governanceValues: GovernanceValues = {
+    prdOverview, prdProblemStatement, prdPersonas, prdFunctionalReqs, prdNonFunctionalReqs, prdMilestones,
+    designTokens, designLayout, designConventions, designGuardrails, designDirectives, designVerification,
+    taskDashboard, taskPhases, taskVerification, taskDirectives, taskSessionLog,
+    memoryContext, memoryAdrs, memoryGotchas, memoryLoop, memoryInvariants, memorySessionHistory,
+  };
+  // State setters are stable, so the map is built once
+  const governanceSetters = useMemo<Record<GovernanceFieldKey, (value: string) => void>>(() => ({
+    prdOverview: setPrdOverview, prdProblemStatement: setPrdProblemStatement, prdPersonas: setPrdPersonas,
+    prdFunctionalReqs: setPrdFunctionalReqs, prdNonFunctionalReqs: setPrdNonFunctionalReqs, prdMilestones: setPrdMilestones,
+    designTokens: setDesignTokens, designLayout: setDesignLayout, designConventions: setDesignConventions,
+    designGuardrails: setDesignGuardrails, designDirectives: setDesignDirectives, designVerification: setDesignVerification,
+    taskDashboard: setTaskDashboard, taskPhases: setTaskPhases, taskVerification: setTaskVerification,
+    taskDirectives: setTaskDirectives, taskSessionLog: setTaskSessionLog,
+    memoryContext: setMemoryContext, memoryAdrs: setMemoryAdrs, memoryGotchas: setMemoryGotchas,
+    memoryLoop: setMemoryLoop, memoryInvariants: setMemoryInvariants, memorySessionHistory: setMemorySessionHistory,
+  }), []);
+
   // Advanced Runtime Controls & Direct Editor Editing
   const [globPattern, setGlobPattern] = useState("**/*");
   const [alwaysApply, setAlwaysApply] = useState(false);
   const [editorContent, setEditorContent] = useState<string>("");
   const editorRef = React.useRef<any>(null);
-  const [isManuallyEdited, setIsManuallyEdited] = useState(false);
+  const [isManuallyEdited, setIsManuallyEditedState] = useState(false);
+  // Manual editor edits for formats other than the active one, preserved across format switches
+  const [stashedEdits, setStashedEdits] = useState<Partial<Record<OutputFormat, string>>>({});
+  // Last manual edit that a form change replaced, offered back to the user via a restore notice
+  const [discardedEdit, setDiscardedEdit] = useState<{ format: OutputFormat; content: string } | null>(null);
+  const isManuallyEditedRef = React.useRef(false);
+  const editorContentRef = React.useRef("");
+  const formatRef = React.useRef<OutputFormat>(format);
+  const stashedEditsRef = React.useRef<Partial<Record<OutputFormat, string>>>({});
+
+  useEffect(() => {
+    editorContentRef.current = editorContent;
+    formatRef.current = format;
+    stashedEditsRef.current = stashedEdits;
+  }, [editorContent, format, stashedEdits]);
+
+  // Clearing the manual flag regenerates output from the form; remember the replaced edit so it can be restored
+  const setIsManuallyEdited = useCallback((next: boolean) => {
+    if (!next && isManuallyEditedRef.current) {
+      setDiscardedEdit({ format: formatRef.current, content: editorContentRef.current });
+    } else if (next) {
+      setDiscardedEdit(null);
+    }
+    isManuallyEditedRef.current = next;
+    setIsManuallyEditedState(next);
+  }, []);
+
+  // Presets and ingestion replace the whole project context, so edits stashed for other formats are stale
+  const resetAllManualEdits = useCallback(() => {
+    stashedEditsRef.current = {};
+    setStashedEdits({});
+    setIsManuallyEdited(false);
+  }, [setIsManuallyEdited]);
+
+  const handleGovernanceChange = (key: GovernanceFieldKey, value: string) => {
+    governanceSetters[key](value);
+    setIsManuallyEdited(false);
+  };
   const [lastAutoSaved, setLastAutoSaved] = useState<string | null>(null);
   const [quotaError, setQuotaError] = useState<string | null>(null);
   const [isManifestModalOpen, setIsManifestModalOpen] = useState(false);
@@ -307,8 +282,6 @@ export function ClaudeSkillsClient({
   const markerDecorationsRef = React.useRef<string[]>([]);
   const previewContainerRef = React.useRef<HTMLPreElement>(null);
   const monacoInstanceRef = React.useRef<any>(null);
-  const lastHandledScrollIdRef = React.useRef(0);
-  const lastHandledPreviewScrollIdRef = React.useRef(0);
 
   // Synchronize activeFieldKeyRef whenever activeFieldKey changes
   useEffect(() => {
@@ -317,14 +290,10 @@ export function ClaudeSkillsClient({
 
   const requestSectionScroll = useCallback((fieldKey?: string) => {
     if (fieldKey) {
-      if (activeFieldKeyRef.current !== fieldKey) {
-        activeFieldKeyRef.current = fieldKey;
-        setActiveFieldKey(fieldKey);
-        setScrollRequestId((prev) => prev + 1);
-      }
-    } else {
-      setScrollRequestId((prev) => prev + 1);
+      activeFieldKeyRef.current = fieldKey;
+      setActiveFieldKey(fieldKey);
     }
+    setScrollRequestId((prev) => prev + 1);
   }, []);
 
   // Synchronize browser address bar with current format and preset without re-rendering or wiping state
@@ -352,10 +321,27 @@ export function ClaudeSkillsClient({
 
   // Central format switcher — clears active markers, resets editor to top, updates format and syncs URL
   const handleSelectFormat = useCallback((newFormat: OutputFormat) => {
+    const prevFormat = formatRef.current;
+    if (newFormat !== prevFormat) {
+      // Stash the outgoing format's manual edits and restore any previously stashed edits for the incoming one
+      const nextStash = { ...stashedEditsRef.current };
+      if (isManuallyEditedRef.current) nextStash[prevFormat] = editorContentRef.current;
+      const restored = nextStash[newFormat];
+      delete nextStash[newFormat];
+      stashedEditsRef.current = nextStash;
+      setStashedEdits(nextStash);
+      setDiscardedEdit(null);
+      if (restored !== undefined) {
+        setEditorContent(restored);
+        editorContentRef.current = restored;
+      }
+      isManuallyEditedRef.current = restored !== undefined;
+      setIsManuallyEditedState(restored !== undefined);
+      formatRef.current = newFormat;
+    }
     setFormat(newFormat);
     activeFieldKeyRef.current = null;
     setActiveFieldKey(null);
-    setIsManuallyEdited(false);
     if (editorRef.current) {
       try {
         editorRef.current.setScrollTop(0);
@@ -373,6 +359,46 @@ export function ClaudeSkillsClient({
       setShouldLoadEditor(true);
     }
   }, [mobileTab]);
+
+  // Proactively pre-warm Monaco bundle and mount in background during idle time
+  useEffect(() => {
+    let cancel = false;
+    const warmUp = () => {
+      if (cancel) return;
+      import("@monaco-editor/react")
+        .then(({ loader }) => {
+          if (!cancel && loader) {
+            configureMonacoLoader(loader);
+            loader
+              .init()
+              .then(() => {
+                // On desktop viewports (>= 1024px), automatically transition to full Monaco once idle
+                if (!cancel && typeof window !== "undefined" && window.innerWidth >= 1024) {
+                  setShouldLoadEditor(true);
+                }
+              })
+              .catch(() => {});
+          }
+        })
+        .catch(() => {});
+    };
+
+    if (typeof window !== "undefined") {
+      if ("requestIdleCallback" in window) {
+        const id = (window as Window & { requestIdleCallback?: any }).requestIdleCallback(warmUp, { timeout: 1500 });
+        return () => {
+          cancel = true;
+          (window as Window & { cancelIdleCallback?: any }).cancelIdleCallback?.(id);
+        };
+      } else {
+        const timer = setTimeout(warmUp, 800);
+        return () => {
+          cancel = true;
+          clearTimeout(timer);
+        };
+      }
+    }
+  }, []);
 
   const isGovernanceFormat = format === "prd_md" || format === "design_md" || format === "task_md" || format === "memory_md";
   const isMcpFormat = format === "mcp_json";
@@ -412,16 +438,6 @@ export function ClaudeSkillsClient({
       setIgnoreCategories(["dependencies", "build", "media", "fixtures", "logs"]);
     }
   };
-
-  const estimatedTokensSaved = useMemo(() => {
-    return IGNORE_CATEGORY_LIST.reduce((acc, cat) => {
-      return ignoreCategories.includes(cat.id) ? acc + cat.tokenSavings : acc;
-    }, 0);
-  }, [ignoreCategories]);
-
-  const activeSecretMasks = useMemo(() => {
-    return IGNORE_CATEGORY_LIST.filter((cat) => cat.isSecret && ignoreCategories.includes(cat.id)).length;
-  }, [ignoreCategories]);
 
   // Slug lock & Static Analysis Audit Panel State
   const [isSlugLocked, setIsSlugLocked] = useState(false);
@@ -502,121 +518,6 @@ export function ClaudeSkillsClient({
   const [mcpEnvValue, setMcpEnvValue] = useState<string>(() => Object.values(defaultMcpPreset.env)[0] || "");
 
   // Real-time MCP Validation
-  const mcpValidation = useMemo(() => {
-    const issues: { type: "error" | "warning" | "info"; message: string; field: string }[] = [];
-    const isGitHub = mcpPresetId === "github" || mcpServerName.toLowerCase().includes("github") || mcpEnvKey.toUpperCase().includes("GITHUB");
-    const isPostgres = mcpPresetId === "postgres" || mcpServerName.toLowerCase().includes("postgres") || mcpArgs.toLowerCase().includes("postgres");
-    const isBrave = mcpPresetId === "brave-search" || mcpServerName.toLowerCase().includes("brave") || mcpEnvKey.toUpperCase().includes("BRAVE");
-    const isFilesystem = mcpPresetId === "filesystem" || mcpServerName.toLowerCase().includes("filesystem") || mcpArgs.includes("server-filesystem");
-
-    // Server identifier checks
-    if (!mcpServerName.trim()) {
-      issues.push({ type: "error", message: "Server identifier key is required (e.g. 'github', 'filesystem').", field: "serverName" });
-    } else if (!/^[a-zA-Z0-9_-]+$/.test(mcpServerName.trim())) {
-      issues.push({ type: "warning", message: "Server key should only contain alphanumeric characters, hyphens, or underscores.", field: "serverName" });
-    }
-
-    // Command check
-    if (!mcpCommand.trim()) {
-      issues.push({ type: "error", message: "Executable command is required (e.g. 'npx', 'node', 'uvx').", field: "command" });
-    }
-
-    // GitHub Access Token Validation
-    if (isGitHub) {
-      const tokenKey = mcpEnvKey.trim();
-      const tokenVal = mcpEnvValue.trim();
-
-      if (!tokenKey || (!tokenKey.includes("GITHUB") && !tokenKey.includes("TOKEN"))) {
-        issues.push({
-          type: "error",
-          message: "Missing environment variable name: Expected 'GITHUB_PERSONAL_ACCESS_TOKEN'.",
-          field: "envKey",
-        });
-      }
-
-      if (!tokenVal) {
-        issues.push({
-          type: "error",
-          message: "GitHub Personal Access Token is required to authenticate against GitHub repositories and API.",
-          field: "envValue",
-        });
-      } else if (tokenVal.includes("your_token_here") || tokenVal.includes("placeholder") || tokenVal.toLowerCase().includes("token")) {
-        issues.push({
-          type: "warning",
-          message: "Placeholder token detected. Replace with a real personal access token from GitHub Settings.",
-          field: "envValue",
-        });
-      } else if (!tokenVal.startsWith("ghp_") && !tokenVal.startsWith("github_pat_") && !tokenVal.startsWith("gho_")) {
-        issues.push({
-          type: "info",
-          message: "Token does not match standard GitHub token prefixes ('ghp_' for classic tokens, 'github_pat_' for fine-grained).",
-          field: "envValue",
-        });
-      }
-    }
-
-    // Postgres Connection URI Validation
-    if (isPostgres) {
-      const argsArray = mcpArgs.split("\n").map((a) => a.trim()).filter(Boolean);
-      const uriArg = argsArray.find((a) => a.startsWith("postgres://") || a.startsWith("postgresql://") || a.includes("5432"));
-      if (!uriArg) {
-        issues.push({
-          type: "error",
-          message: "PostgreSQL connection URI argument is missing. Expected 'postgresql://user:password@host:port/dbname'.",
-          field: "args",
-        });
-      } else if (uriArg.includes("user:password@localhost")) {
-        issues.push({
-          type: "warning",
-          message: "Placeholder database credentials detected. Update credentials for target PostgreSQL host.",
-          field: "args",
-        });
-      }
-    }
-
-    // Brave Search Validation
-    if (isBrave) {
-      if (!mcpEnvValue.trim() || mcpEnvValue.includes("your_brave_search_api_key")) {
-        issues.push({
-          type: "warning",
-          message: "Brave Search API Key is required for web queries. Obtain one from brave.com/search/api.",
-          field: "envValue",
-        });
-      }
-    }
-
-    // Filesystem path check
-    if (isFilesystem) {
-      const argsArray = mcpArgs.split("\n").map((a) => a.trim()).filter(Boolean);
-      const hasPath = argsArray.some((a) => a.startsWith("./") || a.startsWith("/") || a.includes(":\\") || a === ".");
-      if (!hasPath) {
-        issues.push({
-          type: "warning",
-          message: "Filesystem MCP server requires at least one directory path argument (e.g. './' or absolute path).",
-          field: "args",
-        });
-      }
-    }
-
-    const errors = issues.filter((i) => i.type === "error");
-    const warnings = issues.filter((i) => i.type === "warning");
-    const infos = issues.filter((i) => i.type === "info");
-
-    return {
-      isValid: errors.length === 0 && warnings.length === 0,
-      hasErrors: errors.length > 0,
-      hasWarnings: warnings.length > 0,
-      isGitHub,
-      isPostgres,
-      isBrave,
-      isFilesystem,
-      issues,
-      errors,
-      warnings,
-      infos,
-    };
-  }, [mcpPresetId, mcpServerName, mcpCommand, mcpArgs, mcpEnvKey, mcpEnvValue]);
-
   const handleSelectMcpPreset = (presetId: string) => {
     setMcpPresetId(presetId);
     const p = MCP_PRESETS.find((item) => item.id === presetId);
@@ -775,7 +676,11 @@ export function ClaudeSkillsClient({
           if (s.customDirectives) setCustomDirectives(s.customDirectives);
           if (s.exampleGood) setExampleGood(s.exampleGood);
           if (s.exampleBad) setExampleBad(s.exampleBad);
-          if (s.format && s.format !== "subagent_json") setFormat(s.format);
+          // A shared link's format wins, then the route's format deep link, then the saved draft's last-used format
+          const storedFormat: OutputFormat | null = s.format && s.format !== "subagent_json" ? s.format : null;
+          const activeFormat: OutputFormat = (hashState ? storedFormat : null) ?? initialFormat ?? storedFormat ?? formatRef.current;
+          formatRef.current = activeFormat;
+          setFormat(activeFormat);
           if (s.globPattern) setGlobPattern(s.globPattern);
           if (typeof s.alwaysApply === "boolean") setAlwaysApply(s.alwaysApply);
           if (s.mcpPresetId) {
@@ -810,13 +715,51 @@ export function ClaudeSkillsClient({
             if (s.mcpEnvKey !== undefined) setMcpEnvKey(s.mcpEnvKey);
             if (s.mcpEnvValue !== undefined) setMcpEnvValue(s.mcpEnvValue);
           }
+          // Saved manual edits are keyed by format: the active format's edit goes to the editor, the rest to the stash
+          const restoredStash: Partial<Record<OutputFormat, string>> = {};
+          if (s.stashedEdits && typeof s.stashedEdits === "object") {
+            for (const [key, value] of Object.entries(s.stashedEdits)) {
+              if (typeof value === "string") restoredStash[key as OutputFormat] = value;
+            }
+          }
           if (s.editorContent && s.isManuallyEdited) {
-            setEditorContent(s.editorContent);
+            restoredStash[storedFormat ?? activeFormat] = s.editorContent;
+          }
+          const activeEdit = restoredStash[activeFormat];
+          delete restoredStash[activeFormat];
+          stashedEditsRef.current = restoredStash;
+          setStashedEdits(restoredStash);
+          if (activeEdit !== undefined) {
+            setEditorContent(activeEdit);
+            editorContentRef.current = activeEdit;
             setIsManuallyEdited(true);
           }
           if (Array.isArray(s.ignoreCategories)) setIgnoreCategories(s.ignoreCategories);
           if (s.ignorePreset) setIgnorePreset(s.ignorePreset);
           if (typeof s.customIgnoreRules === "string") setCustomIgnoreRules(s.customIgnoreRules);
+          if (typeof s.prdOverview === "string") setPrdOverview(s.prdOverview);
+          if (typeof s.prdProblemStatement === "string") setPrdProblemStatement(s.prdProblemStatement);
+          if (typeof s.prdPersonas === "string") setPrdPersonas(s.prdPersonas);
+          if (typeof s.prdFunctionalReqs === "string") setPrdFunctionalReqs(s.prdFunctionalReqs);
+          if (typeof s.prdNonFunctionalReqs === "string") setPrdNonFunctionalReqs(s.prdNonFunctionalReqs);
+          if (typeof s.prdMilestones === "string") setPrdMilestones(s.prdMilestones);
+          if (typeof s.designTokens === "string") setDesignTokens(s.designTokens);
+          if (typeof s.designLayout === "string") setDesignLayout(s.designLayout);
+          if (typeof s.designConventions === "string") setDesignConventions(s.designConventions);
+          if (typeof s.designGuardrails === "string") setDesignGuardrails(s.designGuardrails);
+          if (typeof s.designDirectives === "string") setDesignDirectives(s.designDirectives);
+          if (typeof s.designVerification === "string") setDesignVerification(s.designVerification);
+          if (typeof s.taskDashboard === "string") setTaskDashboard(s.taskDashboard);
+          if (typeof s.taskPhases === "string") setTaskPhases(s.taskPhases);
+          if (typeof s.taskVerification === "string") setTaskVerification(s.taskVerification);
+          if (typeof s.taskDirectives === "string") setTaskDirectives(s.taskDirectives);
+          if (typeof s.taskSessionLog === "string") setTaskSessionLog(s.taskSessionLog);
+          if (typeof s.memoryContext === "string") setMemoryContext(s.memoryContext);
+          if (typeof s.memoryAdrs === "string") setMemoryAdrs(s.memoryAdrs);
+          if (typeof s.memoryGotchas === "string") setMemoryGotchas(s.memoryGotchas);
+          if (typeof s.memoryLoop === "string") setMemoryLoop(s.memoryLoop);
+          if (typeof s.memoryInvariants === "string") setMemoryInvariants(s.memoryInvariants);
+          if (typeof s.memorySessionHistory === "string") setMemorySessionHistory(s.memorySessionHistory);
         }
       } catch (e) {
         console.error(e);
@@ -824,7 +767,7 @@ export function ClaudeSkillsClient({
       setIsMounted(true);
     }
     loadState();
-  }, [initialFormat, initialPresetId]);
+  }, [initialFormat, initialPresetId, setIsManuallyEdited]);
 
   // Debounced Versioned Envelope Auto-Save
   useEffect(() => {
@@ -860,12 +803,38 @@ export function ClaudeSkillsClient({
           mcpCommand,
           mcpArgs,
           mcpEnvKey,
-          mcpEnvValue,
-          editorContent,
+          // Literal tokens stay in memory only; env references like ${VAR} are safe to persist
+          mcpEnvValue: mcpEnvValue.trim().startsWith("${") ? mcpEnvValue : "",
+          // Unedited editor content is regenerated from the form on load, and could embed the literal token above
+          editorContent: isManuallyEdited ? editorContent : "",
           isManuallyEdited,
+          stashedEdits,
           ignoreCategories,
           ignorePreset,
           customIgnoreRules,
+          prdOverview,
+          prdProblemStatement,
+          prdPersonas,
+          prdFunctionalReqs,
+          prdNonFunctionalReqs,
+          prdMilestones,
+          designTokens,
+          designLayout,
+          designConventions,
+          designGuardrails,
+          designDirectives,
+          designVerification,
+          taskDashboard,
+          taskPhases,
+          taskVerification,
+          taskDirectives,
+          taskSessionLog,
+          memoryContext,
+          memoryAdrs,
+          memoryGotchas,
+          memoryLoop,
+          memoryInvariants,
+          memorySessionHistory,
         });
         if (res.success) {
           const now = new Date();
@@ -882,10 +851,10 @@ export function ClaudeSkillsClient({
       }
     }, 500);
     return () => clearTimeout(timer);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     isMounted,
     initialPresetId,
+    selectedPresetId,
     skillName,
     skillTitle,
     isSlugLocked,
@@ -913,9 +882,33 @@ export function ClaudeSkillsClient({
     mcpEnvValue,
     editorContent,
     isManuallyEdited,
+    stashedEdits,
     ignoreCategories,
     ignorePreset,
     customIgnoreRules,
+    prdOverview,
+    prdProblemStatement,
+    prdPersonas,
+    prdFunctionalReqs,
+    prdNonFunctionalReqs,
+    prdMilestones,
+    designTokens,
+    designLayout,
+    designConventions,
+    designGuardrails,
+    designDirectives,
+    designVerification,
+    taskDashboard,
+    taskPhases,
+    taskVerification,
+    taskDirectives,
+    taskSessionLog,
+    memoryContext,
+    memoryAdrs,
+    memoryGotchas,
+    memoryLoop,
+    memoryInvariants,
+    memorySessionHistory,
   ]);
 
   // Apply Preset with Intelligent Format Auto-Switch
@@ -986,7 +979,7 @@ export function ClaudeSkillsClient({
     }
 
     // Reset manual edit flag and clear markers so the preset content takes over cleanly
-    setIsManuallyEdited(false);
+    resetAllManualEdits();
     setActiveFieldKey(null);
     if (editorRef.current) {
       try { editorRef.current.setScrollTop(0); } catch { /* noop */ }
@@ -1017,7 +1010,7 @@ export function ClaudeSkillsClient({
       setSkillName(generateSafeSlug(manifest.suggestedSkillName));
       setIsSlugLocked(true);
     }
-    setIsManuallyEdited(false);
+    resetAllManualEdits();
   };
 
   // Apply parsed GitHub repository analysis to studio
@@ -1058,9 +1051,8 @@ export function ClaudeSkillsClient({
       setMcpCommand("npx");
       setMcpArgs(`-y\n@modelcontextprotocol/server-github\n${analysis.metadata.fullName}`);
       setMcpEnvKey("GITHUB_PERSONAL_ACCESS_TOKEN");
-      if (token) {
-        setMcpEnvValue(token);
-      }
+      // Reference the env var rather than embedding the ingestion PAT into a downloadable config file
+      setMcpEnvValue("${GITHUB_PERSONAL_ACCESS_TOKEN}");
     }
 
     // Default to targetFormat, or claude_md if user was viewing mcp_json
@@ -1091,7 +1083,7 @@ export function ClaudeSkillsClient({
       mcpCommand: "npx",
       mcpArgs: `-y\n@modelcontextprotocol/server-github\n${analysis.metadata.fullName}`,
       mcpEnvKey: "GITHUB_PERSONAL_ACCESS_TOKEN",
-      mcpEnvValue: token || mcpEnvValue,
+      mcpEnvValue: targetFormat === "mcp_json" || format === "mcp_json" ? "${GITHUB_PERSONAL_ACCESS_TOKEN}" : mcpEnvValue,
       prdOverview,
       prdProblemStatement,
       prdPersonas,
@@ -1120,7 +1112,7 @@ export function ClaudeSkillsClient({
     });
 
     setEditorContent(newContent);
-    setIsManuallyEdited(false);
+    resetAllManualEdits();
 
     const formatSlug = FORMAT_TO_URL_SLUG[activeFmt] || "claude-md";
     syncUrl(`/ai-skill-studio/${formatSlug}`);
@@ -1223,7 +1215,7 @@ export function ClaudeSkillsClient({
     });
 
     setEditorContent(newContent);
-    setIsManuallyEdited(false);
+    resetAllManualEdits();
 
     const formatSlug = FORMAT_TO_URL_SLUG[activeFmt] || "claude-md";
     syncUrl(`/ai-skill-studio/${formatSlug}`);
@@ -1304,7 +1296,7 @@ export function ClaudeSkillsClient({
     });
 
     setEditorContent(newContent);
-    setIsManuallyEdited(false);
+    resetAllManualEdits();
 
     const formatSlug = FORMAT_TO_URL_SLUG[activeFmt] || "claude-md";
     syncUrl(`/ai-skill-studio/${formatSlug}`);
@@ -1395,7 +1387,7 @@ export function ClaudeSkillsClient({
     });
 
     setEditorContent(newContent);
-    setIsManuallyEdited(false);
+    resetAllManualEdits();
 
     const formatSlug = FORMAT_TO_URL_SLUG[activeFmt] || "claude-md";
     syncUrl(`/ai-skill-studio/${formatSlug}`);
@@ -1445,7 +1437,7 @@ export function ClaudeSkillsClient({
     if (ir.triggers && ir.triggers.length > 0) {
       setTriggerTags(ir.triggers);
     }
-    setIsManuallyEdited(false);
+    resetAllManualEdits();
   };
 
   // Toggle checkbox helper
@@ -1701,8 +1693,9 @@ export function ClaudeSkillsClient({
 
   // Synchronize generated content to editorContent when not manually overridden
   useEffect(() => {
-    if (!isManuallyEdited) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
+    // Read the ref, not the render-time flag: the mount-time draft restore marks content as manual in the
+    // same effect flush, and the stale closure value would overwrite the restored edit
+    if (!isManuallyEditedRef.current) {
       setEditorContent(generatedContent);
     }
   }, [generatedContent, isManuallyEdited]);
@@ -1712,9 +1705,23 @@ export function ClaudeSkillsClient({
 
 
   // White Marker — compute marked section range synchronously whenever activeFieldKey or content changes
+  // Single-value text fields narrow the marker to their own lines; shared keys (techStack) and governance cards keep the full section
+  const activeFieldValue = useMemo<string | undefined>(() => {
+    switch (activeFieldKey) {
+      case "skillName": return skillName;
+      case "skillTitle": return skillTitle;
+      case "description": return description;
+      case "role": return role;
+      // Every format renders the philosophy by its title, so the marker lands on that line
+      case "philosophy": return PHILOSOPHIES.find((p) => p.id === philosophy)?.title;
+      case "procedures": return procedures;
+      case "customDirectives": return customDirectives;
+      default: return undefined;
+    }
+  }, [activeFieldKey, skillName, skillTitle, description, role, philosophy, procedures, customDirectives]);
   const markedRange = useMemo(
-    () => (!activeFieldKey ? null : findSectionLineRange(activeContent, activeFieldKey, format)),
-    [activeContent, activeFieldKey, format]
+    () => (!activeFieldKey ? null : findSectionLineRange(activeContent, activeFieldKey, format, activeFieldValue)),
+    [activeContent, activeFieldKey, format, activeFieldValue]
   );
   const markedRangeRef = React.useRef<MarkedSectionRange | null>(null);
   useEffect(() => {
@@ -1772,7 +1779,9 @@ export function ClaudeSkillsClient({
         },
         options: {
           isWholeLine: true,
+          // Soft tint behind the text; the solid bar lives in the gutter so it never overlaps characters
           className: "monaco-white-marker-line",
+          linesDecorationsClassName: "monaco-white-marker-gutter",
           overviewRuler: {
             color: "#ffffff",
             position: 1, // Center lane in scrollbar
@@ -1806,50 +1815,94 @@ export function ClaudeSkillsClient({
     }
   }, [markedRange, editorReady]);
 
-  // White Marker — auto-scroll editor ONLY on explicit user click/focus on form fields
-  // NO window scroll listener and NO jump on format switching
+  // White Marker — auto-follow: keep the marked section in view when a field is focused, and keep the
+  // line being changed in view while the user types in the form. Scrolls only the editor/preview, never the window,
+  // and never while the user is typing inside Monaco itself (Monaco keeps its own cursor visible).
+  const followSnapshotRef = React.useRef<{ content: string; fieldKey: string | null; requestId: number }>({
+    content: "",
+    fieldKey: null,
+    requestId: 0,
+  });
+  const pendingFollowRef = React.useRef<{ range: MarkedSectionRange; focusLine: number | null } | null>(null);
+  const followFrameRef = React.useRef<number | null>(null);
   useEffect(() => {
-    if (scrollRequestId === 0 || scrollRequestId === lastHandledScrollIdRef.current) return;
-    lastHandledScrollIdRef.current = scrollRequestId;
+    const previous = followSnapshotRef.current;
+    followSnapshotRef.current = { content: activeContent, fieldKey: activeFieldKey, requestId: scrollRequestId };
+    if (!markedRange) return;
 
-    // Small delay to let Monaco and content layout settle
-    const scrollTimer = setTimeout(() => {
+    const isNewTarget = scrollRequestId !== previous.requestId || activeFieldKey !== previous.fieldKey;
+    let focusLine: number | null = null;
+    if (!isNewTarget) {
+      const changedLine = findFirstChangedLine(previous.content, activeContent);
+      if (changedLine === null) return;
+      // Follow the edit inside the highlight; edits elsewhere fall back to keeping the highlight in view
+      if (changedLine >= markedRange.startLine && changedLine <= markedRange.endLine) focusLine = changedLine;
+    }
+    // Latest target wins; a single queued frame runs it, so rapid keystrokes never drop or stack scrolls
+    pendingFollowRef.current = { range: markedRange, focusLine };
+    if (followFrameRef.current !== null) return;
+
+    // Wait one frame so Monaco has applied the new value and laid out wrapped lines before measuring
+    followFrameRef.current = requestAnimationFrame(() => {
+      followFrameRef.current = null;
+      const job = pendingFollowRef.current;
+      pendingFollowRef.current = null;
+      if (!job) return;
+      const { range, focusLine } = job;
       const editor = editorRef.current;
-      const targetRange = markedRangeRef.current;
-      if (!editor || !targetRange) return;
-      try {
-        editor.revealLineInCenter(targetRange.startLine, 0); // 0 = Smooth scroll
-      } catch {
+      if (editor) {
         try {
-          editor.revealLine(targetRange.startLine);
+          if (editor.hasTextFocus?.()) return;
+          const layoutHeight = editor.getLayoutInfo().height;
+          if (layoutHeight <= 0) return; // hidden (mobile form tab)
+          const lineCount = editor.getModel()?.getLineCount() ?? range.endLine;
+          const spanOf = (from: number, to: number) => {
+            const last = Math.min(to, lineCount);
+            const top = editor.getTopForLineNumber(Math.min(from, lineCount));
+            const bottom =
+              typeof editor.getBottomForLineNumber === "function"
+                ? editor.getBottomForLineNumber(last)
+                : editor.getTopForLineNumber(last) + 20;
+            return { top, bottom };
+          };
+          const target = computeFollowScrollTop(
+            { scrollTop: editor.getScrollTop(), height: layoutHeight },
+            spanOf(range.startLine, range.endLine),
+            focusLine === null ? null : spanOf(focusLine, focusLine)
+          );
+          if (target !== null) editor.setScrollTop(target, 0); // 0 = ScrollType.Smooth
         } catch {
           /* noop */
         }
+        return;
       }
-    }, 40);
-    return () => clearTimeout(scrollTimer);
-  }, [scrollRequestId]);
 
-  // White Marker — also auto-scroll the static preview container if active (internal scroll ONLY, never window)
-  useEffect(() => {
-    if (!shouldLoadEditor && scrollRequestId > 0 && scrollRequestId !== lastHandledPreviewScrollIdRef.current) {
-      lastHandledPreviewScrollIdRef.current = scrollRequestId;
-
-      const previewTimer = setTimeout(() => {
-        const container = previewContainerRef.current;
-        if (!container) return;
-        const markedElem = container.querySelector<HTMLElement>(".marked-preview-line");
-        if (markedElem) {
-          const containerRect = container.getBoundingClientRect();
-          const elemRect = markedElem.getBoundingClientRect();
-          const targetTop = elemRect.top - containerRect.top + container.scrollTop - container.clientHeight / 2;
-          container.scrollTo({ top: Math.max(0, targetTop), behavior: "smooth" });
-        }
-      }, 40);
-
-      return () => clearTimeout(previewTimer);
-    }
-  }, [scrollRequestId, shouldLoadEditor]);
+      // Static preview (before Monaco loads): one <div> per line inside the <pre>
+      const container = previewContainerRef.current;
+      if (!container || container.clientHeight <= 0) return;
+      const rows = container.children;
+      const spanOfRows = (from: number, to: number) => {
+        const first = rows[from - 1] as HTMLElement | undefined;
+        const last = rows[Math.min(to, rows.length) - 1] as HTMLElement | undefined;
+        if (!first || !last) return null;
+        return { top: first.offsetTop, bottom: last.offsetTop + last.offsetHeight };
+      };
+      const rangeSpan = spanOfRows(range.startLine, range.endLine);
+      if (!rangeSpan) return;
+      const target = computeFollowScrollTop(
+        { scrollTop: container.scrollTop, height: container.clientHeight },
+        rangeSpan,
+        focusLine === null ? null : spanOfRows(focusLine, focusLine)
+      );
+      if (target !== null) container.scrollTo({ top: target, behavior: "smooth" });
+    });
+  }, [markedRange, activeContent, activeFieldKey, scrollRequestId]);
+  useEffect(
+    () => () => {
+      if (followFrameRef.current !== null) cancelAnimationFrame(followFrameRef.current);
+    },
+    []
+  );
 
   // Real-time Rule Quality & Security Audit Engine (5 Core Dimensions)
   const auditReport = useMemo(() => {
@@ -2082,28 +2135,31 @@ export function ClaudeSkillsClient({
 
   // Export Complete AI Workspace Suite as ZIP
   const handleExportZip = async () => {
+    // Active format uses what the editor shows; other formats use their stashed manual edits or fresh output
+    const exportContentFor = (f: OutputFormat) =>
+      f === format ? activeContent : (stashedEdits[f] ?? buildContent(f));
     setIsExportingZip(true);
     try {
       await downloadAiKitZip({
         skillName,
         skillTitle,
-        cursorRulesContent: format === "cursor_mdc" && isManuallyEdited ? editorContent : buildContent("cursor_mdc"),
-        skillMdContent: format === "skill_md" && isManuallyEdited ? editorContent : buildContent("skill_md"),
-        claudeMdContent: format === "claude_md" && isManuallyEdited ? editorContent : buildContent("claude_md"),
-        agentsMdContent: format === "agents_md" && isManuallyEdited ? editorContent : buildContent("agents_md"),
-        mcpJsonContent: format === "mcp_json" && isManuallyEdited ? editorContent : buildContent("mcp_json"),
-        windsurfContent: format === "windsurf_cascade" && isManuallyEdited ? editorContent : buildContent("windsurf_cascade"),
-        copilotContent: format === "copilot_instructions" && isManuallyEdited ? editorContent : buildContent("copilot_instructions"),
-        openaiContent: format === "openai_instructions" && isManuallyEdited ? editorContent : buildContent("openai_instructions"),
-        geminiContent: format === "gemini_prompts" && isManuallyEdited ? editorContent : buildContent("gemini_prompts"),
-        cursorignoreContent: format === "cursorignore" && isManuallyEdited ? editorContent : buildContent("cursorignore"),
-        claudeignoreContent: format === "claudeignore" && isManuallyEdited ? editorContent : buildContent("claudeignore"),
-        llmsTxtContent: format === "llms_txt" && isManuallyEdited ? editorContent : buildContent("llms_txt"),
-        architectureMdContent: format === "architecture_md" && isManuallyEdited ? editorContent : buildContent("architecture_md"),
-        prdMdContent: format === "prd_md" && isManuallyEdited ? editorContent : buildContent("prd_md"),
-        designMdContent: format === "design_md" && isManuallyEdited ? editorContent : buildContent("design_md"),
-        taskMdContent: format === "task_md" && isManuallyEdited ? editorContent : buildContent("task_md"),
-        memoryMdContent: format === "memory_md" && isManuallyEdited ? editorContent : buildContent("memory_md"),
+        cursorRulesContent: exportContentFor("cursor_mdc"),
+        skillMdContent: exportContentFor("skill_md"),
+        claudeMdContent: exportContentFor("claude_md"),
+        agentsMdContent: exportContentFor("agents_md"),
+        mcpJsonContent: exportContentFor("mcp_json"),
+        windsurfContent: exportContentFor("windsurf_cascade"),
+        copilotContent: exportContentFor("copilot_instructions"),
+        openaiContent: exportContentFor("openai_instructions"),
+        geminiContent: exportContentFor("gemini_prompts"),
+        cursorignoreContent: exportContentFor("cursorignore"),
+        claudeignoreContent: exportContentFor("claudeignore"),
+        llmsTxtContent: exportContentFor("llms_txt"),
+        architectureMdContent: exportContentFor("architecture_md"),
+        prdMdContent: exportContentFor("prd_md"),
+        designMdContent: exportContentFor("design_md"),
+        taskMdContent: exportContentFor("task_md"),
+        memoryMdContent: exportContentFor("memory_md"),
         framework,
         language,
       });
@@ -2688,1301 +2744,20 @@ export function ClaudeSkillsClient({
           )}
         >
           {/* Format Selector Card */}
-          <div className="bg-white rounded-xl border border-zinc-200 p-4 sm:p-5 shadow-xs space-y-3.5">
-            <div className="flex items-center justify-between gap-2 border-b border-zinc-100 pb-3">
-              <div className="flex items-center gap-2 min-w-0">
-                <Boxes className="w-4 h-4 text-zinc-700 shrink-0" />
-                <h3 className="text-sm font-bold text-zinc-900 truncate">Target Standard &amp; File Format</h3>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <span className="text-[11px] text-zinc-500 hidden sm:inline">Select runtime specification</span>
-                <InfoTooltip
-                  title="Target File Format"
-                  description="Choose from 17 supported agent formats including Cursor rules, Claude Code skills, MCP servers, and the 4-layer AI governance documents (PRD.md, DESIGN.md, TASK.md, MEMORY.md)."
-                  align="right"
-                />
-              </div>
-            </div>
+          <FormatSelector
+            format={format}
+            handleSelectFormat={handleSelectFormat}
+          />
 
-            {/* Group 1: AI Agent Rules & Skills */}
-            <div className="space-y-1.5">
-              <div className="text-[10px] font-semibold tracking-wider uppercase text-zinc-500 flex items-center gap-1.5">
-                <Bot className="w-3 h-3 text-orange-500" />
-                <span>AI Agent Rules & Skills</span>
-              </div>
-              <div suppressHydrationWarning className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                <button
-                  suppressHydrationWarning
-                  onClick={() => handleSelectFormat("cursor_mdc")}
-                  className={cn(
-                    "p-2 rounded-lg border text-left transition-all flex flex-col gap-1 overflow-hidden",
-                    format === "cursor_mdc"
-                      ? "border-black bg-zinc-950 text-white shadow-sm ring-1 ring-black"
-                      : "border-zinc-200 bg-white hover:bg-zinc-50 text-zinc-700"
-                  )}
-                >
-                  <div className="flex items-center gap-1.5 font-semibold text-xs truncate">
-                    <Image src="/cursor-icon.png" width={14} height={14}  alt="Cursor" className="w-3.5 h-3.5 object-contain shrink-0" />
-                    <span className="truncate">.cursorrules</span>
-                  </div>
-                  <span className={cn("text-[10px] leading-tight truncate", format === "cursor_mdc" ? "text-zinc-400" : "text-zinc-500")}>
-                    Cursor .mdc Rules
-                  </span>
-                </button>
-
-                <button
-                  suppressHydrationWarning
-                  onClick={() => handleSelectFormat("skill_md")}
-                  className={cn(
-                    "p-2 rounded-lg border text-left transition-all flex flex-col gap-1 overflow-hidden",
-                    format === "skill_md"
-                      ? "border-orange-500 bg-orange-50/60 text-orange-950 shadow-xs ring-1 ring-orange-500/20"
-                      : "border-zinc-200 bg-white hover:bg-zinc-50 text-zinc-700"
-                  )}
-                >
-                  <div className="flex items-center gap-1.5 font-semibold text-xs truncate">
-                    <Image src="/ai-skill-icon.png" width={14} height={14}  alt="Claude" className="w-3.5 h-3.5 object-contain shrink-0" />
-                    <span className="truncate">SKILL.md</span>
-                  </div>
-                  <span className="text-[10px] text-zinc-500 leading-tight truncate">Claude Code / Skill</span>
-                </button>
-
-                <button
-                  suppressHydrationWarning
-                  onClick={() => handleSelectFormat("claude_md")}
-                  className={cn(
-                    "p-2 rounded-lg border text-left transition-all flex flex-col gap-1 overflow-hidden",
-                    format === "claude_md"
-                      ? "border-amber-500 bg-amber-50/60 text-amber-950 shadow-xs ring-1 ring-amber-500/20"
-                      : "border-zinc-200 bg-white hover:bg-zinc-50 text-zinc-700"
-                  )}
-                >
-                  <div className="flex items-center gap-1.5 font-semibold text-xs truncate">
-                    <Image src="/claude-icon.png" width={14} height={14}  alt="Claude" className="w-3.5 h-3.5 object-contain shrink-0" />
-                    <span className="truncate">CLAUDE.md</span>
-                  </div>
-                  <span className="text-[10px] text-zinc-500 leading-tight truncate">Root Guidelines</span>
-                </button>
-
-                <button
-                  suppressHydrationWarning
-                  onClick={() => handleSelectFormat("agents_md")}
-                  className={cn(
-                    "p-2 rounded-lg border text-left transition-all flex flex-col gap-1 overflow-hidden",
-                    format === "agents_md"
-                      ? "border-emerald-600 bg-emerald-50/60 text-emerald-950 shadow-xs ring-1 ring-emerald-600/20"
-                      : "border-zinc-200 bg-white hover:bg-zinc-50 text-zinc-700"
-                  )}
-                >
-                  <div className="flex items-center gap-1.5 font-semibold text-xs truncate">
-                    <Cpu className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                    <span className="truncate">AGENTS.md</span>
-                  </div>
-                  <span className="text-[10px] text-zinc-500 leading-tight truncate">Multi-Agent</span>
-                </button>
-
-                <button
-                  suppressHydrationWarning
-                  onClick={() => handleSelectFormat("windsurf_cascade")}
-                  className={cn(
-                    "p-2 rounded-lg border text-left transition-all flex flex-col gap-1 overflow-hidden",
-                    format === "windsurf_cascade"
-                      ? "border-teal-500 bg-teal-50/60 text-teal-950 shadow-xs ring-1 ring-teal-500/20"
-                      : "border-zinc-200 bg-white hover:bg-zinc-50 text-zinc-700"
-                  )}
-                >
-                  <div className="flex items-center gap-1.5 font-semibold text-xs truncate">
-                    <WindsurfIcon className="w-3.5 h-3.5 text-teal-700 shrink-0" />
-                    <span className="truncate">Windsurf</span>
-                  </div>
-                  <span className="text-[10px] text-zinc-500 leading-tight truncate">Cascade Rules</span>
-                </button>
-
-                <button
-                  suppressHydrationWarning
-                  onClick={() => handleSelectFormat("copilot_instructions")}
-                  className={cn(
-                    "p-2 rounded-lg border text-left transition-all flex flex-col gap-1 overflow-hidden",
-                    format === "copilot_instructions"
-                      ? "border-sky-500 bg-sky-50/60 text-sky-950 shadow-xs ring-1 ring-sky-500/20"
-                      : "border-zinc-200 bg-white hover:bg-zinc-50 text-zinc-700"
-                  )}
-                >
-                  <div className="flex items-center gap-1.5 font-semibold text-xs truncate">
-                    <CopilotIcon className="w-3.5 h-3.5 text-sky-600 shrink-0" />
-                    <span className="truncate">Copilot</span>
-                  </div>
-                  <span className="text-[10px] text-zinc-500 leading-tight truncate">Instructions</span>
-                </button>
-
-                <button
-                  suppressHydrationWarning
-                  onClick={() => handleSelectFormat("openai_instructions")}
-                  className={cn(
-                    "p-2 rounded-lg border text-left transition-all flex flex-col gap-1 overflow-hidden",
-                    format === "openai_instructions"
-                      ? "border-purple-500 bg-purple-50/60 text-purple-950 shadow-xs ring-1 ring-purple-500/20"
-                      : "border-zinc-200 bg-white hover:bg-zinc-50 text-zinc-700"
-                  )}
-                >
-                  <div className="flex items-center gap-1.5 font-semibold text-xs truncate">
-                    <OpenAIIcon className="w-3.5 h-3.5 text-purple-700 dark:text-purple-300 shrink-0" />
-                    <span className="truncate">OpenAI</span>
-                  </div>
-                  <span className="text-[10px] text-zinc-500 leading-tight truncate">Custom System</span>
-                </button>
-
-                <button
-                  suppressHydrationWarning
-                  onClick={() => handleSelectFormat("gemini_prompts")}
-                  className={cn(
-                    "p-2 rounded-lg border text-left transition-all flex flex-col gap-1 overflow-hidden",
-                    format === "gemini_prompts"
-                      ? "border-indigo-500 bg-indigo-50/60 text-indigo-950 shadow-xs ring-1 ring-indigo-500/20"
-                      : "border-zinc-200 bg-white hover:bg-zinc-50 text-zinc-700"
-                  )}
-                >
-                  <div className="flex items-center gap-1.5 font-semibold text-xs truncate">
-                    <GeminiIcon className="w-3.5 h-3.5 shrink-0" />
-                    <span className="truncate">Gemini</span>
-                  </div>
-                  <span className="text-[10px] text-zinc-500 leading-tight truncate">System Prompts</span>
-                </button>
-              </div>
-            </div>
-
-            {/* Group 2: Context Shields & Privacy (Ignore Files) */}
-            <div className="space-y-1.5 pt-2 border-t border-zinc-100">
-              <div className="text-[10px] font-semibold tracking-wider uppercase text-zinc-500 flex items-center gap-1.5">
-                <ShieldCheck className="w-3 h-3 text-emerald-600" />
-                <span>Context Shields & Privacy (Ignore Files)</span>
-              </div>
-              <div suppressHydrationWarning className="grid grid-cols-2 gap-2">
-                <button
-                  suppressHydrationWarning
-                  onClick={() => handleSelectFormat("cursorignore")}
-                  className={cn(
-                    "p-2 rounded-lg border text-left transition-all flex flex-col gap-1 overflow-hidden",
-                    format === "cursorignore"
-                      ? "border-emerald-600 bg-emerald-50/60 text-emerald-950 shadow-xs ring-1 ring-emerald-600/20"
-                      : "border-zinc-200 bg-white hover:bg-zinc-50 text-zinc-700"
-                  )}
-                >
-                  <div className="flex items-center gap-1.5 font-semibold text-xs truncate">
-                    <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                    <span className="truncate">.cursorignore</span>
-                  </div>
-                  <span className="text-[10px] text-zinc-500 leading-tight truncate">Token & Secret Shield</span>
-                </button>
-
-                <button
-                  suppressHydrationWarning
-                  onClick={() => handleSelectFormat("claudeignore")}
-                  className={cn(
-                    "p-2 rounded-lg border text-left transition-all flex flex-col gap-1 overflow-hidden",
-                    format === "claudeignore"
-                      ? "border-amber-600 bg-amber-50/60 text-amber-950 shadow-xs ring-1 ring-amber-600/20"
-                      : "border-zinc-200 bg-white hover:bg-zinc-50 text-zinc-700"
-                  )}
-                >
-                  <div className="flex items-center gap-1.5 font-semibold text-xs truncate">
-                    <ShieldCheck className="w-3.5 h-3.5 text-amber-600 shrink-0" />
-                    <span className="truncate">.claudeignore</span>
-                  </div>
-                  <span className="text-[10px] text-zinc-500 leading-tight truncate">CLI Boundary Shield</span>
-                </button>
-              </div>
-            </div>
-
-            {/* Group 3: Integrations & Machine Documentation */}
-            <div className="space-y-1.5 pt-2 border-t border-zinc-100">
-              <div className="text-[10px] font-semibold tracking-wider uppercase text-zinc-500 flex items-center gap-1.5">
-                <FileText className="w-3 h-3 text-blue-600" />
-                <span>Integrations & Machine Documentation</span>
-              </div>
-              <div suppressHydrationWarning className="grid grid-cols-2 sm:grid-cols-3 gap-2 [&>*:last-child]:col-span-2 sm:[&>*:last-child]:col-span-1">
-                <button
-                  suppressHydrationWarning
-                  onClick={() => handleSelectFormat("mcp_json")}
-                  className={cn(
-                    "p-2 rounded-lg border text-left transition-all flex flex-col gap-1 overflow-hidden",
-                    format === "mcp_json"
-                      ? "border-blue-500 bg-blue-50/60 text-blue-950 shadow-xs ring-1 ring-blue-500/20"
-                      : "border-zinc-200 bg-white hover:bg-zinc-50 text-zinc-700"
-                  )}
-                >
-                  <div className="flex items-center gap-1.5 font-semibold text-xs truncate">
-                    <Server className="w-3.5 h-3.5 text-blue-600 shrink-0" />
-                    <span className="truncate">claude.json</span>
-                  </div>
-                  <span className="text-[10px] text-zinc-500 leading-tight truncate">MCP Servers</span>
-                </button>
-
-                <button
-                  suppressHydrationWarning
-                  onClick={() => handleSelectFormat("llms_txt")}
-                  className={cn(
-                    "p-2 rounded-lg border text-left transition-all flex flex-col gap-1 overflow-hidden",
-                    format === "llms_txt"
-                      ? "border-indigo-500 bg-indigo-50/60 text-indigo-950 shadow-xs ring-1 ring-indigo-500/20"
-                      : "border-zinc-200 bg-white hover:bg-zinc-50 text-zinc-700"
-                  )}
-                >
-                  <div className="flex items-center gap-1.5 font-semibold text-xs truncate">
-                    <FileText className="w-3.5 h-3.5 text-indigo-600 shrink-0" />
-                    <span className="truncate">llms.txt</span>
-                  </div>
-                  <span className="text-[10px] text-zinc-500 leading-tight truncate">Codebase Roadmap</span>
-                </button>
-
-                <button
-                  suppressHydrationWarning
-                  onClick={() => handleSelectFormat("architecture_md")}
-                  className={cn(
-                    "p-2 rounded-lg border text-left transition-all flex flex-col gap-1 overflow-hidden",
-                    format === "architecture_md"
-                      ? "border-purple-500 bg-purple-50/60 text-purple-950 shadow-xs ring-1 ring-purple-500/20"
-                      : "border-zinc-200 bg-white hover:bg-zinc-50 text-zinc-700"
-                  )}
-                >
-                  <div className="flex items-center gap-1.5 font-semibold text-xs truncate">
-                    <Layers className="w-3.5 h-3.5 text-purple-600 shrink-0" />
-                    <span className="truncate">ARCHITECTURE.md</span>
-                  </div>
-                  <span className="text-[10px] text-zinc-500 leading-tight truncate">System Invariants</span>
-                </button>
-              </div>
-            </div>
-
-            {/* Group 4: AI Governance & Multi-Agent Planning Suite */}
-            <div className="space-y-1.5 pt-2 border-t border-zinc-100">
-              <div className="text-[10px] font-semibold tracking-wider uppercase text-zinc-500 flex items-center gap-1.5">
-                <Layers className="w-3 h-3 text-emerald-600" />
-                <span>AI Governance & Multi-Agent Planning Suite</span>
-              </div>
-              <div suppressHydrationWarning className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                <button
-                  suppressHydrationWarning
-                  onClick={() => handleSelectFormat("prd_md")}
-                  className={cn(
-                    "p-2 rounded-lg border text-left transition-all flex flex-col gap-1 overflow-hidden",
-                    format === "prd_md"
-                      ? "border-blue-600 bg-blue-50/60 text-blue-950 shadow-xs ring-1 ring-blue-600/20"
-                      : "border-zinc-200 bg-white hover:bg-zinc-50 text-zinc-700"
-                  )}
-                >
-                  <div className="flex items-center gap-1.5 font-semibold text-xs truncate">
-                    <FileText className="w-3.5 h-3.5 text-blue-600 shrink-0" />
-                    <span className="truncate">PRD.md</span>
-                  </div>
-                  <span className="text-[10px] text-zinc-500 leading-tight truncate">Product Requirements</span>
-                </button>
-
-                <button
-                  suppressHydrationWarning
-                  onClick={() => handleSelectFormat("design_md")}
-                  className={cn(
-                    "p-2 rounded-lg border text-left transition-all flex flex-col gap-1 overflow-hidden",
-                    format === "design_md"
-                      ? "border-indigo-600 bg-indigo-50/60 text-indigo-950 shadow-xs ring-1 ring-indigo-600/20"
-                      : "border-zinc-200 bg-white hover:bg-zinc-50 text-zinc-700"
-                  )}
-                >
-                  <div className="flex items-center gap-1.5 font-semibold text-xs truncate">
-                    <Layers className="w-3.5 h-3.5 text-indigo-600 shrink-0" />
-                    <span className="truncate">DESIGN.md</span>
-                  </div>
-                  <span className="text-[10px] text-zinc-500 leading-tight truncate">Design & Invariants</span>
-                </button>
-
-                <button
-                  suppressHydrationWarning
-                  onClick={() => handleSelectFormat("task_md")}
-                  className={cn(
-                    "p-2 rounded-lg border text-left transition-all flex flex-col gap-1 overflow-hidden",
-                    format === "task_md"
-                      ? "border-emerald-600 bg-emerald-50/60 text-emerald-950 shadow-xs ring-1 ring-emerald-600/20"
-                      : "border-zinc-200 bg-white hover:bg-zinc-50 text-zinc-700"
-                  )}
-                >
-                  <div className="flex items-center gap-1.5 font-semibold text-xs truncate">
-                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                    <span className="truncate">TASK.md</span>
-                  </div>
-                  <span className="text-[10px] text-zinc-500 leading-tight truncate">Sprint Tracker & Gates</span>
-                </button>
-
-                <button
-                  suppressHydrationWarning
-                  onClick={() => handleSelectFormat("memory_md")}
-                  className={cn(
-                    "p-2 rounded-lg border text-left transition-all flex flex-col gap-1 overflow-hidden",
-                    format === "memory_md"
-                      ? "border-amber-600 bg-amber-50/60 text-amber-950 shadow-xs ring-1 ring-amber-600/20"
-                      : "border-zinc-200 bg-white hover:bg-zinc-50 text-zinc-700"
-                  )}
-                >
-                  <div className="flex items-center gap-1.5 font-semibold text-xs truncate">
-                    <Cpu className="w-3.5 h-3.5 text-amber-600 shrink-0" />
-                    <span className="truncate">MEMORY.md</span>
-                  </div>
-                  <span className="text-[10px] text-zinc-500 leading-tight truncate">Persistent Agent Brain</span>
-                </button>
-              </div>
-            </div>
-          </div>
-
-          {/* 1. PRD.md Respected Sections */}
-          {format === "prd_md" && (
-            <div className="space-y-4">
-              {/* Card 1: Executive Summary & Vision */}
-              <div data-section="prdOverview" className="bg-white rounded-xl border border-zinc-200 p-4 sm:p-5 shadow-xs space-y-2.5">
-                <div className="flex items-center justify-between border-b border-zinc-100 pb-2 gap-2">
-                  <div className="flex items-center gap-2 min-w-0">
-                    <FileText className="w-4 h-4 text-blue-600 shrink-0" />
-                    <h3 className="text-xs sm:text-sm font-bold text-zinc-900 truncate">1. Executive Summary &amp; Vision</h3>
-                  </div>
-                  <div className="flex items-center gap-2 shrink-0">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const d = getDefaultPrdValues(PRESETS.find((p) => p.id === selectedPresetId) || defaultPreset);
-                        setPrdOverview(d.prdOverview);
-                        setIsManuallyEdited(false);
-                      }}
-                      className="text-[10px] text-zinc-500 hover:text-zinc-700 transition-colors font-mono cursor-pointer"
-                      title="Reset to preset default"
-                    >
-                      Reset
-                    </button>
-                    <InfoTooltip
-                      title="Executive Summary & Vision"
-                      description="Summarize what problem your product solves, target users, and key value propositions in 2-3 sentences. Supports markdown formatting."
-                      example="DevScratchpad is an offline-first developer workbench providing privacy-first tools and agent governance."
-                      align="right"
-                    />
-                  </div>
-                </div>
-                <p className="text-xs text-zinc-500 leading-relaxed">
-                  High-level product vision, core value proposition, and executive scope:
-                </p>
-                <textarea
-                  value={prdOverview}
-                  onFocus={() => setActiveFieldKey("prdOverview")}
-                  onChange={(e) => {
-                    setPrdOverview(e.target.value); setActiveFieldKey("prdOverview");
-                    setIsManuallyEdited(false);
-                  }}
-                  rows={3}
-                  placeholder="Executive summary of the product..."
-                  className="w-full p-2.5 border border-zinc-200 rounded-lg text-xs leading-relaxed focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 resize-y"
-                />
-              </div>
-
-              {/* Card 2: Problem Statement */}
-              <div data-section="prdProblemStatement" className="bg-white rounded-xl border border-zinc-200 p-4 sm:p-5 shadow-xs space-y-2.5">
-                <div className="flex items-center justify-between border-b border-zinc-100 pb-2 gap-2">
-                  <div className="flex items-center gap-2 min-w-0">
-                    <AlertCircle className="w-4 h-4 text-blue-600 shrink-0" />
-                    <h3 className="text-xs sm:text-sm font-bold text-zinc-900 truncate">2. Problem Statement &amp; Scope Boundaries</h3>
-                  </div>
-                  <div className="flex items-center gap-2 shrink-0">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const d = getDefaultPrdValues(PRESETS.find((p) => p.id === selectedPresetId) || defaultPreset);
-                        setPrdProblemStatement(d.prdProblemStatement);
-                        setIsManuallyEdited(false);
-                      }}
-                      className="text-[10px] text-zinc-500 hover:text-zinc-700 transition-colors font-mono cursor-pointer"
-                      title="Reset to preset default"
-                    >
-                      Reset
-                    </button>
-                    <InfoTooltip
-                      title="Problem Statement & Scope"
-                      description="List developer pain points, market differentiation, and explicit non-goals to keep agents strictly within scope boundaries."
-                      example="- Problem: Sensitive credentials leak to remote LLMs.\n- Scope: 100% client-side execution only.\n- Non-Goal: No remote user database."
-                      align="right"
-                    />
-                  </div>
-                </div>
-                <p className="text-xs text-zinc-500 leading-relaxed">
-                  Engineering pain points, agent guardrails, and boundary definitions:
-                </p>
-                <textarea
-                  value={prdProblemStatement} onFocus={() => setActiveFieldKey("prdProblemStatement")}
-                  onChange={(e) => {
-                    setPrdProblemStatement(e.target.value); setActiveFieldKey("prdProblemStatement");
-                    setIsManuallyEdited(false);
-                  }}
-                  rows={3}
-                  placeholder="Specific problems this software addresses..."
-                  className="w-full p-2.5 border border-zinc-200 rounded-lg text-xs font-mono leading-relaxed focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 resize-y"
-                />
-              </div>
-
-              {/* Card 3: User Personas */}
-              <div data-section="prdPersonas" className="bg-white rounded-xl border border-zinc-200 p-4 sm:p-5 shadow-xs space-y-2.5">
-                <div className="flex items-center justify-between border-b border-zinc-100 pb-2 gap-2">
-                  <div className="flex items-center gap-2 min-w-0">
-                    <Users className="w-4 h-4 text-blue-600 shrink-0" />
-                    <h3 className="text-xs sm:text-sm font-bold text-zinc-900 truncate">3. Target User Personas</h3>
-                  </div>
-                  <div className="flex items-center gap-2 shrink-0">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const d = getDefaultPrdValues(PRESETS.find((p) => p.id === selectedPresetId) || defaultPreset);
-                        setPrdPersonas(d.prdPersonas);
-                        setIsManuallyEdited(false);
-                      }}
-                      className="text-[10px] text-zinc-500 hover:text-zinc-700 transition-colors font-mono cursor-pointer"
-                      title="Reset to preset default"
-                    >
-                      Reset
-                    </button>
-                    <InfoTooltip
-                      title="Target User Personas"
-                      description="Define primary user roles, background, workflows, and success metrics in a markdown table or bullet list."
-                      example="| Persona | Role | Key Goal |\n| :--- | :--- | :--- |\n| Alex | Senior Eng | Mask sensitive tokens |"
-                      align="right"
-                    />
-                  </div>
-                </div>
-                <p className="text-xs text-zinc-500 leading-relaxed">
-                  Target user personas, job titles, and primary pain points (Markdown table format):
-                </p>
-                <textarea
-                  value={prdPersonas} onFocus={() => setActiveFieldKey("prdPersonas")}
-                  onChange={(e) => {
-                    setPrdPersonas(e.target.value); setActiveFieldKey("prdPersonas");
-                    setIsManuallyEdited(false);
-                  }}
-                  rows={4}
-                  placeholder="| Persona | Role | Primary Goal & Need |"
-                  className="w-full p-2.5 border border-zinc-200 rounded-lg text-xs font-mono leading-relaxed focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 resize-y"
-                />
-              </div>
-
-              {/* Card 4: Functional Requirements */}
-              <div data-section="prdFunctionalReqs" className="bg-white rounded-xl border border-zinc-200 p-4 sm:p-5 shadow-xs space-y-2.5">
-                <div className="flex items-center justify-between border-b border-zinc-100 pb-2 gap-2">
-                  <div className="flex items-center gap-2 min-w-0">
-                    <CheckCircle2 className="w-4 h-4 text-blue-600 shrink-0" />
-                    <h3 className="text-xs sm:text-sm font-bold text-zinc-900 truncate">4. Functional Requirements (FR)</h3>
-                  </div>
-                  <div className="flex items-center gap-2 shrink-0">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const d = getDefaultPrdValues(PRESETS.find((p) => p.id === selectedPresetId) || defaultPreset);
-                        setPrdFunctionalReqs(d.prdFunctionalReqs);
-                        setIsManuallyEdited(false);
-                      }}
-                      className="text-[10px] text-zinc-500 hover:text-zinc-700 transition-colors font-mono cursor-pointer"
-                      title="Reset to preset default"
-                    >
-                      Reset
-                    </button>
-                    <InfoTooltip
-                      title="Functional Requirements"
-                      description="List features using FR-1, FR-2 format with priority tags (P0/P1/P2) and expected behavior."
-                      example="### FR-1: Client-Side Hashing (P0)\n- SHA-256 and Argon2id computed in-browser with zero network calls."
-                      align="right"
-                    />
-                  </div>
-                </div>
-                <p className="text-xs text-zinc-500 leading-relaxed">
-                  Numbered functional capabilities, domain workflows, and system behaviors:
-                </p>
-                <textarea
-                  value={prdFunctionalReqs} onFocus={() => setActiveFieldKey("prdFunctionalReqs")}
-                  onChange={(e) => {
-                    setPrdFunctionalReqs(e.target.value); setActiveFieldKey("prdFunctionalReqs");
-                    setIsManuallyEdited(false);
-                  }}
-                  rows={6}
-                  placeholder="### Core Capabilities (FR-1 to FR-4)..."
-                  className="w-full p-2.5 border border-zinc-200 rounded-lg text-xs font-mono leading-relaxed focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 resize-y"
-                />
-              </div>
-
-              {/* Card 5: Non-Functional Requirements */}
-              <div data-section="prdNonFunctionalReqs" className="bg-white rounded-xl border border-zinc-200 p-4 sm:p-5 shadow-xs space-y-2.5">
-                <div className="flex items-center justify-between border-b border-zinc-100 pb-2 gap-2">
-                  <div className="flex items-center gap-2 min-w-0">
-                    <ShieldCheck className="w-4 h-4 text-blue-600 shrink-0" />
-                    <h3 className="text-xs sm:text-sm font-bold text-zinc-900 truncate">5. Non-Functional SLAs &amp; Privacy</h3>
-                  </div>
-                  <div className="flex items-center gap-2 shrink-0">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const d = getDefaultPrdValues(PRESETS.find((p) => p.id === selectedPresetId) || defaultPreset);
-                        setPrdNonFunctionalReqs(d.prdNonFunctionalReqs);
-                        setIsManuallyEdited(false);
-                      }}
-                      className="text-[10px] text-zinc-500 hover:text-zinc-700 transition-colors font-mono cursor-pointer"
-                      title="Reset to preset default"
-                    >
-                      Reset
-                    </button>
-                    <InfoTooltip
-                      title="Non-Functional SLAs & Privacy"
-                      description="Specify privacy constraints (zero-server transmission), latency targets, and browser memory limits."
-                      example="- Zero Server Transmission: No API accepts user payloads.\n- Latency: Sub-50ms execution on local payloads."
-                      align="right"
-                    />
-                  </div>
-                </div>
-                <p className="text-xs text-zinc-500 leading-relaxed">
-                  Performance SLAs, zero-server privacy constraints, and reliability standards:
-                </p>
-                <textarea
-                  value={prdNonFunctionalReqs} onFocus={() => setActiveFieldKey("prdNonFunctionalReqs")}
-                  onChange={(e) => {
-                    setPrdNonFunctionalReqs(e.target.value); setActiveFieldKey("prdNonFunctionalReqs");
-                    setIsManuallyEdited(false);
-                  }}
-                  rows={4}
-                  placeholder="- Performance: Sub-50ms overhead..."
-                  className="w-full p-2.5 border border-zinc-200 rounded-lg text-xs font-mono leading-relaxed focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 resize-y"
-                />
-              </div>
-
-              {/* Card 6: Milestone Phasing */}
-              <div data-section="prdMilestones" className="bg-white rounded-xl border border-zinc-200 p-4 sm:p-5 shadow-xs space-y-2.5">
-                <div className="flex items-center justify-between border-b border-zinc-100 pb-2 gap-2">
-                  <div className="flex items-center gap-2 min-w-0">
-                    <Layers className="w-4 h-4 text-blue-600 shrink-0" />
-                    <h3 className="text-xs sm:text-sm font-bold text-zinc-900 truncate">6. Milestone Phasing &amp; Roadmap</h3>
-                  </div>
-                  <div className="flex items-center gap-2 shrink-0">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const d = getDefaultPrdValues(PRESETS.find((p) => p.id === selectedPresetId) || defaultPreset);
-                        setPrdMilestones(d.prdMilestones);
-                        setIsManuallyEdited(false);
-                      }}
-                      className="text-[10px] text-zinc-500 hover:text-zinc-700 transition-colors font-mono cursor-pointer"
-                      title="Reset to preset default"
-                    >
-                      Reset
-                    </button>
-                    <InfoTooltip
-                      title="Milestone Phasing & Roadmap"
-                      description="Define sprint milestones and delivery phases using markdown checklists."
-                      example="### Milestone 1.0 (Core)\n- [x] Baseline crypto suite\n- [ ] Multi-file bundling"
-                      align="right"
-                    />
-                  </div>
-                </div>
-                <p className="text-xs text-zinc-500 leading-relaxed">
-                  Roadmap milestones, deliverables, and release phases (Markdown table format):
-                </p>
-                <textarea
-                  value={prdMilestones} onFocus={() => setActiveFieldKey("prdMilestones")}
-                  onChange={(e) => {
-                    setPrdMilestones(e.target.value); setActiveFieldKey("prdMilestones");
-                    setIsManuallyEdited(false);
-                  }}
-                  rows={4}
-                  placeholder="| Milestone | Phase | Key Deliverables |"
-                  className="w-full p-2.5 border border-zinc-200 rounded-lg text-xs font-mono leading-relaxed focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 resize-y"
-                />
-              </div>
-            </div>
-          )}
-
-          {/* 2. DESIGN.md Respected Sections */}
-          {format === "design_md" && (
-            <div className="space-y-4">
-              {/* Card 1: Design Tokens & Palette */}
-              <div data-section="designTokens" className="bg-white rounded-xl border border-zinc-200 p-4 sm:p-5 shadow-xs space-y-2.5">
-                <div className="flex items-center justify-between border-b border-zinc-100 pb-2 gap-2">
-                  <div className="flex items-center gap-2 min-w-0">
-                    <Layers className="w-4 h-4 text-indigo-600 shrink-0" />
-                    <h3 className="text-xs sm:text-sm font-bold text-zinc-900 truncate">1. Visual Language &amp; Semantic Tokens</h3>
-                  </div>
-                  <div className="flex items-center gap-2 shrink-0">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const d = getDefaultDesignValues(PRESETS.find((p) => p.id === selectedPresetId) || defaultPreset);
-                        setDesignTokens(d.designTokens);
-                        setIsManuallyEdited(false);
-                      }}
-                      className="text-[10px] text-zinc-500 hover:text-zinc-700 transition-colors font-mono cursor-pointer"
-                      title="Reset to preset default"
-                    >
-                      Reset
-                    </button>
-                    <InfoTooltip
-                      title="Visual Language & Tokens"
-                      description="Define hex color tokens, background surfaces, font families, and border radiuses."
-                      example="- Canvas: Pitch black (#09090B)\n- Surface: Elevated dark (#18181B)\n- Typography: Monospace for data, Sans for labels"
-                      align="right"
-                    />
-                  </div>
-                </div>
-                <p className="text-xs text-zinc-500 leading-relaxed">
-                  Pitch-black canvas palette, elevated surfaces, border tokens, and monospace metrics:
-                </p>
-                <textarea
-                  value={designTokens} onFocus={() => setActiveFieldKey("designTokens")}
-                  onChange={(e) => {
-                    setDesignTokens(e.target.value); setActiveFieldKey("designTokens");
-                    setIsManuallyEdited(false);
-                  }}
-                  rows={5}
-                  className="w-full p-2.5 border border-zinc-200 rounded-lg text-xs font-mono leading-relaxed focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 resize-y"
-                />
-              </div>
-
-              {/* Card 2: Single-Canvas Layout */}
-              <div data-section="designLayout" className="bg-white rounded-xl border border-zinc-200 p-4 sm:p-5 shadow-xs space-y-2.5">
-                <div className="flex items-center justify-between border-b border-zinc-100 pb-2 gap-2">
-                  <div className="flex items-center gap-2 min-w-0">
-                    <Sliders className="w-4 h-4 text-indigo-600 shrink-0" />
-                    <h3 className="text-xs sm:text-sm font-bold text-zinc-900 truncate">2. Component Hierarchy &amp; Single-Canvas Layout</h3>
-                  </div>
-                  <div className="flex items-center gap-2 shrink-0">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const d = getDefaultDesignValues(PRESETS.find((p) => p.id === selectedPresetId) || defaultPreset);
-                        setDesignLayout(d.designLayout);
-                        setIsManuallyEdited(false);
-                      }}
-                      className="text-[10px] text-zinc-500 hover:text-zinc-700 transition-colors font-mono cursor-pointer"
-                      title="Reset to preset default"
-                    >
-                      Reset
-                    </button>
-                    <InfoTooltip
-                      title="Single-Canvas Layout"
-                      description="Specify layout rules (single canvas, no nested card-in-card containers, mobile touch targets)."
-                      example="- Single-Canvas: Keep UI depth to a single clean layer.\n- Touch Targets: Minimum 44x44px for interactive elements."
-                      align="right"
-                    />
-                  </div>
-                </div>
-                <p className="text-xs text-zinc-500 leading-relaxed">
-                  Single-canvas layout rules, anti-nested card invariant, and mobile touch targets:
-                </p>
-                <textarea
-                  value={designLayout} onFocus={() => setActiveFieldKey("designLayout")}
-                  onChange={(e) => {
-                    setDesignLayout(e.target.value); setActiveFieldKey("designLayout");
-                    setIsManuallyEdited(false);
-                  }}
-                  rows={4}
-                  className="w-full p-2.5 border border-zinc-200 rounded-lg text-xs font-mono leading-relaxed focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 resize-y"
-                />
-              </div>
-
-              {/* Card 3: Conventions */}
-              <div data-section="designConventions" className="bg-white rounded-xl border border-zinc-200 p-4 sm:p-5 shadow-xs space-y-2.5">
-                <div className="flex items-center justify-between border-b border-zinc-100 pb-2 gap-2">
-                  <div className="flex items-center gap-2 min-w-0">
-                    <Settings2 className="w-4 h-4 text-indigo-600 shrink-0" />
-                    <h3 className="text-xs sm:text-sm font-bold text-zinc-900 truncate">3. Core Architectural &amp; UI Conventions</h3>
-                  </div>
-                  <div className="flex items-center gap-2 shrink-0">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const d = getDefaultDesignValues(PRESETS.find((p) => p.id === selectedPresetId) || defaultPreset);
-                        setDesignConventions(d.designConventions);
-                        setIsManuallyEdited(false);
-                      }}
-                      className="text-[10px] text-zinc-500 hover:text-zinc-700 transition-colors font-mono cursor-pointer"
-                      title="Reset to preset default"
-                    >
-                      Reset
-                    </button>
-                    <InfoTooltip
-                      title="Architectural & UI Conventions"
-                      description="List component contracts, decoupled presentation rules, and controlled state rules."
-                      example="- Decouple UI components strictly from state mutation.\n- Controlled components with explicit TypeScript prop types."
-                      align="right"
-                    />
-                  </div>
-                </div>
-                <p className="text-xs text-zinc-500 leading-relaxed">
-                  Component decoupling, controlled state contracts, and styling conventions:
-                </p>
-                <textarea
-                  value={designConventions} onFocus={() => setActiveFieldKey("designConventions")}
-                  onChange={(e) => {
-                    setDesignConventions(e.target.value); setActiveFieldKey("designConventions");
-                    setIsManuallyEdited(false);
-                  }}
-                  rows={4}
-                  className="w-full p-2.5 border border-zinc-200 rounded-lg text-xs font-mono leading-relaxed focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 resize-y"
-                />
-              </div>
-
-              {/* Card 4: Negative Guardrails */}
-              <div data-section="designGuardrails" className="bg-white rounded-xl border border-zinc-200 p-4 sm:p-5 shadow-xs space-y-2.5">
-                <div className="flex items-center justify-between border-b border-zinc-100 pb-2 gap-2">
-                  <div className="flex items-center gap-2 min-w-0">
-                    <AlertTriangle className="w-4 h-4 text-indigo-600 shrink-0" />
-                    <h3 className="text-xs sm:text-sm font-bold text-zinc-900 truncate">4. Negative Design Guardrails</h3>
-                  </div>
-                  <div className="flex items-center gap-2 shrink-0">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const d = getDefaultDesignValues(PRESETS.find((p) => p.id === selectedPresetId) || defaultPreset);
-                        setDesignGuardrails(d.designGuardrails);
-                        setIsManuallyEdited(false);
-                      }}
-                      className="text-[10px] text-zinc-500 hover:text-zinc-700 transition-colors font-mono cursor-pointer"
-                      title="Reset to preset default"
-                    >
-                      Reset
-                    </button>
-                    <InfoTooltip
-                      title="Negative Design Guardrails"
-                      description="Define explicit forbidden UI anti-patterns (no arbitrary margins, no inline styles, no card nesting)."
-                      example="- Never introduce nested card-in-card containers.\n- Never apply arbitrary inline styles.\n- Never break mobile responsiveness."
-                      align="right"
-                    />
-                  </div>
-                </div>
-                <p className="text-xs text-zinc-500 leading-relaxed">
-                  Forbidden UI anti-patterns (nested cards, arbitrary margin offsets, non-standard CSS):
-                </p>
-                <textarea
-                  value={designGuardrails} onFocus={() => setActiveFieldKey("designGuardrails")}
-                  onChange={(e) => {
-                    setDesignGuardrails(e.target.value); setActiveFieldKey("designGuardrails");
-                    setIsManuallyEdited(false);
-                  }}
-                  rows={4}
-                  className="w-full p-2.5 border border-zinc-200 rounded-lg text-xs font-mono leading-relaxed focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 resize-y"
-                />
-              </div>
-
-              {/* Card 5: StitchMCP & Design Verification */}
-              <div data-section="designVerification" className="bg-white rounded-xl border border-zinc-200 p-4 sm:p-5 shadow-xs space-y-2.5">
-                <div className="flex items-center justify-between border-b border-zinc-100 pb-2 gap-2">
-                  <div className="flex items-center gap-2 min-w-0">
-                    <CheckCircle2 className="w-4 h-4 text-indigo-600 shrink-0" />
-                    <h3 className="text-xs sm:text-sm font-bold text-zinc-900 truncate">5. StitchMCP Compatibility &amp; Design QA Gate</h3>
-                  </div>
-                  <div className="flex items-center gap-2 shrink-0">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const d = getDefaultDesignValues(PRESETS.find((p) => p.id === selectedPresetId) || defaultPreset);
-                        setDesignVerification(d.designVerification);
-                        setIsManuallyEdited(false);
-                      }}
-                      className="text-[10px] text-zinc-500 hover:text-zinc-700 transition-colors font-mono cursor-pointer"
-                      title="Reset to preset default"
-                    >
-                      Reset
-                    </button>
-                    <InfoTooltip
-                      title="StitchMCP & Design QA Gate"
-                      description="Write verification commands and visual QA checks (contrast ratios, mobile breakpoints)."
-                      example="1. Check contrast ratios and accessibility.\n2. Verify responsive layout on mobile and desktop.\n3. Ensure zero visual regressions."
-                      align="right"
-                    />
-                  </div>
-                </div>
-                <p className="text-xs text-zinc-500 leading-relaxed">
-                  StitchMCP schema integration, accessibility contrast, and visual QA checklist:
-                </p>
-                <textarea
-                  value={designVerification} onFocus={() => setActiveFieldKey("designVerification")}
-                  onChange={(e) => {
-                    setDesignVerification(e.target.value); setActiveFieldKey("designVerification");
-                    setIsManuallyEdited(false);
-                  }}
-                  rows={4}
-                  className="w-full p-2.5 border border-zinc-200 rounded-lg text-xs font-mono leading-relaxed focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 resize-y"
-                />
-              </div>
-            </div>
-          )}
-
-          {/* 3. TASK.md Respected Sections */}
-          {format === "task_md" && (
-            <div className="space-y-4">
-              {/* Card 1: Sprint Status Dashboard */}
-              <div data-section="taskDashboard" className="bg-white rounded-xl border border-zinc-200 p-4 sm:p-5 shadow-xs space-y-2.5">
-                <div className="flex items-center justify-between border-b border-zinc-100 pb-2 gap-2">
-                  <div className="flex items-center gap-2 min-w-0">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                    <h3 className="text-xs sm:text-sm font-bold text-zinc-900 truncate">1. Sprint Dashboard &amp; Active Milestone</h3>
-                  </div>
-                  <div className="flex items-center gap-2 shrink-0">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const d = getDefaultTaskValues(PRESETS.find((p) => p.id === selectedPresetId) || defaultPreset);
-                        setTaskDashboard(d.taskDashboard);
-                        setIsManuallyEdited(false);
-                      }}
-                      className="text-[10px] text-zinc-500 hover:text-zinc-700 transition-colors font-mono cursor-pointer"
-                      title="Reset to preset default"
-                    >
-                      Reset
-                    </button>
-                    <InfoTooltip
-                      title="Sprint Dashboard & Milestone"
-                      description="Update active milestone name, completion percentages, and sprint status summary."
-                      example="- Milestone 1.0 (Foundation): [x] 100% Completed\n- Milestone 2.0 (Features): [/] In Progress\n- Milestone 3.0 (Hardening): [ ] Planned"
-                      align="right"
-                    />
-                  </div>
-                </div>
-                <p className="text-xs text-zinc-500 leading-relaxed">
-                  Current milestone, sprint objective, target version, and overall progress:
-                </p>
-                <textarea
-                  value={taskDashboard} onFocus={() => setActiveFieldKey("taskDashboard")}
-                  onChange={(e) => {
-                    setTaskDashboard(e.target.value); setActiveFieldKey("taskDashboard");
-                    setIsManuallyEdited(false);
-                  }}
-                  rows={3}
-                  className="w-full p-2.5 border border-zinc-200 rounded-lg text-xs font-mono leading-relaxed focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 resize-y"
-                />
-              </div>
-
-              {/* Card 2: Active Phase Checklists */}
-              <div data-section="taskPhases" className="bg-white rounded-xl border border-zinc-200 p-4 sm:p-5 shadow-xs space-y-2.5">
-                <div className="flex items-center justify-between border-b border-zinc-100 pb-2 gap-2">
-                  <div className="flex items-center gap-2 min-w-0">
-                    <Terminal className="w-4 h-4 text-emerald-600 shrink-0" />
-                    <h3 className="text-xs sm:text-sm font-bold text-zinc-900 truncate">2. Active Sprint Task Checklists</h3>
-                  </div>
-                  <div className="flex items-center gap-2 shrink-0">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const d = getDefaultTaskValues(PRESETS.find((p) => p.id === selectedPresetId) || defaultPreset);
-                        setTaskPhases(d.taskPhases);
-                        setIsManuallyEdited(false);
-                      }}
-                      className="text-[10px] text-zinc-500 hover:text-zinc-700 transition-colors font-mono cursor-pointer"
-                      title="Reset to preset default"
-                    >
-                      Reset
-                    </button>
-                    <InfoTooltip
-                      title="Active Sprint Task Checklists"
-                      description="Add or check off sprint tasks using markdown checkboxes: - [x] done, - [/] in progress, - [ ] planned."
-                      example="### Phase 2: Active Tasks\n- [x] Schema validation layer\n- [/] Live reactivity sync\n- [ ] E2E smoke tests"
-                      align="right"
-                    />
-                  </div>
-                </div>
-                <p className="text-xs text-zinc-500 leading-relaxed">
-                  Manage Phase 1 Foundation, Phase 2 Active Tasks, and Phase 3 Quality checklists (- [ ] / - [x]):
-                </p>
-                <textarea
-                  value={taskPhases} onFocus={() => setActiveFieldKey("taskPhases")}
-                  onChange={(e) => {
-                    setTaskPhases(e.target.value); setActiveFieldKey("taskPhases");
-                    setIsManuallyEdited(false);
-                  }}
-                  rows={8}
-                  className="w-full p-2.5 border border-zinc-200 rounded-lg text-xs font-mono leading-relaxed focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 resize-y"
-                />
-              </div>
-
-              {/* Card 3: Verification Commands & Quality Gates */}
-              <div data-section="taskVerification" className="bg-white rounded-xl border border-zinc-200 p-4 sm:p-5 shadow-xs space-y-2.5">
-                <div className="flex items-center justify-between border-b border-zinc-100 pb-2 gap-2">
-                  <div className="flex items-center gap-2 min-w-0">
-                    <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
-                    <h3 className="text-xs sm:text-sm font-bold text-zinc-900 truncate">3. Verification Commands &amp; Quality Gates</h3>
-                  </div>
-                  <div className="flex items-center gap-2 shrink-0">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const d = getDefaultTaskValues(PRESETS.find((p) => p.id === selectedPresetId) || defaultPreset);
-                        setTaskVerification(d.taskVerification);
-                        setIsManuallyEdited(false);
-                      }}
-                      className="text-[10px] text-zinc-500 hover:text-zinc-700 transition-colors font-mono cursor-pointer"
-                      title="Reset to preset default"
-                    >
-                      Reset
-                    </button>
-                    <InfoTooltip
-                      title="Verification Commands & Quality Gates"
-                      description="Specify shell verification commands that agents must run before finishing (lint, test, build)."
-                      example="```bash\nnpm run validate-presets\nnpm run lint\nnpm run build\n```"
-                      align="right"
-                    />
-                  </div>
-                </div>
-                <p className="text-xs text-zinc-500 leading-relaxed">
-                  Required verification shell commands that all agents and developers must execute to pass:
-                </p>
-                <textarea
-                  value={taskVerification} onFocus={() => setActiveFieldKey("taskVerification")}
-                  onChange={(e) => {
-                    setTaskVerification(e.target.value); setActiveFieldKey("taskVerification");
-                    setIsManuallyEdited(false);
-                  }}
-                  rows={5}
-                  className="w-full p-2.5 border border-zinc-200 rounded-lg text-xs font-mono leading-relaxed focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 resize-y"
-                />
-              </div>
-
-              {/* Card 4: Agent Session Audit Log */}
-              <div data-section="taskSessionLog" className="bg-white rounded-xl border border-zinc-200 p-4 sm:p-5 shadow-xs space-y-2.5">
-                <div className="flex items-center justify-between border-b border-zinc-100 pb-2 gap-2">
-                  <div className="flex items-center gap-2 min-w-0">
-                    <FileText className="w-4 h-4 text-emerald-600 shrink-0" />
-                    <h3 className="text-xs sm:text-sm font-bold text-zinc-900 truncate">4. Autonomous Agent Session Audit Log</h3>
-                  </div>
-                  <div className="flex items-center gap-2 shrink-0">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const d = getDefaultTaskValues(PRESETS.find((p) => p.id === selectedPresetId) || defaultPreset);
-                        setTaskSessionLog(d.taskSessionLog);
-                        setIsManuallyEdited(false);
-                      }}
-                      className="text-[10px] text-zinc-500 hover:text-zinc-700 transition-colors font-mono cursor-pointer"
-                      title="Reset to preset default"
-                    >
-                      Reset
-                    </button>
-                    <InfoTooltip
-                      title="Agent Session Audit Log"
-                      description="Add markdown table rows recording agent actions, dates, and verification outcomes."
-                      example="| Date | Agent | Action | Result |\n| :--- | :--- | :--- | :--- |\n| 2026-09-20 | Lead Agent | Implemented dedicated sections | ✅ Exit 0 |"
-                      align="right"
-                    />
-                  </div>
-                </div>
-                <p className="text-xs text-zinc-500 leading-relaxed">
-                  Living chronological audit table documenting agent runs, dates, and verification outcomes:
-                </p>
-                <textarea
-                  value={taskSessionLog} onFocus={() => setActiveFieldKey("taskSessionLog")}
-                  onChange={(e) => {
-                    setTaskSessionLog(e.target.value); setActiveFieldKey("taskSessionLog");
-                    setIsManuallyEdited(false);
-                  }}
-                  rows={4}
-                  className="w-full p-2.5 border border-zinc-200 rounded-lg text-xs font-mono leading-relaxed focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 resize-y"
-                />
-              </div>
-
-              {/* Card 5: Sprint Directives */}
-              <div data-section="taskDirectives" className="bg-white rounded-xl border border-zinc-200 p-4 sm:p-5 shadow-xs space-y-2.5">
-                <div className="flex items-center justify-between border-b border-zinc-100 pb-2 gap-2">
-                  <div className="flex items-center gap-2 min-w-0">
-                    <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
-                    <h3 className="text-xs sm:text-sm font-bold text-zinc-900 truncate">5. Sprint Directives &amp; Scope Constraints</h3>
-                  </div>
-                  <div className="flex items-center gap-2 shrink-0">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const d = getDefaultTaskValues(PRESETS.find((p) => p.id === selectedPresetId) || defaultPreset);
-                        setTaskDirectives(d.taskDirectives);
-                        setIsManuallyEdited(false);
-                      }}
-                      className="text-[10px] text-zinc-500 hover:text-zinc-700 transition-colors font-mono cursor-pointer"
-                      title="Reset to preset default"
-                    >
-                      Reset
-                    </button>
-                    <InfoTooltip
-                      title="Sprint Directives & Scope Constraints"
-                      description="Define sprint-specific constraints, architectural bounds, and scope directives for agents."
-                      example="- No external API dependencies.\n- Keep diffs surgical and preserve comments."
-                      align="right"
-                    />
-                  </div>
-                </div>
-                <p className="text-xs text-zinc-500 leading-relaxed">
-                  Project-specific sprint guardrails, non-negotiable scope limits, and execution boundaries:
-                </p>
-                <textarea
-                  value={taskDirectives} onFocus={() => setActiveFieldKey("taskDirectives")}
-                  onChange={(e) => {
-                    setTaskDirectives(e.target.value); setActiveFieldKey("taskDirectives");
-                    setIsManuallyEdited(false);
-                  }}
-                  rows={3}
-                  placeholder="- Critical SLA: Zero regression on build times..."
-                  className="w-full p-2.5 border border-zinc-200 rounded-lg text-xs font-mono leading-relaxed focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 resize-y"
-                />
-              </div>
-            </div>
-          )}
-
-          {/* 4. MEMORY.md Respected Sections */}
-          {format === "memory_md" && (
-            <div className="space-y-4">
-              {/* Card 1: Technology Context Matrix */}
-              <div data-section="memoryContext" className="bg-white rounded-xl border border-zinc-200 p-4 sm:p-5 shadow-xs space-y-2.5">
-                <div className="flex items-center justify-between border-b border-zinc-100 pb-2 gap-2">
-                  <div className="flex items-center gap-2 min-w-0">
-                    <Cpu className="w-4 h-4 text-amber-600 shrink-0" />
-                    <h3 className="text-xs sm:text-sm font-bold text-zinc-900 truncate">1. Persistent Technology Context Matrix</h3>
-                  </div>
-                  <div className="flex items-center gap-2 shrink-0">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const d = getDefaultMemoryValues(PRESETS.find((p) => p.id === selectedPresetId) || defaultPreset);
-                        setMemoryContext(d.memoryContext);
-                        setIsManuallyEdited(false);
-                      }}
-                      className="text-[10px] text-zinc-500 hover:text-zinc-700 transition-colors font-mono cursor-pointer"
-                      title="Reset to preset default"
-                    >
-                      Reset
-                    </button>
-                    <InfoTooltip
-                      title="Technology Context Matrix"
-                      description="Document frameworks, language versions, persistence layers, and core dependencies in a markdown table."
-                      example="| Attribute | Specification | Notes |\n| :--- | :--- | :--- |\n| Framework | Next.js 16.3.3 | App Router, SSG |"
-                      align="right"
-                    />
-                  </div>
-                </div>
-                <p className="text-xs text-zinc-500 leading-relaxed">
-                  Application framework, language invariants, persistence layer, and engineering philosophy:
-                </p>
-                <textarea
-                  value={memoryContext} onFocus={() => setActiveFieldKey("memoryContext")}
-                  onChange={(e) => {
-                    setMemoryContext(e.target.value); setActiveFieldKey("memoryContext");
-                    setIsManuallyEdited(false);
-                  }}
-                  rows={4}
-                  className="w-full p-2.5 border border-zinc-200 rounded-lg text-xs font-mono leading-relaxed focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 resize-y"
-                />
-              </div>
-
-              {/* Card 2: Architectural Decision Records (ADRs) */}
-              <div data-section="memoryAdrs" className="bg-white rounded-xl border border-zinc-200 p-4 sm:p-5 shadow-xs space-y-2.5">
-                <div className="flex items-center justify-between border-b border-zinc-100 pb-2 gap-2">
-                  <div className="flex items-center gap-2 min-w-0">
-                    <BookOpen className="w-4 h-4 text-amber-600 shrink-0" />
-                    <h3 className="text-xs sm:text-sm font-bold text-zinc-900 truncate">2. Architectural Decision Records (ADRs)</h3>
-                  </div>
-                  <div className="flex items-center gap-2 shrink-0">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const d = getDefaultMemoryValues(PRESETS.find((p) => p.id === selectedPresetId) || defaultPreset);
-                        setMemoryAdrs(d.memoryAdrs);
-                        setIsManuallyEdited(false);
-                      }}
-                      className="text-[10px] text-zinc-500 hover:text-zinc-700 transition-colors font-mono cursor-pointer"
-                      title="Reset to preset default"
-                    >
-                      Reset
-                    </button>
-                    <InfoTooltip
-                      title="Architectural Decision Records (ADRs)"
-                      description="Document accepted decisions using: Status, Context, Decision, and Consequences."
-                      example="### ADR-001: Separation of Concerns\n- Status: Accepted\n- Context: Blending UI with state creates fragility.\n- Decision: Decouple presentation from persistence.\n- Consequences: Cleaner testing and reusability."
-                      align="right"
-                    />
-                  </div>
-                </div>
-                <p className="text-xs text-zinc-500 leading-relaxed">
-                  Formal architectural decisions across context resets (Status, Context, Decision, Consequences):
-                </p>
-                <textarea
-                  value={memoryAdrs} onFocus={() => setActiveFieldKey("memoryAdrs")}
-                  onChange={(e) => {
-                    setMemoryAdrs(e.target.value); setActiveFieldKey("memoryAdrs");
-                    setIsManuallyEdited(false);
-                  }}
-                  rows={6}
-                  className="w-full p-2.5 border border-zinc-200 rounded-lg text-xs font-mono leading-relaxed focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 resize-y"
-                />
-              </div>
-
-              {/* Card 3: Operational Gotchas & Pitfalls */}
-              <div data-section="memoryGotchas" className="bg-white rounded-xl border border-zinc-200 p-4 sm:p-5 shadow-xs space-y-2.5">
-                <div className="flex items-center justify-between border-b border-zinc-100 pb-2 gap-2">
-                  <div className="flex items-center gap-2 min-w-0">
-                    <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
-                    <h3 className="text-xs sm:text-sm font-bold text-zinc-900 truncate">3. Operational Gotchas &amp; Pitfalls</h3>
-                  </div>
-                  <div className="flex items-center gap-2 shrink-0">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const d = getDefaultMemoryValues(PRESETS.find((p) => p.id === selectedPresetId) || defaultPreset);
-                        setMemoryGotchas(d.memoryGotchas);
-                        setIsManuallyEdited(false);
-                      }}
-                      className="text-[10px] text-zinc-500 hover:text-zinc-700 transition-colors font-mono cursor-pointer"
-                      title="Reset to preset default"
-                    >
-                      Reset
-                    </button>
-                    <InfoTooltip
-                      title="Operational Gotchas & Pitfalls"
-                      description="Add known traps and gotchas prefixed with ⚠️ to steer agents away from mistakes."
-                      example="- ⚠️ Monaco Editor requires dynamic import with ssr: false.\n- ⚠️ Never run 'cd' commands in tool calls."
-                      align="right"
-                    />
-                  </div>
-                </div>
-                <p className="text-xs text-zinc-500 leading-relaxed">
-                  Critical traps, edge cases, and hard-earned learnings that all agents must heed:
-                </p>
-                <textarea
-                  value={memoryGotchas} onFocus={() => setActiveFieldKey("memoryGotchas")}
-                  onChange={(e) => {
-                    setMemoryGotchas(e.target.value); setActiveFieldKey("memoryGotchas");
-                    setIsManuallyEdited(false);
-                  }}
-                  rows={4}
-                  className="w-full p-2.5 border border-zinc-200 rounded-lg text-xs font-mono leading-relaxed focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 resize-y"
-                />
-              </div>
-
-              {/* Card 4: 5-Step Agent Loop */}
-              <div data-section="memoryLoop" className="bg-white rounded-xl border border-zinc-200 p-4 sm:p-5 shadow-xs space-y-2.5">
-                <div className="flex items-center justify-between border-b border-zinc-100 pb-2 gap-2">
-                  <div className="flex items-center gap-2 min-w-0">
-                    <Terminal className="w-4 h-4 text-amber-600 shrink-0" />
-                    <h3 className="text-xs sm:text-sm font-bold text-zinc-900 truncate">4. 5-Step Agent Execution Loop Protocol</h3>
-                  </div>
-                  <div className="flex items-center gap-2 shrink-0">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const d = getDefaultMemoryValues(PRESETS.find((p) => p.id === selectedPresetId) || defaultPreset);
-                        setMemoryLoop(d.memoryLoop);
-                        setIsManuallyEdited(false);
-                      }}
-                      className="text-[10px] text-zinc-500 hover:text-zinc-700 transition-colors font-mono cursor-pointer"
-                      title="Reset to preset default"
-                    >
-                      Reset
-                    </button>
-                    <InfoTooltip
-                      title="5-Step Agent Execution Loop"
-                      description="Define the agent operating procedure (Ingest → Plan → Execute → Verify → Update)."
-                      example="1. INGEST   → Read MEMORY.md → PRD.md → DESIGN.md\n2. PLAN     → Inspect TASK.md\n3. EXECUTE  → Apply surgical diffs\n4. VERIFY   → Run quality gates\n5. UPDATE   → Log in TASK.md & MEMORY.md"
-                      align="right"
-                    />
-                  </div>
-                </div>
-                <p className="text-xs text-zinc-500 leading-relaxed">
-                  Standard agent execution loop (Ingest → Plan → Execute → Verify → Update):
-                </p>
-                <textarea
-                  value={memoryLoop} onFocus={() => setActiveFieldKey("memoryLoop")}
-                  onChange={(e) => {
-                    setMemoryLoop(e.target.value); setActiveFieldKey("memoryLoop");
-                    setIsManuallyEdited(false);
-                  }}
-                  rows={5}
-                  className="w-full p-2.5 border border-zinc-200 rounded-lg text-xs font-mono leading-relaxed focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 resize-y"
-                />
-              </div>
-
-              {/* Card 5: Domain Invariants & Anchors */}
-              <div data-section="memoryInvariants" className="bg-white rounded-xl border border-zinc-200 p-4 sm:p-5 shadow-xs space-y-2.5">
-                <div className="flex items-center justify-between border-b border-zinc-100 pb-2 gap-2">
-                  <div className="flex items-center gap-2 min-w-0">
-                    <Layers className="w-4 h-4 text-amber-600 shrink-0" />
-                    <h3 className="text-xs sm:text-sm font-bold text-zinc-900 truncate">5. Domain Invariants &amp; Key File Anchors</h3>
-                  </div>
-                  <div className="flex items-center gap-2 shrink-0">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const d = getDefaultMemoryValues(PRESETS.find((p) => p.id === selectedPresetId) || defaultPreset);
-                        setMemoryInvariants(d.memoryInvariants);
-                        setIsManuallyEdited(false);
-                      }}
-                      className="text-[10px] text-zinc-500 hover:text-zinc-700 transition-colors font-mono cursor-pointer"
-                      title="Reset to preset default"
-                    >
-                      Reset
-                    </button>
-                    <InfoTooltip
-                      title="Domain Invariants & Anchors"
-                      description="List key directories, system boundaries, and non-negotiable architectural invariants."
-                      example="- All utilities reside under src/lib/tools/.\n- CLI lives in cli/bin/devscratchpad.mjs."
-                      align="right"
-                    />
-                  </div>
-                </div>
-                <p className="text-xs text-zinc-500 leading-relaxed">
-                  System boundaries, core package directories, and project invariant constraints:
-                </p>
-                <textarea
-                  value={memoryInvariants} onFocus={() => setActiveFieldKey("memoryInvariants")}
-                  onChange={(e) => {
-                    setMemoryInvariants(e.target.value); setActiveFieldKey("memoryInvariants");
-                    setIsManuallyEdited(false);
-                  }}
-                  rows={3}
-                  placeholder="- Key directory anchors..."
-                  className="w-full p-2.5 border border-zinc-200 rounded-lg text-xs font-mono leading-relaxed focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 resize-y"
-                />
-              </div>
-
-              {/* Card 6: Session History */}
-              <div data-section="memorySessionHistory" className="bg-white rounded-xl border border-zinc-200 p-4 sm:p-5 shadow-xs space-y-2.5">
-                <div className="flex items-center justify-between border-b border-zinc-100 pb-2 gap-2">
-                  <div className="flex items-center gap-2 min-w-0">
-                    <FileText className="w-4 h-4 text-amber-600 shrink-0" />
-                    <h3 className="text-xs sm:text-sm font-bold text-zinc-900 truncate">6. Session History</h3>
-                  </div>
-                  <div className="flex items-center gap-2 shrink-0">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const d = getDefaultMemoryValues(PRESETS.find((p) => p.id === selectedPresetId) || defaultPreset);
-                        setMemorySessionHistory(d.memorySessionHistory);
-                        setIsManuallyEdited(false);
-                      }}
-                      className="text-[10px] text-zinc-500 hover:text-zinc-700 transition-colors font-mono cursor-pointer"
-                      title="Reset to preset default"
-                    >
-                      Reset
-                    </button>
-                    <InfoTooltip
-                      title="Session History"
-                      description="Append chronological changelog entries noting dates and key system modifications."
-                      example="- 2026-09-20: Initialized persistent memory bank and core ADRs."
-                      align="right"
-                    />
-                  </div>
-                </div>
-                <p className="text-xs text-zinc-500 leading-relaxed">
-                  Chronological record of memory additions and changes over time:
-                </p>
-                <textarea
-                  value={memorySessionHistory} onFocus={() => setActiveFieldKey("memorySessionHistory")}
-                  onChange={(e) => {
-                    setMemorySessionHistory(e.target.value); setActiveFieldKey("memorySessionHistory");
-                    setIsManuallyEdited(false);
-                  }}
-                  rows={3}
-                  className="w-full p-2.5 border border-zinc-200 rounded-lg text-xs font-mono leading-relaxed focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 resize-y"
-                />
-              </div>
-            </div>
+          {/* Governance formats (PRD.md, DESIGN.md, TASK.md, MEMORY.md): dedicated section cards — see GovernanceSections.tsx */}
+          {isGovernanceFormat && (
+            <GovernanceSections
+              format={format as GovernanceFormat}
+              values={governanceValues}
+              preset={PRESETS.find((p) => p.id === selectedPresetId) || defaultPreset}
+              onChange={handleGovernanceChange}
+              onFocusField={(key) => setActiveFieldKey(key)}
+            />
           )}
 
           {/* Cursor Rule Scope Card (Visible only when format is cursor_mdc) */}
@@ -4055,602 +2830,42 @@ export function ClaudeSkillsClient({
 
           {/* MCP Server Configuration Card (Visible only when format is mcp_json) */}
           {format === "mcp_json" && (
-            <div className="bg-white rounded-xl border border-zinc-200 p-4 sm:p-5 shadow-xs space-y-4">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-zinc-100 pb-3 gap-2">
-                <div className="flex items-center gap-2">
-                  <Server className="w-4 h-4 text-orange-600 shrink-0" />
-                  <h3 className="text-sm font-bold text-zinc-900">Claude MCP Server Configuration</h3>
-                </div>
-                <div className="flex items-center gap-2">
-                  {mcpValidation.hasErrors ? (
-                    <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-rose-700 bg-rose-50 border border-rose-200 px-2 py-0.5 rounded-full">
-                      <AlertCircle className="w-3 h-3 text-rose-500 shrink-0" />
-                      {mcpValidation.errors.length} {mcpValidation.errors.length === 1 ? "issue" : "issues"}
-                    </span>
-                  ) : mcpValidation.hasWarnings ? (
-                    <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full">
-                      <AlertTriangle className="w-3 h-3 text-amber-500 shrink-0" />
-                      {mcpValidation.warnings.length} {mcpValidation.warnings.length === 1 ? "warning" : "warnings"}
-                    </span>
-                  ) : (
-                    <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-orange-800 bg-orange-50/70 border border-orange-200/70 px-2 py-0.5 rounded-full">
-                      <CheckCircle2 className="w-3 h-3 text-orange-600 shrink-0" />
-                      Ready for Claude
-                    </span>
-                  )}
-                  <span className="text-[10px] text-zinc-500 font-mono hidden sm:inline">claude.json</span>
-                  <InfoTooltip
-                    title="Claude MCP Server"
-                    description="Model Context Protocol config for connecting Claude Code CLI or Claude Desktop to local tools, filesystems, and databases."
-                    example="claude.json -> mcpServers"
-                    align="right"
-                  />
-                </div>
-              </div>
-
-              {/* Quick Presets */}
-              <div className="space-y-1.5">
-                <div className="flex items-center justify-between">
-                  <label className="text-xs font-semibold text-zinc-700">Select MCP Preset Template</label>
-                  <InfoTooltip
-                    title="MCP Preset Templates"
-                    description="Pre-configured Model Context Protocol server templates for common developer tools like filesystem, memory, github, and fetch."
-                    align="right"
-                  />
-                </div>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
-                  {MCP_PRESETS.map((preset) => (
-                    <button
-                      key={preset.id}
-                      type="button"
-                      onClick={() => handleSelectMcpPreset(preset.id)}
-                      className={cn(
-                        "px-2.5 py-2 text-left rounded-lg border text-xs font-medium transition-all flex flex-col gap-0.5",
-                        mcpPresetId === preset.id
-                          ? "border-blue-500 bg-blue-50/60 text-blue-900 font-semibold ring-1 ring-blue-400"
-                          : "border-zinc-200 bg-zinc-50/50 hover:bg-zinc-100 text-zinc-700"
-                      )}
-                    >
-                      <span className="truncate">{preset.label}</span>
-                      <span className="text-[10px] text-zinc-500 font-mono font-normal truncate">{preset.command}</span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div className="space-y-1">
-                  <div className="flex items-center justify-between">
-                    <label className="text-xs font-semibold text-zinc-700">Server Identifier Key</label>
-                    <InfoTooltip
-                      title="Server Identifier Key"
-                      description="Unique key name for the MCP server inside the mcpServers JSON dictionary."
-                      example="filesystem, github, postgres"
-                      align="left"
-                    />
-                  </div>
-                  <input
-                    type="text"
-                    value={mcpServerName}
-                    onChange={(e) => setMcpServerName(e.target.value)}
-                    placeholder="e.g. filesystem or github"
-                    className="w-full px-2.5 py-1.5 border border-zinc-200 rounded-lg text-xs font-mono focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
-                  />
-                </div>
-
-                <div className="space-y-1">
-                  <div className="flex items-center justify-between">
-                    <label className="text-xs font-semibold text-zinc-700">Executable Command</label>
-                    <InfoTooltip
-                      title="Executable Command"
-                      description="Binary runner to launch the MCP server (npx, uvx, node, python)."
-                      example="npx, uvx"
-                      align="right"
-                    />
-                  </div>
-                  <input
-                    type="text"
-                    value={mcpCommand}
-                    onChange={(e) => setMcpCommand(e.target.value)}
-                    placeholder="npx, uvx, node, python"
-                    className="w-full px-2.5 py-1.5 border border-zinc-200 rounded-lg text-xs font-mono focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-1">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <label className="text-xs font-semibold text-zinc-700">Command Arguments (One per line)</label>
-                    {mcpValidation.isFilesystem && (
-                      <button
-                        type="button"
-                        onClick={() => setIsFolderModalOpen(true)}
-                        className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-md transition-colors cursor-pointer"
-                        title="Inspect local folder manifests and directory structure"
-                      >
-                        <FolderOpen className="w-3 h-3 text-blue-600" />
-                        <span>Inspect Local Folder</span>
-                      </button>
-                    )}
-                  </div>
-                  <InfoTooltip
-                    title="Command Arguments"
-                    description="Command line arguments passed to the MCP server process, one argument per line."
-                    example="-y\n@modelcontextprotocol/server-filesystem\n./"
-                    align="right"
-                  />
-                </div>
-                <textarea
-                  rows={3}
-                  value={mcpArgs}
-                  onChange={(e) => setMcpArgs(e.target.value)}
-                  placeholder="-y&#10;@modelcontextprotocol/server-filesystem&#10;./"
-                  className="w-full p-2.5 border border-zinc-200 rounded-lg text-xs font-mono leading-relaxed focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 resize-y"
-                />
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div className="space-y-1">
-                  <div className="flex items-center justify-between">
-                    <label className="text-xs font-semibold text-zinc-700">Environment Variable Key (Optional)</label>
-                    <InfoTooltip
-                      title="Environment Variable Key"
-                      description="Secret environment variable name required by the server (e.g. API keys or tokens)."
-                      example="GITHUB_PERSONAL_ACCESS_TOKEN"
-                      align="left"
-                    />
-                  </div>
-                  <input
-                    type="text"
-                    value={mcpEnvKey}
-                    onChange={(e) => setMcpEnvKey(e.target.value)}
-                    placeholder="e.g. GITHUB_PERSONAL_ACCESS_TOKEN"
-                    className="w-full px-2.5 py-1.5 border border-zinc-200 rounded-lg text-xs font-mono focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
-                  />
-                </div>
-                <div className="space-y-1">
-                  <div className="flex items-center justify-between">
-                    <label className="text-xs font-semibold text-zinc-700">Environment Variable Value</label>
-                    {mcpValidation.isGitHub && (
-                      <span className="text-[10px]">
-                        {!mcpEnvValue.trim() ? (
-                          <span className="text-rose-600 font-medium">Token required</span>
-                        ) : mcpEnvValue.includes("your_token_here") || mcpEnvValue.includes("placeholder") ? (
-                          <span className="text-amber-600 font-medium">Placeholder token</span>
-                        ) : mcpEnvValue.startsWith("ghp_") || mcpEnvValue.startsWith("github_pat_") ? (
-                          <span className="text-emerald-600 font-semibold inline-flex items-center gap-0.5">
-                            <Check className="w-2.5 h-2.5" /> Valid PAT format
-                          </span>
-                        ) : (
-                          <span className="text-zinc-500">Custom token</span>
-                        )}
-                      </span>
-                    )}
-                  </div>
-                  <input
-                    type="text"
-                    value={mcpEnvValue}
-                    onChange={(e) => setMcpEnvValue(e.target.value)}
-                    placeholder="e.g. ghp_your_token_here"
-                    className="w-full px-2.5 py-1.5 border border-zinc-200 rounded-lg text-xs font-mono focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
-                  />
-                </div>
-              </div>
-
-              {/* GitHub PAT Helper Banner */}
-              {mcpValidation.isGitHub && (
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-2.5 bg-orange-50/50 border border-orange-200/50 rounded-lg text-xs">
-                  <div className="space-y-0.5">
-                    <div className="font-semibold text-orange-800 flex items-center gap-1.5">
-                      <ExternalLink className="w-3.5 h-3.5 text-orange-800 shrink-0" />
-                      <span>GitHub Personal Access Token (PAT) Required</span>
-                    </div>
-                    <p className="text-[11px] text-orange-800 leading-relaxed">
-                      Classic token (<code className="bg-orange-100/60 text-orange-800 px-1 py-0.2 rounded font-mono text-[10px]">ghp_...</code>) or Fine-grained (<code className="bg-orange-100/60 text-orange-800 px-1 py-0.2 rounded font-mono text-[10px]">github_pat_...</code>) with <code className="bg-orange-100/60 text-orange-800 px-1 py-0.2 rounded font-mono text-[10px]">repo</code> and <code className="bg-orange-100/60 text-orange-800 px-1 py-0.2 rounded font-mono text-[10px]">read:org</code> scopes.
-                    </p>
-                  </div>
-                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 shrink-0 w-full sm:w-auto">
-                    <button
-                      type="button"
-                      onClick={() => setIsGitHubModalOpen(true)}
-                      className="flex-1 sm:flex-none inline-flex items-center justify-center gap-1 px-3 py-2 sm:py-1.5 bg-zinc-900 hover:bg-zinc-800 text-white rounded-md text-xs font-semibold transition-all shadow-2xs cursor-pointer min-h-[36px]"
-                    >
-                      <GitHubIcon className="w-3.5 h-3.5 text-white" />
-                      <span>Ingest Repo</span>
-                    </button>
-                    <a
-                      href="https://github.com/settings/tokens/new?description=Claude+Code+MCP&scopes=repo,read:org,read:user"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex-1 sm:flex-none inline-flex items-center justify-center gap-1 px-3 py-2 sm:py-1.5 bg-white hover:bg-orange-50/80 text-orange-700 hover:text-orange-800 border border-orange-200 rounded-md text-xs font-semibold transition-all shadow-2xs cursor-pointer min-h-[36px]"
-                    >
-                      <span>Generate Token</span>
-                      <ExternalLink className="w-3 h-3 text-orange-700" />
-                    </a>
-                  </div>
-                </div>
-              )}
-
-              {/* Database Schema Introspection Banner */}
-              {(mcpValidation.isPostgres || mcpPresetId === "sqlite") && (
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-2.5 bg-zinc-50 border border-zinc-200/80 rounded-lg text-xs">
-                  <div className="space-y-0.5">
-                    <div className="font-semibold text-zinc-900 flex items-center gap-1.5">
-                      <Database className="w-3.5 h-3.5 text-zinc-700 shrink-0" />
-                      <span>Live Database Schema Introspection</span>
-                    </div>
-                    <p className="text-[11px] text-zinc-500 leading-relaxed">
-                      Paste SQL DDL or Prisma schema to extract tables, foreign keys, and synthesize database safety guardrails.
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => setIsDdlModalOpen(true)}
-                    className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-3 py-2 sm:py-1.5 bg-zinc-900 hover:bg-zinc-800 text-white rounded-md text-xs font-semibold transition-all shadow-2xs cursor-pointer min-h-[36px]"
-                  >
-                    <Database className="w-3.5 h-3.5" />
-                    <span>Introspect DDL</span>
-                  </button>
-                </div>
-              )}
-
-              {/* Docker Compose Introspection Banner */}
-              {mcpPresetId === "docker" && (
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-2.5 bg-zinc-50 border border-zinc-200/80 rounded-lg text-xs">
-                  <div className="space-y-0.5">
-                    <div className="font-semibold text-zinc-900 flex items-center gap-1.5">
-                      <Boxes className="w-3.5 h-3.5 text-zinc-700 shrink-0" />
-                      <span>Live Docker Compose &amp; Container Introspection</span>
-                    </div>
-                    <p className="text-[11px] text-zinc-500 leading-relaxed">
-                      Paste docker-compose.yml or Dockerfile to extract services, port mappings, and container rules.
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => setIsDockerModalOpen(true)}
-                    className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-3 py-2 sm:py-1.5 bg-zinc-900 hover:bg-zinc-800 text-white rounded-md text-xs font-semibold transition-all shadow-2xs cursor-pointer min-h-[36px]"
-                  >
-                    <Boxes className="w-3.5 h-3.5" />
-                    <span>Introspect Compose</span>
-                  </button>
-                </div>
-              )}
-
-              {/* Real-time Validation Diagnostics Checklist */}
-              <div className="rounded-lg border border-zinc-200 bg-zinc-50/70 p-3 space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-zinc-800 flex items-center gap-1.5">
-                    <ShieldCheck className="w-3.5 h-3.5 text-orange-600 shrink-0" />
-                    MCP Protocol Diagnostics
-                  </span>
-                  <span className="text-[10px] text-zinc-500">
-                    {mcpValidation.issues.length === 0
-                      ? "All checks passed"
-                      : `${mcpValidation.issues.length} check${mcpValidation.issues.length > 1 ? "s" : ""} flagged`}
-                  </span>
-                </div>
-
-                {mcpValidation.issues.length > 0 ? (
-                  <div className="space-y-1.5">
-                    {mcpValidation.issues.map((issue, idx) => (
-                      <div
-                        key={idx}
-                        className={cn(
-                          "flex items-start gap-2 text-xs p-2 rounded-md border leading-relaxed",
-                          issue.type === "error"
-                            ? "bg-rose-50/80 border-rose-200 text-rose-900"
-                            : issue.type === "warning"
-                            ? "bg-amber-50/80 border-amber-200 text-amber-900"
-                            : "bg-orange-50/60 border-orange-200/70 text-orange-900"
-                        )}
-                      >
-                        {issue.type === "error" ? (
-                          <AlertCircle className="w-3.5 h-3.5 text-rose-600 shrink-0 mt-0.5" />
-                        ) : issue.type === "warning" ? (
-                          <AlertTriangle className="w-3.5 h-3.5 text-amber-600 shrink-0 mt-0.5" />
-                        ) : (
-                          <Info className="w-3.5 h-3.5 text-orange-600 shrink-0 mt-0.5" />
-                        )}
-                        <span className="text-[11px] flex-1">{issue.message}</span>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="flex items-center gap-2 text-xs text-orange-800 bg-orange-50/50 border border-orange-200/50 rounded-md p-2">
-                    <CheckCircle2 className="w-3.5 h-3.5 text-orange-600 shrink-0" />
-                    <span className="text-[11px]">
-                      MCP configuration verified. Compatible with Claude Code (<code className="bg-orange-100/60 text-orange-800 px-1 py-0.2 rounded font-mono text-[10px]">claude.json</code>) and Claude Desktop (<code className="bg-orange-100/60 text-orange-800 px-1 py-0.2 rounded font-mono text-[10px]">claude_desktop_config.json</code>).
-                    </span>
-                  </div>
-                )}
-              </div>
-            </div>
+            <McpServerConfigCard
+              mcpPresetId={mcpPresetId}
+              mcpServerName={mcpServerName}
+              mcpCommand={mcpCommand}
+              mcpArgs={mcpArgs}
+              mcpEnvKey={mcpEnvKey}
+              mcpEnvValue={mcpEnvValue}
+              setMcpServerName={setMcpServerName}
+              setMcpCommand={setMcpCommand}
+              setMcpArgs={setMcpArgs}
+              setMcpEnvKey={setMcpEnvKey}
+              setMcpEnvValue={setMcpEnvValue}
+              handleSelectMcpPreset={handleSelectMcpPreset}
+              setIsGitHubModalOpen={setIsGitHubModalOpen}
+              setIsDdlModalOpen={setIsDdlModalOpen}
+              setIsDockerModalOpen={setIsDockerModalOpen}
+              setIsFolderModalOpen={setIsFolderModalOpen}
+              requestSectionScroll={requestSectionScroll}
+              setActiveFieldKey={setActiveFieldKey}
+              setIsManuallyEdited={setIsManuallyEdited}
+            />
           )}
 
           {isIgnoreFormat && (
-            <div className="space-y-4">
-              {/* Card 1: Shield Protection Profile & Overview */}
-              <div data-section="ignoreProfile" className="bg-white rounded-xl border border-zinc-200 p-4 sm:p-5 shadow-xs space-y-4">
-                <div className="flex items-center justify-between border-b border-zinc-100 pb-2.5 gap-2">
-                  <div className="flex items-center gap-2">
-                    <ShieldCheck className="w-4 h-4 text-orange-600 shrink-0" />
-                    <h3 className="text-sm font-bold text-zinc-900">
-                      {format === "cursorignore" ? ".cursorignore Shield" : ".claudeignore Shield"}
-                    </h3>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        handleSelectIgnoreProfile("full_shield");
-                        setCustomIgnoreRules("");
-                        setIsManuallyEdited(false);
-                      }}
-                      className="text-[10px] text-zinc-500 hover:text-zinc-700 transition-colors font-mono cursor-pointer"
-                      title="Reset to preset default"
-                    >
-                      Reset
-                    </button>
-                    <InfoTooltip
-                      title={format === "cursorignore" ? ".cursorignore Shield" : ".claudeignore Shield"}
-                      description={
-                        format === "cursorignore"
-                          ? "Controls what files Cursor's AI model indexes into its vector database and prompt context. Placed in repository root."
-                          : "Controls what files Claude Code CLI scans when exploring repository directories. Placed in repository root."
-                      }
-                      example=".env*\nnode_modules/\n*.lock\ncoverage/"
-                      align="right"
-                    />
-                  </div>
-                </div>
-
-                <p className="text-xs text-zinc-500 leading-relaxed">
-                  {format === "cursorignore"
-                    ? "Prevent Cursor AI from indexing secrets, build caches, and bulky lockfiles to save context window tokens:"
-                    : "Define boundary exclusions for Claude Code CLI to guard credentials and reduce prompt bloat:"}
-                </p>
-
-                {/* Profile Selector Buttons in orange theme */}
-                <div className="space-y-1.5">
-                  <div className="flex items-center justify-between">
-                    <label className="text-xs font-semibold text-zinc-700">Shield Protection Profile</label>
-                    <span className="text-[10px] text-zinc-400 font-mono">
-                      {ignorePreset === "full_shield"
-                        ? "Full Protection"
-                        : ignorePreset === "security_only"
-                        ? "Security Focused"
-                        : ignorePreset === "max_token_saver"
-                        ? "Token Saver"
-                        : "Custom Selection"}
-                    </span>
-                  </div>
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                    <button
-                      type="button"
-                      onClick={() => handleSelectIgnoreProfile("full_shield")}
-                      className={cn(
-                        "p-2 sm:px-3 sm:py-2 text-left rounded-lg border text-xs font-medium transition-all flex flex-col gap-0.5 cursor-pointer min-w-0",
-                        ignorePreset === "full_shield"
-                          ? "border-orange-500 bg-orange-50/60 text-orange-950 font-semibold ring-1 ring-orange-500/20"
-                          : "border-zinc-200 bg-white hover:bg-zinc-50 text-zinc-700"
-                      )}
-                    >
-                      <div className="flex items-center gap-1.5 min-w-0">
-                        <ShieldCheck className={cn("w-3.5 h-3.5 shrink-0", ignorePreset === "full_shield" ? "text-orange-600" : "text-zinc-400")} />
-                        <span className="truncate text-xs font-semibold">Full Shield</span>
-                      </div>
-                      <span className="text-[10px] text-zinc-500 font-normal truncate">All 8 categories</span>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => handleSelectIgnoreProfile("security_only")}
-                      className={cn(
-                        "p-2 sm:px-3 sm:py-2 text-left rounded-lg border text-xs font-medium transition-all flex flex-col gap-0.5 cursor-pointer min-w-0",
-                        ignorePreset === "security_only"
-                          ? "border-orange-500 bg-orange-50/60 text-orange-950 font-semibold ring-1 ring-orange-500/20"
-                          : "border-zinc-200 bg-white hover:bg-zinc-50 text-zinc-700"
-                      )}
-                    >
-                      <div className="flex items-center gap-1.5 min-w-0">
-                        <Lock className={cn("w-3.5 h-3.5 shrink-0", ignorePreset === "security_only" ? "text-orange-600" : "text-zinc-400")} />
-                        <span className="truncate text-xs font-semibold">Security Only</span>
-                      </div>
-                      <span className="text-[10px] text-zinc-500 font-normal truncate">Secrets &amp; DB leaks</span>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => handleSelectIgnoreProfile("max_token_saver")}
-                      className={cn(
-                        "p-2 sm:px-3 sm:py-2 text-left rounded-lg border text-xs font-medium transition-all flex flex-col gap-0.5 cursor-pointer min-w-0",
-                        ignorePreset === "max_token_saver"
-                          ? "border-orange-500 bg-orange-50/60 text-orange-950 font-semibold ring-1 ring-orange-500/20"
-                          : "border-zinc-200 bg-white hover:bg-zinc-50 text-zinc-700"
-                      )}
-                    >
-                      <div className="flex items-center gap-1.5 min-w-0">
-                        <Package className={cn("w-3.5 h-3.5 shrink-0", ignorePreset === "max_token_saver" ? "text-orange-600" : "text-zinc-400")} />
-                        <span className="truncate text-xs font-semibold">Max Token Saver</span>
-                      </div>
-                      <span className="text-[10px] text-zinc-500 font-normal truncate">Deps, build &amp; media</span>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => handleSelectIgnoreProfile("custom")}
-                      className={cn(
-                        "p-2 sm:px-3 sm:py-2 text-left rounded-lg border text-xs font-medium transition-all flex flex-col gap-0.5 cursor-pointer min-w-0",
-                        ignorePreset === "custom"
-                          ? "border-orange-500 bg-orange-50/60 text-orange-950 font-semibold ring-1 ring-orange-500/20"
-                          : "border-zinc-200 bg-white hover:bg-zinc-50 text-zinc-700"
-                      )}
-                    >
-                      <div className="flex items-center gap-1.5 min-w-0">
-                        <Sliders className={cn("w-3.5 h-3.5 shrink-0", ignorePreset === "custom" ? "text-orange-600" : "text-zinc-400")} />
-                        <span className="truncate text-xs font-semibold">Custom</span>
-                      </div>
-                      <span className="text-[10px] text-zinc-500 font-normal truncate">Manual rules</span>
-                    </button>
-                  </div>
-                </div>
-
-                {/* Impact Summary HUD in warm orange theme */}
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 p-3 rounded-lg bg-orange-50/30 border border-orange-200/50">
-                  <div className="flex items-center gap-2.5 min-w-0">
-                    <div className="w-8 h-8 rounded-md bg-orange-100/80 flex items-center justify-center shrink-0">
-                      <Package className="w-4 h-4 text-orange-700" />
-                    </div>
-                    <div className="min-w-0">
-                      <div className="text-[11px] font-medium text-zinc-500 leading-tight truncate">Tokens Saved / Turn</div>
-                      <div className="text-xs font-bold text-zinc-900 tracking-tight truncate">~{estimatedTokensSaved}k tokens</div>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-2.5 min-w-0">
-                    <div className="w-8 h-8 rounded-md bg-orange-100/80 flex items-center justify-center shrink-0">
-                      <ShieldCheck className="w-4 h-4 text-orange-700" />
-                    </div>
-                    <div className="min-w-0">
-                      <div className="text-[11px] font-medium text-zinc-500 leading-tight truncate">Secret Leak Guards</div>
-                      <div className="text-xs font-bold text-zinc-900 tracking-tight truncate">{activeSecretMasks} Active Guards</div>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-2.5 min-w-0">
-                    <div className="w-8 h-8 rounded-md bg-orange-100/80 flex items-center justify-center shrink-0">
-                      <Sliders className="w-4 h-4 text-orange-700" />
-                    </div>
-                    <div className="min-w-0">
-                      <div className="text-[11px] font-medium text-zinc-500 leading-tight truncate">Shield Categories</div>
-                      <div className="text-xs font-bold text-zinc-900 tracking-tight truncate">
-                        {ignoreCategories.length} of {IGNORE_CATEGORY_LIST.length} Enabled
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Card 2: Indexing Boundary Categories — Exact fashion and orange theme as other tweak cards */}
-              <div className="bg-white rounded-xl border border-zinc-200 p-4 sm:p-5 shadow-xs space-y-3">
-                <div className="flex items-center justify-between border-b border-zinc-100 pb-2.5 gap-2">
-                  <div className="flex items-center gap-2 min-w-0">
-                    <Sliders className="w-4 h-4 text-orange-600 shrink-0" />
-                    <h3 className="text-sm font-bold text-zinc-900 truncate">Indexing Boundary Categories</h3>
-                    <InfoTooltip
-                      title="Indexing Boundary Categories"
-                      description="Select specific categories of files to shield from AI context. Click any card to toggle and highlight its section in the editor."
-                      example="Secrets, Lockfiles, Build Outputs, Media"
-                      align="left"
-                    />
-                  </div>
-                  <span className="text-[11px] text-zinc-500 shrink-0 hidden sm:inline">Select active exclusions</span>
-                </div>
-
-                <p className="text-xs text-zinc-500 leading-relaxed">
-                  Toggle specific categories to mask secrets and exclude heavy artifacts:
-                </p>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                  {IGNORE_CATEGORY_LIST.map((cat) => {
-                    const isSelected = ignoreCategories.includes(cat.id);
-                    return (
-                      <label
-                        key={cat.id}
-                        data-section={cat.sectionKey}
-                        onClick={() => {
-                          handleToggleCategory(cat.id);
-                          requestSectionScroll(cat.sectionKey);
-                        }}
-                        className={cn(
-                          "p-2.5 rounded-lg border text-left cursor-pointer transition-all flex items-start gap-2.5 select-none",
-                          isSelected
-                            ? "border-orange-200 bg-orange-50/40 text-zinc-900 shadow-2xs"
-                            : "border-zinc-200 bg-white text-zinc-500 hover:border-zinc-300 hover:bg-zinc-50/60"
-                        )}
-                      >
-                        <input
-                          type="checkbox"
-                          checked={isSelected}
-                          onChange={() => {}}
-                          className="mt-0.5 w-3.5 h-3.5 rounded border-zinc-300 accent-orange-600 cursor-pointer shrink-0"
-                        />
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-start sm:items-center justify-between gap-1.5 mb-0.5">
-                            <span className="text-xs font-semibold text-zinc-900 leading-snug break-words">{cat.name}</span>
-                            <span
-                              className={cn(
-                                "text-[10px] sm:text-[11px] font-medium leading-none px-2 py-0.5 rounded-full border shrink-0 tracking-tight whitespace-nowrap mt-0.5 sm:mt-0",
-                                isSelected
-                                  ? "bg-orange-100 text-orange-800 border-orange-200/80 font-semibold"
-                                  : "bg-zinc-100 text-zinc-600 border-zinc-200"
-                              )}
-                            >
-                              {cat.tokenLabel}
-                            </span>
-                          </div>
-                          <span className="text-xs leading-relaxed text-zinc-500 block break-words">{cat.desc}</span>
-                        </div>
-                      </label>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Card 3: Custom Project Rules & Negate Exceptions */}
-              <div
-                data-section="customIgnoreRules"
-                className="bg-white rounded-xl border border-zinc-200 p-4 sm:p-5 shadow-xs space-y-2.5"
-              >
-                <div className="flex items-center justify-between border-b border-zinc-100 pb-2.5 gap-2">
-                  <div className="flex items-center gap-2 min-w-0">
-                    <FileText className="w-4 h-4 text-orange-600 shrink-0" />
-                    <h3 className="text-xs sm:text-sm font-bold text-zinc-900 truncate">Custom Rules &amp; Negate Exceptions</h3>
-                    <InfoTooltip
-                      title="Custom Ignore Rules & Negations"
-                      description="Add custom paths or globs to ignore, or prefix with '!' to re-include files that were excluded by broader category rules (e.g. '!packages/schema/types.d.ts')."
-                      example="!dist/types.d.ts\nscratch/\n*.tmp"
-                      align="left"
-                    />
-                  </div>
-                  {customIgnoreRules.trim().length > 0 && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setCustomIgnoreRules("");
-                        setIsManuallyEdited(false);
-                      }}
-                      className="text-[10px] text-zinc-500 hover:text-zinc-700 transition-colors font-mono cursor-pointer shrink-0"
-                      title="Clear custom rules"
-                    >
-                      Clear
-                    </button>
-                  )}
-                </div>
-
-                <p className="text-xs text-zinc-500 leading-relaxed">
-                  Append repo-specific file globs or re-include allowed files with negation patterns (<code className="font-mono text-zinc-700">!path</code>):
-                </p>
-
-                <textarea
-                  value={customIgnoreRules}
-                  onFocus={() => {
-                    setActiveFieldKey("customIgnoreRules");
-                    requestSectionScroll("customIgnoreRules");
-                  }}
-                  onChange={(e) => {
-                    setCustomIgnoreRules(e.target.value);
-                    setActiveFieldKey("customIgnoreRules");
-                    setIsManuallyEdited(false);
-                  }}
-                  rows={4}
-                  placeholder={`# Custom project rules\nprivate/\ninternal-docs/\n!public/logo.svg`}
-                  className="w-full p-2.5 border border-zinc-200 rounded-lg text-xs font-mono leading-relaxed focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 resize-y"
-                />
-              </div>
-            </div>
+            <IgnoreShieldSuite
+              format={format}
+              ignoreCategories={ignoreCategories}
+              ignorePreset={ignorePreset}
+              customIgnoreRules={customIgnoreRules}
+              setCustomIgnoreRules={setCustomIgnoreRules}
+              handleToggleCategory={handleToggleCategory}
+              handleSelectIgnoreProfile={handleSelectIgnoreProfile}
+              requestSectionScroll={requestSectionScroll}
+              setActiveFieldKey={setActiveFieldKey}
+              setIsManuallyEdited={setIsManuallyEdited}
+            />
           )}
 
           {!isGovernanceFormat && !isMcpFormat && !isIgnoreFormat && (
@@ -5033,7 +3248,7 @@ export function ClaudeSkillsClient({
                 return (
                   <button
                     key={p.id}
-                    onClick={() => { setPhilosophy(p.id as any); setActiveFieldKey("techStack"); setIsManuallyEdited(false); }}
+                    onClick={() => { setPhilosophy(p.id as any); setActiveFieldKey("philosophy"); setIsManuallyEdited(false); }}
                     className={cn(
                       "p-2.5 rounded-lg border text-left transition-all flex flex-col gap-1 cursor-pointer",
                       isSelected
@@ -5073,11 +3288,6 @@ export function ClaudeSkillsClient({
                 return (
                   <label
                     key={opt.id}
-                    onClick={() => {
-                      toggleItem(conventions, setConventions, opt.id);
-                      setActiveFieldKey("conventions");
-                      setIsManuallyEdited(false);
-                    }}
                     className={cn(
                       "p-2.5 rounded-lg border text-left cursor-pointer transition-all flex items-start gap-2.5 select-none",
                       isChecked ? "border-orange-200 bg-orange-50/40 text-zinc-900" : "border-zinc-200 bg-white text-zinc-500 hover:border-zinc-300 hover:bg-zinc-50/60"
@@ -5086,7 +3296,11 @@ export function ClaudeSkillsClient({
                     <input
                       type="checkbox"
                       checked={isChecked}
-                      onChange={() => {}}
+                      onChange={() => {
+                        toggleItem(conventions, setConventions, opt.id);
+                        setActiveFieldKey("conventions");
+                        setIsManuallyEdited(false);
+                      }}
                       className="mt-0.5 w-3.5 h-3.5 rounded border-zinc-300 accent-orange-600 cursor-pointer shrink-0"
                     />
                     <div>
@@ -5120,11 +3334,6 @@ export function ClaudeSkillsClient({
                 return (
                   <label
                     key={opt.id}
-                    onClick={() => {
-                      toggleItem(behaviors, setBehaviors, opt.id);
-                      setActiveFieldKey("behaviors");
-                      setIsManuallyEdited(false);
-                    }}
                     className={cn(
                       "p-2.5 rounded-lg border text-left cursor-pointer transition-all flex items-start gap-2.5 select-none",
                       isChecked ? "border-orange-200 bg-orange-50/40 text-zinc-900" : "border-zinc-200 bg-white text-zinc-500 hover:border-zinc-300 hover:bg-zinc-50/60"
@@ -5133,7 +3342,11 @@ export function ClaudeSkillsClient({
                     <input
                       type="checkbox"
                       checked={isChecked}
-                      onChange={() => {}}
+                      onChange={() => {
+                        toggleItem(behaviors, setBehaviors, opt.id);
+                        setActiveFieldKey("behaviors");
+                        setIsManuallyEdited(false);
+                      }}
                       className="mt-0.5 w-3.5 h-3.5 rounded border-zinc-300 accent-orange-600 cursor-pointer shrink-0"
                     />
                     <div>
@@ -5163,7 +3376,7 @@ export function ClaudeSkillsClient({
 
             <textarea
               value={procedures}
-              onFocus={() => { setActiveFieldKey("procedures"); setIsManuallyEdited(false); }}
+              onFocus={() => setActiveFieldKey("procedures")}
               onChange={(e) => { setProcedures(e.target.value); setActiveFieldKey("procedures"); setIsManuallyEdited(false); }}
               rows={8}
               placeholder="1. Read context... 2. Trace execution..."
@@ -5184,7 +3397,7 @@ export function ClaudeSkillsClient({
               </div>
               <textarea
                 value={customDirectives}
-                onFocus={() => { setActiveFieldKey("customDirectives"); setIsManuallyEdited(false); }}
+                onFocus={() => setActiveFieldKey("customDirectives")}
                 onChange={(e) => { setCustomDirectives(e.target.value); setActiveFieldKey("customDirectives"); setIsManuallyEdited(false); }}
                 rows={5}
                 placeholder="- Never use eval or dangerous innerHTML..."
@@ -5207,8 +3420,8 @@ export function ClaudeSkillsClient({
           {/* Main Card containing Header + Monaco Editor */}
           <div className="bg-zinc-900 rounded-xl border border-zinc-800 shadow-md flex flex-col overflow-hidden">
             {/* File Tab Header with Unified Action Group */}
-            <div className="px-3 py-2 flex items-center justify-between border-b border-zinc-800 bg-zinc-900/95 shrink-0 gap-2 overflow-hidden">
-              <div className="flex items-center gap-2 min-w-0 flex-1 overflow-hidden">
+            <div className="px-2.5 sm:px-3 py-1.5 sm:py-2 flex items-center justify-between border-b border-zinc-800 bg-zinc-900/95 shrink-0 gap-1.5 sm:gap-2 overflow-hidden">
+              <div className="flex items-center gap-1.5 sm:gap-2 min-w-0 flex-1 overflow-hidden">
                 <div
                   suppressHydrationWarning
                   className={cn(
@@ -5232,7 +3445,7 @@ export function ClaudeSkillsClient({
                 />
                 <span
                   suppressHydrationWarning
-                  className="font-mono text-xs text-zinc-200 font-semibold truncate shrink-0 max-w-[14rem]"
+                  className="font-mono text-xs text-zinc-200 font-semibold truncate min-w-0 max-w-[6.5rem] sm:max-w-[9.5rem] md:max-w-[12rem] 2xl:max-w-[16rem]"
                   title={currentFileName}
                 >
                   {currentFileName}
@@ -5244,7 +3457,8 @@ export function ClaudeSkillsClient({
                   <button
                     type="button"
                     onClick={() => setShouldLoadEditor(true)}
-                    className="inline-flex items-center gap-1 text-[10px] text-zinc-400 hover:text-zinc-200 bg-zinc-800/80 hover:bg-zinc-700/80 border border-zinc-700/60 px-2 py-0.5 rounded-md transition-colors font-mono shrink-0 cursor-pointer"
+                    onMouseEnter={() => setShouldLoadEditor(true)}
+                    className="inline-flex items-center gap-1 text-[10px] text-zinc-400 hover:text-zinc-200 bg-zinc-800/80 hover:bg-zinc-700/80 border border-zinc-700/60 px-1.5 sm:px-2 py-0.5 rounded-md transition-colors font-mono shrink-0 cursor-pointer"
                     title="Load interactive code editor"
                   >
                     <FileText className="w-2.5 h-2.5" />
@@ -5259,14 +3473,15 @@ export function ClaudeSkillsClient({
                 )}
                 {isManuallyEdited && (
                   <button
+                    type="button"
                     onClick={() => {
                       setEditorContent(generatedContent);
                       setIsManuallyEdited(false);
                     }}
-                    className="inline-flex items-center gap-1 text-[10px] text-amber-400 bg-amber-950/80 border border-amber-800/90 px-2 py-0.5 rounded-md hover:bg-amber-900 transition-colors font-mono shrink-0 active:scale-95 cursor-pointer"
+                    className="inline-flex items-center gap-1 text-[10px] text-amber-400 bg-amber-950/80 border border-amber-800/90 px-1.5 sm:px-2 py-0.5 rounded-md hover:bg-amber-900 transition-colors font-mono shrink-0 active:scale-95 cursor-pointer shadow-xs"
                     title="Reset custom in-editor edits back to template-generated output"
                   >
-                    <RefreshCw className="w-2.5 h-2.5" />
+                    <RefreshCw className="w-2.5 h-2.5 shrink-0" />
                     <span>Reset</span>
                   </button>
                 )}
@@ -5276,33 +3491,33 @@ export function ClaudeSkillsClient({
               <div className="flex items-center bg-zinc-800/90 rounded-lg p-0.5 border border-zinc-700/60 shadow-xs shrink-0 ml-auto">
                 <button
                   onClick={handleCopy}
-                  className="flex items-center gap-1 px-2 xl:px-2.5 py-1 text-xs text-zinc-300 hover:text-white hover:bg-zinc-700/60 rounded-md transition-colors font-medium cursor-pointer"
+                  className="flex items-center gap-1 px-1.5 sm:px-2 2xl:px-2.5 py-1 text-xs text-zinc-300 hover:text-white hover:bg-zinc-700/60 rounded-md transition-colors font-medium cursor-pointer"
                   title="Copy code to clipboard"
                 >
                   {copied ? <Check className="w-3.5 h-3.5 text-orange-400" /> : <Copy className="w-3.5 h-3.5" />}
-                  <span className="hidden xl:inline">{copied ? "Copied!" : "Copy"}</span>
+                  <span className="hidden 2xl:inline">{copied ? "Copied!" : "Copy"}</span>
                 </button>
 
                 <div className="w-px h-3.5 bg-zinc-700/80 mx-0.5" />
 
                 <button
                   onClick={handleShareLink}
-                  className="flex items-center gap-1 px-2 xl:px-2.5 py-1 text-xs text-zinc-300 hover:text-white hover:bg-zinc-700/60 rounded-md transition-colors font-medium cursor-pointer"
+                  className="flex items-center gap-1 px-1.5 sm:px-2 2xl:px-2.5 py-1 text-xs text-zinc-300 hover:text-white hover:bg-zinc-700/60 rounded-md transition-colors font-medium cursor-pointer"
                   title="Copy shareable link to this exact configuration"
                 >
                   {shareCopied ? <Check className="w-3.5 h-3.5 text-blue-400" /> : <ExternalLink className="w-3.5 h-3.5" />}
-                  <span className="hidden xl:inline">{shareCopied ? "Copied!" : "Share"}</span>
+                  <span className="hidden 2xl:inline">{shareCopied ? "Copied!" : "Share"}</span>
                 </button>
 
                 <div className="w-px h-3.5 bg-zinc-700/80 mx-0.5" />
 
                 <button
                   onClick={handleDownload}
-                  className="flex items-center gap-1 px-2 xl:px-2.5 py-1 text-xs text-zinc-300 hover:text-white hover:bg-zinc-700/60 rounded-md transition-colors font-medium cursor-pointer"
+                  className="flex items-center gap-1 px-1.5 sm:px-2 2xl:px-2.5 py-1 text-xs text-zinc-300 hover:text-white hover:bg-zinc-700/60 rounded-md transition-colors font-medium cursor-pointer"
                   title={`Download ${currentFileName}`}
                 >
                   <Download className="w-3.5 h-3.5" />
-                  <span className="hidden xl:inline">Download</span>
+                  <span className="hidden 2xl:inline">Download</span>
                 </button>
 
                 <div className="w-px h-3.5 bg-zinc-700/80 mx-0.5" />
@@ -5313,7 +3528,7 @@ export function ClaudeSkillsClient({
                     type="button"
                     onClick={handleCliAction}
                     className={cn(
-                      "flex items-center gap-1 px-2 xl:px-2.5 py-1 text-xs rounded-md transition-colors font-medium cursor-pointer",
+                      "flex items-center gap-1 px-1.5 sm:px-2 2xl:px-2.5 py-1 text-xs rounded-md transition-colors font-medium cursor-pointer",
                       showCliDropdown
                         ? "bg-zinc-700 text-orange-400"
                         : "text-zinc-300 hover:text-white hover:bg-zinc-700/60"
@@ -5332,7 +3547,7 @@ export function ClaudeSkillsClient({
                     ) : (
                       <>
                         <Terminal className="w-3.5 h-3.5 text-orange-400" />
-                        <span className="hidden xl:inline">CLI</span>
+                        <span className="hidden 2xl:inline">CLI</span>
                       </>
                     )}
                   </button>
@@ -5504,10 +3719,11 @@ export function ClaudeSkillsClient({
                 <div className="w-px h-3.5 bg-zinc-700/80 mx-0.5" />
 
                 <button
+                  type="button"
                   onClick={handleExportZip}
                   disabled={isExportingZip}
                   className={cn(
-                    "flex items-center gap-1 px-2 sm:px-2.5 py-1 text-xs text-white rounded-md transition-colors font-semibold shadow-xs cursor-pointer disabled:opacity-50 shrink-0",
+                    "flex items-center gap-1 px-1.5 sm:px-2.5 py-1 text-xs text-white rounded-md transition-colors font-semibold shadow-xs cursor-pointer disabled:opacity-50 shrink-0",
                     format === "cursor_mdc"
                       ? "bg-zinc-800 hover:bg-black border border-zinc-600"
                       : "bg-orange-600 hover:bg-orange-500"
@@ -5515,15 +3731,50 @@ export function ClaudeSkillsClient({
                   title="Export complete workspace suite as a .zip bundle"
                 >
                   <Archive className="w-3.5 h-3.5 text-orange-200 shrink-0" />
-                  <span className="whitespace-nowrap">{isExportingZip ? "Zipping..." : "Export ZIP"}</span>
+                  <span className="hidden 2xl:inline whitespace-nowrap">{isExportingZip ? "Zipping..." : "Export ZIP"}</span>
+                  <span className="hidden sm:inline 2xl:hidden whitespace-nowrap">{isExportingZip ? "..." : "ZIP"}</span>
+                  <span className="sm:hidden whitespace-nowrap">{isExportingZip ? "..." : ""}</span>
                 </button>
               </div>
             </div>
+
+            {/* Restore notice — a form change or Reset regenerated output over the user's manual editor edits */}
+            {discardedEdit && discardedEdit.format === format && !isManuallyEdited && (
+              <div
+                role="status"
+                className="px-3 py-1.5 flex items-center justify-between gap-2 border-b border-amber-900/60 bg-amber-950/40 text-[11px] text-amber-300 font-mono"
+              >
+                <span className="min-w-0 truncate">Generated output replaced your manual editor edits.</span>
+                <div className="flex items-center gap-1 shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setEditorContent(discardedEdit.content);
+                      setIsManuallyEdited(true);
+                    }}
+                    className="px-2 py-0.5 rounded-md border border-amber-800/90 bg-amber-950/80 hover:bg-amber-900 transition-colors cursor-pointer"
+                  >
+                    Restore edits
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setDiscardedEdit(null)}
+                    className="px-1.5 py-0.5 rounded-md text-amber-500 hover:text-amber-300 transition-colors cursor-pointer"
+                    aria-label="Dismiss restore notice"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </div>
+              </div>
+            )}
 
             {/* Editor Container — Always full height */}
             <div
               className="h-[430px] sm:h-[520px] lg:h-[calc(100vh-16rem)] min-h-[380px] relative overflow-hidden bg-zinc-950 group"
               onClick={() => {
+                if (!shouldLoadEditor) setShouldLoadEditor(true);
+              }}
+              onMouseEnter={() => {
                 if (!shouldLoadEditor) setShouldLoadEditor(true);
               }}
             >
@@ -5608,8 +3859,12 @@ export function ClaudeSkillsClient({
                     }}
                     onChange={(val) => {
                       if (val !== undefined) {
-                        setEditorContent(val);
-                        setIsManuallyEdited(true);
+                        // Monaco fires outside React's event system, so a deferred render would hand the
+                        // editor a stale `value` that overwrites the next keystroke; commit synchronously.
+                        flushSync(() => {
+                          setEditorContent(val);
+                          setIsManuallyEdited(true);
+                        });
                       }
                     }}
                     loading={
@@ -5635,6 +3890,8 @@ export function ClaudeSkillsClient({
                       lineNumbers: "on",
                       lineNumbersMinChars: 3,
                       glyphMargin: true,
+                      // Room for the White Marker bar between line numbers and text, so it never covers the first character
+                      lineDecorationsWidth: 14,
                       scrollBeyondLastLine: false,
                       smoothScrolling: true,
                       automaticLayout: true,
@@ -6052,137 +4309,10 @@ export function ClaudeSkillsClient({
           </div>
 
           {/* Instructional Target Location Card (Redesigned with warm orange palette & sleek typography) */}
-          <div
-            suppressHydrationWarning
-            className="rounded-xl border border-orange-200/80 bg-gradient-to-b from-orange-50/60 via-white to-orange-50/30 p-3.5 sm:p-4 shadow-2xs space-y-2 shrink-0 transition-all"
-          >
-            <div className="flex items-center justify-between gap-2 border-b border-orange-100 pb-2">
-              <div className="flex items-center gap-2 min-w-0">
-                <div className="w-6 h-6 rounded-md bg-orange-100/90 border border-orange-200/80 flex items-center justify-center shrink-0 text-orange-700 shadow-2xs">
-                  {format === "cursor_mdc" ? (
-                    <Image src="/cursor-icon.png" width={14} height={14} alt="Cursor" className="w-3.5 h-3.5 object-contain" />
-                  ) : format === "claude_md" ? (
-                    <Image src="/claude-icon.png" width={14} height={14} alt="Claude" className="w-3.5 h-3.5 object-contain" />
-                  ) : format === "mcp_json" ? (
-                    <Server className="w-3.5 h-3.5 text-orange-600" />
-                  ) : format === "windsurf_cascade" ? (
-                    <WindsurfIcon className="w-3.5 h-3.5 text-teal-700" />
-                  ) : format === "copilot_instructions" ? (
-                    <CopilotIcon className="w-3.5 h-3.5 text-sky-600" />
-                  ) : format === "openai_instructions" ? (
-                    <OpenAIIcon className="w-3.5 h-3.5 text-purple-700 dark:text-purple-300" />
-                  ) : format === "gemini_prompts" ? (
-                    <GeminiIcon className="w-3.5 h-3.5" />
-                  ) : format === "llms_txt" ? (
-                    <FileText className="w-3.5 h-3.5 text-indigo-600" />
-                  ) : format === "architecture_md" ? (
-                    <Layers className="w-3.5 h-3.5 text-purple-600" />
-                  ) : format === "prd_md" ? (
-                    <FileText className="w-3.5 h-3.5 text-blue-600" />
-                  ) : format === "design_md" ? (
-                    <Layers className="w-3.5 h-3.5 text-indigo-600" />
-                  ) : format === "task_md" ? (
-                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                  ) : format === "memory_md" ? (
-                    <Cpu className="w-3.5 h-3.5 text-amber-600" />
-                  ) : format === "cursorignore" || format === "claudeignore" ? (
-                    <ShieldCheck className="w-3.5 h-3.5 text-orange-600" />
-                  ) : (
-                    <FolderGit2 className={cn("w-3.5 h-3.5", format === "skill_md" ? "text-orange-500" : "text-zinc-800")} />
-                  )}
-                </div>
-                <h4 className="text-xs font-bold text-zinc-900 tracking-tight truncate">Target File Location</h4>
-              </div>
-              <span className="text-[10px] font-medium tracking-tight text-orange-800 bg-orange-100/80 border border-orange-200/70 px-2 py-0.5 rounded-full shrink-0 whitespace-nowrap">
-                Project Placement
-              </span>
-            </div>
-            {format === "skill_md" && (
-              <p className="text-xs text-zinc-600 leading-relaxed font-sans">
-                Save as <code className="px-1.5 py-0.5 rounded-md bg-white border border-orange-200 text-orange-950 font-mono text-[11px] font-semibold shadow-2xs break-all sm:break-normal">.claude/skills/{(skillName || "skill").replace(/[^a-zA-Z0-9._-]/g, "-")}/SKILL.md</code> in project root, or in <code className="px-1.5 py-0.5 rounded-md bg-white border border-orange-200 text-orange-950 font-mono text-[11px] font-semibold shadow-2xs break-all sm:break-normal">~/.claude/skills/{(skillName || "skill").replace(/[^a-zA-Z0-9._-]/g, "-")}/SKILL.md</code> for global Claude Code availability.
-              </p>
-            )}
-            {format === "claude_md" && (
-              <p className="text-xs text-zinc-600 leading-relaxed font-sans">
-                Save as <code className="px-1.5 py-0.5 rounded-md bg-white border border-orange-200 text-orange-950 font-mono text-[11px] font-semibold shadow-2xs break-all sm:break-normal">CLAUDE.md</code> directly in the root directory. Parsed automatically at the start of every session.
-              </p>
-            )}
-            {format === "cursor_mdc" && (
-              <p className="text-xs text-zinc-600 leading-relaxed font-sans">
-                Save in <code className="px-1.5 py-0.5 rounded-md bg-white border border-orange-200 text-orange-950 font-mono text-[11px] font-semibold shadow-2xs break-all sm:break-normal">.cursor/rules/{(skillName || "rule").replace(/[^a-zA-Z0-9._-]/g, "-")}.mdc</code>. Evaluated via glob patterns for targeted context.
-              </p>
-            )}
-            {format === "agents_md" && (
-              <p className="text-xs text-zinc-600 leading-relaxed font-sans">
-                Save as <code className="px-1.5 py-0.5 rounded-md bg-white border border-orange-200 text-orange-950 font-mono text-[11px] font-semibold shadow-2xs break-all sm:break-normal">AGENTS.md</code> in your root directory. Multi-agent workflows load this spec to coordinate tasks.
-              </p>
-            )}
-            {format === "mcp_json" && (
-              <p className="text-xs text-zinc-600 leading-relaxed font-sans">
-                Save as <code className="px-1.5 py-0.5 rounded-md bg-white border border-orange-200 text-orange-950 font-mono text-[11px] font-semibold shadow-2xs break-all sm:break-normal">claude.json</code> in project root or merge its <code className="px-1.5 py-0.5 rounded-md bg-white border border-orange-200 text-orange-950 font-mono text-[11px] font-semibold shadow-2xs break-all sm:break-normal">mcpServers</code> block into Claude Desktop <code className="px-1.5 py-0.5 rounded-md bg-white border border-orange-200 text-orange-950 font-mono text-[11px] font-semibold shadow-2xs break-all sm:break-normal">claude_desktop_config.json</code>.
-              </p>
-            )}
-            {format === "windsurf_cascade" && (
-              <p className="text-xs text-zinc-600 leading-relaxed font-sans">
-                Save as <code className="px-1.5 py-0.5 rounded-md bg-white border border-orange-200 text-orange-950 font-mono text-[11px] font-semibold shadow-2xs break-all sm:break-normal">.windsurf/rules/{(skillName || "rule").replace(/[^a-zA-Z0-9._-]/g, "-")}.md</code> in project root. Windsurf Cascade automatically injects this rule when executing flows.
-              </p>
-            )}
-            {format === "copilot_instructions" && (
-              <p className="text-xs text-zinc-600 leading-relaxed font-sans">
-                Save as <code className="px-1.5 py-0.5 rounded-md bg-white border border-orange-200 text-orange-950 font-mono text-[11px] font-semibold shadow-2xs break-all sm:break-normal">.github/copilot-instructions.md</code> in repository root. Read by GitHub Copilot chat and code completions.
-              </p>
-            )}
-            {format === "openai_instructions" && (
-              <p className="text-xs text-zinc-600 leading-relaxed font-sans">
-                Save in <code className="px-1.5 py-0.5 rounded-md bg-white border border-orange-200 text-orange-950 font-mono text-[11px] font-semibold shadow-2xs break-all sm:break-normal">prompts/openai-custom-instructions.md</code> or paste directly into ChatGPT Custom Instructions / OpenAI Playground System Prompt.
-              </p>
-            )}
-            {format === "gemini_prompts" && (
-              <p className="text-xs text-zinc-600 leading-relaxed font-sans">
-                Save in <code className="px-1.5 py-0.5 rounded-md bg-white border border-orange-200 text-orange-950 font-mono text-[11px] font-semibold shadow-2xs break-all sm:break-normal">prompts/gemini-system-instructions.json</code> for Google AI Studio / Gemini API SDK system instructions configuration.
-              </p>
-            )}
-            {format === "cursorignore" && (
-              <p className="text-xs text-zinc-600 leading-relaxed font-sans">
-                Save as <code className="px-1.5 py-0.5 rounded-md bg-white border border-orange-200 text-orange-950 font-mono text-[11px] font-semibold shadow-2xs break-all sm:break-normal">.cursorignore</code> in project root. Masks credentials and excludes build caches and bulky lockfiles to save 50k+ tokens.
-              </p>
-            )}
-            {format === "claudeignore" && (
-              <p className="text-xs text-zinc-600 leading-relaxed font-sans">
-                Save as <code className="px-1.5 py-0.5 rounded-md bg-white border border-orange-200 text-orange-950 font-mono text-[11px] font-semibold shadow-2xs break-all sm:break-normal">.claudeignore</code> in project root. Prevents Claude Code CLI from reading or modifying restricted directories.
-              </p>
-            )}
-            {format === "llms_txt" && (
-              <p className="text-xs text-zinc-600 leading-relaxed font-sans">
-                Save as <code className="px-1.5 py-0.5 rounded-md bg-white border border-orange-200 text-orange-950 font-mono text-[11px] font-semibold shadow-2xs break-all sm:break-normal">llms.txt</code> in project root or domain root. Standardized machine-readable orientation for LLMs and autonomous agents.
-              </p>
-            )}
-            {format === "architecture_md" && (
-              <p className="text-xs text-zinc-600 leading-relaxed font-sans">
-                Save as <code className="px-1.5 py-0.5 rounded-md bg-white border border-orange-200 text-orange-950 font-mono text-[11px] font-semibold shadow-2xs break-all sm:break-normal">ARCHITECTURE.md</code> in repository root. Establishes non-negotiable data flow and system state invariants.
-              </p>
-            )}
-            {format === "prd_md" && (
-              <p className="text-xs text-zinc-600 leading-relaxed font-sans">
-                Save as <code className="px-1.5 py-0.5 rounded-md bg-white border border-orange-200 text-orange-950 font-mono text-[11px] font-semibold shadow-2xs break-all sm:break-normal">PRD.md</code> in repository root. Authoritative product requirements, user personas, and milestone roadmap.
-              </p>
-            )}
-            {format === "design_md" && (
-              <p className="text-xs text-zinc-600 leading-relaxed font-sans">
-                Save as <code className="px-1.5 py-0.5 rounded-md bg-white border border-orange-200 text-orange-950 font-mono text-[11px] font-semibold shadow-2xs break-all sm:break-normal">DESIGN.md</code> in repository root. UI/UX design tokens, single-canvas layout rules, and negative guardrails.
-              </p>
-            )}
-            {format === "task_md" && (
-              <p className="text-xs text-zinc-600 leading-relaxed font-sans">
-                Save as <code className="px-1.5 py-0.5 rounded-md bg-white border border-orange-200 text-orange-950 font-mono text-[11px] font-semibold shadow-2xs break-all sm:break-normal">TASK.md</code> in repository root. Active sprint tracker, mandatory verification gates, and agent session log.
-              </p>
-            )}
-            {format === "memory_md" && (
-              <p className="text-xs text-zinc-600 leading-relaxed font-sans">
-                Save as <code className="px-1.5 py-0.5 rounded-md bg-white border border-orange-200 text-orange-950 font-mono text-[11px] font-semibold shadow-2xs break-all sm:break-normal">MEMORY.md</code> in repository root. Persistent agent brain: tech context, ADRs, operational gotchas, and 5-step loop.
-              </p>
-            )}
-          </div>
+          <TargetLocationCard
+            format={format}
+            skillName={skillName}
+          />
         </div>
       </main>
 

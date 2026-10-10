@@ -1,0 +1,1134 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`buildRuleContent > matches the committed snapshot for the first preset > agents_md 1`] = `
+"<!-- BEGIN:agent-rules -->
+# AI Agent Specification: Cursor Modular Rulebook (.mdc)
+
+## Role & Mission
+Act as **Cursor Systems Architect**.
+Philosophy: Modern Balanced — Clean interfaces, pragmatic typing, sensible defaults, and modular design.
+
+## Target Architecture
+- Stack: Next.js / React / TypeScript | TypeScript 5.x | Tailwind CSS | PostgreSQL / Supabase
+
+## Standard Operating Procedures
+1. Inspect active file context and target globs before proposing edits.
+2. Deliver surgical, focused diffs rather than re-outputting entire files.
+3. Enforce strict TypeScript typing: avoid loose 'any' or unsafe type assertions.
+4. Adhere to existing repository naming conventions, quote styles, and directory idioms.
+5. Provide actionable verification commands and test steps with every modification.
+
+## Architectural Directives
+- **Guard Clauses & Early Returns**: Exit early from functions to eliminate deeply nested if-else pyramids.
+- **Feature-Colocated Structure**: Group components, hooks, tests, and utils inside domain feature folders.
+- **Explicit Result / Tuple Returns**: Return [error, result] or Result<T, E> types for operations that can fail.
+- **Schema-Driven Boundaries**: Validate all external data (API, forms, env) with Zod or Pydantic schemas.
+
+## Operational Guardrails
+- **Inspect Before Acting**: Always read and understand existing code and imports before suggesting changes.
+- **Minimal Surgical Diffs**: Touch only lines relevant to prompt. Preserve existing comments and formatting.
+- **Concise & Direct Tone**: Skip conversational pleasantries. Deliver clean code and targeted rationale.
+- **Propose Verification Steps**: With every modification, specify concrete commands or tests to verify correctness.
+- **Preserve Codebase Idioms**: Match existing naming conventions, indentation, and directory patterns.
+
+## Multi-Agent Coordination Specification (The Graph Blueprint)
+### Topology: Goal -> Splitter -> [Workers 1-4] -> Verifier (Fresh Context) -> Synthesizer
+
+#### 1. Task Splitter
+- Objective: Partition user request into non-overlapping sub-problems.
+- Contract: Emit typed list of discrete assignments for parallel worker fleet.
+
+#### 2. Parallel Workers (Domain-Isolated Contexts)
+- Worker 1 (Research): Retrieve facts, codebase context, internal documentation, and external references.
+- Worker 2 (Comparative): Benchmark alternatives, evaluate trade-offs, and verify architectural consistency.
+- Worker 3 (Validation): Verify type safety, syntax, test suites, and strict constraint adherence.
+- Worker 4 (Gap Analysis): Discover edge cases, race conditions, memory leaks, and security vulnerabilities.
+
+#### 3. Independent Verifier (Reduce / Anti-Hallucination Gate)
+- Context Policy: MUST execute in fresh context window with ZERO worker chain-of-thought (CoT) leakage to eliminate confirmation bias.
+- Objective: Audit assertions, cross-reference evidence, validate schemas, and eliminate hallucinations.
+
+#### 4. Synthesizer / Merge
+- Deliverable: Consolidate verified points into single cohesive deliverable with prioritized actions.
+
+## Mandatory Project Rules
+- Keep responses direct, dense, and code-first with minimal conversational filler.
+- Never modify unrequested files or remove unrelated comments.
+- Always implement explicit error handling for asynchronous code paths.
+
+## Reference Implementations
+
+### Preferred Pattern
+\`\`\`typescript
+// Good: Surgical, strictly typed handler with early exit
+export async function getSessionUser(req: Request): Promise<User | null> {
+  const token = req.headers.get("authorization")?.replace("Bearer ", "");
+  if (!token) return null;
+  return verifySessionToken(token);
+}
+\`\`\`
+
+### Anti-Pattern
+\`\`\`typescript
+// Discouraged: Loose any types and nested conditionals
+export async function getSession(req: any) {
+  if (req) {
+    if (req.headers) {
+      return req.headers.auth;
+    }
+  }
+  return null;
+}
+\`\`\`
+
+<!-- END:agent-rules -->
+"
+`;
+
+exports[`buildRuleContent > matches the committed snapshot for the first preset > architecture_md 1`] = `
+"# System Architecture & Invariants: Cursor Modular Rulebook (.mdc)
+
+## 1. System Overview
+Modern .cursor/rules/*.mdc configuration for Cursor IDE. Enforces modular scoping with globs, surgical diffs, guard clauses, and strict zero-any type safety.
+All AI agents operating within this repository must adhere strictly to these architectural boundaries.
+
+### Technology Stack
+- **Framework**: Next.js / React / TypeScript
+- **Language Standard**: TypeScript 5.x
+- **UI & Styling**: Tailwind CSS
+- **Data Persistence**: PostgreSQL / Supabase
+- **Engineering Philosophy**: modern
+
+## 2. Core Architectural Invariants
+- **Guard Clauses & Early Returns**: Exit early from functions to eliminate deeply nested if-else pyramids.
+- **Feature-Colocated Structure**: Group components, hooks, tests, and utils inside domain feature folders.
+- **Explicit Result / Tuple Returns**: Return [error, result] or Result<T, E> types for operations that can fail.
+- **Schema-Driven Boundaries**: Validate all external data (API, forms, env) with Zod or Pydantic schemas.
+
+## 3. Data Flow & State Management Principles
+1. **Unidirectional Data Flow**: State flows top-down; mutations flow through explicit, typed handlers.
+2. **Boundary Validation**: External inputs (API payloads, query parameters, environment variables) must be parsed with strict schemas before reaching domain logic.
+3. **Surgical Precision**: Diffs must remain minimal and scoped exclusively to the objective. Do not reformat unrelated code.
+
+## 4. Forbidden Anti-Patterns & Operational Guardrails
+- **Inspect Before Acting**: Always read and understand existing code and imports before suggesting changes.
+- **Minimal Surgical Diffs**: Touch only lines relevant to prompt. Preserve existing comments and formatting.
+- **Concise & Direct Tone**: Skip conversational pleasantries. Deliver clean code and targeted rationale.
+- **Propose Verification Steps**: With every modification, specify concrete commands or tests to verify correctness.
+- **Preserve Codebase Idioms**: Match existing naming conventions, indentation, and directory patterns.
+
+## 5. Domain-Specific Invariants
+- Keep responses direct, dense, and code-first with minimal conversational filler.
+- Never modify unrequested files or remove unrelated comments.
+- Always implement explicit error handling for asynchronous code paths.
+
+## 6. Implementation Reference Patterns
+
+### Preferred Pattern
+\`\`\`typescript
+// Good: Surgical, strictly typed handler with early exit
+export async function getSessionUser(req: Request): Promise<User | null> {
+  const token = req.headers.get("authorization")?.replace("Bearer ", "");
+  if (!token) return null;
+  return verifySessionToken(token);
+}
+\`\`\`
+
+### Forbidden Anti-Pattern
+\`\`\`typescript
+// Discouraged: Loose any types and nested conditionals
+export async function getSession(req: any) {
+  if (req) {
+    if (req.headers) {
+      return req.headers.auth;
+    }
+  }
+  return null;
+}
+\`\`\`
+
+## 7. Verification Protocol
+Before finalizing any implementation:
+1. Inspect active file context and target globs before proposing edits.
+2. Deliver surgical, focused diffs rather than re-outputting entire files.
+3. Enforce strict TypeScript typing: avoid loose 'any' or unsafe type assertions.
+4. Adhere to existing repository naming conventions, quote styles, and directory idioms.
+5. Provide actionable verification commands and test steps with every modification.
+"
+`;
+
+exports[`buildRuleContent > matches the committed snapshot for the first preset > claude_md 1`] = `
+"# Cursor Modular Rulebook (.mdc)
+
+<project_context>
+Modern .cursor/rules/*.mdc configuration for Cursor IDE. Enforces modular scoping with globs, surgical diffs, guard clauses, and strict zero-any type safety.
+
+- Primary Role: Cursor Systems Architect
+- Philosophy: Modern Balanced (Clean interfaces, pragmatic typing, sensible defaults, and modular design.)
+</project_context>
+
+<tech_stack>
+- Framework: Next.js / React / TypeScript
+- Language: TypeScript 5.x
+- Styling: Tailwind CSS
+- Database: PostgreSQL / Supabase
+</tech_stack>
+
+<workflows_and_procedures>
+1. Inspect active file context and target globs before proposing edits.
+2. Deliver surgical, focused diffs rather than re-outputting entire files.
+3. Enforce strict TypeScript typing: avoid loose 'any' or unsafe type assertions.
+4. Adhere to existing repository naming conventions, quote styles, and directory idioms.
+5. Provide actionable verification commands and test steps with every modification.
+</workflows_and_procedures>
+
+<conventions>
+- **Guard Clauses & Early Returns**: Exit early from functions to eliminate deeply nested if-else pyramids.
+- **Feature-Colocated Structure**: Group components, hooks, tests, and utils inside domain feature folders.
+- **Explicit Result / Tuple Returns**: Return [error, result] or Result<T, E> types for operations that can fail.
+- **Schema-Driven Boundaries**: Validate all external data (API, forms, env) with Zod or Pydantic schemas.
+</conventions>
+
+<agent_guardrails>
+- **Inspect Before Acting**: Always read and understand existing code and imports before suggesting changes.
+- **Minimal Surgical Diffs**: Touch only lines relevant to prompt. Preserve existing comments and formatting.
+- **Concise & Direct Tone**: Skip conversational pleasantries. Deliver clean code and targeted rationale.
+- **Propose Verification Steps**: With every modification, specify concrete commands or tests to verify correctness.
+- **Preserve Codebase Idioms**: Match existing naming conventions, indentation, and directory patterns.
+</agent_guardrails>
+
+<custom_directives>
+- Keep responses direct, dense, and code-first with minimal conversational filler.
+- Never modify unrequested files or remove unrelated comments.
+- Always implement explicit error handling for asynchronous code paths.
+</custom_directives>
+
+<implementation_reference>
+### Preferred Patterns
+\`\`\`typescript
+// Good: Surgical, strictly typed handler with early exit
+export async function getSessionUser(req: Request): Promise<User | null> {
+  const token = req.headers.get("authorization")?.replace("Bearer ", "");
+  if (!token) return null;
+  return verifySessionToken(token);
+}
+\`\`\`
+
+### Discouraged Anti-Patterns
+\`\`\`typescript
+// Discouraged: Loose any types and nested conditionals
+export async function getSession(req: any) {
+  if (req) {
+    if (req.headers) {
+      return req.headers.auth;
+    }
+  }
+  return null;
+}
+\`\`\`
+</implementation_reference>
+
+<verification_protocol>
+- Run automated tests or linting before reporting completion.
+- Provide clear verification steps for UI or runtime behavior.
+</verification_protocol>
+"
+`;
+
+exports[`buildRuleContent > matches the committed snapshot for the first preset > claudeignore 1`] = `
+"# .claudeignore - Claude Code CLI Privacy & Boundary Protection
+# Prevents Claude Code CLI from indexing and modifying sensitive credentials, build caches, and bulky lockfiles.
+# Keeping your agent boundary clean improves reasoning quality and prevents data leaks.
+
+# --- Critical: Secrets & Local Credentials ---
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.cert
+*.crt
+id_rsa*
+secrets/
+credentials/
+service-account*.json
+*.p12
+*.pfx
+*.keystore
+
+# --- Dependency Bloat & Massive Lockfiles (Saves 50k+ tokens) ---
+node_modules/
+vendor/
+package-lock.json
+pnpm-lock.yaml
+yarn.lock
+bun.lockb
+poetry.lock
+Pipfile.lock
+Cargo.lock
+composer.lock
+go.sum
+
+# --- Build Artifacts, Bundler & Framework Caches ---
+dist/
+build/
+out/
+.cache/
+*.tsbuildinfo
+.next/
+.turbo/
+.vercel/
+.nuxt/
+.output/
+.svelte-kit/
+coverage/
+
+# --- Large Binary Files & Media (Never needed by LLM) ---
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.ico
+*.webp
+*.mp4
+*.webm
+*.mp3
+*.wav
+*.zip
+*.tar.gz
+*.tgz
+*.rar
+*.7z
+*.pdf
+*.wasm
+
+# --- Test Coverage & Debug Logs ---
+coverage/
+.nyc_output/
+*.lcov
+*.log
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+yarn-error.log*
+
+# --- Editor Metadata & OS Caches ---
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# --- Database Dumps & Local SQLite Storage ---
+*.sql
+*.dump
+*.sqlite
+*.sqlite3
+*.db
+*.db-shm
+*.db-wal
+
+# --- Heavy Test Fixtures & Snapshots ---
+test/fixtures/large/
+tests/fixtures/
+__snapshots__/
+fixtures/**/*.json
+mock-data/**/*.json
+"
+`;
+
+exports[`buildRuleContent > matches the committed snapshot for the first preset > copilot_instructions 1`] = `
+"# GitHub Copilot Repository Instructions
+
+## Project Context
+Modern .cursor/rules/*.mdc configuration for Cursor IDE. Enforces modular scoping with globs, surgical diffs, guard clauses, and strict zero-any type safety.
+
+- **Role**: Cursor Systems Architect
+- **Tech Stack**: Next.js / React / TypeScript • TypeScript 5.x • Tailwind CSS • PostgreSQL / Supabase
+- **Philosophy**: Modern Balanced (Clean interfaces, pragmatic typing, sensible defaults, and modular design.)
+
+## Instructions for Copilot
+When generating completions, chat responses, or pull request suggestions:
+1. Always follow Next.js / React / TypeScript and TypeScript 5.x idioms.
+2. Maintain strict type safety across all function signatures and public APIs.
+3. Execution Procedures:
+   1. Inspect active file context and target globs before proposing edits.
+   2. Deliver surgical, focused diffs rather than re-outputting entire files.
+   3. Enforce strict TypeScript typing: avoid loose 'any' or unsafe type assertions.
+   4. Adhere to existing repository naming conventions, quote styles, and directory idioms.
+   5. Provide actionable verification commands and test steps with every modification.
+
+## Code Conventions
+- **Guard Clauses & Early Returns**: Exit early from functions to eliminate deeply nested if-else pyramids.
+- **Feature-Colocated Structure**: Group components, hooks, tests, and utils inside domain feature folders.
+- **Explicit Result / Tuple Returns**: Return [error, result] or Result<T, E> types for operations that can fail.
+- **Schema-Driven Boundaries**: Validate all external data (API, forms, env) with Zod or Pydantic schemas.
+
+## Prohibited Patterns & Guardrails
+- **Inspect Before Acting**: Always read and understand existing code and imports before suggesting changes.
+- **Minimal Surgical Diffs**: Touch only lines relevant to prompt. Preserve existing comments and formatting.
+- **Concise & Direct Tone**: Skip conversational pleasantries. Deliver clean code and targeted rationale.
+- **Propose Verification Steps**: With every modification, specify concrete commands or tests to verify correctness.
+- **Preserve Codebase Idioms**: Match existing naming conventions, indentation, and directory patterns.
+
+## Custom Rules
+- Keep responses direct, dense, and code-first with minimal conversational filler.
+- Never modify unrequested files or remove unrelated comments.
+- Always implement explicit error handling for asynchronous code paths.
+## Reference Patterns
+
+### Recommended
+\`\`\`typescript
+// Good: Surgical, strictly typed handler with early exit
+export async function getSessionUser(req: Request): Promise<User | null> {
+  const token = req.headers.get("authorization")?.replace("Bearer ", "");
+  if (!token) return null;
+  return verifySessionToken(token);
+}
+\`\`\`
+
+### Prohibited
+\`\`\`typescript
+// Discouraged: Loose any types and nested conditionals
+export async function getSession(req: any) {
+  if (req) {
+    if (req.headers) {
+      return req.headers.auth;
+    }
+  }
+  return null;
+}
+\`\`\`
+"
+`;
+
+exports[`buildRuleContent > matches the committed snapshot for the first preset > cursor_mdc 1`] = `
+"---
+description: "Modern .cursor/rules/*.mdc configuration for Cursor IDE. Enforces modular scoping with globs, surgical diffs, guard clauses, and strict zero-any type safety."
+globs: ["**/*"]
+alwaysApply: false
+---
+
+# Cursor Modular Rulebook (.mdc)
+
+You are acting as: **Cursor Systems Architect**.
+Engineering Philosophy: **Modern Balanced** (Clean interfaces, pragmatic typing, sensible defaults, and modular design.)
+
+## Tech Stack Context
+- **Framework**: Next.js / React / TypeScript
+- **Language**: TypeScript 5.x
+- **Styling**: Tailwind CSS
+- **Database / Data**: PostgreSQL / Supabase
+
+## Execution Procedures
+1. Inspect active file context and target globs before proposing edits.
+2. Deliver surgical, focused diffs rather than re-outputting entire files.
+3. Enforce strict TypeScript typing: avoid loose 'any' or unsafe type assertions.
+4. Adhere to existing repository naming conventions, quote styles, and directory idioms.
+5. Provide actionable verification commands and test steps with every modification.
+
+## Code Conventions
+- **Guard Clauses & Early Returns**: Exit early from functions to eliminate deeply nested if-else pyramids.
+- **Feature-Colocated Structure**: Group components, hooks, tests, and utils inside domain feature folders.
+- **Explicit Result / Tuple Returns**: Return [error, result] or Result<T, E> types for operations that can fail.
+- **Schema-Driven Boundaries**: Validate all external data (API, forms, env) with Zod or Pydantic schemas.
+
+## Agent Directives
+- **Inspect Before Acting**: Always read and understand existing code and imports before suggesting changes.
+- **Minimal Surgical Diffs**: Touch only lines relevant to prompt. Preserve existing comments and formatting.
+- **Concise & Direct Tone**: Skip conversational pleasantries. Deliver clean code and targeted rationale.
+- **Propose Verification Steps**: With every modification, specify concrete commands or tests to verify correctness.
+- **Preserve Codebase Idioms**: Match existing naming conventions, indentation, and directory patterns.
+
+## Specific Project Constraints
+- Keep responses direct, dense, and code-first with minimal conversational filler.
+- Never modify unrequested files or remove unrelated comments.
+- Always implement explicit error handling for asynchronous code paths.
+
+## Implementation Reference
+
+### Preferred Patterns
+\`\`\`typescript
+// Good: Surgical, strictly typed handler with early exit
+export async function getSessionUser(req: Request): Promise<User | null> {
+  const token = req.headers.get("authorization")?.replace("Bearer ", "");
+  if (!token) return null;
+  return verifySessionToken(token);
+}
+\`\`\`
+
+### Discouraged Anti-Patterns
+\`\`\`typescript
+// Discouraged: Loose any types and nested conditionals
+export async function getSession(req: any) {
+  if (req) {
+    if (req.headers) {
+      return req.headers.auth;
+    }
+  }
+  return null;
+}
+\`\`\`
+"
+`;
+
+exports[`buildRuleContent > matches the committed snapshot for the first preset > cursorignore 1`] = `
+"# .cursorignore - AI Context & Token Optimization
+# Prevents Cursor from indexing sensitive credentials, build caches, and bulky lockfiles.
+# Keeping your AI context window clean improves reasoning quality and prevents data leaks.
+
+# --- Critical: Secrets & Local Credentials ---
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.cert
+*.crt
+id_rsa*
+secrets/
+credentials/
+service-account*.json
+*.p12
+*.pfx
+*.keystore
+
+# --- Dependency Bloat & Massive Lockfiles (Saves 50k+ tokens) ---
+node_modules/
+vendor/
+package-lock.json
+pnpm-lock.yaml
+yarn.lock
+bun.lockb
+poetry.lock
+Pipfile.lock
+Cargo.lock
+composer.lock
+go.sum
+
+# --- Build Artifacts, Bundler & Framework Caches ---
+dist/
+build/
+out/
+.cache/
+*.tsbuildinfo
+.next/
+.turbo/
+.vercel/
+.nuxt/
+.output/
+.svelte-kit/
+coverage/
+
+# --- Large Binary Files & Media (Never needed by LLM) ---
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.ico
+*.webp
+*.mp4
+*.webm
+*.mp3
+*.wav
+*.zip
+*.tar.gz
+*.tgz
+*.rar
+*.7z
+*.pdf
+*.wasm
+
+# --- Test Coverage & Debug Logs ---
+coverage/
+.nyc_output/
+*.lcov
+*.log
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+yarn-error.log*
+
+# --- Editor Metadata & OS Caches ---
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# --- Database Dumps & Local SQLite Storage ---
+*.sql
+*.dump
+*.sqlite
+*.sqlite3
+*.db
+*.db-shm
+*.db-wal
+
+# --- Heavy Test Fixtures & Snapshots ---
+test/fixtures/large/
+tests/fixtures/
+__snapshots__/
+fixtures/**/*.json
+mock-data/**/*.json
+"
+`;
+
+exports[`buildRuleContent > matches the committed snapshot for the first preset > design_md 1`] = `
+"# Technical & UI/UX Design System Specification: Cursor Modular Rulebook (.mdc)
+
+> **StitchMCP Compatible**: This document specifies authoritative design tokens, component patterns, and negative guardrails for Next.js / React / TypeScript.
+
+## 1. Visual Language & Semantic Tokens
+- **Canvas / Background**: Pitch-black or deep dark neutral (\`#09090B\` / \`#121215\`)
+- **Card & Surface**: Elevated surface (\`#18181B\`) with \`border-zinc-800/60\`
+- **Accent Tokens**: High-contrast indicator for active states and primary CTAs
+- **Typography**: Monospace font for code/data metrics, sans-serif for UI labels
+- **Styling Paradigm**: Tailwind CSS
+
+## 2. Component Hierarchy & Layout Patterns
+- **Single-Canvas Layout**: Avoid nested card-in-card containers. Keep UI depth to a single clean layer.
+- **Status & Feedback**: Explicit status indicators (execution latency, item count, validation state).
+- **Responsive Adaptability**: Desktop-first layout with graceful degradation for tablet and mobile viewports.
+
+## 3. Core Architectural Conventions
+guard-clauses
+feature-colocated
+result-types
+typed-schemas
+
+## 4. Negative Design Guardrails (Forbidden Anti-Patterns)
+inspect-first
+minimal-diffs
+concise-direct
+verification-driven
+preserve-style
+- Never introduce nested card-in-card containers.
+- Never apply arbitrary inline CSS styles when design system classes exist.
+- Never break layout responsiveness on mobile viewports.
+- Never bypass accessibility standards (contrast ratios, focus rings, ARIA labels).
+
+## 5. Domain Design Directives
+- Keep responses direct, dense, and code-first with minimal conversational filler.
+- Never modify unrequested files or remove unrelated comments.
+- Always implement explicit error handling for asynchronous code paths.
+
+## 6. Component Reference Pattern
+\`\`\`tsx
+// Good: Surgical, strictly typed handler with early exit
+export async function getSessionUser(req: Request): Promise<User | null> {
+  const token = req.headers.get("authorization")?.replace("Bearer ", "");
+  if (!token) return null;
+  return verifySessionToken(token);
+}
+\`\`\`
+
+## 7. Design Verification Gate
+Before approving UI modifications:
+1. Inspect active file context and target globs before proposing edits.
+2. Deliver surgical, focused diffs rather than re-outputting entire files.
+3. Enforce strict TypeScript typing: avoid loose 'any' or unsafe type assertions.
+4. Adhere to existing repository naming conventions, quote styles, and directory idioms.
+5. Provide actionable verification commands and test steps with every modification.
+"
+`;
+
+exports[`buildRuleContent > matches the committed snapshot for the first preset > gemini_prompts 1`] = `
+"{
+  "system_instruction": {
+    "parts": [
+      {
+        "text": "Role & Mission:\\nYou are a Cursor Systems Architect specializing in Next.js / React / TypeScript and TypeScript 5.x.\\nPhilosophy: Modern Balanced — Clean interfaces, pragmatic typing, sensible defaults, and modular design.."
+      },
+      {
+        "text": "Core Guidelines:\\n- - **Guard Clauses & Early Returns**: Exit early from functions to eliminate deeply nested if-else pyramids.\\n- - **Feature-Colocated Structure**: Group components, hooks, tests, and utils inside domain feature folders.\\n- - **Explicit Result / Tuple Returns**: Return [error, result] or Result<T, E> types for operations that can fail.\\n- - **Schema-Driven Boundaries**: Validate all external data (API, forms, env) with Zod or Pydantic schemas."
+      },
+      {
+        "text": "Negative Constraints & Guardrails:\\n- - **Inspect Before Acting**: Always read and understand existing code and imports before suggesting changes.\\n- - **Minimal Surgical Diffs**: Touch only lines relevant to prompt. Preserve existing comments and formatting.\\n- - **Concise & Direct Tone**: Skip conversational pleasantries. Deliver clean code and targeted rationale.\\n- - **Propose Verification Steps**: With every modification, specify concrete commands or tests to verify correctness.\\n- - **Preserve Codebase Idioms**: Match existing naming conventions, indentation, and directory patterns."
+      },
+      {
+        "text": "Mandatory Project Directives:\\n- Keep responses direct, dense, and code-first with minimal conversational filler.\\n- Never modify unrequested files or remove unrelated comments.\\n- Always implement explicit error handling for asynchronous code paths."
+      },
+      {
+        "text": "Workflow Procedures:\\n1. Inspect active file context and target globs before proposing edits.\\n2. Deliver surgical, focused diffs rather than re-outputting entire files.\\n3. Enforce strict TypeScript typing: avoid loose 'any' or unsafe type assertions.\\n4. Adhere to existing repository naming conventions, quote styles, and directory idioms.\\n5. Provide actionable verification commands and test steps with every modification."
+      },
+      {
+        "text": "Verification Protocol:\\nEnsure all answers adhere to strict type-safety, zero-trust security, and surgical minimal edits."
+      }
+    ]
+  },
+  "generation_config": {
+    "temperature": 0.2,
+    "top_p": 0.95,
+    "top_k": 40,
+    "max_output_tokens": 8192
+  }
+}"
+`;
+
+exports[`buildRuleContent > matches the committed snapshot for the first preset > llms_txt 1`] = `
+"# Cursor Modular Rulebook (.mdc)
+
+> Modern .cursor/rules/*.mdc configuration for Cursor IDE. Enforces modular scoping with globs, surgical diffs, guard clauses, and strict zero-any type safety.
+
+## Quick Reference
+- **Framework**: Next.js / React / TypeScript
+- **Language**: TypeScript 5.x
+- **Styling & UI**: Tailwind CSS
+- **Database / Persistence**: PostgreSQL / Supabase
+- **Architectural Philosophy**: modern
+
+## Core Architectural Invariants
+- **Guard Clauses & Early Returns**: Exit early from functions to eliminate deeply nested if-else pyramids.
+- **Feature-Colocated Structure**: Group components, hooks, tests, and utils inside domain feature folders.
+- **Explicit Result / Tuple Returns**: Return [error, result] or Result<T, E> types for operations that can fail.
+- **Schema-Driven Boundaries**: Validate all external data (API, forms, env) with Zod or Pydantic schemas.
+
+## Operational Guardrails & Prohibited Patterns
+- **Inspect Before Acting**: Always read and understand existing code and imports before suggesting changes.
+- **Minimal Surgical Diffs**: Touch only lines relevant to prompt. Preserve existing comments and formatting.
+- **Concise & Direct Tone**: Skip conversational pleasantries. Deliver clean code and targeted rationale.
+- **Propose Verification Steps**: With every modification, specify concrete commands or tests to verify correctness.
+- **Preserve Codebase Idioms**: Match existing naming conventions, indentation, and directory patterns.
+
+## Mandatory Project Directives
+- Keep responses direct, dense, and code-first with minimal conversational filler.
+- Never modify unrequested files or remove unrelated comments.
+- Always implement explicit error handling for asynchronous code paths.
+
+## Implementation Reference
+
+### Preferred Patterns
+\`\`\`typescript
+// Good: Surgical, strictly typed handler with early exit
+export async function getSessionUser(req: Request): Promise<User | null> {
+  const token = req.headers.get("authorization")?.replace("Bearer ", "");
+  if (!token) return null;
+  return verifySessionToken(token);
+}
+\`\`\`
+
+### Discouraged Anti-Patterns
+\`\`\`typescript
+// Discouraged: Loose any types and nested conditionals
+export async function getSession(req: any) {
+  if (req) {
+    if (req.headers) {
+      return req.headers.auth;
+    }
+  }
+  return null;
+}
+\`\`\`
+
+## Verification Commands & Workflows
+1. Inspect active file context and target globs before proposing edits.
+2. Deliver surgical, focused diffs rather than re-outputting entire files.
+3. Enforce strict TypeScript typing: avoid loose 'any' or unsafe type assertions.
+4. Adhere to existing repository naming conventions, quote styles, and directory idioms.
+5. Provide actionable verification commands and test steps with every modification.
+
+## Context Documents & Specs
+- [System Architecture](ARCHITECTURE.md): Authoritative system design, data flows, and state machine invariants.
+- [AI Multi-Agent Spec](AGENTS.md): Universal specification for autonomous coding agent operations.
+"
+`;
+
+exports[`buildRuleContent > matches the committed snapshot for the first preset > mcp_json 1`] = `
+"{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "mcpServers": {
+    "github": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-github"
+      ],
+      "env": {
+        "GITHUB_PERSONAL_ACCESS_TOKEN": "\${GITHUB_PERSONAL_ACCESS_TOKEN}"
+      }
+    }
+  }
+}"
+`;
+
+exports[`buildRuleContent > matches the committed snapshot for the first preset > memory_md 1`] = `
+"# Persistent Agent Memory & Architectural Records: Cursor Modular Rulebook (.mdc)
+
+> **Agent Context Anchor**: Read this file first before taking any action. It persists decisions, ADRs, and gotchas across context resets.
+
+## 1. Technology Context Matrix
+| Attribute | Specification | Notes |
+| :--- | :--- | :--- |
+| **Framework** | Next.js / React / TypeScript | Core application framework |
+| **Language** | TypeScript 5.x | Strict type checking, zero runtime \`any\` |
+| **Data Layer** | PostgreSQL / Supabase | Primary storage / state management |
+| **Philosophy** | modern | Guiding engineering principles |
+
+## 2. Architectural Decision Records (ADRs)
+### ADR-001: Separation of Concerns
+- **Status**: Accepted
+- **Context**: Autonomous agents often blend UI rendering with data mutation logic.
+- **Decision**: Keep business logic, schema validation, and presentation strictly decoupled.
+- **Consequences**: Enhanced testability, reusable domain services, zero side-effects in views.
+
+### ADR-002: Surgical Diff Modification Protocol
+- **Status**: Accepted
+- **Context**: Broad reformatting causes merge conflicts and context bloating.
+- **Decision**: All code edits must be surgical, preserving surrounding comments and structure.
+- **Consequences**: Clean Git history and minimal risk of unintended regressions.
+
+## 3. Operational Gotchas & Pitfalls
+- ⚠️ inspect-first
+- ⚠️ minimal-diffs
+- ⚠️ concise-direct
+- ⚠️ verification-driven
+- ⚠️ preserve-style
+- 💡 guard-clauses
+- 💡 feature-colocated
+- 💡 result-types
+- 💡 typed-schemas
+
+## 4. 5-Step Agent Execution Loop
+\`\`\`
+1. INGEST   → Read MEMORY.md → PRD.md → DESIGN.md
+2. PLAN     → Inspect TASK.md for active sprint objectives
+3. EXECUTE  → Apply surgical, minimal diffs
+4. VERIFY   → Execute all quality verification gates
+5. UPDATE   → Update TASK.md and log actions in MEMORY.md
+\`\`\`
+
+## 5. Domain Invariants
+- Keep responses direct, dense, and code-first with minimal conversational filler.
+- Never modify unrequested files or remove unrelated comments.
+- Always implement explicit error handling for asynchronous code paths.
+
+## 6. Session History
+- **2026-09-20**: Initialized persistent memory bank and core ADRs.
+"
+`;
+
+exports[`buildRuleContent > matches the committed snapshot for the first preset > openai_instructions 1`] = `
+"# OpenAI Custom Instructions & System Prompt
+
+## What would you like ChatGPT / OpenAI to know about you to provide better responses?
+I am building a Next.js / React / TypeScript application in TypeScript 5.x.
+Stack context: Tailwind CSS for styles, PostgreSQL / Supabase for persistence.
+Our architectural philosophy is Modern Balanced: Clean interfaces, pragmatic typing, sensible defaults, and modular design..
+
+## How would you like ChatGPT / OpenAI to respond?
+You are acting as a **Cursor Systems Architect**.
+
+Core Engineering Standards:
+- **Guard Clauses & Early Returns**: Exit early from functions to eliminate deeply nested if-else pyramids.
+- **Feature-Colocated Structure**: Group components, hooks, tests, and utils inside domain feature folders.
+- **Explicit Result / Tuple Returns**: Return [error, result] or Result<T, E> types for operations that can fail.
+- **Schema-Driven Boundaries**: Validate all external data (API, forms, env) with Zod or Pydantic schemas.
+
+Operational Guardrails & Prohibitions:
+- **Inspect Before Acting**: Always read and understand existing code and imports before suggesting changes.
+- **Minimal Surgical Diffs**: Touch only lines relevant to prompt. Preserve existing comments and formatting.
+- **Concise & Direct Tone**: Skip conversational pleasantries. Deliver clean code and targeted rationale.
+- **Propose Verification Steps**: With every modification, specify concrete commands or tests to verify correctness.
+- **Preserve Codebase Idioms**: Match existing naming conventions, indentation, and directory patterns.
+
+Specific Project Requirements:
+- Keep responses direct, dense, and code-first with minimal conversational filler.
+- Never modify unrequested files or remove unrelated comments.
+- Always implement explicit error handling for asynchronous code paths.
+Workflow Checklist:
+1. Inspect active file context and target globs before proposing edits.
+2. Deliver surgical, focused diffs rather than re-outputting entire files.
+3. Enforce strict TypeScript typing: avoid loose 'any' or unsafe type assertions.
+4. Adhere to existing repository naming conventions, quote styles, and directory idioms.
+5. Provide actionable verification commands and test steps with every modification.
+Reference Implementation Patterns:
+Recommended:
+// Good: Surgical, strictly typed handler with early exit
+export async function getSessionUser(req: Request): Promise<User | null> {
+  const token = req.headers.get("authorization")?.replace("Bearer ", "");
+  if (!token) return null;
+  return verifySessionToken(token);
+}
+
+Prohibited:
+// Discouraged: Loose any types and nested conditionals
+export async function getSession(req: any) {
+  if (req) {
+    if (req.headers) {
+      return req.headers.auth;
+    }
+  }
+  return null;
+}
+
+Verification Rules:
+1. Verify type safety and defensive error handling on every suggested change.
+2. Provide concise, focused code solutions without unnecessary fluff.
+"
+`;
+
+exports[`buildRuleContent > matches the committed snapshot for the first preset > prd_md 1`] = `
+"# Product Requirements Document (PRD) — Cursor Modular Rulebook (.mdc)
+
+## Document Metadata
+- **Project**: Cursor Modular Rulebook (.mdc)
+- **Stack**: Next.js / React / TypeScript • TypeScript 5.x • PostgreSQL / Supabase
+- **Status**: Active / In Development
+- **Owner**: Engineering Team
+
+## 1. Executive Summary & Vision
+Modern .cursor/rules/*.mdc configuration for Cursor IDE. Enforces modular scoping with globs, surgical diffs, guard clauses, and strict zero-any type safety.
+
+## 2. Problem Statement
+- Engineering teams face context degradation, inconsistent architectural patterns, and fragmented development velocity without clear, machine-readable specifications.
+- Autonomous coding agents lack authoritative feature scope boundaries, leading to rule drift and unaligned implementations.
+
+## 3. User Personas
+| Persona | Role | Primary Goal & Need |
+| :--- | :--- | :--- |
+| **Full-Stack Developer** | Feature Delivery | Rapid development with deterministic component contracts and zero type ambiguity |
+| **DevOps / SRE** | Reliability | Automated verification gates, strict dependency boundaries, and predictable deployments |
+| **Security Auditor** | Compliance | Enforce zero data leakage, strict schema validation, and least-privilege operations |
+
+## 4. Functional Requirements
+### Core Capabilities (FR-1 to FR-4)
+1. **System Foundation (FR-1)**: Robust runtime using Next.js / React / TypeScript and TypeScript 5.x with strict static type guarantees.
+2. **Data Management (FR-2)**: High-throughput, strongly typed state and persistence using PostgreSQL / Supabase.
+3. **Execution Procedures (FR-3)**:
+   1. Inspect active file context and target globs before proposing edits.
+   2. Deliver surgical, focused diffs rather than re-outputting entire files.
+   3. Enforce strict TypeScript typing: avoid loose 'any' or unsafe type assertions.
+   4. Adhere to existing repository naming conventions, quote styles, and directory idioms.
+   5. Provide actionable verification commands and test steps with every modification.
+4. **Architectural Conventions (FR-4)**:
+   guard-clauses
+   feature-colocated
+   result-types
+   typed-schemas
+
+## 5. Non-Functional Requirements (NFR)
+- **Performance**: Sub-50ms processing overhead on core execution paths.
+- **Reliability & Security**: Zero runtime \`any\` types; strict schema validation on all boundary inputs.
+- inspect-first
+- minimal-diffs
+- concise-direct
+- verification-driven
+- preserve-style
+
+## 6. Domain-Specific Invariants
+- Keep responses direct, dense, and code-first with minimal conversational filler.
+- Never modify unrequested files or remove unrelated comments.
+- Always implement explicit error handling for asynchronous code paths.
+
+## 7. Milestone Phasing & Roadmap
+| Milestone | Phase | Key Deliverables |
+| :--- | :--- | :--- |
+| **M1** | Core Foundation | Architecture scaffold, type definitions, and baseline test harness |
+| **M2** | Feature Implementation | Core domain capabilities and integrated data flows |
+| **M3** | Hardening & Audit | Full verification suite, security review, and production deployment |
+"
+`;
+
+exports[`buildRuleContent > matches the committed snapshot for the first preset > skill_md 1`] = `
+"---
+name: cursor-rules-pro
+description: Modern .cursor/rules/*.mdc configuration for Cursor IDE. Enforces modular scoping with globs, surgical diffs, guard clauses, and strict zero-any type safety.
+---
+
+# Cursor Modular Rulebook (.mdc)
+
+## 1. Overview & Role
+You are operating as a **Cursor Systems Architect**.
+- **Philosophy**: Modern Balanced — Clean interfaces, pragmatic typing, sensible defaults, and modular design.
+- **Stack**: Next.js / React / TypeScript • TypeScript 5.x • Tailwind CSS • PostgreSQL / Supabase
+
+## 2. Core Execution Procedures
+Follow this structured step-by-step workflow when this skill is active:
+1. Inspect active file context and target globs before proposing edits.
+2. Deliver surgical, focused diffs rather than re-outputting entire files.
+3. Enforce strict TypeScript typing: avoid loose 'any' or unsafe type assertions.
+4. Adhere to existing repository naming conventions, quote styles, and directory idioms.
+5. Provide actionable verification commands and test steps with every modification.
+
+## 3. Code Conventions & Architectural Standards
+- **Guard Clauses & Early Returns**: Exit early from functions to eliminate deeply nested if-else pyramids.
+- **Feature-Colocated Structure**: Group components, hooks, tests, and utils inside domain feature folders.
+- **Explicit Result / Tuple Returns**: Return [error, result] or Result<T, E> types for operations that can fail.
+- **Schema-Driven Boundaries**: Validate all external data (API, forms, env) with Zod or Pydantic schemas.
+
+## 4. Agent Behavioral Guardrails
+- **Inspect Before Acting**: Always read and understand existing code and imports before suggesting changes.
+- **Minimal Surgical Diffs**: Touch only lines relevant to prompt. Preserve existing comments and formatting.
+- **Concise & Direct Tone**: Skip conversational pleasantries. Deliver clean code and targeted rationale.
+- **Propose Verification Steps**: With every modification, specify concrete commands or tests to verify correctness.
+- **Preserve Codebase Idioms**: Match existing naming conventions, indentation, and directory patterns.
+
+## 5. Project-Specific Directives & Constraints
+- Keep responses direct, dense, and code-first with minimal conversational filler.
+- Never modify unrequested files or remove unrelated comments.
+- Always implement explicit error handling for asynchronous code paths.
+## 6. Implementation Reference
+
+### Preferred Patterns
+\`\`\`typescript
+// Good: Surgical, strictly typed handler with early exit
+export async function getSessionUser(req: Request): Promise<User | null> {
+  const token = req.headers.get("authorization")?.replace("Bearer ", "");
+  if (!token) return null;
+  return verifySessionToken(token);
+}
+\`\`\`
+
+### Discouraged Anti-Patterns
+\`\`\`typescript
+// Discouraged: Loose any types and nested conditionals
+export async function getSession(req: any) {
+  if (req) {
+    if (req.headers) {
+      return req.headers.auth;
+    }
+  }
+  return null;
+}
+\`\`\`
+## 7. Verification & Quality Gates
+Before concluding any task:
+1. Verify that all modified files compile and satisfy strict type checking.
+2. Ensure no unnecessary files or artifacts were created.
+3. Confirm that error paths return meaningful messages without leaking sensitive internals.
+"
+`;
+
+exports[`buildRuleContent > matches the committed snapshot for the first preset > task_md 1`] = `
+"# Active Sprint Tracker & Quality Gates: Cursor Modular Rulebook (.mdc)
+
+## Quick Status Dashboard
+- **Milestone 1.0 (Foundation)**: [x] 100% Completed
+- **Milestone 2.0 (Core Features)**: [/] In Progress
+- **Milestone 3.0 (Hardening & Release)**: [ ] Planned
+
+---
+
+## Active Phase Checklists
+### Phase 1: Core Foundation & Scaffold
+- [x] Repository initialized with Next.js / React / TypeScript standard conventions
+- [x] Environment configuration and static type checking verified
+- [x] Baseline test framework and linting pipelines configured
+
+### Phase 2: Active Sprint Tasks
+- [/] Core domain implementation following architecture specifications
+- [ ] Schema validation and input sanitation at system boundaries
+- [ ] Integration of persistent state handling
+- [ ] Inspect active file context and target globs before proposing edits.
+- [ ] Deliver surgical, focused diffs rather than re-outputting entire files.
+- [ ] Enforce strict TypeScript typing: avoid loose 'any' or unsafe type assertions.
+- [ ] Adhere to existing repository naming conventions, quote styles, and directory idioms.
+- [ ] Provide actionable verification commands and test steps with every modification.
+
+### Phase 3: Quality Hardening & Compliance
+- [ ] Negative guardrail enforcement audit
+- [ ] Performance benchmarking and regression testing
+- [ ] Documentation and deployment readiness review
+
+---
+
+## Verification Commands & Quality Gates
+Every agent and developer task MUST pass all verification gates before finalizing:
+
+\`\`\`bash
+# 1. Typecheck and linting
+npm run lint
+
+# 2. Automated test suite
+npm test
+
+# 3. Production build
+npm run build
+\`\`\`
+
+---
+
+## Sprint Directives
+- Keep responses direct, dense, and code-first with minimal conversational filler.
+- Never modify unrequested files or remove unrelated comments.
+- Always implement explicit error handling for asynchronous code paths.
+
+---
+
+## Agent Session Log
+
+| Date | Agent / Engineer | Action Taken | Status |
+| :--- | :--- | :--- | :--- |
+| 2026-09-20 | Lead Agent | Scaffolded project rules and sprint tracker | ✅ Initialized |
+"
+`;
+
+exports[`buildRuleContent > matches the committed snapshot for the first preset > windsurf_cascade 1`] = `
+"# Windsurf Cascade Rules: Cursor Modular Rulebook (.mdc)
+
+## 1. Character & Role
+You are an expert **Cursor Systems Architect** operating inside Windsurf Cascade.
+- **Framework**: Next.js / React / TypeScript
+- **Language**: TypeScript 5.x
+- **Philosophy**: Modern Balanced — Clean interfaces, pragmatic typing, sensible defaults, and modular design.
+- **Targets**: \`**/*\`
+
+## 2. Cascade Execution Workflow
+1. Inspect active file context and target globs before proposing edits.
+2. Deliver surgical, focused diffs rather than re-outputting entire files.
+3. Enforce strict TypeScript typing: avoid loose 'any' or unsafe type assertions.
+4. Adhere to existing repository naming conventions, quote styles, and directory idioms.
+5. Provide actionable verification commands and test steps with every modification.
+
+## 3. Mandatory Architectural Guardrails
+- **Guard Clauses & Early Returns**: Exit early from functions to eliminate deeply nested if-else pyramids.
+- **Feature-Colocated Structure**: Group components, hooks, tests, and utils inside domain feature folders.
+- **Explicit Result / Tuple Returns**: Return [error, result] or Result<T, E> types for operations that can fail.
+- **Schema-Driven Boundaries**: Validate all external data (API, forms, env) with Zod or Pydantic schemas.
+
+## 4. Negative Constraints
+- **Inspect Before Acting**: Always read and understand existing code and imports before suggesting changes.
+- **Minimal Surgical Diffs**: Touch only lines relevant to prompt. Preserve existing comments and formatting.
+- **Concise & Direct Tone**: Skip conversational pleasantries. Deliver clean code and targeted rationale.
+- **Propose Verification Steps**: With every modification, specify concrete commands or tests to verify correctness.
+- **Preserve Codebase Idioms**: Match existing naming conventions, indentation, and directory patterns.
+
+## 5. Project-Specific Directives
+- Keep responses direct, dense, and code-first with minimal conversational filler.
+- Never modify unrequested files or remove unrelated comments.
+- Always implement explicit error handling for asynchronous code paths.
+## 6. Implementation Reference
+
+### Preferred Patterns
+\`\`\`typescript
+// Good: Surgical, strictly typed handler with early exit
+export async function getSessionUser(req: Request): Promise<User | null> {
+  const token = req.headers.get("authorization")?.replace("Bearer ", "");
+  if (!token) return null;
+  return verifySessionToken(token);
+}
+\`\`\`
+
+### Discouraged Anti-Patterns
+\`\`\`typescript
+// Discouraged: Loose any types and nested conditionals
+export async function getSession(req: any) {
+  if (req) {
+    if (req.headers) {
+      return req.headers.auth;
+    }
+  }
+  return null;
+}
+\`\`\`
+## 7. Cascade Quality Gates
+1. Keep diffs surgical and minimal; never reformat unrelated code.
+2. Confirm all modified files compile without type errors.
+3. Preserve all existing docstrings, tests, and comments.
+"
+`;

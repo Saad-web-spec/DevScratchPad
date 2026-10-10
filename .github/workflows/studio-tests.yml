@@ -1,0 +1,38 @@
+name: AI Skill Studio Engine Tests
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "src/app/claude-skills/**"
+      - "vitest.config.mts"
+      - "package.json"
+      - "package-lock.json"
+  pull_request:
+    branches: [main]
+    paths:
+      - "src/app/claude-skills/**"
+      - "vitest.config.mts"
+      - "package.json"
+      - "package-lock.json"
+
+jobs:
+  test:
+    name: Generator, Section Locator & Auditor Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "npm"
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Run Vitest Suite
+        run: npm test
