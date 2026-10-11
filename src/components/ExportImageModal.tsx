@@ -2,9 +2,10 @@
 
 import { useState, useRef } from"react";
 import { toPng, toBlob } from"html-to-image";
-import { Download, X, Image as ImageIcon, Copy, Check } from"lucide-react";
+import { Download, X, ImageDown, Copy, Check } from"lucide-react";
 import { MonacoEditor } from"@/components/MonacoEditor";
 import { cn } from"@/lib/utils";
+import { btnIcon, btnPrimary, btnSecondary, segmentBtn, segmentTrack, selectBase, ICON_STROKE } from"@/components/tools/ToolChrome";
 
 interface ExportImageModalProps {
  isOpen: boolean;
@@ -24,11 +25,11 @@ const BACKGROUNDS = [
 
 const SYNTAX_THEMES = [
  { name:"GitHub Light", bg:"#FFFFFF", headerBg:"#F6F8FA", textClass:"text-zinc-600", themeId:"vs"},
- { name:"One Dark Pro", bg:"#282C34", headerBg:"#21252B", textClass:"text-zinc-900/60", themeId:"devscratchpad-dark"},
- { name:"Dark Slate", bg:"#121215", headerBg:"#09090B", textClass:"text-zinc-900/60", themeId:"devscratchpad-dark"},
- { name:"Dracula", bg:"#282A36", headerBg:"#21222C", textClass:"text-zinc-900/60", themeId:"devscratchpad-dark"},
- { name:"GitHub Dark", bg:"#0D1117", headerBg:"#010409", textClass:"text-zinc-900/60", themeId:"devscratchpad-dark"},
- { name:"Nord", bg:"#2E3440", headerBg:"#3B4252", textClass:"text-zinc-900/60", themeId:"devscratchpad-dark"},
+ { name:"One Dark Pro", bg:"#282C34", headerBg:"#21252B", textClass:"text-white/60", themeId:"devscratchpad-dark"},
+ { name:"Dark Slate", bg:"#121215", headerBg:"#09090B", textClass:"text-white/60", themeId:"devscratchpad-dark"},
+ { name:"Dracula", bg:"#282A36", headerBg:"#21222C", textClass:"text-white/60", themeId:"devscratchpad-dark"},
+ { name:"GitHub Dark", bg:"#0D1117", headerBg:"#010409", textClass:"text-white/60", themeId:"devscratchpad-dark"},
+ { name:"Nord", bg:"#2E3440", headerBg:"#3B4252", textClass:"text-white/60", themeId:"devscratchpad-dark"},
 ];
 
 const PADDINGS = [
@@ -38,7 +39,8 @@ const PADDINGS = [
 ];
 
 export function ExportImageModal({ isOpen, onClose, code, language }: ExportImageModalProps) {
- const [activeBg, setActiveBg] = useState(BACKGROUNDS[0]);
+ // Default to the neutral dark canvas so exports match the site's black/white look; colour canvases stay one tap away.
+ const [activeBg, setActiveBg] = useState(BACKGROUNDS[4]);
  const [activeTheme, setActiveTheme] = useState(SYNTAX_THEMES[0]); // Default GitHub Light
  const [activePadding, setActivePadding] = useState(PADDINGS[1]); // Default 32px
  const [showLineNumbers, setShowLineNumbers] = useState(false);
@@ -122,7 +124,7 @@ export function ExportImageModal({ isOpen, onClose, code, language }: ExportImag
  };
 
  return (
- <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 md:p-6 bg-black/70 backdrop-blur-sm animate-in fade-in duration-150">
+ <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 md:p-6 bg-black/60 animate-in fade-in duration-150">
  {/* Dynamic override for Monaco transparent background */}
  <style>{`
  .export-monaco-container .monaco-editor,
@@ -136,17 +138,18 @@ export function ExportImageModal({ isOpen, onClose, code, language }: ExportImag
  {/* Header */}
  <div className="flex items-center justify-between px-4 py-3 sm:px-5 sm:py-3.5 border-b border-zinc-200 shrink-0">
  <div className="flex items-center gap-2.5">
- <div className="p-1.5 rounded-lg bg-indigo-50 text-indigo-600">
- <ImageIcon className="w-4 h-4 sm:w-5 sm:h-5"/>
+ <div className="flex size-8 items-center justify-center rounded-md bg-zinc-900 text-white">
+ <ImageDown className="size-4" strokeWidth={ICON_STROKE} aria-hidden="true"/>
  </div>
- <h2 className="font-semibold text-sm sm:text-base text-zinc-900">Export Code Snippet</h2>
+ <h2 className="font-semibold text-sm sm:text-base text-zinc-900">Export as image</h2>
  </div>
  <button
  onClick={onClose}
- className="p-1.5 text-zinc-500 hover:text-zinc-700 hover:bg-zinc-100 rounded-lg transition-colors"
+ className={cn(btnIcon,"-mr-1.5")}
  aria-label="Close modal"
+ title="Close"
  >
- <X className="w-5 h-5"/>
+ <X className="size-4" strokeWidth={ICON_STROKE} aria-hidden="true"/>
  </button>
  </div>
 
@@ -208,7 +211,6 @@ export function ExportImageModal({ isOpen, onClose, code, language }: ExportImag
  scrollbar: { vertical: 'hidden', horizontal: 'hidden' },
  fontSize: 13,
  lineHeight: 21,
- fontFamily:"'JetBrains Mono', 'Fira Code', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
  padding: { top: 2, bottom: 2 },
  wordWrap:"on",
  }}
@@ -218,7 +220,7 @@ export function ExportImageModal({ isOpen, onClose, code, language }: ExportImag
  </div>
 
  {/* Brand Watermark - Positioned in canvas bottom corner */}
- <div className="absolute bottom-2 sm:bottom-2.5 right-3 sm:right-4 text-[10px] sm:text-xs font-mono text-zinc-900/50 tracking-wider select-none pointer-events-none drop-shadow-none">
+ <div className="absolute bottom-2 sm:bottom-2.5 right-3 sm:right-4 text-[10px] sm:text-xs font-mono text-white/60 tracking-wider select-none pointer-events-none drop-shadow-none">
  devscratchpad.tech
  </div>
  </div>
@@ -240,10 +242,10 @@ export function ExportImageModal({ isOpen, onClose, code, language }: ExportImag
  onClick={() => setActiveBg(bg)}
  title={bg.name}
  className={cn(
-"h-8 sm:h-9 rounded-lg transition-all hover:scale-105 active:scale-95 border",
+"h-10 md:h-9 rounded-md transition-shadow border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-900 focus-visible:ring-offset-2",
  bg.class,
  activeBg.name === bg.name 
- ?"ring-2 ring-indigo-500 ring-offset-2 border-transparent shadow-none"
+ ?"ring-2 ring-zinc-900 ring-offset-2 border-transparent shadow-none"
  :"border-zinc-200"
  )}
  aria-label={bg.name}
@@ -260,7 +262,7 @@ export function ExportImageModal({ isOpen, onClose, code, language }: ExportImag
  <select 
  value={activeTheme.name}
  onChange={(e) => setActiveTheme(SYNTAX_THEMES.find(t => t.name === e.target.value) || SYNTAX_THEMES[0])}
- className="w-full h-9 bg-zinc-50 border border-zinc-200 text-zinc-900 text-xs sm:text-sm rounded-lg px-3 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors"
+ className={cn(selectBase,"w-full")}
  >
  {SYNTAX_THEMES.map((theme) => (
  <option key={theme.name} value={theme.name}>{theme.name}</option>
@@ -273,17 +275,12 @@ export function ExportImageModal({ isOpen, onClose, code, language }: ExportImag
  <label className="text-xs font-semibold text-zinc-700 uppercase tracking-wider block mb-2">
  Canvas Padding
  </label>
- <div className="flex bg-zinc-100 p-1 rounded-lg border border-zinc-200">
+ <div className={cn(segmentTrack,"flex w-full")}>
  {PADDINGS.map((pad) => (
  <button
  key={pad.label}
  onClick={() => setActivePadding(pad)}
- className={cn(
-"flex-1 py-1 sm:py-1.5 text-xs font-medium rounded-md transition-colors text-center",
- activePadding.label === pad.label
- ?"bg-white text-zinc-900 shadow-none border border-zinc-200"
- :"text-zinc-500 hover:text-zinc-700 border border-transparent"
- )}
+ className={cn(segmentBtn(activePadding.label === pad.label),"flex-1 text-center")}
  >
  {pad.label}
  </button>
@@ -303,8 +300,8 @@ export function ExportImageModal({ isOpen, onClose, code, language }: ExportImag
  aria-label="Toggle line numbers"
  onClick={() => setShowLineNumbers(!showLineNumbers)}
  className={cn(
-"w-10 h-5.5 rounded-full transition-colors relative focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2",
- showLineNumbers ?"bg-indigo-600":"bg-zinc-300"
+"w-10 h-5.5 rounded-full transition-colors relative focus:outline-none focus-visible:ring-2 focus-visible:ring-zinc-900 focus-visible:ring-offset-2",
+ showLineNumbers ?"bg-zinc-900":"bg-zinc-300"
  )}
  >
  <div className={cn(
@@ -319,21 +316,21 @@ export function ExportImageModal({ isOpen, onClose, code, language }: ExportImag
  <button
  onClick={handleCopyClipboard}
  disabled={isExporting}
- className="w-full h-9 sm:h-10 bg-zinc-100 hover:bg-zinc-200 text-zinc-900 border border-zinc-200 rounded-lg font-medium flex items-center justify-center gap-2 transition-colors disabled:opacity-50 text-xs sm:text-sm active:scale-[0.99]"
+ className={cn(btnSecondary,"w-full md:h-10 md:text-sm")}
  >
- {copied ? <Check className="w-4 h-4 text-emerald-500"/> : <Copy className="w-4 h-4 text-zinc-500"/>}
+ {copied ? <Check className="size-4 text-emerald-600" strokeWidth={ICON_STROKE} aria-hidden="true"/> : <Copy className="size-4" strokeWidth={ICON_STROKE} aria-hidden="true"/>}
  <span>{copied ?"Copied to Clipboard!":"Copy PNG to Clipboard"}</span>
  </button>
  
  <button
  onClick={handleDownload}
  disabled={isExporting}
- className="w-full h-9 sm:h-10 bg-blue-600 hover:bg-blue-500 active:bg-blue-700 text-zinc-900 rounded-lg font-medium flex items-center justify-center gap-2 transition-colors disabled:opacity-50 shadow-none text-xs sm:text-sm active:scale-[0.99]"
+ className={cn(btnPrimary,"w-full md:h-10 md:text-sm")}
  >
  {isExporting ? (
  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"/>
  ) : (
- <Download className="w-4 h-4"/>
+ <Download className="size-4" strokeWidth={ICON_STROKE} aria-hidden="true"/>
  )}
  <span>{isExporting ?"Exporting...":"Download PNG"}</span>
  </button>

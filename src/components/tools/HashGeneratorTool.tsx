@@ -1,234 +1,192 @@
 "use client";
 
-import { useState, useEffect } from"react";
-import { generateAllHashes, type HashResults } from"@/lib/tools/hash";
-import { ShareButton } from"@/components/ShareButton";
-import { EmbedButton } from"@/components/EmbedButton";
-import { ExportImageButton } from"@/components/ExportImageButton";
-import { Hash, Copy, Trash2, Check } from"lucide-react";
-import { cn } from"@/lib/utils";
-import { addSnapshot } from"@/lib/storage";
+import { useState, useEffect, useMemo } from "react";
+import { generateAllHashes, EMPTY_HASHES, type HashResults } from "@/lib/tools/hash";
+import { ShareMenu } from "@/components/ShareMenu";
+import { Copy, Check, Trash2 } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { addSnapshot } from "@/lib/storage";
+import { ToolHeader, PaneBar, btnPrimary, btnIcon, segmentTrack, segmentBtn, iconProps } from "@/components/tools/ToolChrome";
+import { getToolIcon } from "@/components/layout/toolIcons";
+import { useCopyFlash, useDebouncedValue, CopyIconButton, formatBytes } from "@/components/tools/security/securityUi";
 
 interface HashGeneratorToolProps {
- onValidationChange: (isValid: boolean, error?: string) => void;
- onStatsChange: (length: number, execMs: number) => void;
- onLogHistory?: (input: string) => void;
- restoredInput?: string | null;
+  onValidationChange: (isValid: boolean, error?: string) => void;
+  onStatsChange: (length: number, execMs: number) => void;
+  onLogHistory?: (input: string) => void;
+  restoredInput?: string | null;
 }
 
-const DEFAULT_TEXT ="DevScratchpad – Fast, Private & Beautiful Developer Tools";
+const DEFAULT_TEXT = "DevScratchpad – Fast, Private & Beautiful Developer Tools";
+
+const HASH_ROWS: { id: keyof HashResults; name: string; bits: string; legacy?: boolean }[] = [
+  { id: "md5", name: "MD5", bits: "128-bit", legacy: true },
+  { id: "sha1", name: "SHA-1", bits: "160-bit", legacy: true },
+  { id: "sha256", name: "SHA-256", bits: "256-bit" },
+  { id: "sha384", name: "SHA-384", bits: "384-bit" },
+  { id: "sha512", name: "SHA-512", bits: "512-bit" },
+];
 
 export function HashGeneratorTool({
- onValidationChange,
- onStatsChange,
- onLogHistory,
- restoredInput,
+  onValidationChange,
+  onStatsChange,
+  onLogHistory,
+  restoredInput,
 }: HashGeneratorToolProps) {
- const [input, setInput] = useState<string>(DEFAULT_TEXT);
- const [hashes, setHashes] = useState<HashResults>({
- md5:"",
- sha1:"",
- sha256:"",
- sha512:"",
- });
- const [isUppercase, setIsUppercase] = useState<boolean>(false);
- const [copiedKey, setCopiedKey] = useState<string | null>(null);
+  const [input, setInput] = useState<string>(DEFAULT_TEXT);
+  // Digests tagged with the exact input they were computed from, so stale results never show.
+  const [computed, setComputed] = useState<{ source: string; hashes: HashResults }>({ source: "", hashes: EMPTY_HASHES });
+  const [isUppercase, setIsUppercase] = useState<boolean>(false);
+  const { copiedKey, copy } = useCopyFlash();
 
- // Save workspace snapshot
- useEffect(() => {
- const handleSave = () => {
- addSnapshot("hash","Hash Generator", input, JSON.stringify(hashes, null, 2));
- };
- window.addEventListener("save-workspace", handleSave);
- return () => window.removeEventListener("save-workspace", handleSave);
- }, [input, hashes]);
+  // Hash ~150ms after typing stops so large pastes never block the textarea.
+  const debouncedInput = useDebouncedValue(input, 150);
+  const hashes = computed.hashes;
+  // While a newer input is pending, keep the previous digests on screen but dimmed.
+  const isStale = computed.source !== input;
+  const byteLength = useMemo(() => new TextEncoder().encode(input).length, [input]);
 
- // Restore from history
- useEffect(() => {
- if (restoredInput) setInput(restoredInput);
- }, [restoredInput]);
+  // Save workspace snapshot
+  useEffect(() => {
+    const handleSave = () => {
+      addSnapshot("hash", "Hash Generator", input, JSON.stringify(hashes, null, 2));
+    };
+    window.addEventListener("save-workspace", handleSave);
+    return () => window.removeEventListener("save-workspace", handleSave);
+  }, [input, hashes]);
 
- // Compute hashes when input changes
- useEffect(() => {
- let isCancelled = false;
- const start = performance.now();
+  // Restore from history / share link
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (restoredInput) setInput(restoredInput);
+  }, [restoredInput]);
 
- onValidationChange(true);
+  // Compute hashes when the (debounced) input changes
+  useEffect(() => {
+    let isCancelled = false;
+    const start = performance.now();
 
- generateAllHashes(input).then((res) => {
- if (!isCancelled) {
- setHashes(res);
- const end = performance.now();
- onStatsChange(input.length, end - start);
- }
- });
+    onValidationChange(true);
 
- return () => {
- isCancelled = true;
- };
- }, [input, onValidationChange, onStatsChange]);
+    generateAllHashes(debouncedInput).then((res) => {
+      if (isCancelled) return;
+      setComputed({ source: debouncedInput, hashes: res });
+      onStatsChange(debouncedInput.length, Math.round((performance.now() - start) * 10) / 10);
+    });
 
- const handleCopy = (text: string, key: string) => {
- if (!text) return;
- const valueToCopy = isUppercase ? text.toUpperCase() : text.toLowerCase();
- navigator.clipboard.writeText(valueToCopy);
- setCopiedKey(key);
- onLogHistory?.(input);
- setTimeout(() => setCopiedKey(null), 1500);
- };
+    return () => {
+      isCancelled = true;
+    };
+  }, [debouncedInput, onValidationChange, onStatsChange]);
 
- const handleCopyAll = () => {
- const formatValue = (h: string) => (isUppercase ? h.toUpperCase() : h.toLowerCase());
- const allText = [
- `MD5: ${formatValue(hashes.md5)}`,
- `SHA-1: ${formatValue(hashes.sha1)}`,
- `SHA-256:${formatValue(hashes.sha256)}`,
- `SHA-512:${formatValue(hashes.sha512)}`,
- ].join("\n");
+  const formatValue = (h: string) => (isUppercase ? h.toUpperCase() : h.toLowerCase());
 
- navigator.clipboard.writeText(allText);
- setCopiedKey("all");
- onLogHistory?.(input);
- setTimeout(() => setCopiedKey(null), 1500);
- };
+  const handleCopy = (text: string, key: string) => {
+    if (copy(formatValue(text), key)) onLogHistory?.(input);
+  };
 
- const HASH_CARDS = [
- { id:"md5", name:"MD5", bits:"128-bit", value: hashes.md5 },
- { id:"sha1", name:"SHA-1", bits:"160-bit", value: hashes.sha1 },
- { id:"sha256", name:"SHA-256", bits:"256-bit", value: hashes.sha256 },
- { id:"sha512", name:"SHA-512", bits:"512-bit", value: hashes.sha512 },
- ];
+  const allText = HASH_ROWS.filter((row) => hashes[row.id])
+    .map((row) => `${`${row.name}:`.padEnd(9)}${formatValue(hashes[row.id])}`)
+    .join("\n");
 
- return (
- <div className="flex flex-col h-full bg-[#09090B] overflow-y-auto w-full overflow-x-hidden relative">
- {/* Tool Header */}
- <div className="min-h-14 border-b border-zinc-200 flex items-center justify-between gap-2 overflow-x-auto no-scrollbar py-2 px-3 md:px-4 bg-white shrink-0 sticky top-0 z-10">
- <div className="flex items-center gap-2">
- <Hash className="w-4 h-4 text-zinc-900"/>
- <span className="text-sm font-semibold text-zinc-900">Hash Generator</span>
- </div>
+  const handleCopyAll = () => {
+    if (copy(allText, "all")) onLogHistory?.(input);
+  };
 
- <div className="flex items-center gap-2">
- <ExportImageButton code={JSON.stringify(hashes, null, 2) || input} language="plaintext"/>
- <EmbedButton toolSlug="hash-generator"data={input} />
- <ShareButton toolSlug="hash-generator"data={input} />
- 
- <div className="bg-zinc-100 p-0.5 rounded-lg flex items-center h-8 ml-1">
- <button
- onClick={() => setIsUppercase(false)}
- className={cn(
-"px-2.5 py-1 text-xs font-medium rounded-md transition-all",
- !isUppercase
- ?"bg-white text-zinc-900 font-semibold shadow-none"
- :"text-zinc-500 hover:text-zinc-900"
- )}
- >
- lowercase
- </button>
- <button
- onClick={() => setIsUppercase(true)}
- className={cn(
-"px-2.5 py-1 text-xs font-medium rounded-md transition-all",
- isUppercase
- ?"bg-white text-zinc-900 font-semibold shadow-none"
- :"text-zinc-500 hover:text-zinc-900"
- )}
- >
- UPPERCASE
- </button>
- </div>
+  const hasOutput = Boolean(hashes.sha256);
 
- <button
- onClick={handleCopyAll}
- className="bg-zinc-900 hover:bg-zinc-800 text-white h-8 px-3 text-xs font-semibold rounded-md flex items-center gap-1.5 ml-1 shrink-0 transition-colors shadow-none"
- >
- {copiedKey ==="all"? (
- <Check className="w-3.5 h-3.5"/>
- ) : (
- <Copy className="w-3.5 h-3.5"/>
- )}
- <span>{copiedKey ==="all"?"Copied!":"Copy All Hashes"}</span>
- </button>
- </div>
- </div>
+  return (
+    <div className="flex h-full w-full flex-col overflow-y-auto overflow-x-hidden bg-white md:overflow-hidden">
+      {/* Tool Header */}
+      <ToolHeader
+        icon={getToolIcon("hash")}
+        title="Hash Generator"
+        utilities={<ShareMenu toolSlug="hash" data={input} imageCode={allText || input} imageLanguage="plaintext" />}
+        options={
+          <div className={segmentTrack} role="group" aria-label="Letter case">
+            <button type="button" onClick={() => setIsUppercase(false)} aria-pressed={!isUppercase} className={segmentBtn(!isUppercase)}>
+              lowercase
+            </button>
+            <button type="button" onClick={() => setIsUppercase(true)} aria-pressed={isUppercase} className={segmentBtn(isUppercase)}>
+              UPPERCASE
+            </button>
+          </div>
+        }
+        actions={
+          <>
+            <button type="button" onClick={handleCopyAll} disabled={!hasOutput} className={btnPrimary}>
+              {copiedKey === "all" ? <Check {...iconProps} /> : <Copy {...iconProps} />}
+              <span>{copiedKey === "all" ? "Copied" : "Copy all"}</span>
+            </button>
+          </>
+        }
+      />
 
- {/* Main Content Area */}
- <div className="flex-1 flex flex-col p-4 md:p-8 max-w-5xl mx-auto w-full gap-8 bg-white ]">
- {/* Input Box Container */}
- <div className="bg-zinc-50 border border-zinc-200 rounded-xl p-4 shadow-none">
- <div className="flex items-center justify-between mb-3">
- <span className="text-xs font-semibold text-zinc-500 uppercase tracking-wider">
- Input Text
- </span>
- <button
- onClick={() => setInput("")}
- className="p-1 rounded-md transition-colors"
- title="Clear input"
- >
- <Trash2 className="w-3.5 h-3.5 text-zinc-400 hover:text-zinc-800"/>
- </button>
- </div>
- <textarea
- value={input}
- onChange={(e) => setInput(e.target.value)}
- placeholder="Type or paste your text here..."
- className="font-mono text-sm bg-transparent border-0 outline-none focus:ring-0 text-zinc-900 w-full min-h-[100px] resize-y placeholder:text-zinc-400"
- />
- </div>
+      {/* Main Content Area: input left, digests right (stacked on mobile) */}
+      <div className="flex flex-1 flex-col md:min-h-0 md:flex-row">
+        <section className="flex shrink-0 flex-col border-b border-zinc-200 md:min-h-0 md:w-5/12 md:shrink md:border-b-0 md:border-r">
+          <PaneBar label="Input text">
+            <button
+              type="button"
+              onClick={() => setInput("")}
+              disabled={!input}
+              className={btnIcon}
+              title="Clear input"
+              aria-label="Clear input"
+            >
+              <Trash2 {...iconProps} />
+            </button>
+          </PaneBar>
+          <textarea
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            placeholder="Type or paste text to hash…"
+            aria-label="Input text"
+            spellCheck={false}
+            className="block min-h-36 w-full flex-1 resize-y bg-transparent p-3 font-mono text-[13px] leading-relaxed text-zinc-900 outline-none placeholder:text-zinc-400 md:min-h-0 md:resize-none md:p-4"
+          />
+          <div className="flex h-9 shrink-0 items-center justify-between gap-2 border-t border-zinc-200 bg-zinc-50 px-3 text-[11px] tabular-nums text-zinc-500">
+            <span>{input.length.toLocaleString()} chars</span>
+            <span>{formatBytes(byteLength)} UTF-8</span>
+          </div>
+        </section>
 
- {/* Generated Hashes List */}
- <div>
- <span className="text-xs font-semibold text-zinc-500 uppercase tracking-wider block mb-4">
- Generated Hashes
- </span>
-
- <div className="space-y-3">
- {HASH_CARDS.map((card) => {
- const displayVal = card.value
- ? isUppercase
- ? card.value.toUpperCase()
- : card.value.toLowerCase()
- :"—";
-
- return (
- <div
- key={card.id}
- className="flex flex-col sm:flex-row sm:items-center justify-between p-3.5 bg-white border border-zinc-200/80 rounded-xl mb-3 shadow-none hover:border-zinc-300 transition-all gap-3 sm:gap-0"
- >
- {/* Algorithm Tag & Bit Badge */}
- <div className="flex items-center gap-3">
- <span className="font-mono font-bold text-xs text-zinc-900 min-w-[70px]">
- {card.name}
- </span>
- <span className="bg-zinc-100 text-zinc-600 border border-zinc-200 px-2 py-0.5 rounded text-[10px] font-mono">
- {card.bits}
- </span>
- </div>
-
- {/* Hash Output Text */}
- <div className="font-mono text-sm text-zinc-800 truncate mx-0 sm:mx-4 select-all flex-1">
- {displayVal}
- </div>
-
- {/* Copy Button */}
- <button
- onClick={() => handleCopy(card.value, card.id)}
- className="h-8 px-2.5 text-xs bg-zinc-100 hover:bg-zinc-200 text-zinc-700 rounded-md font-medium transition-colors flex items-center justify-center gap-1 shrink-0"
- title={`Copy ${card.name} hash`}
- >
- {copiedKey === card.id ? (
- <Check className="w-3.5 h-3.5 text-zinc-900"/>
- ) : (
- <Copy className="w-3.5 h-3.5"/>
- )}
- <span>{copiedKey === card.id ?"Copied":"Copy"}</span>
- </button>
- </div>
- );
- })}
- </div>
- </div>
- </div>
- </div>
- );
+        <section className="flex min-w-0 flex-1 flex-col md:min-h-0">
+          <PaneBar label="Digests" className="pr-3 md:pr-3">
+            <span className="text-[11px] text-zinc-400">Hex</span>
+          </PaneBar>
+          <div className="divide-y divide-zinc-200 md:min-h-0 md:flex-1 md:overflow-y-auto">
+            {HASH_ROWS.map((row) => {
+              const value = hashes[row.id];
+              return (
+                <div key={row.id} className="flex items-start gap-3 py-2.5 pl-3 pr-1.5 md:pl-4 md:pr-2">
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-semibold text-zinc-900">{row.name}</span>
+                      <span className="text-[11px] text-zinc-400">{row.bits}</span>
+                      {row.legacy && <span className="text-[11px] text-zinc-400">· not collision-safe</span>}
+                    </div>
+                    <p
+                      className={cn(
+                        "mt-1 select-all break-all font-mono text-[13px] leading-relaxed text-zinc-800 transition-opacity",
+                        isStale && "opacity-40"
+                      )}
+                    >
+                      {value ? formatValue(value) : <span className="text-zinc-300">—</span>}
+                    </p>
+                  </div>
+                  <CopyIconButton
+                    copied={copiedKey === row.id}
+                    onClick={() => handleCopy(value, row.id)}
+                    disabled={!value}
+                    label={`Copy ${row.name} hash`}
+                  />
+                </div>
+              );
+            })}
+          </div>
+        </section>
+      </div>
+    </div>
+  );
 }

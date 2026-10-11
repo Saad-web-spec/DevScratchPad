@@ -31,7 +31,7 @@ export function LearningTracks({ tracks, allPosts }: LearningTracksProps) {
           <h2 className="text-[11px] font-mono uppercase tracking-widest text-zinc-500 font-semibold">
             CURATED LEARNING TRACKS
           </h2>
-          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+          <span className="w-1.5 h-1.5 rounded-full bg-zinc-400" />
         </div>
         <span className="text-xs font-mono text-zinc-400">Structured Deep Dives</span>
       </div>

@@ -2,10 +2,11 @@
 
 import React from "react";
 import Image from "next/image";
-import { CheckCircle2, Cpu, FileText, FolderGit2, Layers, Server, ShieldCheck } from "lucide-react";
+import { CheckCircle2, ChevronDown, Cpu, FileText, FolderGit2, Layers, Server, ShieldCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { WindsurfIcon, OpenAIIcon, GeminiIcon, CopilotIcon } from "@/components/icons/AssistantBrandIcons";
 import type { OutputFormat } from "../lib/ruleGenerator";
+import { EXPORT_FORMATS, getExportTarget } from "../lib/exportTargets";
 
 export interface TargetLocationCardProps {
   format: OutputFormat;
@@ -17,6 +18,9 @@ export function TargetLocationCard({
   format,
   skillName,
 }: TargetLocationCardProps) {
+  const kitPaths = [...EXPORT_FORMATS.map((f) => getExportTarget(f, skillName).repoPath), "README.md"].sort();
+  const activePath = getExportTarget(format, skillName).repoPath;
+
   return (
     <div
       suppressHydrationWarning
@@ -85,7 +89,7 @@ export function TargetLocationCard({
       )}
       {format === "mcp_json" && (
         <p className="text-xs text-zinc-600 leading-relaxed font-sans">
-          Save as <code className="px-1.5 py-0.5 rounded-md bg-white border border-orange-200 text-orange-950 font-mono text-[11px] font-semibold shadow-2xs break-all sm:break-normal">claude.json</code> in project root or merge its <code className="px-1.5 py-0.5 rounded-md bg-white border border-orange-200 text-orange-950 font-mono text-[11px] font-semibold shadow-2xs break-all sm:break-normal">mcpServers</code> block into Claude Desktop <code className="px-1.5 py-0.5 rounded-md bg-white border border-orange-200 text-orange-950 font-mono text-[11px] font-semibold shadow-2xs break-all sm:break-normal">claude_desktop_config.json</code>.
+          Save as <code className="px-1.5 py-0.5 rounded-md bg-white border border-orange-200 text-orange-950 font-mono text-[11px] font-semibold shadow-2xs break-all sm:break-normal">.mcp.json</code> in project root for Claude Code, or merge its <code className="px-1.5 py-0.5 rounded-md bg-white border border-orange-200 text-orange-950 font-mono text-[11px] font-semibold shadow-2xs break-all sm:break-normal">mcpServers</code> block into Claude Desktop <code className="px-1.5 py-0.5 rounded-md bg-white border border-orange-200 text-orange-950 font-mono text-[11px] font-semibold shadow-2xs break-all sm:break-normal">claude_desktop_config.json</code>.
         </p>
       )}
       {format === "windsurf_cascade" && (
@@ -148,6 +152,27 @@ export function TargetLocationCard({
           Save as <code className="px-1.5 py-0.5 rounded-md bg-white border border-orange-200 text-orange-950 font-mono text-[11px] font-semibold shadow-2xs break-all sm:break-normal">MEMORY.md</code> in repository root. Persistent agent brain: tech context, ADRs, operational gotchas, and 5-step loop.
         </p>
       )}
+
+      {/* AI kit preview: the exact paths the ZIP export writes, so users know what lands in their repo */}
+      <details className="group border-t border-orange-100 pt-2">
+        <summary className="flex cursor-pointer list-none items-center justify-between gap-2 rounded text-xs font-medium text-zinc-700 hover:text-zinc-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 [&::-webkit-details-marker]:hidden">
+          <span>What&apos;s in the ZIP export ({kitPaths.length} files)</span>
+          <ChevronDown className="h-3.5 w-3.5 text-zinc-400 transition-transform group-open:rotate-180" aria-hidden="true" />
+        </summary>
+        <p className="mt-1.5 text-[11px] text-zinc-500">Unzip into your project root. Every file is already in the folder its tool reads from.</p>
+        <ul className="mt-1.5 space-y-0.5 font-mono text-[11px] text-zinc-600">
+          {kitPaths.map((path) => (
+            <li
+              key={path}
+              className={cn("truncate", path === activePath && "font-semibold text-orange-800")}
+              title={path}
+            >
+              {path}
+              {path === activePath && <span className="font-sans font-normal text-orange-700"> (open in editor)</span>}
+            </li>
+          ))}
+        </ul>
+      </details>
     </div>
   );
 }

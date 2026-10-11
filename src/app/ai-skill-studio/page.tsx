@@ -2,11 +2,13 @@ import { Metadata } from "next";
 import { ClaudeSkillsClient } from "../claude-skills/ClaudeSkillsClient";
 
 import { AiSkillStudioSeoContent } from "./AiSkillStudioSeoContent";
+import { STUDIO_FAQS, toPlainText } from "./components/studioFaqs";
 
 export const metadata: Metadata = {
-  title: "AI Skill Studio — 17 Formats & 4-Layer AI Agent Operating Suite",
+  // Absolute title stays under ~60 chars so Google does not truncate it in results
+  title: { absolute: "AI Skill Studio: CLAUDE.md & Cursor Rules Generator" },
   description:
-    "AI Skill Studio: Free offline generator supporting 17 formats (Cursor .mdc, Claude SKILL.md, CLAUDE.md, AGENTS.md, PRD.md, DESIGN.md, TASK.md, MEMORY.md, MCP, Windsurf, Copilot, .cursorignore, .claudeignore, llms.txt, ARCHITECTURE.md). 100% offline privacy.",
+    "Generate CLAUDE.md, AGENTS.md, Cursor rules, SKILL.md and Copilot instructions for your stack. Free, runs in your browser, nothing is uploaded.",
   alternates: {
     canonical: "https://www.devscratchpad.tech/ai-skill-studio",
   },
@@ -39,13 +41,11 @@ export const metadata: Metadata = {
     "claude code agent skills",
     "cursor project rules",
     "offline cursor rules generator",
-    "17 AI formats",
-    "4-layer AI agent suite",
   ],
   openGraph: {
-    title: "AI Skill Studio — 17 Formats & 4-Layer AI Agent Operating Suite | DevScratchpad",
+    title: "AI Skill Studio: CLAUDE.md & Cursor Rules Generator | DevScratchpad",
     description:
-      "Generate production-grade AI agent rules across 17 formats (Cursor .mdc, Claude SKILL.md, CLAUDE.md, AGENTS.md, PRD.md, DESIGN.md, TASK.md, MEMORY.md, MCP, Windsurf, Copilot, .cursorignore, .claudeignore, llms.txt, ARCHITECTURE.md). 100% offline privacy.",
+      "Generate CLAUDE.md, AGENTS.md, Cursor rules, SKILL.md and Copilot instructions for your stack. Free, runs in your browser, nothing is uploaded.",
     url: "https://www.devscratchpad.tech/ai-skill-studio",
     siteName: "DevScratchpad",
     locale: "en_US",
@@ -56,22 +56,22 @@ export const metadata: Metadata = {
         secureUrl: "https://www.devscratchpad.tech/og-ai-skill-studio.png",
         width: 1200,
         height: 630,
-        alt: "AI Skill Studio — 17 Formats & 4-Layer AI Agent Operating Suite — DevScratchpad",
+        alt: "AI Skill Studio: CLAUDE.md, Cursor rules and agent skills generator",
         type: "image/png",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "AI Skill Studio — 17 Formats & 4-Layer AI Agent Operating Suite | DevScratchpad",
+    title: "AI Skill Studio: CLAUDE.md & Cursor Rules Generator | DevScratchpad",
     description:
-      "Generate production-grade AI agent rules across 17 formats & 4-layer suite (.cursorignore, .claudeignore, llms.txt, ARCHITECTURE.md, PRD.md, DESIGN.md, TASK.md, MEMORY.md). 100% offline workbench.",
+      "Generate CLAUDE.md, AGENTS.md, Cursor rules, SKILL.md and Copilot instructions for your stack. Free, runs in your browser, nothing is uploaded.",
     images: [
       {
         url: "https://www.devscratchpad.tech/og-ai-skill-studio.png",
         width: 1200,
         height: 630,
-        alt: "AI Skill Studio — 17 Formats & 4-Layer AI Agent Operating Suite — DevScratchpad",
+        alt: "AI Skill Studio: CLAUDE.md, Cursor rules and agent skills generator",
       },
     ],
   },
@@ -85,7 +85,7 @@ const jsonLdGraph = {
       "@id": "https://www.devscratchpad.tech/ai-skill-studio#webapp",
       name: "AI Skill Studio",
       description:
-        "Generate production-grade AI agent configuration files for Claude Code (SKILL.md), Cursor IDE (.cursor/rules/*.mdc), Anthropic CLAUDE.md, AGENTS.md, PRD.md, DESIGN.md, TASK.md, MEMORY.md, .cursorignore, .claudeignore, llms.txt, and ARCHITECTURE.md.",
+        "Generate AI agent configuration files for Claude Code (SKILL.md), Cursor IDE (.cursor/rules/*.mdc), Anthropic CLAUDE.md, AGENTS.md, PRD.md, DESIGN.md, TASK.md, MEMORY.md, .cursorignore, .claudeignore, llms.txt, and ARCHITECTURE.md.",
       url: "https://www.devscratchpad.tech/ai-skill-studio",
       applicationCategory: "DeveloperApplication",
       operatingSystem: "Any",
@@ -103,9 +103,9 @@ const jsonLdGraph = {
         "Multi-agent governance suite (PRD.md, DESIGN.md, TASK.md, MEMORY.md)",
         ".cursorignore & .claudeignore context shields to mask secrets and eliminate token bloat",
         "llms.txt and ARCHITECTURE.md machine documentation blueprints",
-        "100% client-side privacy with zero server uploads",
+        "Runs in your browser; nothing you type or import is uploaded",
         "Package manifest ingestion for package.json, Cargo.toml, pyproject.toml, and go.mod",
-        "Unified 17-file 4-layer AI suite ZIP archive exporter and terminal CLI",
+        "ZIP export with every file in its folder, plus a terminal CLI",
       ],
       contactPoint: {
         "@type": "ContactPoint",
@@ -116,81 +116,40 @@ const jsonLdGraph = {
     {
       "@type": "FAQPage",
       "@id": "https://www.devscratchpad.tech/ai-skill-studio#faq",
-      mainEntity: [
-        {
-          "@type": "Question",
-          name: "What is the difference between Cursor .mdc rules and legacy .cursorrules?",
-          acceptedAnswer: {
-            "@type": "Answer",
-            text: "The legacy .cursorrules file is a single monolithic file loaded on every AI interaction, rapidly consuming context window tokens. Modern Cursor Project Rules (.cursor/rules/*.mdc) allow modular rulebooks with file glob patterns and alwaysApply: false, so rules attach only when relevant code is being modified.",
-          },
+      // Same list the visible FAQ renders, so the structured text always matches the page
+      mainEntity: STUDIO_FAQS.map((faq) => ({
+        "@type": "Question",
+        name: toPlainText(faq.question),
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: toPlainText(faq.answer),
         },
-        {
-          "@type": "Question",
-          name: "How does Claude Code detect and run custom skills from SKILL.md?",
-          acceptedAnswer: {
-            "@type": "Answer",
-            text: "Claude Code searches .claude/skills/<skill-name>/SKILL.md in your project directory (or globally in ~/.claude/skills/). It indexes the YAML frontmatter (name and description). When your request aligns with the skill description or when you trigger its slash command, Claude automatically loads the full markdown instructions.",
-          },
-        },
-        {
-          "@type": "Question",
-          name: "Can I use the generated rules in Windsurf, GitHub Copilot, or Aider?",
-          acceptedAnswer: {
-            "@type": "Answer",
-            text: "Yes. The generated CLAUDE.md and AGENTS.md files use standard Markdown and XML structures compatible with Windsurf Cascade, GitHub Copilot workspace instructions, and Aider system prompts.",
-          },
-        },
-        {
-          "@type": "Question",
-          name: "Does AI Skill Studio send my manifest files or code to any server?",
-          acceptedAnswer: {
-            "@type": "Answer",
-            text: "No. All manifest parsing (package.json, Cargo.toml, etc.), rule generation, Monaco editing, and ZIP archive creation are executed 100% client-side via JavaScript in your browser memory. No backend network requests are made.",
-          },
-        },
-        {
-          "@type": "Question",
-          name: "Where should I put the generated files in my repository?",
-          acceptedAnswer: {
-            "@type": "Answer",
-            text: "Exporting the AI Kit ZIP will automatically arrange the files in the correct directory structure: Cursor rules go to .cursor/rules/<name>.mdc, Claude skills go to .claude/skills/<name>/SKILL.md, Anthropic guidelines go to CLAUDE.md, multi-agent protocol goes to AGENTS.md, governance documents (PRD.md, DESIGN.md, TASK.md, MEMORY.md) go to repository root, and context shields go to .cursorignore and .claudeignore.",
-          },
-        },
-        {
-          "@type": "Question",
-          name: "How can I get support or request custom AI skill presets?",
-          acceptedAnswer: {
-            "@type": "Answer",
-            text: "Contact our support team directly at support@devscratchpad.tech for assistance with multi-agent governance, custom MCP integrations, or tailored rulebooks.",
-          },
-        },
-      ],
+      })),
     },
     {
       "@type": "HowTo",
       "@id": "https://www.devscratchpad.tech/ai-skill-studio#howto",
-      name: "How to Generate Production-Ready Claude Code Skills & Cursor Rules",
+      name: "How to create a CLAUDE.md, AGENTS.md or Cursor rules file",
       description:
-        "Step-by-step guide to generating, customizing, and exporting production-grade agent steering files.",
+        "Pick a file format and a preset for your stack, edit the rules, then copy, download or export the files.",
       step: [
         {
           "@type": "HowToStep",
           position: 1,
-          name: "Select Preset or Import Manifest",
-          text: "Select a pre-built architecture preset (such as Next.js 15, FastAPI, Cursor .mdc Pro, or Codebase Auditor) or drop your project's package.json or Cargo.toml to auto-detect dependencies and language idiom.",
+          name: "Pick a format and a preset",
+          text: "Choose the file you need under Target Standard & File Format, then pick one of the Presets for your stack. Or click Auto-Detect to read your package.json, pyproject.toml, Cargo.toml or go.mod.",
         },
         {
           "@type": "HowToStep",
           position: 2,
-          name: "Configure Guardrails, Governance, and Code References",
-          text: "Customize agent behaviors, architectural conventions, PRD/DESIGN/TASK/MEMORY governance specs, and execution procedures using guided section cards and interactive info tooltips.",
+          name: "Edit the rules",
+          text: "Change the commands, conventions and \"never\" rules in the form. The editor updates as you type, and you can also edit the file there directly.",
         },
         {
           "@type": "HowToStep",
           position: 3,
-          name: "Export AI Suite ZIP or Copy Markdown",
-          text: "Copy the formatted rule directly into your clipboard, or click 'Export AI Kit (.zip)' to download a complete pre-structured directory containing .cursor/rules/, .claude/skills/, CLAUDE.md, AGENTS.md, PRD.md, DESIGN.md, TASK.md, and MEMORY.md.",
+          name: "Copy, download or export",
+          text: "Use Copy or Download for the current file, or Export ZIP to get every file in its folder, ready to unzip into your repo.",
         },
       ],
     },
@@ -222,7 +181,13 @@ export default function AISkillStudioPage() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLdGraph).replace(/</g, "\\u003c") }}
       />
-      <ClaudeSkillsClient />
+      <ClaudeSkillsClient
+        heading={{
+          title: "AI Skill Studio: CLAUDE.md, Cursor rules and agent skills generator",
+          description:
+            "Pick the file your AI coding tool reads, choose your stack, and download it ready to drop into your repo. Runs in your browser; nothing is uploaded.",
+        }}
+      />
       <AiSkillStudioSeoContent />
     </>
   );

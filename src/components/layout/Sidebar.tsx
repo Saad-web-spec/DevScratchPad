@@ -1,73 +1,84 @@
 "use client";
 
-import { useState, useEffect } from"react";
-import {
-  FileJson, Database, Key, Binary, Hash, Type, Regex, Code, Clock,
-  Terminal, SplitSquareHorizontal, History, Trash2,
-  FileCode, Calendar, ArrowLeftRight, Minimize2, Sparkles, FileText, Shield, Network,
-  Fingerprint, ShieldCheck, KeyRound, Lock
-} from "lucide-react";
+import { useState, useEffect } from "react";
+import { ChevronDown, RotateCcwClock, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   getHistoryEntries, clearHistory, deleteHistoryEntry,
   formatRelativeTime, type HistoryEntry
 } from "@/lib/storage";
+import { getToolIcon, ICON_STROKE } from "./toolIcons";
 
 const NAV_CATEGORIES = [
   {
-    title: "Data Formatters & Validators",
+    title: "Formatters & Validators",
     items: [
-      { name: "JSON Formatter", icon: FileJson, id: "json-formatter" },
-      { name: "JSON Schema Validator", icon: ShieldCheck, id: "json-schema-validator" },
-      { name: "XML Formatter", icon: Code, id: "xml-formatter" },
-      { name: "SQL Formatter", icon: Database, id: "sql-formatter" },
-      { name: "GraphQL Formatter", icon: Sparkles, id: "graphql-formatter" },
-      { name: "CSS/SVG Minifier", icon: Minimize2, id: "minifier" },
+      { name: "JSON Formatter", id: "json-formatter" },
+      { name: "JSON Schema Validator", id: "json-schema-validator" },
+      { name: "XML Formatter", id: "xml-formatter" },
+      { name: "SQL Formatter", id: "sql-formatter" },
+      { name: "GraphQL Formatter", id: "graphql-formatter" },
+      { name: "CSS/SVG Minifier", id: "minifier" },
     ],
   },
   {
-    title: "Data Generators & Mocks",
+    title: "Generators & Mocks",
     items: [
-      { name: "Mock Data Generator", icon: Database, id: "mock-data-generator" },
-      { name: "UUID / ULID Generator", icon: Fingerprint, id: "uuid-generator" },
+      { name: "Mock Data Generator", id: "mock-data-generator" },
+      { name: "UUID / ULID Generator", id: "uuid-generator" },
     ],
   },
   {
     title: "Security & Cryptography",
     items: [
-      { name: "JWT Decoder", icon: Key, id: "jwt" },
-      { name: "Base64 & Hex Inspector", icon: Binary, id: "base64-inspector" },
-      { name: "Hash Generator", icon: Hash, id: "hash" },
-      { name: "HMAC Generator", icon: Shield, id: "hmac-generator" },
-      { name: "Password Hash & Verifier", icon: Lock, id: "password-hash" },
-      { name: "X.509 Cert Decoder", icon: ShieldCheck, id: "cert-decoder" },
-      { name: "SSH Key Generator", icon: KeyRound, id: "ssh-key-generator" },
+      { name: "JWT Decoder", id: "jwt" },
+      { name: "Base64 & Hex Inspector", id: "base64-inspector" },
+      { name: "Hash Generator", id: "hash" },
+      { name: "HMAC Generator", id: "hmac-generator" },
+      { name: "Password Hash & Verifier", id: "password-hash" },
+      { name: "X.509 Cert Decoder", id: "cert-decoder" },
+      { name: "SSH Key Generator", id: "ssh-key-generator" },
     ],
   },
   {
     title: "Code & Type Converters",
     items: [
-      { name: "JSON to TypeScript", icon: FileCode, id: "json-to-ts" },
-      { name: "JSON to Zod", icon: FileCode, id: "json-to-zod" },
-      { name: "JSON to Go Struct", icon: FileCode, id: "json-to-go" },
-      { name: "YAML / JSON", icon: ArrowLeftRight, id: "yaml" },
-      { name: "cURL to Fetch", icon: Terminal, id: "curl-to-fetch" },
-      { name: "cURL to Python", icon: Terminal, id: "curl-to-python" },
-      { name: "cURL to Go", icon: Terminal, id: "curl-to-go" },
-      { name: "SVG to JSX", icon: FileCode, id: "svg-to-jsx" },
+      { name: "JSON to TypeScript", id: "json-to-ts" },
+      { name: "JSON to Zod", id: "json-to-zod" },
+      { name: "JSON to Go Struct", id: "json-to-go" },
+      { name: "YAML / JSON", id: "yaml" },
+      { name: "cURL to Fetch", id: "curl-to-fetch" },
+      { name: "cURL to Python", id: "curl-to-python" },
+      { name: "cURL to Go", id: "curl-to-go" },
+      { name: "SVG to JSX", id: "svg-to-jsx" },
     ],
   },
   {
     title: "Time, Network & Utilities",
     items: [
-      { name: "Epoch / Timestamp", icon: Clock, id: "epoch-converter" },
-      { name: "Regex Tester", icon: Regex, id: "regex" },
-      { name: "Diff Checker", icon: SplitSquareHorizontal, id: "diff" },
-      { name: "Cron Visualizer", icon: Calendar, id: "cron" },
-      { name: "CIDR Calculator", icon: Network, id: "cidr-calculator" },
+      { name: "Epoch / Timestamp", id: "epoch-converter" },
+      { name: "Regex Tester", id: "regex" },
+      { name: "Diff Checker", id: "diff" },
+      { name: "Cron Visualizer", id: "cron" },
+      { name: "CIDR Calculator", id: "cidr-calculator" },
     ],
   },
 ];
+
+/** Sidebar ids that are aliases of a listed tool, so the canonical entry still shows as active. */
+const ACTIVE_ALIASES: Record<string, string> = {
+  "json-validator": "json-formatter",
+  base64: "base64-inspector",
+  x509: "cert-decoder",
+  "ssh-keygen": "ssh-key-generator",
+  bcrypt: "password-hash",
+  "yaml-to-json": "yaml",
+  "json-to-yaml": "yaml",
+  "curl-to-javascript": "curl-to-fetch",
+};
+
+const FOCUS_RING =
+  "focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-zinc-900";
 
 interface SidebarProps {
  activeToolId?: string;
@@ -86,6 +97,7 @@ export function Sidebar({
 }: SidebarProps) {
  const [historyOpen, setHistoryOpen] = useState(false);
  const [entries, setEntries] = useState<HistoryEntry[]>([]);
+ const activeId = ACTIVE_ALIASES[activeToolId] ?? activeToolId;
 
  const refreshHistory = () => setEntries(getHistoryEntries());
 
@@ -114,34 +126,43 @@ export function Sidebar({
  };
 
  return (
- <aside className={cn("w-60 bg-zinc-50 border-r border-zinc-200 flex flex-col h-full shrink-0 overflow-y-auto transition-colors", className)}>
- <div className="flex-1 py-4">
- <nav aria-label="Main Navigation">
+ <aside
+ className={cn(
+ "w-60 bg-white border-r border-zinc-200 flex flex-col h-full shrink-0 overflow-y-auto overscroll-contain [scrollbar-width:thin] [scrollbar-color:var(--color-zinc-200)_transparent]",
+ className
+ )}
+ >
+ <div className="flex-1 py-3">
+ <nav aria-label="Tools">
  {NAV_CATEGORIES.map((category) => (
- <div key={category.title} className="mb-5">
- <h3 className="px-4 text-[10px] font-semibold text-zinc-400 uppercase tracking-widest mb-1.5">
+ <div key={category.title} className="mb-4 last:mb-0">
+ <h3 className="px-4 pb-1 pt-1 text-[11px] font-medium text-zinc-400 uppercase tracking-wider">
  {category.title}
  </h3>
- <ul className="space-y-px">
+ <ul className="px-2 space-y-px">
  {category.items.map((item) => {
- const isActive = activeToolId === item.id;
+ const isActive = activeId === item.id;
+ const Icon = getToolIcon(item.id);
  return (
  <li key={item.id}>
  <button
+ type="button"
  onClick={() => handleToolClick(item.id)}
+ aria-current={isActive ? "page" : undefined}
  className={cn(
-"w-full flex items-center gap-3 px-4 py-2 text-[13px] transition-all text-left group",
+ "group relative w-full flex items-center gap-2.5 h-10 md:h-8 px-2.5 rounded-md text-sm md:text-[13px] text-left transition-colors",
  isActive
- ?"bg-blue-50 text-blue-600 border-l-2 border-blue-600 font-medium"
- :"text-zinc-600 hover:text-zinc-900 hover:bg-zinc-100 border-l-2 border-transparent"
+ ? "bg-zinc-100 text-zinc-900 font-medium before:absolute before:-left-2 before:inset-y-1.5 before:w-0.5 before:rounded-r-full before:bg-zinc-900"
+ : "text-zinc-600 hover:bg-zinc-50 hover:text-zinc-900",
+ FOCUS_RING
  )}
  >
- <item.icon
+ <Icon
+ aria-hidden="true"
+ strokeWidth={ICON_STROKE}
  className={cn(
-"w-4 h-4 shrink-0 transition-colors",
- isActive
- ?"text-blue-600"
- :"text-zinc-400 group-hover:text-zinc-500"
+ "size-4 shrink-0 transition-colors",
+ isActive ? "text-zinc-900" : "text-zinc-500 group-hover:text-zinc-900"
  )}
  />
  <span className="truncate">{item.name}</span>
@@ -158,66 +179,92 @@ export function Sidebar({
  {/* History Drawer Toggle */}
  <div className="border-t border-zinc-200">
  <button
+ type="button"
  onClick={() => setHistoryOpen(!historyOpen)}
- className="w-full flex items-center justify-between px-4 py-3 text-[13px] text-zinc-500 hover:text-zinc-700 hover:bg-zinc-50 transition-colors"
+ aria-expanded={historyOpen}
+ className={cn(
+ "group w-full flex items-center justify-between h-11 md:h-10 px-4 text-sm md:text-[13px] text-zinc-600 hover:text-zinc-900 hover:bg-zinc-50 transition-colors",
+ FOCUS_RING
+ )}
  >
- <div className="flex items-center gap-2">
- <History className="w-4 h-4 text-zinc-400"/>
+ <span className="flex items-center gap-2.5">
+ <RotateCcwClock
+ aria-hidden="true"
+ strokeWidth={ICON_STROKE}
+ className="size-4 text-zinc-500 transition-colors group-hover:text-zinc-900"
+ />
  <span>History</span>
- </div>
- <span className="text-[10px] bg-zinc-200 text-zinc-600 border border-transparent px-1.5 py-0.5 rounded-full font-medium">
+ </span>
+ <span className="flex items-center gap-1.5">
+ <span className="min-w-5 rounded-full bg-zinc-100 px-1.5 py-px text-center text-[10px] font-medium tabular-nums text-zinc-600">
  {entries.length}
+ </span>
+ <ChevronDown
+ aria-hidden="true"
+ strokeWidth={ICON_STROKE}
+ className={cn("size-3.5 text-zinc-400", historyOpen && "rotate-180")}
+ />
  </span>
  </button>
 
  {historyOpen && (
- <div className="border-t border-zinc-200 max-h-72 overflow-y-auto bg-white">
+ <div className="border-t border-zinc-200 max-h-72 overflow-y-auto overscroll-contain bg-white">
  {entries.length === 0 ? (
  <p className="px-4 py-6 text-xs text-zinc-400 text-center">
  No history yet
  </p>
  ) : (
  <>
- <div className="px-3 py-2 flex items-center justify-between border-b border-zinc-100">
- <span className="text-[10px] text-zinc-400 uppercase tracking-wider font-medium">
+ <div className="pl-4 pr-2 h-9 flex items-center justify-between border-b border-zinc-100">
+ <span className="text-[11px] text-zinc-400 uppercase tracking-wider font-medium">
  Recent
  </span>
  <button
+ type="button"
  onClick={handleClearAll}
- className="text-[10px] text-red-500 hover:text-red-700 font-medium"
+ className={cn(
+ "rounded px-2 py-1 text-[11px] font-medium text-zinc-500 hover:bg-zinc-50 hover:text-red-600 transition-colors",
+ FOCUS_RING
+ )}
  >
- Clear All
+ Clear all
  </button>
  </div>
  <ul>
  {entries.map((entry) => (
  <li
  key={entry.id}
- className="group flex items-center justify-between px-3 py-2 hover:bg-zinc-50 transition-colors"
+ className="group flex items-center justify-between gap-2 pl-4 pr-2 hover:bg-zinc-50 transition-colors"
  >
  <button
+ type="button"
  onClick={() => handleHistoryClick(entry)}
- className="flex-1 text-left min-w-0"
+ className={cn("flex-1 min-w-0 py-2 text-left rounded", FOCUS_RING)}
  >
- <p className="text-xs font-medium text-zinc-700 truncate group-hover:text-blue-600 transition-colors">
+ <p className="text-xs font-medium text-zinc-700 truncate transition-colors group-hover:text-zinc-900">
  {entry.toolName}
  </p>
  <p className="text-[10px] text-zinc-400 truncate font-mono">
  {entry.input.slice(0, 50)}…
  </p>
  </button>
- <div className="flex items-center gap-1 shrink-0 ml-2">
- <span className="text-[10px] text-zinc-400">
+ <div className="flex items-center gap-0.5 shrink-0">
+ <span className="text-[10px] tabular-nums text-zinc-400">
  {formatRelativeTime(entry.timestamp)}
  </span>
  <button
+ type="button"
  onClick={(e) => {
  e.stopPropagation();
  handleDelete(entry.id);
  }}
- className="p-1 text-zinc-700 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
+ aria-label={`Delete ${entry.toolName} history entry`}
+ className={cn(
+ "grid size-9 md:size-7 place-items-center rounded text-zinc-400 hover:text-red-600 transition-colors md:opacity-0 md:group-hover:opacity-100 md:focus-visible:opacity-100",
+ FOCUS_RING
+ )}
  >
- <Trash2 className="w-3 h-3"/>
+ <Trash2 aria-hidden="true" strokeWidth={ICON_STROKE} className="size-3.5" />
  </button>
  </div>
  </li>

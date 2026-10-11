@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { BookOpen, Sparkles, Terminal, Search, ShieldCheck } from "lucide-react";
+import { Terminal, Search, ShieldCheck } from "lucide-react";
 
 interface HubHeaderProps {
   searchQuery: string;
@@ -25,7 +25,7 @@ export function HubHeader({
       {/* Top Badge */}
       <div className="flex flex-wrap items-center gap-2 mb-4">
         <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-mono font-medium bg-zinc-900 text-white shadow-sm">
-          <Terminal className="w-3.5 h-3.5 text-emerald-400" />
+          <Terminal className="w-3.5 h-3.5 text-zinc-400" />
           <span>DEV_LEARNING_HUB // v2.0</span>
         </div>
         <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-mono text-zinc-600 bg-zinc-100 border border-zinc-200">

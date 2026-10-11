@@ -1,15 +1,20 @@
 "use client";
 
-import { useState, useEffect } from"react";
+import { useState, useEffect, useDeferredValue } from"react";
 import { MonacoEditor } from"@/components/MonacoEditor";
-import { formatSql, validateSql, type SqlDialect } from"@/lib/tools/sql";
-import { ShareButton } from"@/components/ShareButton";
-import { EmbedButton } from"@/components/EmbedButton";
-import { ExportImageButton } from"@/components/ExportImageButton";
-import { Play, Copy, Trash2, Check , Database } from"lucide-react";
+import { ShareMenu } from "@/components/ShareMenu";
+import type { SqlDialect } from"@/lib/tools/sql";
+import { Play, Copy, Trash2, Check } from"lucide-react";
 import { cn } from"@/lib/utils";
 import { addSnapshot } from"@/lib/storage";
+import { ToolHeader, PaneBar, MobilePaneTabs, EDITOR_OPTIONS, btnPrimary, btnGhost, btnIcon, selectBase, iconProps } from "@/components/tools/ToolChrome";
+import { getToolIcon } from "@/components/layout/toolIcons";
 import { EditorPanelFooter } from '@/components/layout/StatusBar';
+
+/** sql-formatter is large; it is fetched once, after the tool has painted. */
+type SqlLib = typeof import("@/lib/tools/sql");
+let sqlLibPromise: Promise<SqlLib> | null = null;
+const loadSqlLib = () => (sqlLibPromise ??= import("@/lib/tools/sql"));
 
 interface SqlFormatterToolProps {
  onValidationChange: (isValid: boolean, error?: string, line?: number) => void;
@@ -39,6 +44,13 @@ const DIALECT_OPTIONS: { label: string; value: SqlDialect }[] = [
  { label:"PL/SQL", value:"plsql"},
 ];
 
+const PANE_TABS = [
+ { id:"input"as const, label:"Input SQL"},
+ { id:"output"as const, label:"Formatted Output"},
+];
+
+type KeywordCase ="upper"|"lower"|"preserve";
+
 export function SqlFormatterTool({
  onValidationChange,
  onStatsChange,
@@ -49,12 +61,23 @@ export function SqlFormatterTool({
  const [output, setOutput] = useState<string>("");
  const [dialect, setDialect] = useState<SqlDialect>("sql");
  const [indent, setIndent] = useState<number>(2);
- const [keywordCase, setKeywordCase] = useState<"upper"|"lower"|"preserve">("upper");
+ const [keywordCase, setKeywordCase] = useState<KeywordCase>("upper");
  const [copied, setCopied] = useState(false);
  const [activeTab, setActiveTab] = useState<"input"|"output">("input");
  const [isValid, setIsValid] = useState(true);
  const [errorMsg, setErrorMsg] = useState<string | undefined>();
  const [errorLine, setErrorLine] = useState<number | undefined>();
+ const [lib, setLib] = useState<SqlLib | null>(null);
+
+ useEffect(() => {
+ let alive = true;
+ loadSqlLib().then((mod) => {
+ if (alive) setLib(mod);
+ });
+ return () => {
+ alive = false;
+ };
+ }, []);
 
  // Save workspace snapshot
  useEffect(() => {
@@ -70,28 +93,35 @@ export function SqlFormatterTool({
  if (restoredInput) setInput(restoredInput);
  }, [restoredInput]);
 
- // Real-time validation
+ // Real-time format + validation in one pass (formatting is the validation), on a deferred
+ // copy of the input so the formatter never blocks typing.
+ const deferredInput = useDeferredValue(input);
  useEffect(() => {
+ if (!lib) return;
  const start = performance.now();
- const { valid, error } = validateSql(input, {
- language: dialect,
- tabWidth: indent,
- keywordCase,
- });
- const end = performance.now();
- const ms = end - start;
-
+ let valid = true;
+ let error: string | undefined;
+ let line: number | undefined;
+ try {
+ setOutput(lib.formatSql(deferredInput, { language: dialect, tabWidth: indent, keywordCase }));
+ } catch (err: unknown) {
+ valid = false;
+ error = err instanceof Error ? err.message :"Invalid SQL query syntax";
+ const lineMatch = error.match(/line\s+(\d+)/i);
+ line = lineMatch ? parseInt(lineMatch[1], 10) : undefined;
+ }
  setIsValid(valid);
  setErrorMsg(error);
- setErrorLine(undefined);
- onValidationChange(valid, error);
- onStatsChange(input.length, ms);
- }, [input, dialect, indent, keywordCase, onValidationChange, onStatsChange]);
+ setErrorLine(line);
+ onValidationChange(valid, error, line);
+ onStatsChange(deferredInput.length, performance.now() - start);
+ }, [lib, deferredInput, dialect, indent, keywordCase, onValidationChange, onStatsChange]);
 
- const handleFormat = () => {
+ const handleFormat = async () => {
  const start = performance.now();
  try {
- const formatted = formatSql(input, {
+ const mod = lib ?? (await loadSqlLib());
+ const formatted = mod.formatSql(input, {
  language: dialect,
  tabWidth: indent,
  keywordCase,
@@ -100,17 +130,15 @@ export function SqlFormatterTool({
  onValidationChange(true);
  onLogHistory?.(input);
  setActiveTab("output");
- } catch (err: any) {
- onValidationChange(false, err.message ||"Failed to format SQL");
+ } catch (err: unknown) {
+ onValidationChange(false, err instanceof Error ? err.message :"Failed to format SQL");
  }
- const end = performance.now();
- const ms = end - start;
- onStatsChange(input.length, ms);
+ onStatsChange(input.length, performance.now() - start);
  };
 
  const handleCopy = () => {
  if (!output) return;
- navigator.clipboard.writeText(output);
+ navigator.clipboard?.writeText(output).catch(() => {});
  setCopied(true);
  setTimeout(() => setCopied(false), 1500);
  };
@@ -118,24 +146,17 @@ export function SqlFormatterTool({
  return (
  <div className="flex flex-col h-full bg-white w-full overflow-x-hidden">
  {/* Tool Header */}
- <div className="min-h-14 border-b border-[#e2e8f0] flex items-center justify-between gap-2 overflow-x-auto no-scrollbar py-2 px-3 md:px-4 px-3 md:px-4 py-2 md:py-0 bg-[#f8fafc] shrink-0">
- <div className="flex items-center gap-2">
- <Database className="w-4 h-4 text-zinc-900"/>
- <span className="text-sm font-semibold text-zinc-800">SQL Formatter</span>
- </div>
-
- <div className="flex items-center gap-2">
- <ExportImageButton code={output || input} language="sql"/>
- <EmbedButton toolSlug="sql-formatter"data={input} />
- <ShareButton toolSlug="sql-formatter"data={input} />
- 
- <div className="h-5 w-px bg-zinc-200 mx-1 shrink-0"/>
-
+ <ToolHeader
+ icon={getToolIcon("sql-formatter")}
+ title="SQL Formatter"
+ utilities={<ShareMenu toolSlug="sql-formatter" data={input} imageCode={output || input} imageLanguage="sql" />}
+ options={<>
  {/* Dialect Selector */}
  <select
  value={dialect}
  onChange={(e) => setDialect(e.target.value as SqlDialect)}
- className="h-9 bg-white border border-zinc-200 text-zinc-700 text-xs rounded-md px-2 focus:outline-none font-medium shrink-0"
+ className={selectBase}
+ aria-label="SQL dialect"
  >
  {DIALECT_OPTIONS.map((opt) => (
  <option key={opt.value} value={opt.value}>
@@ -148,7 +169,8 @@ export function SqlFormatterTool({
  <select
  value={indent}
  onChange={(e) => setIndent(Number(e.target.value))}
- className="h-9 bg-white border border-zinc-200 text-zinc-700 text-xs rounded-md px-2 focus:outline-none shrink-0"
+ className={selectBase}
+ aria-label="Indentation"
  >
  <option value={2}>2 Spaces</option>
  <option value={4}>4 Spaces</option>
@@ -157,78 +179,46 @@ export function SqlFormatterTool({
  {/* Keyword Case */}
  <select
  value={keywordCase}
- onChange={(e) => setKeywordCase(e.target.value as"upper"|"lower"|"preserve")}
- className="h-9 bg-white border border-zinc-200 text-zinc-700 text-xs rounded-md px-2 focus:outline-none shrink-0"
+ onChange={(e) => setKeywordCase(e.target.value as KeywordCase)}
+ className={selectBase}
+ aria-label="Keyword case"
  >
  <option value="upper">UPPERCASE</option>
  <option value="lower">lowercase</option>
  <option value="preserve">Preserve</option>
  </select>
-
+ </>}
+ actions={
  <button
- onClick={handleFormat}
- className="h-8 px-3 text-xs font-semibold rounded-md shadow-none transition-colors flex items-center gap-1.5 bg-zinc-900 hover:bg-zinc-800 text-white shrink-0"
+ onClick={() => void handleFormat()}
+ disabled={!isValid || !input.trim()}
+ className={btnPrimary}
  >
- <Play className="w-3.5 h-3.5"/>
+ <Play {...iconProps}/>
  <span>Format</span>
  </button>
- </div>
- </div>
+ }
+ />
 
  {/* Mobile Segmented Tab Control */}
- <div className="flex md:hidden bg-[#f1f5f9] p-1 border-b border-[#e2e8f0] shrink-0">
- <button
- onClick={() => setActiveTab("input")}
- className={cn(
-"flex-1 py-1.5 text-xs font-medium rounded-md transition-colors text-center",
- activeTab ==="input"
- ?"bg-white text-zinc-900 font-semibold shadow-none rounded-md px-2.5 py-1 text-xs"
- :"text-zinc-500 hover:text-zinc-900 px-2.5 py-1 text-xs"
- )}
- >
- Input SQL
- </button>
- <button
- onClick={() => setActiveTab("output")}
- className={cn(
-"flex-1 py-1.5 text-xs font-medium rounded-md transition-colors text-center",
- activeTab ==="output"
- ?"bg-white text-zinc-900 font-semibold shadow-none rounded-md px-2.5 py-1 text-xs"
- :"text-zinc-500 hover:text-zinc-900 px-2.5 py-1 text-xs"
- )}
- >
- Formatted Output
- </button>
- </div>
+ <MobilePaneTabs tabs={PANE_TABS} active={activeTab} onChange={setActiveTab} />
 
  {/* Dual Editors */}
  <div className="flex-1 flex flex-col md:flex-row overflow-hidden w-full max-w-full">
  {/* Left: Input */}
- <div className={cn("flex-1 border-r-0 md:border-r border-b md:border-b-0 border-[#e2e8f0] flex flex-col min-w-0 w-full overflow-x-hidden", activeTab !=="input"&&"hidden md:flex")}>
- <div className="h-8 bg-[#f8fafc] border-b border-[#e2e8f0] flex items-center justify-between px-3 shrink-0">
- <span className="text-[11px] font-medium text-zinc-500 uppercase tracking-wider">Input SQL</span>
- <button
- onClick={() => setInput("")}
- className="text-zinc-400 hover:text-zinc-800 transition-colors"
- title="Clear"
- >
- <Trash2 className="w-3.5 h-3.5"/>
+ <div className={cn("flex-1 border-r-0 md:border-r border-b md:border-b-0 border-zinc-200 flex flex-col min-w-0 w-full overflow-x-hidden", activeTab !=="input"&&"hidden md:flex")}>
+ <PaneBar label="Input SQL">
+ <button onClick={() => setInput("")} className={btnIcon} title="Clear input" aria-label="Clear input">
+ <Trash2 {...iconProps}/>
  </button>
- </div>
+ </PaneBar>
  <div className="flex-1 relative w-full max-w-full overflow-x-hidden">
  <MonacoEditor
  height="100%"
  defaultLanguage="sql"
  value={input}
  onChange={(value) => setInput(value ||"")}
- options={{
- minimap: { enabled: false },
- fontSize: 13,
- wordWrap:"on",
- scrollBeyondLastLine: false,
- padding: { top: 16 },
- fontFamily:"'JetBrains Mono', 'Fira Code', Consolas, monospace",
- }}
+ options={EDITOR_OPTIONS}
  />
  </div>
  <EditorPanelFooter isValid={isValid} errorMessage={errorMsg} errorLine={typeof errorLine !== 'undefined' ? errorLine : undefined} />
@@ -236,40 +226,23 @@ export function SqlFormatterTool({
 
  {/* Right: Output */}
  <div className={cn("flex-1 flex flex-col min-w-0 w-full overflow-x-hidden", activeTab !=="output"&&"hidden md:flex")}>
- <div className="h-8 bg-[#f8fafc] border-b border-[#e2e8f0] flex items-center justify-between px-3 shrink-0">
- <span className="text-[11px] font-medium text-zinc-500 uppercase tracking-wider">Formatted SQL</span>
- <button
- onClick={handleCopy}
- className={cn(
-"flex items-center gap-1 text-[11px] transition-colors",
- copied ?"text-zinc-900 font-medium":"text-zinc-400 hover:text-zinc-700"
- )}
- >
- {copied ? <Check className="w-3.5 h-3.5 text-zinc-900"/> : <Copy className="w-3.5 h-3.5"/>}
+ <PaneBar label="Formatted SQL">
+ <button onClick={handleCopy} disabled={!output} className={cn(btnGhost, copied &&"text-zinc-900")}>
+ {copied ? <Check {...iconProps}/> : <Copy {...iconProps}/>}
  <span>{copied ?"Copied!":"Copy"}</span>
  </button>
- </div>
+ </PaneBar>
  <div className="flex-1 relative w-full max-w-full overflow-x-hidden">
  <MonacoEditor
  height="100%"
  defaultLanguage="sql"
  value={output}
  onChange={(value) => setOutput(value ||"")}
- options={{
- readOnly: false,
- minimap: { enabled: false },
- fontSize: 13,
- wordWrap:"on",
- scrollBeyondLastLine: false,
- padding: { top: 16 },
- fontFamily:"'JetBrains Mono', 'Fira Code', Consolas, monospace",
- }}
+ options={EDITOR_OPTIONS}
  />
  </div>
  </div>
  </div>
-
- 
  </div>
  );
 }

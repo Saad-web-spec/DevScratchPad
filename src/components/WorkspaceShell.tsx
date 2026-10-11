@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
-import { TopBar } from "@/components/layout/TopBar";
+import { useState, useEffect, useCallback, useRef } from "react";
+import { TopBar, saveWorkspace } from "@/components/layout/TopBar";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { TabsBar } from "@/components/layout/TabsBar";
 import { useWorkspaceTabs } from "@/hooks/useWorkspaceTabs";
@@ -37,7 +37,11 @@ const TimestampConverterTool = dynamic(() => import("@/components/tools/Timestam
 import { CommandPalette } from "@/components/modals/CommandPalette";
 import { getToolMeta, type ToolMeta } from "@/lib/tools/registry";
 import { addHistoryEntry, type HistoryEntry } from "@/lib/storage";
-import { X, Sparkles } from "lucide-react";
+import { X, Sparkles, Save } from "lucide-react";
+import { BrandLink, PrimaryNavList } from "@/components/layout/PrimaryNav";
+import { InstallAppButton } from "@/components/layout/InstallAppButton";
+import { ICON_STROKE } from "@/components/layout/toolIcons";
+import { cn } from "@/lib/utils";
 import { useRouter } from "next/navigation";
 import { decodeShareData } from "@/components/ShareButton";
 import { SIDEBAR_TO_SLUG, SLUG_TO_SIDEBAR, getToolUrl } from "@/lib/routes";
@@ -111,6 +115,7 @@ export function WorkspaceShell({ initialToolSlug, toolMeta, children }: Workspac
 
   const [isCommandPaletteOpen, setCommandPaletteOpen] = useState(false);
   const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false);
+  const drawerCloseRef = useRef<HTMLButtonElement>(null);
   const [magicPasteToast, setMagicPasteToast] = useState<{ message: string; visible: boolean } | null>(null);
   const [restoredInput, setRestoredInput] = useState<string | null>(null);
 
@@ -127,6 +132,21 @@ export function WorkspaceShell({ initialToolSlug, toolMeta, children }: Workspac
     window.addEventListener("keydown", handleKeyDown, true);
     return () => window.removeEventListener("keydown", handleKeyDown, true);
   }, []);
+
+  // Mobile drawer: focus the close button on open, close on Escape, return focus to the opener on close
+  useEffect(() => {
+    if (!isMobileDrawerOpen) return;
+    const opener = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    drawerCloseRef.current?.focus();
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setIsMobileDrawerOpen(false);
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+      opener?.focus();
+    };
+  }, [isMobileDrawerOpen]);
 
   // Status Bar State
   const [, setIsValid] = useState(true);
@@ -283,11 +303,13 @@ export function WorkspaceShell({ initialToolSlug, toolMeta, children }: Workspac
   ];
 
   return (
-    <div className="flex flex-col h-screen w-full bg-white overflow-hidden relative">
+    <div className="flex flex-col h-dvh w-full bg-white overflow-hidden relative">
       {!isEmbed && (
         <TopBar
           onOpenCommandPalette={() => setCommandPaletteOpen(true)}
           onOpenMobileMenu={() => setIsMobileDrawerOpen(true)}
+          isMobileMenuOpen={isMobileDrawerOpen}
+          mobileMenuId="workspace-mobile-drawer"
         />
       )}
 
@@ -302,33 +324,42 @@ export function WorkspaceShell({ initialToolSlug, toolMeta, children }: Workspac
           />
         )}
 
-        {/* Mobile Slide-over Drawer / Sheet Component */}
+        {/* Mobile Slide-over Drawer / Sheet Component: site links, every tool + history, workspace actions */}
         {isMobileDrawerOpen && !isEmbed && (
           <div className="fixed inset-0 z-50 md:hidden flex">
             {/* Backdrop */}
             <div
-              className="fixed inset-0 bg-zinc-900/50 backdrop-blur-xs transition-opacity animate-in fade-in duration-200"
+              aria-hidden="true"
+              className="fixed inset-0 bg-zinc-950/40"
               onClick={() => setIsMobileDrawerOpen(false)}
             />
 
             {/* Slide-over Container */}
-            <div className="relative flex flex-col w-72 max-w-[85vw] bg-white h-full shadow-none z-10 animate-in slide-in-from-left duration-200 border-r border-transparent">
-              <div className="h-14 border-b border-zinc-200 flex items-center justify-between px-4 shrink-0 bg-white">
-                <div className="flex items-center gap-2.5">
-                  <span className="font-semibold text-base text-zinc-900 truncate">
-                    DevScratchpad
-                  </span>
-                </div>
+            <div
+              id="workspace-mobile-drawer"
+              role="dialog"
+              aria-modal="true"
+              aria-label="Menu"
+              className="relative z-10 flex h-full w-80 max-w-[85vw] flex-col bg-white border-r border-zinc-200"
+            >
+              <div className="h-14 border-b border-zinc-200 flex items-center justify-between pl-4 pr-1.5 shrink-0">
+                <BrandLink />
                 <button
+                  ref={drawerCloseRef}
+                  type="button"
                   onClick={() => setIsMobileDrawerOpen(false)}
-                  className="p-1.5 rounded-lg text-zinc-500 hover:text-zinc-700 hover:bg-zinc-100 transition-colors"
-                  aria-label="Close navigation drawer"
+                  className="grid size-10 place-items-center rounded-lg text-zinc-500 hover:text-zinc-900 hover:bg-zinc-100 transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-zinc-900"
+                  aria-label="Close menu"
                 >
-                  <X className="w-5 h-5" />
+                  <X aria-hidden="true" strokeWidth={ICON_STROKE} className="size-5" />
                 </button>
               </div>
 
-              <div className="flex-1 overflow-y-auto min-h-0">
+              <div className="flex-1 overflow-y-auto overscroll-contain min-h-0 [scrollbar-width:thin] [scrollbar-color:var(--color-zinc-200)_transparent]">
+                <PrimaryNavList
+                  className="px-2 py-3 border-b border-zinc-200"
+                  onNavigate={() => setIsMobileDrawerOpen(false)}
+                />
                 <Sidebar
                   activeToolId={activeTool}
                   onSelectTool={(id) => {
@@ -340,8 +371,24 @@ export function WorkspaceShell({ initialToolSlug, toolMeta, children }: Workspac
                     setIsMobileDrawerOpen(false);
                   }}
                   onCloseMobileMenu={() => setIsMobileDrawerOpen(false)}
-                  className="w-full border-r-0"
+                  className="w-full h-auto border-r-0 overflow-visible"
                 />
+              </div>
+
+              {/* Workspace actions (desktop shows these in the top bar) */}
+              <div className="shrink-0 border-t border-zinc-200 bg-white px-3 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] space-y-2">
+                <InstallAppButton variant="menu" />
+                <button
+                  type="button"
+                  onClick={() => {
+                    saveWorkspace();
+                    setIsMobileDrawerOpen(false);
+                  }}
+                  className="flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-zinc-900 text-sm font-medium text-white transition-colors hover:bg-zinc-800 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-zinc-900 focus-visible:ring-offset-2"
+                >
+                  <Save aria-hidden="true" strokeWidth={ICON_STROKE} className="size-4" />
+                  <span>Save Workspace</span>
+                </button>
               </div>
             </div>
           </div>
@@ -349,7 +396,8 @@ export function WorkspaceShell({ initialToolSlug, toolMeta, children }: Workspac
 
         <main className="flex-1 flex flex-col min-w-0 bg-white overflow-y-auto relative">
           {!isEmbed && isLoaded && (
-            <div className="sticky top-0 z-20">
+            // On phones a lone tab only repeats the tool title, so the strip appears once a second tool is open
+            <div className={cn("sticky top-0 z-20", tabs.length <= 1 && "hidden md:block")}>
               <TabsBar 
                 tabs={tabs} 
                 activeTabId={activeTool} 
@@ -359,7 +407,7 @@ export function WorkspaceShell({ initialToolSlug, toolMeta, children }: Workspac
             </div>
           )}
           <div className="flex-1 min-h-0 relative flex flex-col">
-            <div className="min-h-[calc(100vh-3.5rem-36px)] relative flex flex-col border-b border-zinc-200">
+            <div className="min-h-[calc(100dvh-3.5rem-36px)] relative flex flex-col border-b border-zinc-200">
               {tabs.map((tab) => {
                 const isActive = tab.id === activeTool;
                 return (
@@ -593,8 +641,8 @@ export function WorkspaceShell({ initialToolSlug, toolMeta, children }: Workspac
 
             {/* Smart Paste Floating Toast Notification */}
             {magicPasteToast && magicPasteToast.visible && (
-              <div className="fixed bottom-14 left-1/2 -translate-x-1/2 z-50 animate-in fade-in slide-in-from-bottom-3 duration-200 pointer-events-none">
-                <div className="bg-zinc-900 text-white text-xs md:text-sm font-medium px-4 py-2 rounded-full shadow-none flex items-center gap-2 border border-zinc-800 backdrop-blur-md">
+              <div className="fixed bottom-[calc(3.5rem+env(safe-area-inset-bottom))] left-1/2 -translate-x-1/2 z-50 pointer-events-none">
+                <div className="bg-zinc-900 text-white text-xs md:text-sm font-medium px-4 py-2 rounded-full flex items-center gap-2 border border-zinc-800 whitespace-nowrap">
                   <Sparkles className="w-3.5 h-3.5 text-zinc-300 shrink-0" />
                   <span>{magicPasteToast.message}</span>
                 </div>
@@ -605,7 +653,7 @@ export function WorkspaceShell({ initialToolSlug, toolMeta, children }: Workspac
                 href="https://devscratchpad.tech"
                 target="_blank"
                 rel="noreferrer"
-                className="absolute bottom-2 right-2 text-[10px] text-zinc-400 hover:text-zinc-600 bg-white/80 backdrop-blur-xs px-2 py-0.5 rounded border border-zinc-200 shadow-xs z-50"
+                className="absolute bottom-2 right-2 text-[10px] text-zinc-400 hover:text-zinc-600 bg-white/90 px-2 py-0.5 rounded border border-zinc-200 z-50 transition-colors"
               >
                 Powered by DevScratchpad
               </a>

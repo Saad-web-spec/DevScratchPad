@@ -18,17 +18,17 @@ export const TOOLS_REGISTRY: Record<string, ToolMeta> = {
     category: "Data Formatters & Validators",
     name: "JSON Formatter & Validator",
     shortName: "JSON Formatter",
-    description: "Format, validate, and minify JSON with interactive syntax highlighting and sorting.",
+    description: "Format, validate, and minify JSON with interactive syntax highlighting.",
     seoTitle: "JSON Formatter — 100% Client-Side Private",
-    seoDescription: "Free online JSON formatter and validator. Format, minify, and lint JSON data locally in your browser. No server uploads.",
+    seoDescription: "Free online JSON formatter and validator. Format, minify, and validate JSON data locally in your browser. No server uploads.",
     howToUse: [
       "Paste your unformatted JSON data into the editor.",
-      "The tool will automatically validate and format it with proper indentation.",
-      "Use the 'Minify' button to strip whitespace, or 'Sort Keys' to alphabetize the structure."
+      "Validation runs as you type; click 'Format' to pretty-print it with 2 or 4 spaces.",
+      "Click 'Minify' to strip all whitespace."
     ],
     edgeCases: [
-      "Extremely large JSON payloads (50MB+) are supported via Monaco Editor.",
-      "Handles deeply nested structures and displays precise line-number validation errors."
+      "Large payloads load in the Monaco editor, but very large files can slow down live validation.",
+      "Handles deeply nested structures and shows the error line (when the browser reports it) below the input."
     ],
     shortcuts: ["Ctrl/Cmd + V — Smart Magic Paste", "Ctrl/Cmd + K — Open Command Palette"],
     relatedBlogSlug: "json-formatter-privacy-backed-developer-tools"
@@ -38,15 +38,15 @@ export const TOOLS_REGISTRY: Record<string, ToolMeta> = {
     category: "Data Formatters & Validators",
     name: "JSON Schema Validator",
     shortName: "JSON Schema Validator",
-    description: "Validate JSON data against draft-07/2020-12 schemas with real-time error highlighting.",
+    description: "Validate JSON data against draft-07 schemas with real-time error reporting.",
     seoTitle: "JSON Schema Validator — AJV Offline",
     seoDescription: "Validate JSON data against JSON Schema specs entirely in your browser using AJV. Free, private, and fast.",
     howToUse: [
       "Paste your JSON data in the left editor.",
       "Paste your JSON Schema in the right editor.",
-      "Validation runs instantly, highlighting exact lines with schema violations."
+      "Validation runs as you type and lists each violation with its JSON path."
     ],
-    edgeCases: ["Unsupported external schema references ($ref)."],
+    edgeCases: ["External $ref URLs are not fetched; only local refs (#/definitions/...) resolve."],
     shortcuts: []
   },
   "xml-formatter": {
@@ -59,7 +59,7 @@ export const TOOLS_REGISTRY: Record<string, ToolMeta> = {
     seoDescription: "Format and pretty-print XML documents entirely in your browser.",
     howToUse: [
       "Paste raw XML into the editor.",
-      "The engine will parse and format the DOM tree with correct indentation."
+      "Click 'Format' to indent it (2 or 4 spaces) or 'Minify' to compact it; syntax is validated as you type."
     ],
     shortcuts: []
   },
@@ -74,7 +74,7 @@ export const TOOLS_REGISTRY: Record<string, ToolMeta> = {
     howToUse: [
       "Paste your unformatted SQL query.",
       "Select your target SQL dialect.",
-      "View the pretty-printed, capitalized SQL output."
+      "Click 'Format' to get pretty-printed SQL (keywords in UPPERCASE by default)."
     ],
     shortcuts: []
   },
@@ -88,22 +88,22 @@ export const TOOLS_REGISTRY: Record<string, ToolMeta> = {
     seoDescription: "Format and pretty-print GraphQL queries and schemas.",
     howToUse: [
       "Paste your GraphQL query or schema.",
-      "The tool validates syntax and applies standard Prettier formatting."
+      "Click 'Format' to check the syntax and pretty-print it with the graphql-js printer."
     ],
     shortcuts: []
   },
   "minifier": {
     slug: "minifier",
     category: "Data Formatters & Validators",
-    name: "CSS / SVG / HTML Minifier",
+    name: "CSS / SVG Minifier",
     shortName: "Minifier",
-    description: "Minify and compress CSS stylesheets, SVG graphics, and HTML documents.",
+    description: "Minify and compress CSS stylesheets and SVG graphics.",
     seoTitle: "CSS, SVG & HTML Minifier Online",
-    seoDescription: "Minify CSS, SVG, and HTML online instantly. Reduce file sizes securely in your browser.",
+    seoDescription: "Minify CSS and SVG online. Reduce file sizes securely in your browser.",
     howToUse: [
-      "Select the input type (CSS, SVG, HTML).",
+      "Select the mode (CSS Minifier or SVG Minifier).",
       "Paste your raw code.",
-      "Copy the compressed output and view the byte savings."
+      "Click 'Minify CSS' or 'Minify SVG', then copy the output and check the 'Saved' badge."
     ],
     shortcuts: []
   },
@@ -117,10 +117,10 @@ export const TOOLS_REGISTRY: Record<string, ToolMeta> = {
     seoDescription: "Generate massive amounts of realistic mock data in JSON, CSV, or SQL formats entirely in your browser using Faker.js.",
     howToUse: [
       "Define your schema using Faker template fields (e.g. {{person.firstName}}).",
-      "Set the number of rows to generate.",
-      "Export as JSON, CSV, or SQL Insert statements."
+      "Set the Rows count, pick a Format, and click 'Generate'.",
+      "Copy or Download the output as JSON, CSV, or SQL INSERT statements."
     ],
-    edgeCases: ["Generating more than 100,000 rows might slow down the browser."],
+    edgeCases: ["Large row counts (the Rows field suggests up to 10,000) can slow down the browser."],
     shortcuts: []
   },
   "uuid-generator": {
@@ -128,13 +128,13 @@ export const TOOLS_REGISTRY: Record<string, ToolMeta> = {
     category: "Data Generators & Mocks",
     name: "UUID / ULID / NanoID Generator",
     shortName: "UUID Generator",
-    description: "Generate cryptographically secure UUIDv4, ULID, and NanoID strings in bulk.",
+    description: "Generate UUID v4, UUID v7, ULID, and NanoID strings in bulk, locally in your browser.",
     seoTitle: "UUID & ULID Generator — Privacy Bulk IDs",
-    seoDescription: "Generate secure UUIDs (v4), ULIDs, and NanoIDs in bulk directly in your browser. 100% private.",
+    seoDescription: "Generate UUIDs (v4, v7), ULIDs, and NanoIDs in bulk directly in your browser. 100% private.",
     howToUse: [
-      "Select the ID format (UUIDv4, ULID, or NanoID).",
-      "Specify the quantity to generate (up to 10,000 at once).",
-      "Click Generate and copy the list."
+      "Select the ID type (UUID v4, UUID v7, ULID, or NanoID).",
+      "Pick a quantity (1 to 100) and an output format (Lines, JSON, or CSV).",
+      "IDs generate instantly; click 'Regenerate' for a new batch and 'Copy All' to copy the list."
     ],
     shortcuts: [],
     relatedBlogSlug: "uuid-v4-v5-v7-explained"
@@ -144,7 +144,7 @@ export const TOOLS_REGISTRY: Record<string, ToolMeta> = {
     category: "Security & Cryptography",
     name: "JWT Decoder & Inspector",
     shortName: "JWT Decoder",
-    description: "Decode JSON Web Tokens securely. Inspect claims, header, and signature status locally.",
+    description: "Decode JSON Web Tokens locally. Inspect header and claims, and verify HS256 signatures with your secret.",
     seoTitle: "JWT Decoder & Token Inspector",
     seoDescription: "Decode and inspect JWTs (JSON Web Tokens) locally in your browser. We never log or transmit your tokens to a server.",
     howToUse: [
@@ -161,16 +161,16 @@ export const TOOLS_REGISTRY: Record<string, ToolMeta> = {
     category: "Security & Cryptography",
     name: "Base64 / Hex / Binary Multi-Inspector & Image Previewer",
     shortName: "Base64 & Hex Inspector",
-    description: "Auto-detects and converts between Base64, URL-Safe Base64, Hexadecimal streams, Canonical Hex Dumps, Binary octets, and Data URL images.",
+    description: "Auto-detects Base64, URL-safe Base64, Hex, Binary, URL-encoded, and Data URL input and converts it to every format, plus a Canonical Hex Dump.",
     seoTitle: "Base64 & Hex Inspector — Converter & Dump",
     seoDescription: "Free, 100% private Base64, Hex, Binary, and Data URL inspector. Convert encodings, view canonical hex dumps, and preview data URL images directly in your browser.",
     howToUse: [
       "Paste any string, Base64 payload, Hex stream, Binary bits, or Data URL image into the editor.",
       "The tool auto-detects the encoding format and renders simultaneous multi-format conversions.",
       "Switch to 'Canonical Hex Dump' to inspect byte offsets, hex pairs, and ASCII representation.",
-      "If an image Data URL is detected, view the live high-contrast preview canvas and download the file."
+      "If an image is detected (Data URL or raw Base64), see it under 'Live Preview' and click 'Download' to save it."
     ],
-    edgeCases: ["URL-safe unpadded Base64 strings (- and _).", "Embedded PNG/JPEG/WEBP magic bytes in raw Base64."],
+    edgeCases: ["URL-safe Base64 (- and _); for unpadded strings, select the 'Base64' pill if it is not auto-detected.", "Embedded PNG/JPEG/GIF/WEBP magic bytes in raw Base64."],
     shortcuts: ["Ctrl/Cmd + K — Open Command Palette"],
     relatedBlogSlug: "base64-inspector-guide"
   },
@@ -183,11 +183,11 @@ export const TOOLS_REGISTRY: Record<string, ToolMeta> = {
     seoTitle: "Hash Generator — MD5, SHA256 & SHA512",
     seoDescription: "Generate MD5, SHA-1, SHA-256, and SHA-512 hashes online in parallel without uploading data to servers.",
     howToUse: [
-      "Type or paste any input text or file hash data.",
+      "Type or paste any text into the Input Text box.",
       "The engine calculates all cryptographic hash sums simultaneously.",
       "Copy required hash output with one click."
     ],
-    edgeCases: ["Unicode character normalization in hashing."],
+    edgeCases: ["Unicode text is hashed as raw UTF-8 bytes without normalization, so NFC and NFD forms give different hashes."],
     shortcuts: [],
     relatedBlogSlug: "openssl-x509-devops-cheat-sheet"
   },
@@ -211,15 +211,15 @@ export const TOOLS_REGISTRY: Record<string, ToolMeta> = {
     category: "Security & Cryptography",
     name: "Bcrypt / Argon2 / PBKDF2 Password Hash Verifier & Generator",
     shortName: "Password Hash & Verifier",
-    description: "Generate and verify passwords against Bcrypt ($2a/$2b), Argon2id, and PBKDF2 hashes with cost factor controls.",
+    description: "Generate Bcrypt, Argon2id, PBKDF2, and SCrypt hashes (with Bcrypt cost and PBKDF2 iteration controls) and verify passwords against Bcrypt hashes.",
     seoTitle: "Bcrypt & Argon2 Hash Generator",
-    seoDescription: "Generate Bcrypt, Argon2id, and PBKDF2 password hashes and verify candidate passwords against existing hashes entirely in your browser.",
+    seoDescription: "Generate Bcrypt, Argon2id, and PBKDF2 password hashes and verify candidate passwords against existing Bcrypt hashes (and Argon2id/PBKDF2 hashes made by this tool) entirely in your browser.",
     howToUse: [
       "Toggle between 'Generate Hash' and 'Verify Password Against Hash' modes.",
-      "In Generate mode: Enter plaintext password, adjust cost rounds or iterations, and copy generated hash.",
-      "In Verify mode: Paste an existing hash ($2b$10$...) and candidate password to receive an instant match verification badge."
+      "In Generate mode: enter the plaintext password, adjust the Bcrypt cost factor or PBKDF2 iterations, and click 'Copy Hash'.",
+      "In Verify mode: paste an existing hash ($2b$10$...) and the candidate password to see a Match or Mismatch result."
     ],
-    edgeCases: ["Bcrypt 72-byte string truncation limits.", "Support for $2a$, $2b$, and $2y$ hash dialect prefixes."],
+    edgeCases: ["Bcrypt silently ignores password bytes beyond 72 (no warning is shown).", "Support for $2a$, $2b$, and $2y$ hash dialect prefixes."],
     shortcuts: ["Ctrl/Cmd + K — Open Command Palette"],
     relatedBlogSlug: "password-hashing-bcrypt-argon2"
   },
@@ -228,15 +228,15 @@ export const TOOLS_REGISTRY: Record<string, ToolMeta> = {
     category: "Security & Cryptography",
     name: "X.509 Certificate & CSR Decoder",
     shortName: "Certificate Decoder",
-    description: "Decode X.509 PEM certificates and PKCS#10 CSRs in your browser. Inspect Subject, Issuer, SANs, Validity countdown, and fingerprints.",
+    description: "Decode X.509 PEM certificates and PKCS#10 CSRs in your browser. Inspect Subject and Issuer CN, validity dates, public key info, and fingerprints.",
     seoTitle: "X.509 & CSR Decoder — Private SSL Tool",
-    seoDescription: "Decode and inspect X.509 SSL/TLS certificates and CSR requests in your browser. View Subject Alternative Names (SANs), expiry dates, fingerprints, and key usages.",
+    seoDescription: "Decode and inspect X.509 SSL/TLS certificates and CSR requests in your browser. View subject and issuer, expiry dates, public key details, and SHA-256/SHA-1 fingerprints.",
     howToUse: [
-      "Paste a PEM certificate (-----BEGIN CERTIFICATE-----) or CSR (-----BEGIN CERTIFICATE REQUEST-----), or upload a .crt/.pem file.",
-      "Instantly inspect certificate status, validity countdown, Common Name, and Issuer.",
-      "Review Subject Alternative Names (SANs) and Cryptographic Properties (Key size, algorithm, SHA-256 fingerprint)."
+      "Paste a PEM certificate (-----BEGIN CERTIFICATE-----) or CSR (-----BEGIN CERTIFICATE REQUEST-----), or click 'Upload Certificate' to load a PEM-encoded .pem/.crt/.cer/.csr file.",
+      "Instantly inspect the Valid/Expired badge, Not Before/Not After dates, Subject CN, and Issuer CN.",
+      "Review Public Key Info (algorithm, key size), the signature algorithm, serial number, and SHA-256/SHA-1 fingerprints."
     ],
-    edgeCases: ["Expired or not-yet-valid certificates.", "Wildcard DNS and multi-SAN SSL certificates."],
+    edgeCases: ["Expired certificates are flagged with an Expired badge.", "Wildcard Common Names (e.g. *.example.com)."],
     shortcuts: ["Ctrl/Cmd + K — Open Command Palette"],
     relatedBlogSlug: "x509-certificate-decoder-guide"
   },
@@ -245,16 +245,16 @@ export const TOOLS_REGISTRY: Record<string, ToolMeta> = {
     category: "Security & Cryptography",
     name: "SSH Keypair Generator & Randomart Visualizer",
     shortName: "SSH Key Generator",
-    description: "Generate cryptographically secure Ed25519, RSA (2048/4096), and ECDSA SSH key pairs directly in your browser with OpenSSH Randomart.",
+    description: "Generate cryptographically secure Ed25519, RSA (2048/4096), and ECDSA P-256 SSH key pairs directly in your browser with OpenSSH Randomart.",
     seoTitle: "SSH Key Generator — Ed25519, RSA, ECDSA",
-    seoDescription: "Generate secure SSH key pairs (Ed25519, RSA 4096, ECDSA) in your browser using WebCrypto API. Download .pub and .pem keys with OpenSSH Randomart visualizer.",
+    seoDescription: "Generate secure SSH key pairs (Ed25519, RSA 4096, ECDSA) in your browser using WebCrypto API. Download the .pub public key and PKCS#8 PEM private key with OpenSSH Randomart visualizer.",
     howToUse: [
       "Select your desired algorithm (Ed25519 is recommended for modern servers).",
-      "Enter a custom comment or email identity (e.g. user@devscratchpad).",
-      "Copy or download your public key (id_ed25519.pub) and private key (PKCS#8 PEM).",
+      "Enter a Key Comment / Identity (e.g. user@devscratchpad), then click 'Generate New Keypair'.",
+      "Copy or download your public key (e.g. id_ed25519.pub) and private key (PKCS#8 PEM; click 'Reveal' to view it).",
       "View the iconic OpenSSH Drunken Bishop Randomart ASCII art visualizer."
     ],
-    edgeCases: ["Zero server transmission ensures private keys never leave your machine memory.", "OpenSSH wire format binary serialization done completely client-side."],
+    edgeCases: ["Keys are generated locally and never sent to a server (saving the workspace keeps them in this browser's localStorage).", "OpenSSH wire-format public key serialization done completely client-side."],
     shortcuts: ["Ctrl/Cmd + K — Open Command Palette"],
     relatedBlogSlug: "ssh-key-generator-guide"
   },
@@ -263,13 +263,13 @@ export const TOOLS_REGISTRY: Record<string, ToolMeta> = {
     category: "Code & Type Converters",
     name: "JSON to TypeScript Interfaces",
     shortName: "JSON to TS",
-    description: "Instantly infer TypeScript interfaces and types from a JSON payload.",
+    description: "Instantly infer TypeScript interfaces from a JSON payload.",
     seoTitle: "JSON to TypeScript — Private Scratchpad",
     seoDescription: "Convert JSON payloads into strict TypeScript interfaces instantly in your browser.",
     howToUse: [
       "Paste your JSON payload into the left editor.",
       "The engine infers arrays, nested objects, and primitives.",
-      "Copy the exported TypeScript interfaces from the right editor."
+      "Copy the generated TypeScript interfaces from the TypeScript Definitions pane on the right."
     ],
     shortcuts: [],
     relatedBlogSlug: "json-to-typescript-zod-schema-guide"
@@ -311,8 +311,8 @@ export const TOOLS_REGISTRY: Record<string, ToolMeta> = {
     seoTitle: "YAML to JSON — 100% Client-Side Tool",
     seoDescription: "Convert YAML to JSON and JSON to YAML securely with our 100% offline, zero server transmission developer tools and scratch pad.",
     howToUse: [
-      "Paste YAML or JSON into the left pane.",
-      "The tool auto-detects the format and converts it to the counterpart on the right."
+      "Pick 'YAML to JSON' or 'JSON to YAML', then paste your input into the left pane.",
+      "The result updates live on the right; use 'Swap' to reverse the direction."
     ],
     shortcuts: [],
     relatedBlogSlug: "yaml-to-json-conversion-developers"
@@ -327,7 +327,7 @@ export const TOOLS_REGISTRY: Record<string, ToolMeta> = {
     seoDescription: "Convert cURL commands into JavaScript fetch() code snippets instantly.",
     howToUse: [
       "Paste a bash `curl` command into the input.",
-      "Copy the ready-to-use JavaScript `fetch()` syntax."
+      "Copy the generated `fetch()` snippet (JSON bodies are wrapped in JSON.stringify; review other body types)."
     ],
     shortcuts: [],
     relatedBlogSlug: "convert-curl-to-fetch-axios"
@@ -353,7 +353,7 @@ export const TOOLS_REGISTRY: Record<string, ToolMeta> = {
     shortName: "cURL to Go",
     description: "Translate bash cURL commands into Go `net/http` client code.",
     seoTitle: "cURL to Go HTTP Request Converter",
-    seoDescription: "Translate cURL to Go, Fetch, and Python instantly. 100% offline, privacy backed code generation developer tools by DevScratchpad.",
+    seoDescription: "Translate cURL commands into Go net/http code instantly, entirely in your browser.",
     howToUse: [
       "Paste a bash `curl` command.",
       "Copy the Go HTTP request client code."
@@ -365,9 +365,9 @@ export const TOOLS_REGISTRY: Record<string, ToolMeta> = {
     category: "Code & Type Converters",
     name: "SVG to JSX Converter",
     shortName: "SVG to JSX",
-    description: "Convert raw SVG markup into React JSX/TSX components.",
+    description: "Convert raw SVG markup into a React JSX component.",
     seoTitle: "SVG to React JSX Converter Online",
-    seoDescription: "Convert raw SVG icons into React JSX and TSX components instantly.",
+    seoDescription: "Convert raw SVG icons into React JSX components instantly.",
     howToUse: [
       "Paste raw SVG markup into the left editor.",
       "Copy the React component code from the right editor."
@@ -381,11 +381,11 @@ export const TOOLS_REGISTRY: Record<string, ToolMeta> = {
     shortName: "Epoch Converter",
     description: "Convert Unix epoch timestamps to human-readable dates (Local and UTC).",
     seoTitle: "Epoch & Unix Timestamp Converter Online",
-    seoDescription: "Convert Unix timestamps to readable dates, seconds to milliseconds, and format times.",
+    seoDescription: "Convert Unix timestamps (seconds or milliseconds) to local, UTC, ISO 8601, and relative times.",
     howToUse: [
       "Enter an epoch timestamp (seconds or milliseconds).",
       "View the localized and UTC date equivalents.",
-      "Or, pick a calendar date to generate an epoch timestamp."
+      "Or, click 'Current Time' to fill in the current epoch timestamp."
     ],
     shortcuts: []
   },
@@ -394,15 +394,15 @@ export const TOOLS_REGISTRY: Record<string, ToolMeta> = {
     category: "Time, Network & Utilities",
     name: "Regex Tester & Matcher",
     shortName: "Regex Tester",
-    description: "Real-time RegExp testing with flags (g, i, m, s), match lists, and substitution preview.",
+    description: "Real-time RegExp testing with flags (g, i, m, s, u, y), match lists, and substitution preview.",
     seoTitle: "Regex Tester — Real-Time RegEx Testing",
     seoDescription: "Test regular expressions in real-time with regex flag controls, group matches, and string replacement preview.",
     howToUse: [
       "Enter your regular expression pattern and flags.",
       "Paste test string into the text area.",
-      "Inspect matched groups and highlighted ranges in real-time."
+      "Inspect each match, its index range, and capture groups ($1, $2...) in real time."
     ],
-    edgeCases: ["Catastrophic backtracking prevention and lookbehinds."],
+    edgeCases: ["Supports lookbehind assertions (native JS RegExp).", "There is no backtracking timeout, so patterns like (a+)+$ can freeze the tab."],
     shortcuts: [],
     relatedBlogSlug: "regex-cheat-sheet-recipes"
   },
@@ -416,7 +416,7 @@ export const TOOLS_REGISTRY: Record<string, ToolMeta> = {
     seoDescription: "Compare text and code side-by-side online. Highlights character-level differences and additions.",
     howToUse: [
       "Paste original text in left pane and modified text in right pane.",
-      "Toggle between side-by-side and inline diff modes.",
+      "The diff shows side-by-side on wider screens and switches to inline view on narrow screens.",
       "Inspect character-level highlighting."
     ],
     edgeCases: ["Large files over 10,000 lines."],
@@ -429,11 +429,11 @@ export const TOOLS_REGISTRY: Record<string, ToolMeta> = {
     shortName: "Cron Visualizer",
     description: "Translates complex cron schedules into plain English with a 5-column breakdown grid.",
     seoTitle: "Cron Expression Visualizer & Generator",
-    seoDescription: "Translate cron expressions into human-readable English schedules with next execution date forecasting.",
+    seoDescription: "Translate cron expressions into human-readable English schedules with a field-by-field breakdown.",
     howToUse: [
       "Paste any standard 5-field cron expression.",
       "Inspect the translated plain English description and column breakdown.",
-      "View next scheduled execution timestamps."
+      "Or pick one of the common schedule presets."
     ],
     edgeCases: ["Non-standard day of week numbering (0 vs 7)."],
     shortcuts: [],
@@ -444,15 +444,15 @@ export const TOOLS_REGISTRY: Record<string, ToolMeta> = {
     category: "Time, Network & Utilities",
     name: "CIDR Calculator & Subnet Inspector",
     shortName: "CIDR Calculator",
-    description: "Calculate IPv4 and IPv6 subnet masks, broadcast addresses, and usable ranges.",
+    description: "Calculate IPv4 subnet masks, broadcast addresses, and usable ranges.",
     seoTitle: "CIDR & Subnet Calculator Online",
-    seoDescription: "Calculate IPv4/IPv6 subnets, view CIDR notation, netmasks, broadcast IP, and usable host ranges.",
+    seoDescription: "Calculate IPv4 subnets, view CIDR notation, netmasks, broadcast IP, and usable host ranges.",
     howToUse: [
       "Enter an IP address and CIDR suffix (e.g. 192.168.1.0/24).",
       "The tool calculates network boundaries, broadcast IP, and total usable addresses.",
       "View detailed bitmask breakdown."
     ],
-    edgeCases: ["/31 and /32 point-to-point subnets."],
+    edgeCases: ["/31 (RFC 3021 point-to-point, 2 usable) and /32 (single host) subnets."],
     shortcuts: []
   }
 };

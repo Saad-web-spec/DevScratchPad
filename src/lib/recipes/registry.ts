@@ -383,7 +383,7 @@ export const RECIPE_REGISTRY: Record<string, RecipeMeta> = {
       },
       {
         "question": "How can I automatically fix braces?",
-        "answer": "Use our GraphQL Formatter, which relies on Prettier to automatically align and close selection sets."
+        "answer": "Missing braces cannot be added automatically. Paste the query into our GraphQL Formatter to check whether it parses (it uses graphql-js), then click Format to re-align the selection sets once it does."
       }
     ]
   },

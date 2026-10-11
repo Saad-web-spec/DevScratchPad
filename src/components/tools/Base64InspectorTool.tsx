@@ -1,17 +1,27 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useDeferredValue } from "react";
 import {
   inspectAndConvert,
   type DetectedFormat,
-  type InspectorConversions,
 } from "@/lib/tools/base64-inspector";
-import { ShareButton } from "@/components/ShareButton";
-import { EmbedButton } from "@/components/EmbedButton";
-import { ExportImageButton } from "@/components/ExportImageButton";
-import { Copy, Trash2, Check, Binary, Image as ImageIcon, Download, Sparkles } from "lucide-react";
+import { ShareMenu } from "@/components/ShareMenu";
+import { Trash2, Download, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { addSnapshot } from "@/lib/storage";
+import {
+  ToolHeader,
+  PaneBar,
+  MobilePaneTabs,
+  btnGhost,
+  selectBase,
+  segmentTrack,
+  segmentBtn,
+  iconProps,
+  ICON_STROKE,
+} from "@/components/tools/ToolChrome";
+import { getToolIcon } from "@/components/layout/toolIcons";
+import { useCopyFlash, CopyIconButton, CopyGhostButton, formatBytes } from "@/components/tools/security/securityUi";
 
 interface Base64InspectorToolProps {
   onValidationChange: (isValid: boolean, error?: string) => void;
@@ -22,17 +32,21 @@ interface Base64InspectorToolProps {
 
 const DEFAULT_SAMPLE = "DevScratchpad — 100% Client-Side Privacy Suite ⚡";
 
-const SAMPLES: { label: string; value: string; format?: DetectedFormat }[] = [
-  { label: "Sample Text", value: DEFAULT_SAMPLE },
-  { label: "Base64", value: "RGV2U2NyYXRjaHBhZCDigJQgMTAwJSBDbGllbnQtU2lkZSBQcml2YWN5IFN1aXRlIOKaoc+P" },
-  { label: "Hex", value: "44 65 76 53 63 72 61 74 63 68 70 61 64" },
-  { label: "Binary", value: "01000100 01100101 01110110 01010011 01100011 01110010 01100001 01110100 01100011 01101000" },
-  {
-    label: "Data URL (PNG)",
-    value:
-      "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAYAAACNMs+9AAAAFUlEQVR42mNk+M9QzwAEjDAGYzAAAO9wB/58pdaMAAAAAElFTkSuQmCC",
-  },
-];
+const FORMAT_LABELS: Record<DetectedFormat, string> = {
+  "plain-text": "Plain text",
+  base64: "Base64",
+  "base64-url": "Base64 URL",
+  "data-url": "Data URL",
+  hex: "Hex",
+  binary: "Binary",
+  "url-encoded": "URL encoded",
+};
+
+const FORCEABLE: DetectedFormat[] = ["plain-text", "base64", "hex", "binary", "url-encoded"];
+
+/** Long outputs are previewed (rendering megabytes of text freezes the page); Copy always copies everything. */
+const PREVIEW_CHARS = 20_000;
+const preview = (text: string) => (text.length > PREVIEW_CHARS ? `${text.slice(0, PREVIEW_CHARS)}…` : text);
 
 export function Base64InspectorTool({
   onValidationChange,
@@ -43,7 +57,8 @@ export function Base64InspectorTool({
   const [input, setInput] = useState<string>(DEFAULT_SAMPLE);
   const [forcedFormat, setForcedFormat] = useState<DetectedFormat | undefined>(undefined);
   const [activeTab, setActiveTab] = useState<"cards" | "hexdump">("cards");
-  const [copiedKey, setCopiedKey] = useState<string | null>(null);
+  const [mobilePane, setMobilePane] = useState<"input" | "output">("input");
+  const { copiedKey, copy } = useCopyFlash();
 
   // Restore from history
   useEffect(() => {
@@ -51,19 +66,10 @@ export function Base64InspectorTool({
     if (restoredInput) setInput(restoredInput);
   }, [restoredInput]);
 
-  // Conversions computation
-  const { conversions, execMs, isValid, error } = useMemo(() => {
-    const start = performance.now();
-    try {
-      const result = inspectAndConvert(input, forcedFormat);
-      const end = performance.now();
-      return { conversions: result, execMs: end - start, isValid: true };
-    } catch (err: unknown) {
-      const end = performance.now();
-      const message = err instanceof Error ? err.message : String(err);
-      return { conversions: inspectAndConvert(input), execMs: end - start, isValid: false, error: message };
-    }
-  }, [input, forcedFormat]);
+  // Conversions run on a deferred copy of the input so typing stays responsive on large pastes.
+  const deferredInput = useDeferredValue(input);
+  const conversions = useMemo(() => inspectAndConvert(deferredInput, forcedFormat), [deferredInput, forcedFormat]);
+  const isValid = !conversions.error;
 
   // Save workspace snapshot
   useEffect(() => {
@@ -75,16 +81,12 @@ export function Base64InspectorTool({
   }, [input, conversions]);
 
   useEffect(() => {
-    onValidationChange(isValid, error);
-    onStatsChange(input.length, Math.round(execMs * 10) / 10);
-  }, [isValid, error, input.length, execMs, onValidationChange, onStatsChange]);
+    onValidationChange(isValid, conversions.error);
+    onStatsChange(deferredInput.length, 0);
+  }, [isValid, conversions.error, deferredInput.length, onValidationChange, onStatsChange]);
 
   const handleCopy = (text: string, key: string) => {
-    if (!text) return;
-    navigator.clipboard.writeText(text);
-    setCopiedKey(key);
-    onLogHistory?.(input);
-    setTimeout(() => setCopiedKey(null), 1500);
+    if (copy(text, key)) onLogHistory?.(input);
   };
 
   const handleDownloadImage = () => {
@@ -96,282 +98,184 @@ export function Base64InspectorTool({
     a.click();
   };
 
-  const FORMAT_PILLS: { id: DetectedFormat | "auto"; label: string }[] = [
-    { id: "auto", label: "Auto-Detect" },
-    { id: "plain-text", label: "Plain Text" },
-    { id: "base64", label: "Base64" },
-    { id: "hex", label: "Hex" },
-    { id: "binary", label: "Binary" },
-    { id: "url-encoded", label: "URL Encoded" },
-  ];
+  const rows = useMemo(
+    () => [
+      { id: "text", label: "Plain text (UTF-8)", value: conversions.plainText },
+      { id: "b64", label: "Base64", value: conversions.base64 },
+      { id: "b64url", label: "Base64 URL-safe (unpadded)", value: conversions.base64Url },
+      { id: "hex", label: "Hex", value: conversions.hexStream },
+      { id: "bin", label: "Binary", value: conversions.binary },
+      { id: "url", label: "URL encoded", value: conversions.urlEncoded },
+    ],
+    [conversions]
+  );
+  const hexDumpPreview = useMemo(() => preview(conversions.hexDump), [conversions.hexDump]);
+  const showImage = conversions.dataUrlInfo.isImage && conversions.dataUrlInfo.fullDataUrl;
 
   return (
-    <div className="flex flex-col h-full bg-white overflow-y-auto relative">
+    <div className="flex h-full w-full flex-col overflow-hidden bg-white">
       {/* Top Controls Bar (Unified Clean Header) */}
-      <div className="h-10 border-b border-neutral-200 px-4 flex items-center justify-between gap-4 shrink-0 bg-white">
-        <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar">
-          <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-neutral-100 border border-neutral-200 text-[11px] font-medium text-neutral-600">
-            <Sparkles className="w-3 h-3 text-neutral-500" />
-            <span>Detected:</span>
-            <span className="font-semibold text-neutral-800 uppercase tracking-wide">
-              {conversions.detectedFormat}
+      <ToolHeader
+        icon={getToolIcon("base64-inspector")}
+        title="Base64 / Hex / Binary Inspector"
+        utilities={
+          <ShareMenu
+            toolSlug="base64-inspector"
+            data={input}
+            imageCode={conversions.hexDump || input}
+            imageLanguage="text"
+          />
+        }
+        options={
+          <select
+            value={forcedFormat ?? "auto"}
+            onChange={(e) => setForcedFormat(e.target.value === "auto" ? undefined : (e.target.value as DetectedFormat))}
+            className={selectBase}
+            aria-label="Input format"
+            title="Input format"
+          >
+            <option value="auto">
+              Auto{forcedFormat === undefined ? ` · ${FORMAT_LABELS[conversions.detectedFormat]}` : "-detect"}
+            </option>
+            {FORCEABLE.map((f) => (
+              <option key={f} value={f}>
+                {FORMAT_LABELS[f]}
+              </option>
+            ))}
+          </select>
+        }
+      />
+
+      <MobilePaneTabs
+        tabs={[
+          { id: "input", label: "Input" },
+          { id: "output", label: "Encodings" },
+        ]}
+        active={mobilePane}
+        onChange={setMobilePane}
+      />
+
+      {/* Main Workspace Layout (Dual Pane) */}
+      <div className="flex min-h-0 flex-1 flex-col md:flex-row" id="base64-export-card">
+        {/* Left Pane: Input */}
+        <section
+          className={cn(
+            "flex min-h-0 min-w-0 flex-1 flex-col md:border-r md:border-zinc-200",
+            mobilePane !== "input" && "hidden md:flex"
+          )}
+        >
+          <PaneBar label="Input">
+            <button type="button" onClick={() => setInput("")} disabled={!input} className={btnGhost} title="Clear input">
+              <Trash2 {...iconProps} />
+              <span>Clear</span>
+            </button>
+          </PaneBar>
+
+          <textarea
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            placeholder="Paste text, Base64, hex, binary bits, a URL-encoded string or a data: URL…"
+            aria-label="Input"
+            className="min-h-0 w-full flex-1 resize-none border-0 bg-transparent p-3 font-mono text-[13px] leading-relaxed text-zinc-900 outline-none placeholder:text-zinc-400 md:p-4"
+            spellCheck={false}
+            autoCapitalize="off"
+            autoComplete="off"
+          />
+
+          <div className="flex h-9 shrink-0 items-center gap-2 border-t border-zinc-200 bg-zinc-50 px-3 text-[11px] text-zinc-500">
+            {conversions.error ? (
+              <span className="flex min-w-0 items-center gap-1.5 font-medium text-red-600">
+                <AlertCircle className="size-3.5 shrink-0" strokeWidth={ICON_STROKE} aria-hidden="true" />
+                <span className="truncate">{conversions.error}</span>
+              </span>
+            ) : (
+              <span className="truncate">
+                Read as <span className="font-medium text-zinc-900">{FORMAT_LABELS[conversions.detectedFormat]}</span>
+              </span>
+            )}
+            <span className="ml-auto shrink-0 tabular-nums">
+              {input.length.toLocaleString()} chars · {formatBytes(conversions.byteLength)}
             </span>
           </div>
 
-          <div className="h-4 w-px bg-neutral-200 mx-1" />
-
-          <div className="flex items-center p-0.5 rounded-md bg-neutral-100/50 border border-neutral-200">
-            {FORMAT_PILLS.map((p) => {
-              const isSelected = p.id === "auto" ? forcedFormat === undefined : forcedFormat === p.id;
-              return (
-                <button
-                  key={p.id}
-                  onClick={() => setForcedFormat(p.id === "auto" ? undefined : p.id)}
-                  className={cn(
-                    "px-2.5 py-1 rounded text-[11px] font-medium transition-colors whitespace-nowrap",
-                    isSelected
-                      ? "bg-white text-neutral-900 shadow-sm ring-1 ring-black/5"
-                      : "text-neutral-500 hover:text-neutral-900"
-                  )}
-                >
-                  {p.label}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        <div className="flex items-center gap-1.5">
-          <ShareButton toolSlug="base64-inspector" data={input} />
-          <EmbedButton toolSlug="base64-inspector" data={input} />
-          <ExportImageButton code={conversions.hexDump || input} language="text" />
-        </div>
-      </div>
-
-      {/* Main Workspace Layout (Strict Dual-Pane Grid) */}
-      <div className="flex-1 min-h-[600px] grid grid-cols-1 lg:grid-cols-2 divide-y lg:divide-y-0 lg:divide-x divide-neutral-200 overflow-hidden bg-neutral-50/30" id="base64-export-card">
-        {/* Left Pane: Input Editor */}
-        <div className="flex flex-col h-full bg-white relative min-h-0">
-          <div className="flex-1 p-0 overflow-y-auto relative">
-            <textarea
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              placeholder="Paste any text, Base64 string, Hex stream, Binary bits, or Data URL image..."
-              className="w-full h-full p-4 font-mono text-sm text-neutral-900 bg-transparent resize-none border-0 outline-none focus:ring-0 leading-relaxed placeholder:text-neutral-400"
-              spellCheck={false}
-            />
-          </div>
-
-          {/* Action Bar (Bottom of Editor) */}
-          <div className="h-10 border-t border-neutral-200 bg-neutral-50/50 flex items-center justify-between px-4 shrink-0">
-            <div className="text-[11px] font-mono text-neutral-500">
-              {input.length} chars &bull; {new Blob([input]).size} bytes
-            </div>
-            <div className="flex items-center gap-1.5">
-              <button
-                onClick={() => setInput("")}
-                className="px-2 py-1 rounded text-[11px] font-medium text-neutral-500 hover:text-neutral-900 hover:bg-neutral-200/50 transition-colors flex items-center gap-1.5"
-                title="Clear input"
-              >
-                <Trash2 className="w-3.5 h-3.5" />
-                <span>Clear</span>
-              </button>
-            </div>
-          </div>
-
           {/* Live Image Preview (Docked Bottom) */}
-          {conversions.dataUrlInfo.isImage && conversions.dataUrlInfo.fullDataUrl && (
-            <div className="border-t border-neutral-200 bg-white shrink-0 p-4">
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-2 text-xs font-medium text-neutral-800">
-                  <ImageIcon className="w-4 h-4 text-neutral-500" />
-                  <span>Live Preview</span>
-                  <span className="px-2 py-0.5 rounded bg-neutral-100 border border-neutral-200 text-neutral-700 text-[10px] font-mono uppercase">
-                    {conversions.dataUrlInfo.mimeType}
-                  </span>
-                </div>
-                <button
-                  onClick={handleDownloadImage}
-                  className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-neutral-900 text-neutral-100 text-[11px] font-medium hover:bg-neutral-800 transition-colors"
-                >
-                  <Download className="w-3.5 h-3.5" />
+          {showImage && (
+            <div className="shrink-0 border-t border-zinc-200">
+              <PaneBar label={<>Image · <span className="normal-case">{conversions.dataUrlInfo.mimeType}</span></>}>
+                <button type="button" onClick={handleDownloadImage} className={btnGhost}>
+                  <Download {...iconProps} />
                   <span>Download</span>
                 </button>
-              </div>
-
+              </PaneBar>
               {/* Checkerboard background for transparency */}
-              <div
-                className="flex items-center justify-center p-4 border border-neutral-200 rounded-lg overflow-hidden max-h-48"
-                style={{
-                  backgroundImage: "url('data:image/svg+xml;utf8,<svg width=\"20\" height=\"20\" xmlns=\"http://www.w3.org/2000/svg\"><rect width=\"10\" height=\"10\" fill=\"%23e5e5e5\"/><rect x=\"10\" width=\"10\" height=\"10\" fill=\"%23f5f5f5\"/><rect y=\"10\" width=\"10\" height=\"10\" fill=\"%23f5f5f5\"/><rect x=\"10\" y=\"10\" width=\"10\" height=\"10\" fill=\"%23e5e5e5\"/></svg>')",
-                  backgroundSize: "20px 20px"
-                }}
-              >
+              <div className="flex max-h-48 items-center justify-center overflow-hidden bg-[image:conic-gradient(#e4e4e7_25%,#fafafa_0_50%,#e4e4e7_0_75%,#fafafa_0)] bg-[length:16px_16px] p-4">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={conversions.dataUrlInfo.fullDataUrl}
-                  alt="Preview"
-                  className="max-h-[150px] max-w-full object-contain shadow-sm border border-neutral-200/50"
+                  alt="Decoded image preview"
+                  className="max-h-40 max-w-full object-contain [image-rendering:pixelated]"
                 />
               </div>
             </div>
           )}
-        </div>
+        </section>
 
-        {/* Right Pane: Multi-Encoding Output Grid */}
-        <div className="flex flex-col h-full bg-neutral-50/30 min-h-0">
-          <div className="h-10 border-b border-neutral-200 px-4 flex items-center justify-between bg-white shrink-0">
-            <div className="flex items-center p-0.5 rounded-md bg-neutral-100/50 border border-neutral-200">
-              <button
-                onClick={() => setActiveTab("cards")}
-                className={cn(
-                  "px-3 py-1 rounded text-[11px] font-medium transition-colors",
-                  activeTab === "cards"
-                    ? "bg-white text-neutral-900 shadow-sm ring-1 ring-black/5 font-semibold"
-                    : "text-neutral-500 hover:text-neutral-900"
-                )}
-              >
-                Multi-Format Cards
+        {/* Right Pane: Encodings / Hex dump */}
+        <section
+          className={cn("flex min-h-0 min-w-0 flex-1 flex-col", mobilePane !== "output" && "hidden md:flex")}
+        >
+          <PaneBar label={activeTab === "cards" ? "Encodings" : "Hex dump"} className="pr-1">
+            {activeTab === "hexdump" && (
+              <CopyIconButton
+                copied={copiedKey === "hexdump"}
+                onClick={() => handleCopy(conversions.hexDump, "hexdump")}
+                label="Copy hex dump"
+              />
+            )}
+            <div className={segmentTrack}>
+              <button type="button" onClick={() => setActiveTab("cards")} className={segmentBtn(activeTab === "cards")}>
+                All
               </button>
-              <button
-                onClick={() => setActiveTab("hexdump")}
-                className={cn(
-                  "px-3 py-1 rounded text-[11px] font-medium transition-colors",
-                  activeTab === "hexdump"
-                    ? "bg-white text-neutral-900 shadow-sm ring-1 ring-black/5 font-semibold"
-                    : "text-neutral-500 hover:text-neutral-900"
-                )}
-              >
-                Canonical Hex Dump
+              <button type="button" onClick={() => setActiveTab("hexdump")} className={segmentBtn(activeTab === "hexdump")}>
+                Hex dump
               </button>
             </div>
-          </div>
+          </PaneBar>
 
-          <div className="flex-1 overflow-y-auto p-4 space-y-4">
-            {activeTab === "cards" ? (
-              <>
-                {/* Plain Text UTF-8 */}
-                <div className="bg-neutral-50 border border-neutral-200 rounded-lg p-3">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-xs font-semibold text-neutral-700">Plain Text (UTF-8)</span>
-                    <button
-                      onClick={() => handleCopy(conversions.plainText, "text")}
-                      className="text-neutral-400 hover:text-neutral-900 transition-colors"
-                      aria-label="Copy plain text" title="Copy plain text"
-                    >
-                      {copiedKey === "text" ? <Check className="w-3.5 h-3.5 text-neutral-900" /> : <Copy className="w-3.5 h-3.5" />}
-                    </button>
+          {activeTab === "cards" ? (
+            <div className="min-h-0 flex-1 divide-y divide-zinc-100 overflow-y-auto">
+              {rows.map((row) => (
+                <div key={row.id} className="px-3 py-2 md:px-4">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="truncate text-xs font-medium text-zinc-700">{row.label}</span>
+                    <CopyIconButton
+                      copied={copiedKey === row.id}
+                      onClick={() => handleCopy(row.value, row.id)}
+                      disabled={!row.value}
+                      label={`Copy ${row.label}`}
+                      className="-mr-2 md:-mr-1.5"
+                    />
                   </div>
-                  <pre className="font-mono text-sm text-neutral-900 break-all whitespace-pre-wrap max-h-24 overflow-y-auto">
-                    {conversions.plainText || "<empty>"}
+                  <pre className="max-h-28 overflow-y-auto whitespace-pre-wrap break-all pb-1 font-mono text-[13px] leading-relaxed text-zinc-900">
+                    {row.value ? preview(row.value) : <span className="text-zinc-400">empty</span>}
                   </pre>
                 </div>
-
-                {/* Base64 Standard */}
-                <div className="bg-neutral-50 border border-neutral-200 rounded-lg p-3">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-xs font-semibold text-neutral-700">Base64 (Standard RFC 4648)</span>
-                    <button
-                      onClick={() => handleCopy(conversions.base64, "b64")}
-                      className="text-neutral-400 hover:text-neutral-900 transition-colors"
-                      aria-label="Copy Base64" title="Copy Base64"
-                    >
-                      {copiedKey === "b64" ? <Check className="w-3.5 h-3.5 text-neutral-900" /> : <Copy className="w-3.5 h-3.5" />}
-                    </button>
-                  </div>
-                  <pre className="font-mono text-sm text-neutral-900 break-all whitespace-pre-wrap max-h-24 overflow-y-auto">
-                    {conversions.base64 || "<empty>"}
-                  </pre>
+              ))}
+            </div>
+          ) : (
+            <div className="flex min-h-0 flex-1 flex-col">
+              <pre className="min-h-0 flex-1 overflow-auto whitespace-pre p-3 font-mono text-xs leading-relaxed text-zinc-700 md:p-4">
+                {hexDumpPreview || "00000000"}
+              </pre>
+              {conversions.hexDump.length > PREVIEW_CHARS && (
+                <div className="flex shrink-0 items-center justify-between gap-2 border-t border-zinc-200 bg-zinc-50 pl-3 text-[11px] text-zinc-500">
+                  <span className="truncate">Preview truncated. Copy gets the full dump.</span>
+                  <CopyGhostButton copied={copiedKey === "hexdump"} onClick={() => handleCopy(conversions.hexDump, "hexdump")} />
                 </div>
-
-                {/* Base64 URL-Safe */}
-                <div className="bg-neutral-50 border border-neutral-200 rounded-lg p-3">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-xs font-semibold text-neutral-700">Base64 (URL-Safe, Unpadded)</span>
-                    <button
-                      onClick={() => handleCopy(conversions.base64Url, "b64url")}
-                      className="text-neutral-400 hover:text-neutral-900 transition-colors"
-                      aria-label="Copy URL-safe Base64" title="Copy URL-safe Base64"
-                    >
-                      {copiedKey === "b64url" ? <Check className="w-3.5 h-3.5 text-neutral-900" /> : <Copy className="w-3.5 h-3.5" />}
-                    </button>
-                  </div>
-                  <pre className="font-mono text-sm text-neutral-900 break-all whitespace-pre-wrap max-h-24 overflow-y-auto">
-                    {conversions.base64Url || "<empty>"}
-                  </pre>
-                </div>
-
-                {/* Hex Stream */}
-                <div className="bg-neutral-50 border border-neutral-200 rounded-lg p-3">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-xs font-semibold text-neutral-700">Hex Stream (Spaced Bytes)</span>
-                    <button
-                      onClick={() => handleCopy(conversions.hexStream, "hex")}
-                      className="text-neutral-400 hover:text-neutral-900 transition-colors"
-                      aria-label="Copy Hex" title="Copy Hex"
-                    >
-                      {copiedKey === "hex" ? <Check className="w-3.5 h-3.5 text-neutral-900" /> : <Copy className="w-3.5 h-3.5" />}
-                    </button>
-                  </div>
-                  <pre className="font-mono text-sm text-neutral-900 break-all whitespace-pre-wrap max-h-24 overflow-y-auto">
-                    {conversions.hexStream || "<empty>"}
-                  </pre>
-                </div>
-
-                {/* Binary Bits */}
-                <div className="bg-neutral-50 border border-neutral-200 rounded-lg p-3">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-xs font-semibold text-neutral-700">Binary (8-bit Octets)</span>
-                    <button
-                      onClick={() => handleCopy(conversions.binary, "bin")}
-                      className="text-neutral-400 hover:text-neutral-900 transition-colors"
-                      aria-label="Copy Binary" title="Copy Binary"
-                    >
-                      {copiedKey === "bin" ? <Check className="w-3.5 h-3.5 text-neutral-900" /> : <Copy className="w-3.5 h-3.5" />}
-                    </button>
-                  </div>
-                  <pre className="font-mono text-sm text-neutral-900 break-all whitespace-pre-wrap max-h-24 overflow-y-auto">
-                    {conversions.binary || "<empty>"}
-                  </pre>
-                </div>
-
-                {/* URL Encoded */}
-                <div className="bg-neutral-50 border border-neutral-200 rounded-lg p-3">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-xs font-semibold text-neutral-700">URL / Percent Encoded</span>
-                    <button
-                      onClick={() => handleCopy(conversions.urlEncoded, "url")}
-                      className="text-neutral-400 hover:text-neutral-900 transition-colors"
-                      aria-label="Copy URL encoded" title="Copy URL encoded"
-                    >
-                      {copiedKey === "url" ? <Check className="w-3.5 h-3.5 text-neutral-900" /> : <Copy className="w-3.5 h-3.5" />}
-                    </button>
-                  </div>
-                  <pre className="font-mono text-sm text-neutral-900 break-all whitespace-pre-wrap max-h-24 overflow-y-auto">
-                    {conversions.urlEncoded || "<empty>"}
-                  </pre>
-                </div>
-              </>
-            ) : (
-              /* Canonical Hex Dump View - Dark Slate Theme */
-              <div className="p-0 rounded-lg border border-neutral-200 bg-neutral-900 shadow-sm h-full flex flex-col overflow-hidden min-h-[300px]">
-                <div className="flex items-center justify-between px-4 py-2 border-b border-neutral-800 bg-neutral-900/50 shrink-0">
-                  <span className="text-xs font-mono text-neutral-400">Canonical Hex Dump</span>
-                  <button
-                    onClick={() => handleCopy(conversions.hexDump, "hexdump")}
-                    className="flex items-center gap-1.5 px-2 py-1 rounded text-[11px] font-medium text-neutral-400 hover:text-neutral-100 hover:bg-neutral-800 transition-colors"
-                  >
-                    {copiedKey === "hexdump" ? <Check className="w-3.5 h-3.5 text-neutral-100" /> : <Copy className="w-3.5 h-3.5" />}
-                    <span>Copy Dump</span>
-                  </button>
-                </div>
-                <pre className="flex-1 font-mono text-sm text-neutral-300 overflow-auto p-4 leading-relaxed">
-                  {conversions.hexDump || "00000000"}
-                </pre>
-              </div>
-            )}
-          </div>
-        </div>
+              )}
+            </div>
+          )}
+        </section>
       </div>
     </div>
   );

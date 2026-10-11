@@ -1,154 +1,248 @@
-import React, { useState, useEffect, useCallback, useRef } from "react";
+"use client";
+
+import React, { useState, useEffect, useRef } from "react";
+import type { ErrorObject, ValidateFunction } from "ajv";
 import { MonacoEditor } from "@/components/MonacoEditor";
-import { CheckCircle2, AlertTriangle, XCircle, Check } from "lucide-react";
-import Ajv from "ajv";
-import addFormats from "ajv-formats";
+import { ShareMenu } from "@/components/ShareMenu";
+import { AlertTriangle, XCircle, Check, Trash2, Loader2 } from "lucide-react";
+import { addSnapshot } from "@/lib/storage";
+import { getToolIcon } from "@/components/layout/toolIcons";
+import { ToolHeader, PaneBar, EDITOR_OPTIONS, btnIcon, iconProps } from "@/components/tools/ToolChrome";
 
 interface JsonSchemaValidatorToolProps {
-  onValidationChange?: (isValid: boolean) => void;
+  onValidationChange?: (isValid: boolean, error?: string, line?: number) => void;
   onStatsChange?: (length: number, ms: number) => void;
   restoredInput?: string | null;
 }
 
-export function JsonSchemaValidatorTool({ onValidationChange, restoredInput }: JsonSchemaValidatorToolProps) {
-  const parsedInput = restoredInput ? JSON.parse(restoredInput) : null;
-  const [jsonText, setJsonText] = useState(parsedInput?.json || "{\n  \"name\": \"DevScratchpad\",\n  \"active\": true\n}");
-  const [schemaText, setSchemaText] = useState(parsedInput?.schema || "{\n  \"type\": \"object\",\n  \"properties\": {\n    \"name\": { \"type\": \"string\" },\n    \"active\": { \"type\": \"boolean\" }\n  },\n  \"required\": [\"name\"]\n}");
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const [errors, setErrors] = useState<any[]>([]);
+type Draft = "draft-07" | "2019-09" | "2020-12";
+
+/** Which JSON Schema dialect a schema declares through `$schema` (draft-07 when absent). */
+function detectDraft(schema: unknown): Draft {
+  const declared =
+    schema && typeof schema === "object" && "$schema" in schema ? String((schema as { $schema: unknown }).$schema) : "";
+  if (declared.includes("2020-12")) return "2020-12";
+  if (declared.includes("2019-09")) return "2019-09";
+  return "draft-07";
+}
+
+/**
+ * Ajv is large, so it loads after the tool paints. The 2019-09 / 2020-12 builds load only
+ * when a schema asks for them (the default Ajv class rejects those `$schema` URIs).
+ */
+async function createValidator(schema: object, draft: Draft): Promise<ValidateFunction> {
+  const [{ default: addFormats }, AjvClass] = await Promise.all([
+    import("ajv-formats"),
+    draft === "2020-12"
+      ? import("ajv/dist/2020").then((m) => m.default)
+      : draft === "2019-09"
+        ? import("ajv/dist/2019").then((m) => m.default)
+        : import("ajv").then((m) => m.default),
+  ]);
+  // A fresh instance per schema: re-compiling a schema with an `$id` on a shared instance
+  // throws "schema with key or id already exists".
+  const ajv = new AjvClass({ allErrors: true });
+  addFormats(ajv);
+  return ajv.compile(schema);
+}
+
+const DEFAULT_JSON = "{\n  \"name\": \"DevScratchpad\",\n  \"active\": true\n}";
+const DEFAULT_SCHEMA = "{\n  \"type\": \"object\",\n  \"properties\": {\n    \"name\": { \"type\": \"string\" },\n    \"active\": { \"type\": \"boolean\" }\n  },\n  \"required\": [\"name\"]\n}";
+
+export function JsonSchemaValidatorTool({ onValidationChange, onStatsChange, restoredInput }: JsonSchemaValidatorToolProps) {
+  const parsedInput = parseRestored(restoredInput);
+  const [jsonText, setJsonText] = useState(parsedInput?.json || DEFAULT_JSON);
+  const [schemaText, setSchemaText] = useState(parsedInput?.schema || DEFAULT_SCHEMA);
+  const [errors, setErrors] = useState<ErrorObject[]>([]);
   const [isValid, setIsValid] = useState(true);
   const [jsonError, setJsonError] = useState<string | null>(null);
   const [schemaError, setSchemaError] = useState<string | null>(null);
-  
-  const ajvRef = useRef<Ajv | null>(null);
+  const [draft, setDraft] = useState<Draft>("draft-07");
+  const [isChecking, setIsChecking] = useState(true);
 
+  // Compiled validator for the current schema text; recompiled only when the schema changes.
+  const compiledRef = useRef<{ schemaText: string; validate: ValidateFunction } | null>(null);
+
+  // Restore from share link / history after mount (the initial state only sees the first render)
   useEffect(() => {
-    const ajv = new Ajv({ allErrors: true });
-    addFormats(ajv);
-    ajvRef.current = ajv;
-  }, []);
+    const restored = parseRestored(restoredInput);
+    if (!restored) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (typeof restored.json === "string") setJsonText(restored.json);
+    if (typeof restored.schema === "string") setSchemaText(restored.schema);
+  }, [restoredInput]);
 
-  const validate = useCallback(() => {
-    if (!ajvRef.current) return;
-    
-    setJsonError(null);
-    setSchemaError(null);
-    setErrors([]);
-    
-    let data;
-    try {
-      data = JSON.parse(jsonText);
-    } catch (e: any) {
-      setJsonError("Invalid JSON Data: " + e.message);
-      setIsValid(false);
-      onValidationChange?.(false);
-      return;
-    }
-    
-    let schema;
-    try {
-      schema = JSON.parse(schemaText);
-    } catch (e: any) {
-      setSchemaError("Invalid JSON Schema: " + e.message);
-      setIsValid(false);
-      onValidationChange?.(false);
-      return;
-    }
+  // Save workspace snapshot
+  useEffect(() => {
+    const handleSave = () => {
+      addSnapshot("json-schema-validator", "JSON Schema Validator", JSON.stringify({ json: jsonText, schema: schemaText }), "");
+    };
+    window.addEventListener("save-workspace", handleSave);
+    return () => window.removeEventListener("save-workspace", handleSave);
+  }, [jsonText, schemaText]);
 
-    try {
-      const validateFn = ajvRef.current.compile(schema);
-      const valid = validateFn(data);
-      setIsValid(valid);
-      onValidationChange?.(valid);
-      
-      if (!valid) {
-        setErrors(validateFn.errors || []);
+  // Debounced validation (300ms) so typing in either editor stays smooth.
+  useEffect(() => {
+    let cancelled = false;
+    const timer = setTimeout(async () => {
+      const start = performance.now();
+      const fail = (setter: (msg: string) => void, msg: string) => {
+        if (cancelled) return;
+        setter(msg);
+        setErrors([]);
+        setIsValid(false);
+        setIsChecking(false);
+        onValidationChange?.(false, msg);
+      };
+
+      let data: unknown;
+      try {
+        data = JSON.parse(jsonText);
+      } catch (e: unknown) {
+        setSchemaError(null);
+        return fail(setJsonError, "Invalid JSON Data: " + (e instanceof Error ? e.message : String(e)));
       }
-    } catch (e: any) {
-      setSchemaError("Schema Compilation Error: " + e.message);
-      setIsValid(false);
-      onValidationChange?.(false);
-    }
-  }, [jsonText, schemaText, onValidationChange]);
 
-  useEffect(() => {
-    const timer = setTimeout(validate, 300);
-    return () => clearTimeout(timer);
-  }, [validate]);
+      let schema: unknown;
+      try {
+        schema = JSON.parse(schemaText);
+      } catch (e: unknown) {
+        setJsonError(null);
+        return fail(setSchemaError, "Invalid JSON Schema: " + (e instanceof Error ? e.message : String(e)));
+      }
+      if (!schema || typeof schema !== "object") {
+        setJsonError(null);
+        return fail(setSchemaError, "Invalid JSON Schema: the schema must be a JSON object");
+      }
+
+      const schemaDraft = detectDraft(schema);
+      try {
+        if (!compiledRef.current || compiledRef.current.schemaText !== schemaText) {
+          const validate = await createValidator(schema, schemaDraft);
+          compiledRef.current = { schemaText, validate };
+        }
+      } catch (e: unknown) {
+        setJsonError(null);
+        return fail(setSchemaError, "Schema Compilation Error: " + (e instanceof Error ? e.message : String(e)));
+      }
+      if (cancelled) return;
+
+      const validateFn = compiledRef.current.validate;
+      const valid = validateFn(data) as boolean;
+      setJsonError(null);
+      setSchemaError(null);
+      setDraft(schemaDraft);
+      setIsValid(valid);
+      setErrors(valid ? [] : [...(validateFn.errors ?? [])]);
+      setIsChecking(false);
+      onValidationChange?.(valid, valid ? undefined : validateFn.errors?.[0]?.message);
+      onStatsChange?.(jsonText.length, performance.now() - start);
+    }, 300);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [jsonText, schemaText, onValidationChange, onStatsChange]);
 
   return (
     <div className="flex flex-col h-full bg-white w-full overflow-x-hidden">
       {/* Toolbar */}
-      <div className="flex items-center justify-between px-3 md:px-4 py-2 border-b border-zinc-200 bg-white shrink-0 overflow-x-auto hide-scrollbar">
-        <div className="flex items-center gap-2">
-          <div className="flex items-center gap-1.5 min-w-max">
-            {jsonError || schemaError ? (
-              <span className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-500/10 text-red-600 border border-red-500/20">
-                <XCircle className="w-3.5 h-3.5 text-red-500" />
-                Parse Error
-              </span>
-            ) : isValid ? (
-              <span className="bg-zinc-100 text-zinc-700 border border-zinc-200 px-2 py-0.5 rounded-md text-xs font-mono flex items-center gap-1">
-                <Check className="w-3 h-3 text-zinc-900" />
-                <span>Valid against Schema</span>
-              </span>
-            ) : (
-              <span className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-500/10 text-red-600 border border-red-500/20">
-                <AlertTriangle className="w-3.5 h-3.5 text-red-500" />
-                {errors.length} Validation {errors.length === 1 ? "Error" : "Errors"}
-              </span>
-            )}
-          </div>
-        </div>
-      </div>
+      <ToolHeader
+        icon={getToolIcon("json-schema-validator")}
+        title="JSON Schema Validator"
+        utilities={
+          <ShareMenu
+            toolSlug="json-schema-validator"
+            data={{ json: jsonText, schema: schemaText }}
+            imageCode={jsonText}
+            imageLanguage="json"
+          />
+        }
+        options={
+          isChecking ? (
+            <span className="inline-flex h-8 items-center gap-1.5 text-xs font-medium text-zinc-500">
+              <Loader2 {...iconProps} className="size-3.5 shrink-0 animate-spin" />
+              Checking…
+            </span>
+          ) : jsonError || schemaError ? (
+            <span className="inline-flex h-8 items-center gap-1.5 text-xs font-medium text-red-600">
+              <XCircle {...iconProps} className="size-3.5 shrink-0" />
+              Parse error
+            </span>
+          ) : isValid ? (
+            <span className="inline-flex h-8 items-center gap-1.5 text-xs font-medium text-zinc-700">
+              <Check {...iconProps} className="size-3.5 shrink-0" />
+              Valid
+            </span>
+          ) : (
+            <span className="inline-flex h-8 items-center gap-1.5 text-xs font-medium text-red-600">
+              <AlertTriangle {...iconProps} className="size-3.5 shrink-0" />
+              {errors.length} {errors.length === 1 ? "error" : "errors"}
+            </span>
+          )
+        }
+      />
 
       {/* Editor Split */}
       <div className="flex-1 flex flex-col md:flex-row min-h-0 border-b border-zinc-200">
-        <div className="flex-1 border-r border-zinc-200 flex flex-col min-h-0">
-          <div className="px-3 py-1.5 bg-zinc-50 border-b border-zinc-200 flex justify-between items-center shrink-0">
-            <span className="text-xs font-semibold text-zinc-600 uppercase tracking-wider">JSON Data</span>
-          </div>
-          <div className="flex-1 relative">
+        <div className="flex-1 border-b md:border-b-0 md:border-r border-zinc-200 flex flex-col min-h-0 min-w-0">
+          <PaneBar label="JSON Data">
+            <button onClick={() => setJsonText("")} className={btnIcon} title="Clear JSON data" aria-label="Clear JSON data">
+              <Trash2 {...iconProps} />
+            </button>
+          </PaneBar>
+          <div className="flex-1 relative min-h-[160px]">
             <MonacoEditor
               height="100%"
               language="json"
               value={jsonText}
               onChange={(val) => setJsonText(val || "")}
-              options={{ minimap: { enabled: false }, tabSize: 2, wordWrap: "on" }}
+              options={EDITOR_OPTIONS}
             />
           </div>
         </div>
-        <div className="flex-1 flex flex-col min-h-0">
-          <div className="px-3 py-1.5 bg-zinc-50 border-b border-zinc-200 flex justify-between items-center shrink-0">
-            <span className="text-xs font-semibold text-zinc-600 uppercase tracking-wider">JSON Schema (Draft 07)</span>
-          </div>
-          <div className="flex-1 relative">
+        <div className="flex-1 flex flex-col min-h-0 min-w-0">
+          <PaneBar
+            label={
+              <>
+                JSON Schema
+                <span className="ml-1.5 rounded bg-zinc-200/70 px-1.5 py-0.5 font-mono text-[10px] normal-case tracking-normal text-zinc-600">
+                  {draft}
+                </span>
+              </>
+            }
+          >
+            <button onClick={() => setSchemaText("")} className={btnIcon} title="Clear schema" aria-label="Clear schema">
+              <Trash2 {...iconProps} />
+            </button>
+          </PaneBar>
+          <div className="flex-1 relative min-h-[160px]">
             <MonacoEditor
               height="100%"
               language="json"
               value={schemaText}
               onChange={(val) => setSchemaText(val || "")}
-              options={{ minimap: { enabled: false }, tabSize: 2, wordWrap: "on" }}
+              options={EDITOR_OPTIONS}
             />
           </div>
         </div>
       </div>
 
       {/* Error Output Console */}
-      {(!isValid || jsonError || schemaError) && (
-        <div className="h-48 shrink-0 bg-red-50/30 overflow-y-auto">
-          <div className="px-3 py-1.5 bg-red-50 border-b border-red-100 flex items-center gap-2 sticky top-0">
-            <XCircle className="w-3.5 h-3.5 text-red-500" />
-            <span className="text-xs font-semibold text-red-800 uppercase tracking-wider">Validation Errors</span>
+      {!isChecking && (!isValid || jsonError || schemaError) && (
+        <div className="h-40 md:h-48 shrink-0 bg-red-50/30 overflow-y-auto">
+          <div className="h-9 px-3 bg-red-50 border-b border-red-100 flex items-center gap-2 sticky top-0">
+            <XCircle {...iconProps} className="size-3.5 shrink-0" />
+            <span className="text-[11px] font-semibold text-red-800 uppercase tracking-wider">Validation Errors</span>
           </div>
-          <div className="p-3 text-xs font-mono text-red-900">
+          <div className="p-3 text-xs font-mono text-red-900 break-words">
             {jsonError && <div>{jsonError}</div>}
             {schemaError && <div>{schemaError}</div>}
             {!jsonError && !schemaError && errors.map((err, i) => (
-              <div key={i} className="mb-2 pb-2 border-b border-red-100 last:border-0 last:mb-0 last:pb-0 flex gap-2">
+              <div key={i} className="mb-2 pb-2 border-b border-red-100 last:border-0 last:mb-0 last:pb-0 flex flex-wrap gap-x-2 gap-y-0.5">
                 <span className="text-red-500 font-bold shrink-0">[{err.instancePath || "/"}]</span>
                 <span>{err.message}</span>
-                {err.params && <span className="text-red-400 opacity-80">{JSON.stringify(err.params)}</span>}
+                {err.params && <span className="text-red-500/80 break-all">{JSON.stringify(err.params)}</span>}
               </div>
             ))}
           </div>
@@ -156,4 +250,15 @@ export function JsonSchemaValidatorTool({ onValidationChange, restoredInput }: J
       )}
     </div>
   );
+}
+
+/** Restored payloads are `{ json, schema }`; anything else (magic paste, stale links) is ignored. */
+function parseRestored(raw: string | null | undefined): { json?: string; schema?: string } | null {
+  if (!raw) return null;
+  try {
+    const parsed: unknown = JSON.parse(raw);
+    return parsed && typeof parsed === "object" ? (parsed as { json?: string; schema?: string }) : null;
+  } catch {
+    return null;
+  }
 }

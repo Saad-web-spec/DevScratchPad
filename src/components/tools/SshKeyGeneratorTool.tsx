@@ -1,28 +1,37 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import type { GeneratedKeypair, KeyAlgorithmType } from "@/lib/tools/ssh-key-generator";
+import { ShareMenu } from "@/components/ShareMenu";
 import {
-  generateSshKeypair,
-  type KeyAlgorithmType,
-  type GeneratedKeypair,
-} from "@/lib/tools/ssh-key-generator";
-import { ShareButton } from "@/components/ShareButton";
-import { EmbedButton } from "@/components/EmbedButton";
-import { ExportImageButton } from "@/components/ExportImageButton";
-import {
-  KeyRound,
   RefreshCw,
+  LoaderCircle,
   Copy,
   Check,
   Download,
   Eye,
   EyeOff,
-  Shield,
-  Terminal,
-  Fingerprint,
+  ShieldAlert,
+  TriangleAlert,
+  CircleAlert,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { addSnapshot } from "@/lib/storage";
+import {
+  ToolHeader,
+  PaneBar,
+  btnPrimary,
+  btnSecondary,
+  btnGhost,
+  btnIcon,
+  selectBase,
+  inputBase,
+  segmentTrack,
+  segmentBtn,
+  captionText,
+  iconProps,
+} from "@/components/tools/ToolChrome";
+import { getToolIcon } from "@/components/layout/toolIcons";
 
 interface SshKeyGeneratorToolProps {
   onValidationChange: (isValid: boolean, error?: string) => void;
@@ -31,32 +40,58 @@ interface SshKeyGeneratorToolProps {
   restoredInput?: string | null;
 }
 
-const ALGORITHMS: { id: KeyAlgorithmType; name: string; tag: string; description: string }[] = [
-  {
-    id: "ed25519",
-    name: "Ed25519",
-    tag: "Recommended",
-    description: "Modern standard. Fastest, ultra-secure 256-bit Edwards-curve.",
-  },
-  {
-    id: "rsa-2048",
-    name: "RSA 2048",
-    tag: "Legacy Compatibility",
-    description: "Broadest compatibility across legacy servers and cloud providers.",
-  },
-  {
-    id: "rsa-4096",
-    name: "RSA 4096",
-    tag: "High Security",
-    description: "Maximum RSA strength for enterprise compliance requirements.",
-  },
-  {
-    id: "ecdsa-p256",
-    name: "ECDSA P-256",
-    tag: "NIST Standard",
-    description: "Compact 256-bit elliptic curve key using NIST P-256.",
-  },
+type PrivateFormat = "openssh" | "pkcs8";
+
+/** The lib is loaded on first generate so the tool chunk stays small. */
+type ApplyComment = (keypair: GeneratedKeypair, comment: string) => GeneratedKeypair;
+
+const DEFAULT_ALGO: KeyAlgorithmType = "ed25519";
+const DEFAULT_COMMENT = "user@devscratchpad";
+
+const ALGORITHMS: { id: KeyAlgorithmType; name: string; caption: string }[] = [
+  { id: "ed25519", name: "Ed25519", caption: "Recommended. Small, fast keys supported by OpenSSH 6.5+, GitHub and GitLab." },
+  { id: "rsa-2048", name: "RSA 2048", caption: "Widest compatibility with older servers, appliances and cloud consoles." },
+  { id: "rsa-4096", name: "RSA 4096", caption: "Larger RSA key for strict compliance policies. Takes longer to generate." },
+  { id: "ecdsa-p256", name: "ECDSA P-256", caption: "NIST P-256 curve, for environments that require FIPS-approved curves." },
 ];
+
+const ALGORITHM_NAMES: Record<KeyAlgorithmType, string> = {
+  ed25519: "Ed25519",
+  "rsa-2048": "RSA 2048",
+  "rsa-4096": "RSA 4096",
+  "ecdsa-p256": "ECDSA P-256",
+};
+
+/** ssh-keygen's own labels (as in `ssh-keygen -l` and the randomart header). */
+const KEY_LABELS: Record<GeneratedKeypair["keyType"], string> = {
+  "ssh-ed25519": "ED25519",
+  "ssh-rsa": "RSA",
+  "ecdsa-sha2-nistp256": "ECDSA",
+};
+
+const KEY_FILES: Record<GeneratedKeypair["keyType"], string> = {
+  "ssh-ed25519": "id_ed25519",
+  "ssh-rsa": "id_rsa",
+  "ecdsa-sha2-nistp256": "id_ecdsa",
+};
+
+const PRIVATE_FORMATS: { id: PrivateFormat; name: string; caption: string }[] = [
+  { id: "openssh", name: "OpenSSH", caption: "OpenSSH format, as written by ssh-keygen." },
+  { id: "pkcs8", name: "PKCS#8", caption: "PKCS#8 PEM, for OpenSSL and crypto libraries." },
+];
+
+const preBase = "m-0 font-mono text-xs leading-5 text-zinc-800";
+
+function downloadText(content: string, filename: string) {
+  const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  a.click();
+  // Revoke after the click has been handled so slower browsers still get the file
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
 
 export function SshKeyGeneratorTool({
   onValidationChange,
@@ -64,316 +99,413 @@ export function SshKeyGeneratorTool({
   onLogHistory,
   restoredInput,
 }: SshKeyGeneratorToolProps) {
-  const [algo, setAlgo] = useState<KeyAlgorithmType>("ed25519");
-  const [comment, setComment] = useState<string>("user@devscratchpad");
-  const [keypair, setKeypair] = useState<GeneratedKeypair | null>(null);
+  const [algo, setAlgo] = useState<KeyAlgorithmType>(DEFAULT_ALGO);
+  const [comment, setComment] = useState<string>(DEFAULT_COMMENT);
+  const [result, setResult] = useState<{ keypair: GeneratedKeypair; applyComment: ApplyComment } | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [showPrivateKey, setShowPrivateKey] = useState(false);
+  const [privateFormat, setPrivateFormat] = useState<PrivateFormat>("openssh");
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
 
-  const handleGenerate = async (currentAlgo = algo, currentComment = comment) => {
+  // Latest parent callbacks, so `generate` stays stable while the shell re-creates them
+  const callbacksRef = useRef({ onValidationChange, onStatsChange, onLogHistory });
+  useEffect(() => {
+    callbacksRef.current = { onValidationChange, onStatsChange, onLogHistory };
+  });
+
+  // Each request gets an id; only the newest one may publish its result (a slow RSA 4096
+  // generation must not overwrite an Ed25519 key requested after it).
+  const requestRef = useRef(0);
+
+  const generate = useCallback(async (nextAlgo: KeyAlgorithmType, nextComment: string) => {
+    const id = ++requestRef.current;
     setIsGenerating(true);
     const start = performance.now();
     try {
-      const result = await generateSshKeypair(currentAlgo, currentComment);
-      const end = performance.now();
-      setKeypair(result);
-      onValidationChange(true);
-      onStatsChange(result.publicKeyOpenSSH.length, Math.round((end - start) * 10) / 10);
-      onLogHistory?.(`Generated ${currentAlgo} key: ${currentComment}`);
-    } catch (err: any) {
-      onValidationChange(false, err.message);
+      const lib = await import("@/lib/tools/ssh-key-generator");
+      const keypair = await lib.generateSshKeypair(nextAlgo, nextComment);
+      if (id !== requestRef.current) return;
+      const execMs = Math.round((performance.now() - start) * 10) / 10;
+      setResult({ keypair, applyComment: lib.applyComment });
+      setError(null);
+      const { onValidationChange: validate, onStatsChange: stats, onLogHistory: log } = callbacksRef.current;
+      validate(true);
+      stats(keypair.publicKeyOpenSSH.length, execMs);
+      log?.(`Generated ${keypair.algorithm} key: ${keypair.comment}`);
+    } catch (err) {
+      if (id !== requestRef.current) return;
+      const message = err instanceof Error ? err.message : "Key generation failed";
+      setError(message);
+      callbacksRef.current.onValidationChange(false, message);
     } finally {
-      setIsGenerating(false);
+      if (id === requestRef.current) setIsGenerating(false);
     }
-  };
+  }, []);
 
+  // Initial auto-generate on mount, or restore algorithm + comment from a shared public key line
+  const handledRestoreRef = useRef<string | null | undefined>(undefined);
   useEffect(() => {
-    handleGenerate(algo, comment);
-  }, [algo]);
+    const isFirstRun = handledRestoreRef.current === undefined;
+    const input = restoredInput?.trim() || null;
+    if (!isFirstRun && (!input || input === handledRestoreRef.current)) return;
+    handledRestoreRef.current = input;
+
+    void (async () => {
+      const parsed = input
+        ? (await import("@/lib/tools/ssh-key-generator")).parseOpenSshPublicKey(input)
+        : null;
+      if (parsed) {
+        setAlgo(parsed.algorithm);
+        setComment(parsed.comment);
+        void generate(parsed.algorithm, parsed.comment);
+      } else if (isFirstRun) {
+        void generate(DEFAULT_ALGO, DEFAULT_COMMENT);
+      }
+    })();
+  }, [restoredInput, generate]);
+
+  // The comment is just text inside the public line and the OpenSSH private key, so rebuild
+  // those strings instead of generating a new key on every keystroke.
+  const keypair = useMemo(
+    () => (result ? result.applyComment(result.keypair, comment) : null),
+    [result, comment]
+  );
 
   // Save workspace snapshot
   useEffect(() => {
     const handleSave = () => {
-      if (keypair) {
-        addSnapshot("ssh-key-generator", "SSH Keypair Generator", keypair.publicKeyOpenSSH, JSON.stringify(keypair, null, 2));
-      }
+      if (!keypair) return;
+      const { material: _material, ...snapshot } = keypair;
+      addSnapshot("ssh-key-generator", "SSH Key Generator", keypair.publicKeyOpenSSH, JSON.stringify(snapshot, null, 2));
     };
     window.addEventListener("save-workspace", handleSave);
     return () => window.removeEventListener("save-workspace", handleSave);
   }, [keypair]);
 
-  const handleCopy = (text: string, key: string) => {
+  const copyTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => () => {
+    if (copyTimer.current) clearTimeout(copyTimer.current);
+  }, []);
+
+  const handleCopy = async (text: string, key: string) => {
     if (!text) return;
-    navigator.clipboard.writeText(text);
+    try {
+      await navigator.clipboard.writeText(text);
+    } catch {
+      return;
+    }
     setCopiedKey(key);
-    setTimeout(() => setCopiedKey(null), 1500);
+    if (copyTimer.current) clearTimeout(copyTimer.current);
+    copyTimer.current = setTimeout(() => setCopiedKey(null), 1500);
   };
 
-  const handleDownload = (content: string, filename: string) => {
-    const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = filename;
-    a.click();
-    URL.revokeObjectURL(url);
+  const selectAlgo = (next: KeyAlgorithmType) => {
+    setAlgo(next);
+    void generate(next, comment);
   };
 
-  const getBaseFilename = () => {
-    if (algo === "ed25519") return "id_ed25519";
-    if (algo === "ecdsa-p256") return "id_ecdsa";
-    return "id_rsa";
-  };
+  const keyLabel = keypair ? `${KEY_LABELS[keypair.keyType]} ${keypair.keySize}` : null;
+  const baseFilename = KEY_FILES[keypair?.keyType ?? "ssh-ed25519"];
+  const publicKey = keypair?.publicKeyOpenSSH ?? "";
+  const privateKey = keypair ? (privateFormat === "openssh" ? keypair.privateKeyOpenSSH : keypair.privateKeyPem) : "";
+  const privateFilename = privateFormat === "openssh" ? baseFilename : `${baseFilename}.pem`;
+  const selectedAlgo = ALGORITHMS.find((a) => a.id === algo) ?? ALGORITHMS[0];
+  const formatCaption = PRIVATE_FORMATS.find((f) => f.id === privateFormat)?.caption;
+
+  const usageLines = useMemo(
+    () => [
+      "# Install the downloaded key pair",
+      `mv ${baseFilename} ${baseFilename}.pub ~/.ssh/ && chmod 600 ~/.ssh/${baseFilename}`,
+      "# Authorize it on a server (adds it to ~/.ssh/authorized_keys)",
+      `ssh-copy-id -i ~/.ssh/${baseFilename}.pub user@host`,
+      "# Connect",
+      `ssh -i ~/.ssh/${baseFilename} user@host`,
+    ],
+    [baseFilename]
+  );
+  const usageText = useMemo(() => usageLines.join("\n"), [usageLines]);
+
+  const copyLabel = (key: string, label = "Copy") => (
+    <>
+      {copiedKey === key ? <Check {...iconProps} /> : <Copy {...iconProps} />}
+      <span>{copiedKey === key ? "Copied" : label}</span>
+    </>
+  );
 
   return (
-    <div className="flex flex-col h-full bg-white overflow-y-auto relative">
+    <div className="flex h-full flex-col bg-white">
       {/* Top Controls Bar (Unified Clean Header) */}
-      <div className="h-10 border-b border-neutral-200 px-4 flex items-center justify-between gap-4 shrink-0 bg-white">
-        <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar">
-          <span className="text-xs font-mono font-medium text-neutral-600">SSH Keypair Generator</span>
-        </div>
-
-        <div className="flex items-center gap-1.5">
-          <ShareButton toolSlug="ssh-key-generator" data={keypair?.publicKeyOpenSSH || ""} />
-          <EmbedButton toolSlug="ssh-key-generator" data={keypair?.publicKeyOpenSSH || ""} />
-          <ExportImageButton code={keypair?.publicKeyOpenSSH || ""} language="text" />
-        </div>
-      </div>
-
-      {/* Main Workspace Layout (Strict Dual-Pane Grid) */}
-      <div className="flex-1 min-h-[620px] grid grid-cols-1 lg:grid-cols-2 divide-y lg:divide-y-0 lg:divide-x divide-neutral-200 overflow-hidden bg-neutral-50/30" id="ssh-key-export">
-        {/* Left Pane: Configuration */}
-        <div className="flex flex-col h-full bg-white relative min-h-0">
-          <div className="h-10 border-b border-neutral-200 bg-neutral-50/50 flex items-center justify-between px-4 shrink-0">
-            <span className="text-xs font-mono font-semibold text-neutral-700">Key Configuration</span>
-          </div>
-          <div className="flex-1 p-6 overflow-y-auto relative space-y-6">
-            
-            {/* Algorithm Selector Grid */}
-            <div className="space-y-3">
-              <label className="text-[11px] font-semibold text-neutral-900 uppercase tracking-wider block">
-                Key Algorithm
-              </label>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {ALGORITHMS.map((a) => {
-                  const isSelected = algo === a.id;
-                  return (
-                    <button
-                      key={a.id}
-                      onClick={() => setAlgo(a.id)}
-                      className={cn(
-                        "p-3 rounded-lg border text-left transition-colors relative focus:outline-none flex flex-col gap-1.5",
-                        isSelected
-                          ? "border-neutral-900 bg-neutral-50 shadow-sm"
-                          : "border-neutral-200 bg-white hover:border-neutral-300 hover:bg-neutral-50/50"
-                      )}
-                    >
-                      <div className="flex items-center justify-between w-full">
-                        <span className={cn(
-                          "font-mono text-sm",
-                          isSelected ? "text-neutral-900 font-semibold" : "text-neutral-700 font-medium"
-                        )}>
-                          {a.name}
-                        </span>
-                        <span className="text-[10px] text-neutral-500 bg-neutral-100 border border-neutral-200/60 px-1.5 py-0.5 rounded font-medium">
-                          {a.tag}
-                        </span>
-                      </div>
-                      <span className="text-[11px] text-neutral-500 leading-tight">
-                        {a.description}
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
+      <ToolHeader
+        icon={getToolIcon("ssh-key-generator")}
+        title="SSH Key Generator"
+        utilities={
+          <ShareMenu toolSlug="ssh-key-generator" data={publicKey} imageCode={publicKey} imageLanguage="text" />
+        }
+        options={
+          <>
+            <select
+              value={algo}
+              onChange={(e) => selectAlgo(e.target.value as KeyAlgorithmType)}
+              aria-label="Key algorithm"
+              className={cn(selectBase, "min-w-0 flex-1 md:hidden")}
+            >
+              {ALGORITHMS.map((a) => (
+                <option key={a.id} value={a.id}>
+                  {a.name}
+                </option>
+              ))}
+            </select>
+            <div className={cn(segmentTrack, "hidden md:inline-flex")} role="group" aria-label="Key algorithm">
+              {ALGORITHMS.map((a) => (
+                <button
+                  key={a.id}
+                  type="button"
+                  aria-pressed={algo === a.id}
+                  onClick={() => selectAlgo(a.id)}
+                  className={segmentBtn(algo === a.id)}
+                >
+                  {a.name}
+                </button>
+              ))}
             </div>
-
-            {/* Comment Input */}
-            <div className="space-y-2">
-              <label htmlFor="key-comment" className="text-[11px] font-semibold text-neutral-900 uppercase tracking-wider block">
-                Key Comment / Identity
-              </label>
-              <input
-                id="key-comment"
-                type="text"
-                value={comment}
-                onChange={(e) => setComment(e.target.value)}
-                placeholder="user@devscratchpad"
-                className="w-full h-10 px-3 bg-white border border-neutral-200 rounded-lg text-sm font-mono text-neutral-900 focus:outline-none focus:border-neutral-400 focus:ring-1 focus:ring-neutral-400 transition-all placeholder:text-neutral-400"
-              />
-            </div>
-
-            {/* Generate Action */}
-            <div className="pt-2">
-              <button
-                onClick={() => handleGenerate()}
-                disabled={isGenerating}
-                className="w-full h-10 rounded-lg bg-neutral-900 text-white text-sm font-medium hover:bg-neutral-800 transition-colors disabled:opacity-50 flex items-center justify-center gap-2 shadow-sm"
-              >
-                <RefreshCw className={cn("w-4 h-4", isGenerating && "animate-spin")} />
-                <span>Generate New Keypair</span>
-              </button>
-            </div>
-
-          </div>
-        </div>
-
-        {/* Right Pane: Parsed Output */}
-        <div className="flex flex-col h-full bg-neutral-50/30 min-h-0">
-          <div className="h-10 border-b border-neutral-200 bg-neutral-50/50 flex items-center justify-between px-4 shrink-0">
-            <span className="text-xs font-mono font-semibold text-neutral-700">Cryptographic Material</span>
-          </div>
-
-          <div className="flex-1 overflow-y-auto p-4 relative">
-            {keypair ? (
-              <div className="space-y-4">
-                
-                {/* Public Key Card */}
-                <div className="bg-white border border-neutral-200 rounded-lg overflow-hidden flex flex-col shadow-sm">
-                  <div className="h-10 px-3 bg-neutral-50 border-b border-neutral-200 flex items-center justify-between shrink-0">
-                    <div className="flex items-center gap-2">
-                      <span className="text-[11px] font-semibold text-neutral-800 font-mono">Public Key (OpenSSH)</span>
-                      <span className="px-1.5 py-0.5 bg-blue-100 text-blue-700 border border-blue-200 rounded text-[9px] font-bold uppercase tracking-wider">
-                        {algo.toUpperCase()}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                      <button
-                        onClick={() => handleCopy(keypair.publicKeyOpenSSH, "pub")}
-                        className="flex items-center gap-1.5 px-2 py-1 rounded border border-neutral-200 bg-white hover:bg-neutral-50 text-neutral-700 text-[11px] font-medium transition-colors"
-                      >
-                        {copiedKey === "pub" ? <Check className="w-3.5 h-3.5 text-neutral-900" /> : <Copy className="w-3.5 h-3.5" />}
-                        <span>Copy</span>
-                      </button>
-                      <button
-                        onClick={() => handleDownload(keypair.publicKeyOpenSSH, `${getBaseFilename()}.pub`)}
-                        className="flex items-center gap-1.5 px-2 py-1 rounded border border-neutral-200 bg-white hover:bg-neutral-50 text-neutral-700 text-[11px] font-medium transition-colors"
-                      >
-                        <Download className="w-3.5 h-3.5" />
-                        <span>.pub</span>
-                      </button>
-                    </div>
-                  </div>
-                  <pre className="p-3 bg-white text-neutral-800 text-xs font-mono break-all whitespace-pre-wrap select-all m-0 max-h-24 overflow-y-auto">
-                    {keypair.publicKeyOpenSSH}
-                  </pre>
-                </div>
-
-                {/* Private Key Card */}
-                <div className="bg-white border border-neutral-200 rounded-lg overflow-hidden flex flex-col shadow-sm">
-                  <div className="h-10 px-3 bg-neutral-50 border-b border-neutral-200 flex items-center justify-between shrink-0">
-                    <div className="flex items-center gap-2">
-                      <span className="text-[11px] font-semibold text-neutral-800 font-mono">Private Key (PKCS#8 PEM)</span>
-                      <span className="px-1.5 py-0.5 bg-amber-100 text-amber-700 border border-amber-200 rounded text-[9px] font-bold uppercase tracking-wider">
-                        SECRET
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                      <button
-                        onClick={() => setShowPrivateKey(!showPrivateKey)}
-                        className="flex items-center gap-1.5 px-2 py-1 rounded border border-neutral-200 bg-white hover:bg-neutral-50 text-neutral-700 text-[11px] font-medium transition-colors"
-                      >
-                        {showPrivateKey ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
-                        <span>{showPrivateKey ? "Hide" : "Reveal"}</span>
-                      </button>
-                      <button
-                        onClick={() => handleCopy(keypair.privateKeyPem, "priv")}
-                        className="flex items-center gap-1.5 px-2 py-1 rounded border border-neutral-200 bg-white hover:bg-neutral-50 text-neutral-700 text-[11px] font-medium transition-colors"
-                      >
-                        {copiedKey === "priv" ? <Check className="w-3.5 h-3.5 text-neutral-900" /> : <Copy className="w-3.5 h-3.5" />}
-                        <span>Copy</span>
-                      </button>
-                      <button
-                        onClick={() => handleDownload(keypair.privateKeyPem, getBaseFilename())}
-                        className="flex items-center gap-1.5 px-2 py-1 rounded border border-neutral-200 bg-white hover:bg-neutral-50 text-neutral-700 text-[11px] font-medium transition-colors"
-                      >
-                        <Download className="w-3.5 h-3.5" />
-                        <span>.pem</span>
-                      </button>
-                    </div>
-                  </div>
-                  <div className="relative bg-white">
-                    <pre className={cn(
-                      "p-3 text-neutral-800 text-[11px] font-mono break-all whitespace-pre-wrap select-all m-0 max-h-36 overflow-y-auto leading-relaxed",
-                      !showPrivateKey && "blur-xs select-none opacity-40"
-                    )}>
-                      {keypair.privateKeyPem}
-                    </pre>
-                    {!showPrivateKey && (
-                      <div className="absolute inset-0 flex items-center justify-center bg-neutral-100/30 backdrop-blur-[2px]">
-                        <button
-                          onClick={() => setShowPrivateKey(true)}
-                          className="px-4 py-2 rounded-lg border border-neutral-300 bg-white text-neutral-900 text-[11px] font-semibold shadow-xs hover:bg-neutral-50 transition-colors flex items-center gap-2"
-                        >
-                          <Eye className="w-4 h-4" />
-                          <span>Click to reveal Private Key</span>
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                {/* Fingerprints & Randomart Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {/* Fingerprints */}
-                  <div className="bg-white border border-neutral-200 rounded-lg flex flex-col shadow-sm">
-                    <div className="h-8 px-3 bg-neutral-50 border-b border-neutral-200 flex items-center shrink-0">
-                      <span className="text-[10px] font-bold text-neutral-500 uppercase tracking-wider">Fingerprints</span>
-                    </div>
-                    <div className="p-3 space-y-3 bg-white">
-                      <div>
-                        <div className="flex items-center justify-between mb-0.5">
-                          <span className="text-[10px] font-medium text-neutral-500 uppercase">SHA-256</span>
-                          <button
-                            onClick={() => handleCopy(keypair.fingerprintSha256, "fp256")}
-                            className="text-neutral-400 hover:text-neutral-900 transition-colors"
-                          >
-                            {copiedKey === "fp256" ? <Check className="w-3.5 h-3.5 text-neutral-900" /> : <Copy className="w-3.5 h-3.5" />}
-                          </button>
-                        </div>
-                        <span className="font-mono text-[11px] text-neutral-900 break-all">{keypair.fingerprintSha256}</span>
-                      </div>
-                      <div className="border-t border-neutral-100 pt-3">
-                        <div className="flex items-center justify-between mb-0.5">
-                          <span className="text-[10px] font-medium text-neutral-500 uppercase">MD5</span>
-                          <button
-                            onClick={() => handleCopy(keypair.fingerprintMd5, "fpmd5")}
-                            className="text-neutral-400 hover:text-neutral-900 transition-colors"
-                          >
-                            {copiedKey === "fpmd5" ? <Check className="w-3.5 h-3.5 text-neutral-900" /> : <Copy className="w-3.5 h-3.5" />}
-                          </button>
-                        </div>
-                        <span className="font-mono text-[11px] text-neutral-900 break-all">{keypair.fingerprintMd5}</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Randomart */}
-                  <div className="bg-neutral-950 border border-neutral-800 rounded-lg flex flex-col shadow-sm">
-                    <div className="h-8 px-3 bg-neutral-900/50 border-b border-neutral-800 flex items-center justify-between shrink-0">
-                      <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider">Randomart</span>
-                      <button
-                        onClick={() => handleCopy(keypair.randomart, "art")}
-                        className="text-neutral-500 hover:text-neutral-200 transition-colors"
-                      >
-                        {copiedKey === "art" ? <Check className="w-3 h-3 text-neutral-200" /> : <Copy className="w-3 h-3" />}
-                      </button>
-                    </div>
-                    <div className="flex-1 p-3 flex items-center justify-center">
-                      <pre className="font-mono text-[10px] text-neutral-300 leading-tight select-all m-0">
-                        {keypair.randomart}
-                      </pre>
-                    </div>
-                  </div>
-                </div>
-
-              </div>
+          </>
+        }
+        actions={
+          <button
+            type="button"
+            onClick={() => void generate(algo, comment)}
+            disabled={isGenerating}
+            className={btnPrimary}
+            title="Generate a new key pair"
+          >
+            {isGenerating ? (
+              <LoaderCircle {...iconProps} className="size-4 shrink-0 animate-spin" />
             ) : (
-              <div className="p-8 text-center text-neutral-400 font-mono text-sm">
-                Generating cryptographic keypair...
+              <RefreshCw {...iconProps} />
+            )}
+            <span>{isGenerating ? "Generating" : "Generate"}</span>
+          </button>
+        }
+      />
+
+      {/* Output scrolls inside the tool root (the shell gives it a fixed-height box) */}
+      <div className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden">
+        <div className="grid min-h-full grid-cols-1 lg:grid-cols-[minmax(0,1fr)_minmax(320px,380px)] lg:divide-x lg:divide-zinc-200">
+          {/* Left: options + keys */}
+          <div className="flex min-w-0 flex-col">
+            <div className="border-b border-zinc-200 px-3 py-3 md:px-4">
+              <div className="flex flex-col gap-1.5 sm:flex-row sm:items-center sm:gap-3">
+                <label htmlFor="ssh-key-comment" className={cn(captionText, "shrink-0")}>
+                  Comment
+                </label>
+                <input
+                  id="ssh-key-comment"
+                  type="text"
+                  value={comment}
+                  onChange={(e) => setComment(e.target.value)}
+                  placeholder="user@host (optional)"
+                  spellCheck={false}
+                  autoComplete="off"
+                  className={cn(inputBase, "w-full min-w-0 sm:max-w-sm")}
+                />
+              </div>
+              <p className="mt-2 text-xs text-zinc-500">
+                <span className="font-medium text-zinc-700">{selectedAlgo.name}.</span> {selectedAlgo.caption}
+              </p>
+            </div>
+
+            {error && (
+              <div role="alert" className="flex items-start gap-2 border-b border-red-200 bg-red-50 px-3 py-2.5 text-xs text-red-700 md:px-4">
+                <CircleAlert {...iconProps} className="mt-px size-4 shrink-0" />
+                <span className="min-w-0 break-words">Key generation failed: {error}</span>
               </div>
             )}
+
+            {keypair?.fellBack && (
+              <div role="status" className="flex items-start gap-2 border-b border-amber-200 bg-amber-50 px-3 py-2.5 text-xs text-amber-800 md:px-4">
+                <TriangleAlert {...iconProps} className="mt-px size-4 shrink-0" />
+                <span className="min-w-0">
+                  This browser cannot generate {ALGORITHM_NAMES[keypair.requestedAlgorithm]} keys with WebCrypto, so an{" "}
+                  {ALGORITHM_NAMES[keypair.algorithm]} key was generated instead.
+                </span>
+              </div>
+            )}
+
+            <div className={cn("flex flex-col transition-opacity", isGenerating && "opacity-60")} aria-busy={isGenerating}>
+              {/* Public Key */}
+              <section className="border-b border-zinc-200">
+                <PaneBar
+                  label={
+                    <>
+                      Public key
+                      {keyLabel && (
+                        <span className="ml-2 rounded bg-zinc-200/70 px-1.5 py-0.5 font-mono text-[10px] tracking-normal text-zinc-700">
+                          {keyLabel}
+                        </span>
+                      )}
+                    </>
+                  }
+                >
+                  <button type="button" onClick={() => handleCopy(publicKey, "pub")} disabled={!publicKey} className={btnGhost}>
+                    {copyLabel("pub")}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => downloadText(`${publicKey}\n`, `${baseFilename}.pub`)}
+                    disabled={!publicKey}
+                    className={btnGhost}
+                    title={`Download ${baseFilename}.pub`}
+                  >
+                    <Download {...iconProps} />
+                    <span>.pub</span>
+                  </button>
+                </PaneBar>
+                <pre className={cn(preBase, "max-h-40 select-all overflow-y-auto whitespace-pre-wrap break-all px-3 py-3 md:px-4", !publicKey && "text-zinc-400")}>
+                  {publicKey || "Generating key pair..."}
+                </pre>
+              </section>
+
+              {/* Private Key */}
+              <section className="border-b border-zinc-200">
+                <PaneBar label="Private key">
+                  <button
+                    type="button"
+                    onClick={() => setShowPrivateKey((v) => !v)}
+                    disabled={!privateKey}
+                    className={btnGhost}
+                    aria-pressed={showPrivateKey}
+                  >
+                    {showPrivateKey ? <EyeOff {...iconProps} /> : <Eye {...iconProps} />}
+                    <span>{showPrivateKey ? "Hide" : "Reveal"}</span>
+                  </button>
+                  <button type="button" onClick={() => handleCopy(privateKey, "priv")} disabled={!privateKey} className={btnGhost}>
+                    {copyLabel("priv")}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => downloadText(privateKey, privateFilename)}
+                    disabled={!privateKey}
+                    className={btnGhost}
+                    title={`Download ${privateFilename}`}
+                    aria-label={`Download ${privateFilename}`}
+                  >
+                    <Download {...iconProps} />
+                    <span className="hidden sm:inline">Download</span>
+                  </button>
+                </PaneBar>
+
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 border-b border-zinc-100 px-3 py-2 md:px-4">
+                  <div className={segmentTrack} role="group" aria-label="Private key format">
+                    {PRIVATE_FORMATS.map((f) => (
+                      <button
+                        key={f.id}
+                        type="button"
+                        aria-pressed={privateFormat === f.id}
+                        onClick={() => setPrivateFormat(f.id)}
+                        className={segmentBtn(privateFormat === f.id)}
+                      >
+                        {f.name}
+                      </button>
+                    ))}
+                  </div>
+                  <span className="min-w-0 text-xs text-zinc-500">{formatCaption}</span>
+                </div>
+
+                <div className="relative">
+                  <pre
+                    aria-hidden={!showPrivateKey}
+                    className={cn(
+                      preBase,
+                      "max-h-72 min-h-36 whitespace-pre-wrap break-all px-3 py-3 md:px-4",
+                      showPrivateKey ? "select-all overflow-y-auto" : "pointer-events-none select-none overflow-hidden blur-sm",
+                      !privateKey && "text-zinc-400"
+                    )}
+                  >
+                    {privateKey || "Generating key pair..."}
+                  </pre>
+                  {!showPrivateKey && privateKey && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-white/40">
+                      <button type="button" onClick={() => setShowPrivateKey(true)} className={btnSecondary}>
+                        <Eye {...iconProps} />
+                        <span>Reveal private key</span>
+                      </button>
+                    </div>
+                  )}
+                </div>
+
+                <p className="flex items-start gap-1.5 border-t border-zinc-100 px-3 py-2 text-xs text-amber-700 md:px-4">
+                  <ShieldAlert {...iconProps} className="mt-px size-3.5 shrink-0" />
+                  <span>Secret. Keep it on your machine as ~/.ssh/{baseFilename}; never share or commit it.</span>
+                </p>
+              </section>
+            </div>
+          </div>
+
+          {/* Right: fingerprints, randomart, usage */}
+          <div className={cn("flex min-w-0 flex-col transition-opacity", isGenerating && "opacity-60")}>
+            <section className="border-b border-zinc-200">
+              <PaneBar label="Fingerprints" />
+              <div className="divide-y divide-zinc-100">
+                {(
+                  [
+                    ["fp-sha256", keypair?.fingerprintSha256, "SHA256 fingerprint"],
+                    ["fp-md5", keypair?.fingerprintMd5, "MD5 fingerprint"],
+                  ] as const
+                ).map(([key, value, label]) => (
+                  <div key={key} className="flex min-h-12 items-center gap-2 py-1 pl-3 pr-1 md:pl-4">
+                    <code className="min-w-0 flex-1 break-all font-mono text-xs leading-5 text-zinc-900">
+                      {value ?? <span className="text-zinc-400">...</span>}
+                    </code>
+                    <button
+                      type="button"
+                      onClick={() => value && handleCopy(value, key)}
+                      disabled={!value}
+                      className={cn(btnIcon, copiedKey === key && "text-zinc-900")}
+                      title={copiedKey === key ? "Copied" : `Copy ${label}`}
+                      aria-label={`Copy ${label}`}
+                    >
+                      {copiedKey === key ? <Check {...iconProps} /> : <Copy {...iconProps} />}
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </section>
+
+            <section className="border-b border-zinc-200">
+              <PaneBar label="Randomart">
+                <button
+                  type="button"
+                  onClick={() => keypair && handleCopy(keypair.randomart, "art")}
+                  disabled={!keypair}
+                  className={cn(btnIcon, copiedKey === "art" && "text-zinc-900")}
+                  title={copiedKey === "art" ? "Copied" : "Copy randomart"}
+                  aria-label="Copy randomart"
+                >
+                  {copiedKey === "art" ? <Check {...iconProps} /> : <Copy {...iconProps} />}
+                </button>
+              </PaneBar>
+              <div className="px-3 py-4 md:px-4">
+                <pre className={cn(preBase, "mx-auto w-max max-w-full overflow-x-auto leading-4")}>
+                  {keypair?.randomart ?? ""}
+                </pre>
+              </div>
+            </section>
+
+            <section className="border-b border-zinc-200">
+              <PaneBar label="Usage">
+                <button type="button" onClick={() => handleCopy(usageText, "usage")} className={btnGhost}>
+                  {copyLabel("usage")}
+                </button>
+              </PaneBar>
+              <pre className={cn(preBase, "overflow-x-auto whitespace-pre px-3 py-3 md:px-4")}>
+                {usageLines.map((line) => (
+                  <span key={line} className={cn("block", line.startsWith("#") && "text-zinc-400")}>
+                    {line}
+                  </span>
+                ))}
+              </pre>
+            </section>
           </div>
         </div>
       </div>

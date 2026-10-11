@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
-import { Check, Copy, Terminal, ArrowUpRight } from "lucide-react";
+import { Check, Copy, ArrowUpRight } from "lucide-react";
 import { QuickCheatItem } from "@/lib/blog/types";
 
 interface CheatSheetGridProps {

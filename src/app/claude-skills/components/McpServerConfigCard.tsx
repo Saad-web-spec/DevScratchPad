@@ -190,11 +190,11 @@ export function McpServerConfigCard({
               Ready for Claude
             </span>
           )}
-          <span className="text-[10px] text-zinc-500 font-mono hidden sm:inline">claude.json</span>
+          <span className="text-[10px] text-zinc-500 font-mono hidden sm:inline">.mcp.json</span>
           <InfoTooltip
             title="Claude MCP Server"
             description="Model Context Protocol config for connecting Claude Code CLI or Claude Desktop to local tools, filesystems, and databases."
-            example="claude.json -> mcpServers"
+            example=".mcp.json -> mcpServers"
             align="right"
           />
         </div>
@@ -479,7 +479,7 @@ export function McpServerConfigCard({
           <div className="flex items-center gap-2 text-xs text-orange-800 bg-orange-50/50 border border-orange-200/50 rounded-md p-2">
             <CheckCircle2 className="w-3.5 h-3.5 text-orange-600 shrink-0" />
             <span className="text-[11px]">
-              MCP configuration verified. Compatible with Claude Code (<code className="bg-orange-100/60 text-orange-800 px-1 py-0.2 rounded font-mono text-[10px]">claude.json</code>) and Claude Desktop (<code className="bg-orange-100/60 text-orange-800 px-1 py-0.2 rounded font-mono text-[10px]">claude_desktop_config.json</code>).
+              MCP configuration verified. Compatible with Claude Code (<code className="bg-orange-100/60 text-orange-800 px-1 py-0.2 rounded font-mono text-[10px]">.mcp.json</code>) and Claude Desktop (<code className="bg-orange-100/60 text-orange-800 px-1 py-0.2 rounded font-mono text-[10px]">claude_desktop_config.json</code>).
             </span>
           </div>
         )}

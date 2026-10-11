@@ -244,7 +244,7 @@ export function FormatSelector({
           >
             <div className="flex items-center gap-1.5 font-semibold text-xs truncate">
               <Server className="w-3.5 h-3.5 text-blue-600 shrink-0" />
-              <span className="truncate">claude.json</span>
+              <span className="truncate">.mcp.json</span>
             </div>
             <span className="text-[10px] text-zinc-500 leading-tight truncate">MCP Servers</span>
           </button>

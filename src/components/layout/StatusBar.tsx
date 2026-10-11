@@ -42,7 +42,7 @@ export function EditorPanelFooter({
  <CheckCircle2 className="w-3.5 h-3.5 text-zinc-900"/> Ready
  </span>
  ) : (
- <span className="flex items-center gap-1.5 text-red-400 font-medium truncate max-w-md">
+ <span className="flex min-w-0 items-center gap-1.5 text-red-600 font-medium truncate max-w-md">
  <AlertCircle className="w-3.5 h-3.5 text-red-500 shrink-0"/>
  Line {line}, Col {col}: {shortMessage}
  </span>
@@ -75,7 +75,7 @@ export function StatusBar({
  executionMs: number;
 }) {
  return (
- <div className="h-8 border-t border-zinc-200 ] bg-zinc-50 ] flex items-center justify-between px-4 shrink-0 transition-colors">
+ <div className="h-8 border-t border-zinc-200 bg-zinc-50 flex items-center justify-between gap-3 px-3 md:px-4 shrink-0 transition-colors">
  <div className="flex items-center gap-4 min-w-0 flex-1">
  {isValid ? (
  <div className="flex items-center gap-2">
@@ -89,7 +89,7 @@ export function StatusBar({
  )}
  </div>
 
- <div className="flex items-center gap-4 text-xs text-zinc-500">
+ <div className="flex items-center gap-3 md:gap-4 text-xs tabular-nums text-zinc-500 shrink-0">
  <div>{inputLength.toLocaleString()} chars</div>
  <div>{executionMs.toFixed(2)} ms</div>
  <div>UTF-8</div>

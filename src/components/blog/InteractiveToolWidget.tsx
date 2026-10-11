@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
-import { Terminal, ArrowRight, Play, Check, Copy, Sparkles, ShieldCheck } from "lucide-react";
+import { ArrowRight, Check, Copy, ShieldCheck } from "lucide-react";
 import { InteractivePreset } from "@/lib/blog/types";
 import { ToolMeta } from "@/lib/tools/registry";
 
@@ -30,7 +30,7 @@ export function InteractiveToolWidget({ preset, toolMeta }: InteractiveToolWidge
       {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-zinc-800">
         <div className="flex items-center gap-2">
-          <span className="w-2 h-2 rounded-full bg-emerald-400" />
+          <span className="w-2 h-2 rounded-full bg-zinc-400" />
           <h3 className="text-sm font-semibold text-white tracking-tight">
             {preset.title}
           </h3>

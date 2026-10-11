@@ -1,163 +1,108 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
-import { Search, Save, Menu, MoreVertical, Lock } from "lucide-react";
-import Link from "next/link";
+import { Search, Save, Menu } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { useModKeyLabel } from "@/lib/useModKeyLabel";
 import { InstallAppButton } from "./InstallAppButton";
+import { BrandLink, PrimaryNav } from "./PrimaryNav";
+import { ICON_STROKE } from "./toolIcons";
 
 interface TopBarProps {
   onOpenCommandPalette?: () => void;
   onOpenMobileMenu?: () => void;
+  /** Whether the mobile tool drawer is open (drives `aria-expanded` on the menu button). */
+  isMobileMenuOpen?: boolean;
+  /** Id of the mobile drawer element, for `aria-controls`. */
+  mobileMenuId?: string;
 }
 
-export function TopBar({ onOpenCommandPalette, onOpenMobileMenu }: TopBarProps) {
-  const [isOverflowOpen, setIsOverflowOpen] = useState(false);
-  const dropdownRef = useRef<HTMLDivElement>(null);
+const FOCUS_RING =
+  "focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-zinc-900 focus-visible:ring-offset-2";
 
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setIsOverflowOpen(false);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
+/** Dispatches the workspace-wide save event that each tool listens for. */
+export function saveWorkspace() {
+  window.dispatchEvent(new Event("save-workspace"));
+}
 
-  const handleSaveWorkspace = () => {
-    window.dispatchEvent(new Event("save-workspace"));
-    setIsOverflowOpen(false);
-  };
+/**
+ * Workspace header. Desktop: brand, primary links, search, install + save.
+ * Mobile: one menu button (opens the tool drawer, which also carries the site links and workspace actions),
+ * the brand, and a search button.
+ */
+export function TopBar({ onOpenCommandPalette, onOpenMobileMenu, isMobileMenuOpen, mobileMenuId }: TopBarProps) {
+  const modKey = useModKeyLabel();
+  const shortcut = `${modKey}+K`;
 
   return (
-    <header className="sticky top-0 z-30 h-14 bg-white/95 backdrop-blur-md border-b border-zinc-200 flex items-center justify-between px-3 md:px-4 shrink-0 transition-colors">
-      {/* Left side: Hamburger menu (mobile) + Brand logo */}
-      <div className="flex items-center gap-2.5">
+    <header className="sticky top-0 z-30 h-14 bg-white border-b border-zinc-200 flex items-center gap-1 md:gap-3 pl-1.5 pr-1.5 md:px-4 shrink-0">
+      {/* Left side: Menu button (mobile) + Brand logo + primary navigation */}
+      <div className="flex min-w-0 items-center gap-1 md:gap-4 lg:gap-6">
         <button
+          type="button"
           onClick={onOpenMobileMenu}
-          className="p-1.5 rounded-lg text-zinc-600 hover:text-zinc-900 hover:bg-zinc-100 transition-colors md:hidden focus:outline-none"
-          aria-label="Open Navigation Menu"
+          className={cn(
+            "grid size-10 place-items-center rounded-lg text-zinc-700 transition-colors hover:bg-zinc-100 hover:text-zinc-900 md:hidden",
+            FOCUS_RING
+          )}
+          aria-label="Open menu"
+          aria-haspopup="dialog"
+          aria-expanded={isMobileMenuOpen ?? false}
+          aria-controls={mobileMenuId}
         >
-          <Menu className="w-5 h-5" />
+          <Menu aria-hidden="true" strokeWidth={ICON_STROKE} className="size-5" />
         </button>
 
-        <div className="flex items-center gap-2.5">
-          <span className="font-semibold text-base md:text-lg tracking-tight text-zinc-900 truncate">
-            DevScratchpad
-          </span>
-        </div>
+        <BrandLink className="px-1 md:px-0" />
+
+        <PrimaryNav showMobileMenu={false} />
       </div>
 
-      {/* Middle: Search bar button */}
-      <div className="flex items-center mx-2 flex-1 max-w-xs md:max-w-none md:flex-initial">
+      {/* Search: icon button on phones, compact field from sm (icon-only at md where the nav needs the room) */}
+      <div className="flex min-w-0 flex-1 items-center justify-end">
         <button
+          type="button"
           onClick={onOpenCommandPalette}
-          className="group flex items-center gap-2 px-2.5 sm:px-3 py-1.5 bg-zinc-50 hover:bg-zinc-100 text-zinc-500 hover:text-zinc-700 rounded-lg border border-zinc-200 hover:border-zinc-300 transition-all text-xs sm:text-sm w-full sm:w-64 justify-between"
+          aria-label="Search tools"
+          aria-keyshortcuts="Control+K Meta+K"
+          title={`Search tools (${shortcut})`}
+          className={cn(
+            "group flex items-center justify-center rounded-lg text-zinc-700 transition-colors hover:bg-zinc-100 hover:text-zinc-900",
+            "size-10 sm:h-8 sm:w-64 sm:justify-between sm:gap-2 sm:border sm:border-zinc-200 sm:bg-zinc-50 sm:px-2.5 sm:text-zinc-500 sm:hover:border-zinc-300 sm:hover:bg-white",
+            "md:w-auto lg:w-52 xl:w-64",
+            FOCUS_RING
+          )}
         >
-          <div className="flex items-center gap-2 min-w-0">
-            <Search className="w-4 h-4 shrink-0 text-zinc-400 group-hover:text-blue-500 transition-colors" />
-            <span className="truncate">Search tools...</span>
-          </div>
-          <kbd className="hidden sm:inline-block px-1.5 py-0.5 rounded bg-white border border-zinc-200 text-[10px] font-medium text-zinc-400 group-hover:border-blue-300">
-            ⌘K
+          <span className="flex min-w-0 items-center gap-2">
+            <Search
+              aria-hidden="true"
+              strokeWidth={ICON_STROKE}
+              className="size-5 shrink-0 sm:size-4 sm:text-zinc-400 sm:group-hover:text-zinc-700"
+            />
+            <span className="hidden truncate text-sm sm:inline md:hidden lg:inline">Search tools…</span>
+          </span>
+          <kbd className="hidden shrink-0 rounded border border-zinc-200 bg-white px-1.5 py-px font-sans text-[10px] font-medium text-zinc-400 sm:inline-block md:hidden lg:inline-block">
+            {modKey} K
           </kbd>
         </button>
       </div>
 
-      {/* Right side: Actions */}
-      <div className="flex items-center gap-1.5 sm:gap-2">
-        {/* Mobile visible AI Studio & Skill Icons (1-tap) */}
-        <Link
-          href="/ai-skill-studio"
-          className="flex md:hidden p-1.5 hover:bg-zinc-100 active:bg-zinc-200 rounded-md transition-colors items-center justify-center shrink-0"
-          title="AI Skill Studio"
-          aria-label="AI Skill Studio"
-        >
-          <img
-            src="/ai-skill-icon.png"
-            className="w-5 h-4 object-contain"
-            alt="AI Skill Studio"
-          />
-        </Link>
-        <Link
-          href="/skill"
-          className="flex md:hidden p-1.5 hover:bg-zinc-100 active:bg-zinc-200 rounded-md transition-colors items-center justify-center shrink-0"
-          title="AI Skill Hub & Library"
-          aria-label="AI Skill Hub & Library"
-        >
-          <img
-            src="/skill-folder-icon.png"
-            className="w-7 h-5.5 object-contain"
-            alt="Skills"
-          />
-        </Link>
-
-        {/* Desktop Action Buttons */}
-        <div className="hidden md:flex items-center gap-2">
-          <InstallAppButton />
-          <Link
-            href="/ai-skill-studio"
-            className="text-zinc-700 hover:text-zinc-900 hover:bg-zinc-100 text-xs px-2.5 py-1.5 rounded-md flex items-center gap-1.5 transition-colors font-semibold"
-            title="AI Skill Studio"
-          >
-            <img src="/ai-skill-icon.png" className="w-4 h-3.5 object-contain" alt="AI Skill Studio" />
-            <span>AI Skill Studio</span>
-          </Link>
-          <Link
-            href="/skill"
-            className="p-1 hover:bg-zinc-100 rounded-md transition-colors flex items-center justify-center shrink-0"
-            title="AI Skill Hub & Library"
-            aria-label="AI Skill Hub & Library"
-          >
-            <img
-              src="/skill-folder-icon.png"
-              className="w-7 h-5.5 sm:w-8 sm:h-6 object-contain hover:scale-105 transition-transform"
-              alt="Skills"
-            />
-          </Link>
-          <div className="bg-neutral-900 text-neutral-100 text-xs px-2.5 py-1 rounded-md flex items-center gap-1.5"><Lock className="w-3 h-3" /> 100% Local</div>
-          <div className="w-px h-6 bg-zinc-200 mx-1"></div>
-          <button
-            onClick={handleSaveWorkspace}
-            className="flex items-center gap-2 px-3 py-1.5 bg-zinc-900 hover:bg-zinc-800 text-white rounded-lg transition-all text-sm font-medium shadow-none active:scale-95"
-          >
-            <Save className="w-4 h-4" />
-            <span>Save Workspace</span>
-          </button>
-        </div>
-
-        {/* Mobile Overflow Menu */}
-        <div className="relative md:hidden" ref={dropdownRef}>
-          <button
-            onClick={() => setIsOverflowOpen((prev) => !prev)}
-            className="p-1.5 rounded-lg text-zinc-600 hover:text-zinc-900 hover:bg-zinc-100 transition-colors focus:outline-none"
-            aria-label="More actions"
-          >
-            <MoreVertical className="w-5 h-5" />
-          </button>
-
-          {isOverflowOpen && (
-            <div className="absolute right-0 mt-2 w-52 bg-white rounded-xl shadow-lg border border-zinc-200 py-1 z-50 animate-in fade-in zoom-in-95 duration-100">
-              <Link
-                href="/ai-skill-studio"
-                onClick={() => setIsOverflowOpen(false)}
-                className="w-full flex items-center gap-2.5 px-4 py-2.5 text-xs text-zinc-900 hover:bg-zinc-50 font-semibold transition-colors text-left border-b border-zinc-100"
-              >
-                <img src="/ai-skill-icon.png" className="w-4 h-3.5 object-contain" alt="AI Skill Studio" />
-                <span>AI Skill Studio</span>
-              </Link>
-              <button
-                onClick={handleSaveWorkspace}
-                className="w-full flex items-center gap-2.5 px-4 py-2.5 text-xs text-zinc-700 hover:bg-zinc-50 font-medium transition-colors text-left"
-              >
-                <Save className="w-4 h-4 text-zinc-500" />
-                <span>Save Workspace</span>
-              </button>
-            </div>
+      {/* Right side: Workspace actions (on mobile they live in the tool drawer) */}
+      <div className="hidden shrink-0 items-center gap-2 md:flex">
+        <InstallAppButton className="hidden lg:flex" />
+        <button
+          type="button"
+          onClick={saveWorkspace}
+          title="Save workspace"
+          aria-label="Save workspace"
+          className={cn(
+            "flex h-8 items-center gap-2 rounded-lg bg-zinc-900 px-2 text-sm font-medium text-white transition-colors hover:bg-zinc-800 xl:px-3",
+            FOCUS_RING
           )}
-        </div>
+        >
+          <Save aria-hidden="true" strokeWidth={ICON_STROKE} className="size-4" />
+          <span className="hidden xl:inline">Save Workspace</span>
+        </button>
       </div>
     </header>
   );
 }
-

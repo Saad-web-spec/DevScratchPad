@@ -38,7 +38,7 @@ export async function generateMetadata({
           secureUrl: "https://www.devscratchpad.tech/ai-skill-studio/opengraph-image",
           width: 1200,
           height: 630,
-          alt: `${hub.seoTitle} — 13 Formats & 5-Layer AI Agent Suite — DevScratchpad`,
+          alt: `${hub.seoTitle} | DevScratchpad AI Skill Studio`,
           type: "image/png",
         },
       ],
@@ -52,7 +52,7 @@ export async function generateMetadata({
           url: "https://www.devscratchpad.tech/ai-skill-studio/opengraph-image",
           width: 1200,
           height: 630,
-          alt: `${hub.seoTitle} — 13 Formats & 5-Layer AI Agent Suite — DevScratchpad`,
+          alt: `${hub.seoTitle} | DevScratchpad AI Skill Studio`,
         },
       ],
     },
@@ -141,8 +141,9 @@ export default async function FormatHubPage({
       <ClaudeSkillsClient
         initialFormat={hub.format}
         formatSlug={hub.slug}
+        heading={{ title: hub.heroHeading, description: hub.heroSubheading }}
       />
-      <AiSkillStudioSeoContent />
+      <AiSkillStudioSeoContent activeFormatSlug={hub.slug} formatFaqs={hub.faqs} />
     </>
   );
 }

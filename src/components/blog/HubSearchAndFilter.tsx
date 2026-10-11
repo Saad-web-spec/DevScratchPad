@@ -2,7 +2,7 @@
 
 import React, { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
-import { ArrowUpRight, Clock, BookOpen, Layers, Sparkles, Filter } from "lucide-react";
+import { ArrowUpRight, Filter } from "lucide-react";
 import { BlogPost, LearningTrack, QuickCheatItem } from "@/lib/blog/types";
 import { HubHeader } from "./HubHeader";
 import { LearningTracks } from "./LearningTracks";
@@ -169,7 +169,7 @@ export function HubSearchAndFilter({ posts, tracks, cheats }: HubSearchAndFilter
                       {post.category.toUpperCase()}
                     </span>
                     {post.type === "cheat-sheet" && (
-                      <span className="text-[10px] font-mono font-medium px-2 py-0.5 bg-amber-50 border border-amber-200 text-amber-800 rounded">
+                      <span className="text-[10px] font-mono font-medium px-2 py-0.5 bg-zinc-900 border border-zinc-900 text-white rounded">
                         CHEAT SHEET
                       </span>
                     )}

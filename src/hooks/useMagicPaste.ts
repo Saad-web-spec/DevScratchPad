@@ -4,6 +4,22 @@ import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { getToolUrl } from "@/lib/routes";
 
+/** Tools that already accept a detected payload; pasting on any of them must not navigate away. */
+const SAME_FAMILY: Record<string, string[]> = {
+  "curl-to-fetch": ["curl-to-fetch", "curl-to-python", "curl-to-go", "curl-to-javascript"],
+  "json-formatter": [
+    "json-formatter",
+    "json-validator",
+    "json-schema-validator",
+    "json-to-ts",
+    "json-to-zod",
+    "json-to-go",
+    "json-to-yaml",
+    "yaml-to-json",
+    "yaml",
+  ],
+};
+
 export function useMagicPaste() {
   const router = useRouter();
 
@@ -12,6 +28,10 @@ export function useMagicPaste() {
       // Don't intercept if user is pasting into a standard input field or textarea
       // (We DO want to intercept if they are pasting into Monaco Editor or the document body)
       const target = e.target as HTMLElement;
+      // Pasting into a specific tool's editor is deliberate (e.g. JSON into the diff checker): never navigate away.
+      if (window.location.pathname.startsWith("/tools/") && target.closest?.(".monaco-editor")) {
+        return;
+      }
       if (
         target.tagName === "INPUT" || 
         target.tagName === "TEXTAREA"
@@ -71,7 +91,10 @@ export function useMagicPaste() {
         const currentPath = window.location.pathname;
         const targetPath = getToolUrl(detectedToolSlug);
         
-        if (currentPath !== targetPath) {
+        const family = SAME_FAMILY[detectedToolSlug] ?? [detectedToolSlug];
+        const onCompatibleTool = currentPath === targetPath || family.some((slug) => getToolUrl(slug) === currentPath);
+
+        if (!onCompatibleTool) {
           // Intercept paste, save payload, and redirect
           e.preventDefault();
           e.stopPropagation();

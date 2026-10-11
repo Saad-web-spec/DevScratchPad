@@ -1,12 +1,17 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { MonacoEditor } from "@/components/MonacoEditor";
-import { ShareButton } from "@/components/ShareButton";
-import { EmbedButton } from "@/components/EmbedButton";
-import { ExportImageButton } from "@/components/ExportImageButton";
-import { FileCode, Copy, Check } from "lucide-react";
+import { ShareMenu } from "@/components/ShareMenu";
+import { Copy, Check, Eraser } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { addSnapshot } from "@/lib/storage";
+import { ToolHeader, PaneBar, MobilePaneTabs, btnGhost, inputBase, segmentTrack, segmentBtn, captionText, iconProps } from "@/components/tools/ToolChrome";
+import { getToolIcon } from "@/components/layout/toolIcons";
+import { convertSvgToJsx } from "@/components/tools/converters/svgToJsx";
+import { ToolFooter, formatStats } from "@/components/tools/converters/ToolFooter";
+import { useSettledValue, timed } from "@/components/tools/converters/useSettledValue";
+import { useCopyFeedback } from "@/components/tools/converters/useCopyFeedback";
 
 interface SvgToJsxToolProps {
   onValidationChange: (isValid: boolean, error?: string) => void;
@@ -14,14 +19,44 @@ interface SvgToJsxToolProps {
   restoredInput?: string | null;
 }
 
+const DEFAULT_SVG =
+  '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-code"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>';
+
+const INPUT_OPTIONS = { wordWrap: "on" } as const;
+const OUTPUT_OPTIONS = { wordWrap: "on", readOnly: true, domReadOnly: true } as const;
+
 export function SvgToJsxTool({ onValidationChange, onStatsChange, restoredInput }: SvgToJsxToolProps) {
-  const [input, setInput] = useState<string>('<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-code"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>');
-  const [output, setOutput] = useState("");
-  const [copied, setCopied] = useState(false);
+  const [input, setInput] = useState<string>(DEFAULT_SVG);
+  const [componentName, setComponentName] = useState("SvgIcon");
+  const [typescript, setTypescript] = useState(true);
+  const [activeTab, setActiveTab] = useState<"input" | "output">("input");
+  const [copiedId, copy] = useCopyFeedback();
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (restoredInput) setInput(restoredInput);
   }, [restoredInput]);
+
+  const settledInput = useSettledValue(input);
+  const result = useMemo(
+    () => timed(() => convertSvgToJsx(settledInput, { componentName, typescript })),
+    [settledInput, componentName, typescript]
+  );
+  const output = result.code;
+
+  // Preview the source SVG as an image (images never run scripts embedded in the markup).
+  // Inline SVG copied from HTML/JSX often omits xmlns, which a standalone SVG image needs to render.
+  const previewSrc = useMemo(() => {
+    const svg = settledInput.trim();
+    if (!result.ok || !svg) return "";
+    const standalone = /<svg\b[^>]*\sxmlns=/i.test(svg) ? svg : svg.replace(/<svg\b/i, '<svg xmlns="http://www.w3.org/2000/svg"');
+    return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(standalone)}`;
+  }, [result.ok, settledInput]);
+
+  useEffect(() => {
+    onValidationChange(result.ok, result.error);
+    onStatsChange(settledInput.length, result.ms);
+  }, [result, settledInput, onValidationChange, onStatsChange]);
 
   useEffect(() => {
     const handleSave = () => {
@@ -31,92 +66,93 @@ export function SvgToJsxTool({ onValidationChange, onStatsChange, restoredInput 
     return () => window.removeEventListener("save-workspace", handleSave);
   }, [input, output]);
 
-  useEffect(() => {
-    const start = performance.now();
-    try {
-      let jsx = input;
-      
-      // Replace class with className
-      jsx = jsx.replace(/\bclass=/g, 'className=');
-      
-      // Convert dash-case attributes to camelCase
-      const dashAttributes = [
-        'stroke-width', 'stroke-linecap', 'stroke-linejoin', 
-        'stroke-dasharray', 'stroke-dashoffset', 'stroke-miterlimit', 
-        'stroke-opacity', 'fill-rule', 'fill-opacity', 'clip-rule', 'clip-path'
-      ];
-      dashAttributes.forEach(attr => {
-        const camel = attr.replace(/-([a-z])/g, g => g[1].toUpperCase());
-        jsx = jsx.replace(new RegExp(attr + '=', 'g'), camel + '=');
-      });
-
-      const componentCode = `export function SvgComponent(props) {\n  return (\n    ${jsx.trim().replace(/\n/g, '\n    ')}\n  );\n}`;
-      
-      setOutput(componentCode);
-      onValidationChange(true);
-      onStatsChange(input.length, performance.now() - start);
-    } catch (err) {
-      onValidationChange(false, (err as Error).message);
-    }
-  }, [input, onValidationChange, onStatsChange]);
-
-  const handleCopy = () => {
-    if (!output) return;
-    navigator.clipboard.writeText(output);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
+  const empty = !input.trim();
+  const footerStatus = empty ? "idle" : !result.ok ? "error" : result.warnings.length ? "warning" : "ok";
+  const footerMessage = empty
+    ? "Paste an SVG to convert"
+    : !result.ok
+      ? `${result.line ? `Line ${result.line}${result.column ? `, Col ${result.column}` : ""}: ` : ""}${result.error}`
+      : result.warnings.length
+        ? `${result.warnings[0]}${result.warnings.length > 1 ? ` (+${result.warnings.length - 1} more)` : ""}`
+        : `Converted ${result.elements} element${result.elements === 1 ? "" : "s"}`;
 
   return (
-    <div className="flex flex-col h-full bg-white w-full overflow-x-hidden">
-      <div className="min-h-14 border-b border-[#e2e8f0] flex items-center justify-between gap-2 overflow-x-auto no-scrollbar py-2 px-3 md:px-4 bg-[#f8fafc] shrink-0">
-        <div className="flex items-center gap-2">
-          <FileCode className="w-4 h-4 text-zinc-900" />
-          <span className="text-sm font-semibold text-zinc-800">SVG to JSX</span>
-        </div>
-        
-        <div className="flex items-center gap-2">
-          <ExportImageButton code={output || input} language="typescript" />
-          <EmbedButton toolSlug="svg-to-jsx" data={input} />
-          <ShareButton toolSlug="svg-to-jsx" data={input} />
-        </div>
-      </div>
+    <div className="flex h-full w-full flex-col overflow-hidden bg-white">
+      <ToolHeader
+        icon={getToolIcon("svg-to-jsx")}
+        title="SVG to JSX"
+        utilities={<ShareMenu toolSlug="svg-to-jsx" data={input} imageCode={output || input} imageLanguage="typescript" />}
+        options={
+          <>
+            <label className="flex min-w-0 items-center gap-2">
+              <span className="whitespace-nowrap text-[13px] font-medium text-zinc-500 md:text-xs">Name</span>
+              <input
+                type="text"
+                value={componentName}
+                onChange={(e) => setComponentName(e.target.value)}
+                placeholder="SvgIcon"
+                spellCheck={false}
+                aria-label="Component name"
+                className={cn(inputBase, "w-36 min-w-0 font-mono")}
+              />
+            </label>
+            <div className={segmentTrack} role="group" aria-label="Output flavour">
+              <button type="button" aria-pressed={typescript} onClick={() => setTypescript(true)} className={segmentBtn(typescript)}>
+                TSX
+              </button>
+              <button type="button" aria-pressed={!typescript} onClick={() => setTypescript(false)} className={segmentBtn(!typescript)}>
+                JSX
+              </button>
+            </div>
+          </>
+        }
+      />
 
-      <div className="flex-1 flex flex-col md:flex-row min-h-0">
-        <div className="flex-1 flex flex-col min-h-[300px] md:min-h-0 border-b md:border-b-0 md:border-r border-zinc-200">
-          <div className="h-8 bg-zinc-50 border-b border-zinc-200 flex items-center px-3 shrink-0">
-            <span className="text-[11px] font-medium text-zinc-500 uppercase tracking-wider">Raw SVG</span>
-          </div>
-          <div className="flex-1 relative">
-            <MonacoEditor
-              language="html"
-              value={input}
-              onChange={(v) => setInput(v || "")}
-              options={{ minimap: { enabled: false }, lineNumbers: 'on' }}
-            />
-          </div>
-        </div>
+      <MobilePaneTabs
+        tabs={[
+          { id: "input", label: "SVG" },
+          { id: "output", label: typescript ? "TSX" : "JSX" },
+        ]}
+        active={activeTab}
+        onChange={setActiveTab}
+      />
 
-        <div className="flex-1 flex flex-col min-h-[300px] md:min-h-0 relative bg-[#fafafa]">
-          <div className="h-8 bg-zinc-50 border-b border-zinc-200 flex items-center justify-between px-3 shrink-0">
-            <span className="text-[11px] font-medium text-zinc-500 uppercase tracking-wider">JSX Component</span>
-            <button 
-              onClick={handleCopy}
-              className="flex items-center gap-1.5 text-[11px] font-medium text-zinc-500 hover:text-zinc-800 transition-colors"
-            >
-              {copied ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
-              {copied ? "Copied!" : "Copy"}
+      <div className="flex min-h-0 w-full flex-1 flex-col md:flex-row">
+        <section className={cn("flex min-h-0 min-w-0 flex-1 flex-col border-zinc-200 md:border-r", activeTab !== "input" && "hidden md:flex")}>
+          <PaneBar label="SVG markup">
+            <button type="button" onClick={() => setInput("")} disabled={empty} className={btnGhost} title="Clear input">
+              <Eraser {...iconProps} />
+              <span>Clear</span>
             </button>
+          </PaneBar>
+          <div className="relative min-h-0 flex-1">
+            <MonacoEditor height="100%" language="xml" value={input} onChange={(v) => setInput(v || "")} options={INPUT_OPTIONS} />
           </div>
-          <div className="flex-1 relative">
-            <MonacoEditor
-              language="typescript"
-              value={output}
-              options={{ readOnly: true, minimap: { enabled: false } }}
-            />
+          {previewSrc && (
+            <div className="flex h-24 shrink-0 items-center gap-4 border-t border-zinc-200 bg-zinc-50 px-3 md:h-28">
+              <span className={captionText}>Preview</span>
+              <div className="flex min-w-0 flex-1 items-center justify-center">
+                {/* eslint-disable-next-line @next/next/no-img-element -- data: URL preview of user input, nothing to optimise */}
+                <img src={previewSrc} alt="SVG preview" className="max-h-16 max-w-full object-contain md:max-h-20" />
+              </div>
+            </div>
+          )}
+        </section>
+
+        <section className={cn("flex min-h-0 min-w-0 flex-1 flex-col", activeTab !== "output" && "hidden md:flex")}>
+          <PaneBar label={typescript ? "TSX component" : "JSX component"}>
+            <button type="button" onClick={() => copy(output, "output")} disabled={!output} className={cn(btnGhost, copiedId === "output" && "text-zinc-900")}>
+              {copiedId === "output" ? <Check {...iconProps} /> : <Copy {...iconProps} />}
+              <span>{copiedId === "output" ? "Copied" : "Copy"}</span>
+            </button>
+          </PaneBar>
+          <div className="relative min-h-0 flex-1">
+            <MonacoEditor height="100%" language="typescript" value={output} options={OUTPUT_OPTIONS} />
           </div>
-        </div>
+        </section>
       </div>
+
+      <ToolFooter status={footerStatus} message={footerMessage} meta={formatStats(input.length, empty ? undefined : result.ms)} />
     </div>
   );
 }

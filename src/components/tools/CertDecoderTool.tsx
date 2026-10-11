@@ -1,29 +1,24 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import {
-  decodeCertificateOrCsr,
-  type DecodedCertificate,
-} from "@/lib/tools/cert-decoder";
-import { ShareButton } from "@/components/ShareButton";
-import { EmbedButton } from "@/components/EmbedButton";
-import { ExportImageButton } from "@/components/ExportImageButton";
-import {
-  ShieldCheck,
-  ShieldAlert,
-  FileCheck,
-  Copy,
-  Trash2,
-  Check,
-  Upload,
-  Calendar,
-  Lock,
-  Globe,
-  Award,
-  Layers,
-} from "lucide-react";
+import { useCallback, useEffect, useRef, useState, type ChangeEvent, type DragEvent } from "react";
+import type * as CertDecoderLib from "@/lib/tools/cert-decoder";
+import type { DecodedBundle, DecodedCertificate } from "@/lib/tools/cert-decoder";
+import { ShareMenu } from "@/components/ShareMenu";
+import { Copy, Check, Trash2, Upload, ShieldAlert, FileBadge } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { addSnapshot } from "@/lib/storage";
+import {
+  ToolHeader,
+  PaneBar,
+  MobilePaneTabs,
+  btnSecondary,
+  btnGhost,
+  btnIcon,
+  chipBtn,
+  iconProps,
+} from "@/components/tools/ToolChrome";
+import { getToolIcon } from "@/components/layout/toolIcons";
+import { CertDetails, ROLE_LABELS } from "@/components/tools/security/cert/CertDetails";
 
 interface CertDecoderToolProps {
   onValidationChange: (isValid: boolean, error?: string) => void;
@@ -32,37 +27,46 @@ interface CertDecoderToolProps {
   restoredInput?: string | null;
 }
 
-// Preloaded sample self-signed test certificate for instant preview
-const SAMPLE_CERT = `-----BEGIN CERTIFICATE-----
-MIIDRjCCAi6gAwIBAgIUW6w3l1Fq7vjK0zQ5zQ3l1Fq7vjMwDQYJKoZIhvcNAQEL
-BQAwNDELMAkGA1UEBhMCVVMxEzARBgNVBAoMCkRldlNjcmF0Y2gxEDAOBgNVBAMM
-B2Rldi5sb2MwHhcNMjYwMTAxMDAwMDAwWhcNMjcwMTAxMDAwMDAwWjA0MQswCQYD
-VQQGEwJVUzETMBEGA1UECgwKRGV2U2NyYXRjaDEQMA4GA1UEAwwHZGV2LmxvYzCC
-ASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBAL0WJ1aR8v9t6Q8tN5mZ9s7q
-q4mX+p+kUe4/5X3aO1XmP7K1iJ9vB2tZ6Q0zO7gV3e1zP9oK7v1b8m9k3m2n8q4+
-r0t1s2u3v4w5x6y7z8A1B2C3D4E5F6G7H8I9J0K1L2M3N4O5P6Q7R8S9T0U1V2W3
-X4Y5Z6a7b8c9d0e1f2g3h4i5j6k7l8m9n0o1p2q3r4s5t6u7v8w9x0y1z2A3B4C5
-D6E7F8G9H0I1J2K3L4M5N6O7P8Q9R0S1T2U3V4W5X6Y7Z8a9b0c1d2e3f4g5h6i7
-AgMBAAGjUDBOMB0GA1UdDgQWBBTs/p0Q4Z9oK8u2q3v4w5x6y7z8AjAfBgNVHSME
-GDAWgBTs/p0Q4Z9oK8u2q3v4w5x6y7z8AjAMBgNVHRMEBTADAQH/MA0GCSqGSIb3
-DQEBCwUAA4IBAQBV9q3r4s5t6u7v8w9x0y1z2A3B4C5D6E7F8G9H0I1J2K3L4M5N
-6O7P8Q9R0S1T2U3V4W5X6Y7Z8a9b0c1d2e3f4g5h6i7j8k9l0m1n2o3p4q5r6s7t
-8u9v0w1x2y3z4A5B6C7D8E9F0G1H2I3J4K5L6M7N8O9P0Q1R2S3T4U5V6W7X8Y9Z
------END CERTIFICATE-----`;
+type Pane = "input" | "details";
+const PANE_TABS: { id: Pane; label: string }[] = [
+  { id: "input", label: "Input" },
+  { id: "details", label: "Details" },
+];
 
-const SAMPLE_CSR = `-----BEGIN CERTIFICATE REQUEST-----
-MIICvDCCAaQCAQAwdzELMAkGA1UEBhMCVVMxEDAOBgNVBAgMB0Zsb3JpZGExETAP
-BgNVBAcMCE9ybGFuZG8xGTAXBgNVBAoMEERldlNjcmF0Y2hwYWQgTExDMRgwFgYD
-VQQDDA9kZXZzY3JhdGNocGFkLnRlY2gxITAfBgkqhkiG9w0BCQEWEnVzZXJAZGV2
-c2NyYXRjaHBhZC50ZWNoMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA
-yR4Z7w1w5v7s8q9r4s5t6u7v8w9x0y1z2A3B4C5D6E7F8G9H0I1J2K3L4M5N6O7P
-8Q9R0S1T2U3V4W5X6Y7Z8a9b0c1d2e3f4g5h6i7j8k9l0m1n2o3p4q5r6s7t8u9v
-0w1x2y3z4A5B6C7D8E9F0G1H2I3J4K5L6M7N8O9P0Q1R2S3T4U5V6W7X8Y9Z0a1b
-2c3d4e5f6g7h8i9j0k1l2m3n4o5p6q7r8s9t0u1v2w3x4y5z6A7B8C9D0E1F2G3H
-AgMBAAGgADANBgkqhkiG9w0BAQsFAAOCAQEAPq1r2s3t4u5v6w7x8y9z0a1b2c3d
-4e5f6g7h8i9j0k1l2m3n4o5p6q7r8s9t0u1v2w3x4y5z6A7B8C9D0E1F2G3H4I5J
-6K7L8M9N0O1P2Q3R4S5T6U7V8W9X0Y1Z2a3b4c5d6e7f8g9h0i1j2k3l4m5n6o7p
------END CERTIFICATE REQUEST-----`;
+const NO_ITEMS: DecodedCertificate[] = [];
+
+/** Typing waits this long before decoding; pastes, samples and uploads decode at once. */
+const TYPING_DEBOUNCE_MS = 200;
+
+/**
+ * @peculiar/x509 + reflect-metadata are heavy, so the decoder is a separate chunk that loads on
+ * first use (or when the user focuses the input) instead of with the page.
+ */
+let decoderPromise: Promise<typeof CertDecoderLib> | null = null;
+function loadDecoder(): Promise<typeof CertDecoderLib> {
+  decoderPromise ??= import("@/lib/tools/cert-decoder").catch((err: unknown) => {
+    decoderPromise = null;
+    throw err;
+  });
+  return decoderPromise;
+}
+const warmDecoder = () => {
+  loadDecoder().catch(() => undefined);
+};
+
+/** Wraps binary DER (.cer / .der uploads) as base64 so the decoder can read it. */
+function derToBase64(bytes: Uint8Array): string {
+  let binary = "";
+  for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
+  return (btoa(binary).match(/.{1,64}/g) ?? []).join("\n");
+}
+
+async function readCertFile(file: File): Promise<string> {
+  const bytes = new Uint8Array(await file.arrayBuffer());
+  // DER always starts with an ASN.1 SEQUENCE (0x30) followed by a length byte; PEM is text.
+  if (bytes[0] === 0x30 && (bytes[1] & 0x80) !== 0) return derToBase64(bytes);
+  return new TextDecoder().decode(bytes);
+}
 
 export function CertDecoderTool({
   onValidationChange,
@@ -70,318 +74,262 @@ export function CertDecoderTool({
   onLogHistory,
   restoredInput,
 }: CertDecoderToolProps) {
-  const [input, setInput] = useState<string>("");
-  const [certData, setCertData] = useState<DecodedCertificate | null>(null);
+  const [input, setInput] = useState<string>(restoredInput ?? "");
+  const [decoded, setDecoded] = useState<{ input: string; bundle: DecodedBundle } | null>(null);
+  const [selected, setSelected] = useState(0);
+  const [pane, setPane] = useState<Pane>("input");
+  const [dragging, setDragging] = useState(false);
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
+  const [prevRestored, setPrevRestored] = useState(restoredInput);
+  const lastDecodedRef = useRef("");
+  const copyTimerRef = useRef<number | undefined>(undefined);
 
   // Restore from history
-  useEffect(() => {
-    if (restoredInput) setInput(restoredInput);
-  }, [restoredInput]);
+  if (restoredInput !== prevRestored) {
+    setPrevRestored(restoredInput);
+    if (restoredInput) {
+      setInput(restoredInput);
+      setSelected(0);
+    }
+  }
 
-  // Decode when input changes
+  // Decode when input changes (debounced while typing, cancelled when stale)
   useEffect(() => {
-    let isCancelled = false;
-    const start = performance.now();
-    decodeCertificateOrCsr(input).then((res) => {
-      if (!isCancelled) {
-        setCertData(res);
-        const end = performance.now();
-        onStatsChange(input.length, Math.round((end - start) * 10) / 10);
-        onValidationChange(res.valid, res.error);
+    const text = input;
+    const previous = lastDecodedRef.current;
+    if (!text.trim()) {
+      lastDecodedRef.current = "";
+      onValidationChange(true);
+      onStatsChange(0, 0);
+      return;
+    }
+
+    let cancelled = false;
+    const isJump = !previous.trim() || Math.abs(text.length - previous.length) > 32;
+    const timer = window.setTimeout(async () => {
+      lastDecodedRef.current = text;
+      try {
+        const { decodePemBundle } = await loadDecoder();
+        if (cancelled) return;
+        const start = performance.now();
+        const bundle = await decodePemBundle(text);
+        if (cancelled) return;
+        setDecoded({ input: text, bundle });
+        onStatsChange(text.length, Math.round((performance.now() - start) * 10) / 10);
+        const failed = bundle.items.find((item) => !item.valid);
+        onValidationChange(!failed, failed?.error);
+      } catch {
+        if (cancelled) return;
+        const error = "Could not load the certificate decoder. Check your connection and try again.";
+        setDecoded({ input: text, bundle: { items: [{ type: "certificate", valid: false, error }], skipped: [] } });
+        onValidationChange(false, error);
       }
-    });
+    }, isJump ? 0 : TYPING_DEBOUNCE_MS);
 
     return () => {
-      isCancelled = true;
+      cancelled = true;
+      window.clearTimeout(timer);
     };
   }, [input, onValidationChange, onStatsChange]);
+
+  useEffect(() => () => window.clearTimeout(copyTimerRef.current), []);
+
+  const hasInput = input.trim().length > 0;
+  const items = hasInput && decoded ? decoded.bundle.items : NO_ITEMS;
+  const index = Math.min(selected, Math.max(0, items.length - 1));
+  const current = items[index];
 
   // Save workspace snapshot
   useEffect(() => {
     const handleSave = () => {
-      addSnapshot("cert-decoder", "X.509 Certificate Decoder", input, JSON.stringify(certData, null, 2));
+      const output = items.length > 1 ? items : (items[0] ?? null);
+      addSnapshot("cert-decoder", "X.509 Certificate Decoder", input, JSON.stringify(output, null, 2));
     };
     window.addEventListener("save-workspace", handleSave);
     return () => window.removeEventListener("save-workspace", handleSave);
-  }, [input, certData]);
+  }, [input, items]);
 
-  const handleCopy = (text: string, key: string) => {
-    if (!text) return;
-    navigator.clipboard.writeText(text);
-    setCopiedKey(key);
-    onLogHistory?.(input);
-    setTimeout(() => setCopiedKey(null), 1500);
+  const handleCopy = useCallback(
+    (text: string, key: string) => {
+      if (!text) return;
+      navigator.clipboard
+        ?.writeText(text)
+        .then(() => {
+          setCopiedKey(key);
+          window.clearTimeout(copyTimerRef.current);
+          copyTimerRef.current = window.setTimeout(() => setCopiedKey(null), 1500);
+        })
+        .catch(() => undefined);
+      onLogHistory?.(input);
+    },
+    [input, onLogHistory]
+  );
+
+  const loadText = (text: string, showDetails: boolean) => {
+    setInput(text);
+    setSelected(0);
+    if (showDetails) setPane("details");
   };
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
+  const loadFile = async (file: File | undefined) => {
     if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const content = event.target?.result as string;
-      if (content) setInput(content);
-    };
-    reader.readAsText(file);
+    try {
+      loadText(await readCertFile(file), true);
+    } catch {
+      onValidationChange(false, `Could not read ${file.name}.`);
+    }
   };
+
+  const handleFileUpload = (e: ChangeEvent<HTMLInputElement>) => {
+    void loadFile(e.target.files?.[0]);
+    e.target.value = "";
+  };
+
+  const handleDrop = (e: DragEvent<HTMLDivElement>) => {
+    if (!e.dataTransfer.files.length) return;
+    e.preventDefault();
+    setDragging(false);
+    void loadFile(e.dataTransfer.files[0]);
+  };
+
+  const copyJson = () => {
+    if (!current?.valid) return;
+    handleCopy(JSON.stringify(current, (key, value: unknown) => (key === "rawPem" ? undefined : value), 2), "json");
+  };
+
 
   return (
-    <div className="flex flex-col h-full bg-white overflow-y-auto relative">
-      {/* Top Controls Bar (Unified Clean Header) */}
-      <div className="h-10 border-b border-neutral-200 px-4 flex items-center justify-between gap-4 shrink-0 bg-white">
-        <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar">
-          <label className="border border-neutral-300 bg-white text-neutral-800 text-xs px-3 py-1.5 rounded-md flex items-center gap-2 hover:bg-neutral-50 cursor-pointer transition-colors shadow-sm">
-            <Upload className="w-3.5 h-3.5" />
-            <span className="font-medium">Upload Certificate</span>
-            <input type="file" className="hidden" onChange={handleFileUpload} accept=".pem,.crt,.cer,.csr,.txt" />
+    <div className="flex h-full min-h-0 flex-col bg-white">
+      <ToolHeader
+        icon={getToolIcon("cert-decoder")}
+        title="X.509 Certificate Decoder"
+        utilities={<ShareMenu toolSlug="cert-decoder" data={input} imageCode={input} imageLanguage="text" />}
+        actions={
+          <label
+            className={cn(btnSecondary, "cursor-pointer focus-within:ring-2 focus-within:ring-zinc-900")}
+            onPointerEnter={warmDecoder}
+          >
+            <Upload {...iconProps} />
+            <span>Upload</span>
+            <input type="file" className="sr-only" onChange={handleFileUpload} accept=".pem,.crt,.cer,.der,.csr,.txt" />
           </label>
-        </div>
+        }
+      />
 
-        <div className="flex items-center gap-1.5">
-          <ShareButton toolSlug="cert-decoder" data={input} />
-          <EmbedButton toolSlug="cert-decoder" data={input} />
-          <ExportImageButton code={input} language="text" />
-        </div>
-      </div>
+      <MobilePaneTabs tabs={PANE_TABS} active={pane} onChange={setPane} />
 
-      {/* Main Workspace Layout (Strict Dual-Pane Grid) */}
-      <div className="flex-1 min-h-[600px] grid grid-cols-1 lg:grid-cols-2 divide-y lg:divide-y-0 lg:divide-x divide-neutral-200 overflow-hidden bg-neutral-50/30" id="cert-decoder-export">
-        {/* Left Pane: Input Editor */}
-        <div className="flex flex-col h-full bg-white relative min-h-0">
-          <div className="h-10 border-b border-neutral-200 bg-neutral-50/50 flex items-center justify-between px-4 shrink-0">
-            <span className="text-xs font-mono font-semibold text-neutral-700">PEM / CSR Input</span>
+      <div className="flex min-h-0 flex-1 flex-col md:flex-row">
+        {/* Left Pane: PEM input */}
+        <div
+          className={cn(
+            "min-h-0 min-w-0 flex-1 flex-col md:flex md:border-r md:border-zinc-200",
+            pane === "input" ? "flex" : "hidden",
+            dragging && "ring-2 ring-inset ring-zinc-900"
+          )}
+          onDragOver={(e) => {
+            if (!e.dataTransfer.types.includes("Files")) return;
+            e.preventDefault();
+            setDragging(true);
+          }}
+          onDragLeave={() => setDragging(false)}
+          onDrop={handleDrop}
+        >
+          <PaneBar label="PEM input">
             <button
-              onClick={() => setInput("")}
-              className="p-1.5 rounded text-neutral-400 hover:text-neutral-900 hover:bg-neutral-200/50 transition-colors flex items-center justify-center"
+              type="button"
+              onClick={() => loadText("", false)}
+              className={btnIcon}
               title="Clear input"
+              aria-label="Clear input"
+              disabled={!input}
             >
-              <Trash2 className="w-3.5 h-3.5" />
+              <Trash2 {...iconProps} />
             </button>
-          </div>
-          <div className="flex-1 p-0 overflow-y-auto relative">
-            <textarea
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              placeholder="Paste your -----BEGIN CERTIFICATE----- or -----BEGIN CERTIFICATE REQUEST----- here..."
-              className="w-full h-full p-4 font-mono text-sm text-neutral-900 bg-transparent resize-none border-0 outline-none focus:ring-0 leading-relaxed placeholder:text-neutral-400"
-              spellCheck={false}
-            />
-          </div>
+          </PaneBar>
+          <textarea
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onFocus={warmDecoder}
+            placeholder={"Paste a certificate, fullchain.pem or CSR\n\n-----BEGIN CERTIFICATE-----\n...\n-----END CERTIFICATE-----"}
+            aria-label="PEM certificate or CSR input"
+            className="block min-h-0 w-full min-w-0 flex-1 resize-none break-all border-0 bg-transparent p-4 font-mono text-[13px] leading-relaxed text-zinc-900 outline-none placeholder:text-zinc-400 focus:ring-0 md:text-xs"
+            spellCheck={false}
+            autoCapitalize="off"
+            autoComplete="off"
+            autoCorrect="off"
+          />
         </div>
 
         {/* Right Pane: Parsed Output */}
-        <div className="flex flex-col h-full bg-neutral-50/30 min-h-0">
-          <div className="h-10 border-b border-neutral-200 bg-neutral-50/50 flex items-center justify-between px-4 shrink-0">
-            <span className="text-xs font-mono font-semibold text-neutral-700">Parsed Certificate Details</span>
-            {certData?.valid && (
-              <button
-                onClick={() => handleCopy(JSON.stringify(certData, null, 2), "json_dump")}
-                className="flex items-center gap-1.5 px-2 py-1 rounded text-[11px] font-medium text-neutral-500 hover:text-neutral-900 hover:bg-neutral-200/50 transition-colors"
-              >
-                {copiedKey === "json_dump" ? <Check className="w-3.5 h-3.5 text-neutral-900" /> : <Copy className="w-3.5 h-3.5" />}
-                <span>Copy JSON</span>
+        <div className={cn("min-h-0 min-w-0 flex-1 flex-col md:flex", pane === "details" ? "flex" : "hidden")}>
+          <PaneBar label={current?.valid ? (current.type === "csr" ? "CSR details" : "Certificate details") : "Details"}>
+            {items.length > 1 && current?.rawPem && (
+              <button type="button" onClick={() => handleCopy(current.rawPem ?? "", "pem")} className={btnGhost}>
+                {copiedKey === "pem" ? <Check {...iconProps} /> : <Copy {...iconProps} />}
+                <span>Copy PEM</span>
               </button>
             )}
-          </div>
+            <button type="button" onClick={copyJson} className={btnGhost} disabled={!current?.valid}>
+              {copiedKey === "json" ? <Check {...iconProps} /> : <Copy {...iconProps} />}
+              <span>Copy JSON</span>
+            </button>
+          </PaneBar>
 
-          <div className="flex-1 overflow-y-auto relative bg-white dark:bg-neutral-950">
-            {!certData?.valid ? (
-              input.trim().length === 0 ? (
-                /* Empty State Skeleton (Grid) */
-                <div className="select-none pointer-events-none pb-8">
-                  <div className="text-[11px] font-semibold text-neutral-500 uppercase tracking-wider bg-neutral-50 dark:bg-neutral-900/50 px-3 py-1.5 border-y border-neutral-200 dark:border-neutral-800 first:border-t-0">
-                    Subject & Issuer
-                  </div>
-                  <div className="grid grid-cols-[130px_1fr] gap-4 px-3 py-2 border-b border-neutral-100 dark:border-neutral-800/50">
-                    <span className="text-neutral-500 font-medium whitespace-nowrap text-xs">Subject CN</span>
-                    <div className="h-4 bg-neutral-100 dark:bg-neutral-800 rounded w-1/2 mt-0.5"></div>
-                  </div>
-                  <div className="grid grid-cols-[130px_1fr] gap-4 px-3 py-2 border-b border-neutral-100 dark:border-neutral-800/50">
-                    <span className="text-neutral-500 font-medium whitespace-nowrap text-xs">Issuer CN</span>
-                    <div className="h-4 bg-neutral-100 dark:bg-neutral-800 rounded w-1/3 mt-0.5"></div>
-                  </div>
-                  <div className="grid grid-cols-[130px_1fr] gap-4 px-3 py-2 border-b border-neutral-100 dark:border-neutral-800/50">
-                    <span className="text-neutral-500 font-medium whitespace-nowrap text-xs">Serial Number</span>
-                    <div className="h-4 bg-neutral-100 dark:bg-neutral-800 rounded w-2/3 mt-0.5"></div>
-                  </div>
+          {items.length > 1 && (
+            <div className="flex shrink-0 flex-wrap gap-1.5 border-b border-zinc-200 px-3 py-2" aria-label="Blocks in this input">
+              {items.map((item, i) => (
+                <button
+                  key={i}
+                  type="button"
+                  aria-pressed={i === index}
+                  onClick={() => setSelected(i)}
+                  title={item.subject?.commonName ?? item.error}
+                  className={cn(chipBtn(i === index), "h-10 md:h-8", !item.valid && i !== index && "text-red-700")}
+                >
+                  {i + 1} · {item.valid && item.role ? ROLE_LABELS[item.role] : "Invalid"}
+                </button>
+              ))}
+            </div>
+          )}
 
-                  <div className="text-[11px] font-semibold text-neutral-500 uppercase tracking-wider bg-neutral-50 dark:bg-neutral-900/50 px-3 py-1.5 border-y border-neutral-200 dark:border-neutral-800 mt-4">
-                    Validity Period
-                  </div>
-                  <div className="grid grid-cols-[130px_1fr] gap-4 px-3 py-2 border-b border-neutral-100 dark:border-neutral-800/50">
-                    <span className="text-neutral-500 font-medium whitespace-nowrap text-xs">Not Before</span>
-                    <div className="h-4 bg-neutral-100 dark:bg-neutral-800 rounded w-1/2 mt-0.5"></div>
-                  </div>
-                  <div className="grid grid-cols-[130px_1fr] gap-4 px-3 py-2 border-b border-neutral-100 dark:border-neutral-800/50">
-                    <span className="text-neutral-500 font-medium whitespace-nowrap text-xs">Not After</span>
-                    <div className="h-4 bg-neutral-100 dark:bg-neutral-800 rounded w-1/2 mt-0.5"></div>
-                  </div>
+          <div className="min-h-0 flex-1 overflow-y-auto">
+            {!hasInput ? (
+              /* Empty state */
+              <div className="flex min-h-full flex-col items-center justify-center gap-3 px-6 py-12 text-center">
+                <FileBadge className="size-6 text-zinc-300" strokeWidth={iconProps.strokeWidth} aria-hidden="true" />
+                <div>
+                  <p className="text-sm font-medium text-zinc-900">Paste a certificate, chain or CSR</p>
+                  <p className="mx-auto mt-1 max-w-xs text-xs leading-relaxed text-zinc-500">
+                    PEM or base64 DER. Decoded in your browser; nothing is uploaded.
+                  </p>
                 </div>
-              ) : (
-                /* Error State Banner (Flattened) */
-                <div className="p-4">
-                  <div className="bg-red-50/50 dark:bg-red-950/20 border border-red-200 dark:border-red-900/50 rounded-md p-4">
-                    <div className="flex items-center gap-2 mb-2">
-                      <ShieldAlert className="w-4 h-4 text-red-600 dark:text-red-400" />
-                      <span className="text-xs font-bold tracking-wider text-red-600 dark:text-red-400 uppercase">Parsing Error</span>
-                    </div>
-                    <div className="font-mono text-[13px] text-red-900 dark:text-red-200 mt-2 mb-3">
-                      {certData?.error || "Invalid PEM certificate format."}
-                    </div>
-                    <div className="text-xs text-neutral-600 dark:text-neutral-400 flex items-center gap-2">
-                      <span className="font-semibold text-neutral-900 dark:text-neutral-100">Tip:</span> 
-                      <span>Ensure headers like <code className="bg-white dark:bg-black border border-neutral-200 dark:border-neutral-700 px-1.5 py-0.5 rounded font-mono text-neutral-800 dark:text-neutral-200 mx-1">-----BEGIN CERTIFICATE-----</code> are intact.</span>
-                    </div>
-                  </div>
-                </div>
-              )
-            ) : (
-              /* Valid Certificate Data (High-Density Property Grid) */
-              <div className="pb-8">
-                {/* Type Badge */}
-                <div className="px-3 py-3 border-b border-neutral-100 dark:border-neutral-800/50 flex items-center justify-between bg-white dark:bg-neutral-950">
-                  <span className="text-xs font-semibold text-neutral-700 dark:text-neutral-300">
-                    {certData.type === "certificate" ? "X.509 Certificate" : "Certificate Signing Request (CSR)"}
-                  </span>
-                </div>
-
-                <div className="text-[11px] font-semibold text-neutral-500 uppercase tracking-wider bg-neutral-50 dark:bg-neutral-900/50 px-3 py-1.5 border-y border-neutral-200 dark:border-neutral-800">
-                  Subject & Issuer
-                </div>
-                {certData.subject?.commonName && (
-                  <div className="grid grid-cols-[130px_1fr] gap-4 px-3 py-2 border-b border-neutral-100 dark:border-neutral-800/50 hover:bg-neutral-50/50 dark:hover:bg-neutral-900/20 text-xs transition-colors">
-                    <span className="text-neutral-500 font-medium whitespace-nowrap">Subject CN</span>
-                    <span className="font-mono text-neutral-900 dark:text-neutral-200 break-all">{certData.subject.commonName}</span>
-                  </div>
-                )}
-                {certData.type === "certificate" && certData.issuer?.commonName && (
-                  <div className="grid grid-cols-[130px_1fr] gap-4 px-3 py-2 border-b border-neutral-100 dark:border-neutral-800/50 hover:bg-neutral-50/50 dark:hover:bg-neutral-900/20 text-xs transition-colors">
-                    <span className="text-neutral-500 font-medium whitespace-nowrap">Issuer CN</span>
-                    <span className="font-mono text-neutral-900 dark:text-neutral-200 break-all">{certData.issuer.commonName}</span>
-                  </div>
-                )}
-                {certData.serialNumber && (
-                  <div className="grid grid-cols-[130px_1fr] gap-4 px-3 py-2 border-b border-neutral-100 dark:border-neutral-800/50 hover:bg-neutral-50/50 dark:hover:bg-neutral-900/20 text-xs transition-colors">
-                    <span className="text-neutral-500 font-medium whitespace-nowrap">Serial Number</span>
-                    <span className="font-mono text-neutral-900 dark:text-neutral-200 break-all">{certData.serialNumber}</span>
-                  </div>
-                )}
-                {certData.signatureAlgorithm && (
-                  <div className="grid grid-cols-[130px_1fr] gap-4 px-3 py-2 border-b border-neutral-100 dark:border-neutral-800/50 hover:bg-neutral-50/50 dark:hover:bg-neutral-900/20 text-xs transition-colors">
-                    <span className="text-neutral-500 font-medium whitespace-nowrap">Signature Algorithm</span>
-                    <span className="font-mono text-neutral-900 dark:text-neutral-200 break-all">{certData.signatureAlgorithm}</span>
-                  </div>
-                )}
-
-                {certData.type === "certificate" && certData.notBefore && certData.notAfter && (
-                  <>
-                    <div className="text-[11px] font-semibold text-neutral-500 uppercase tracking-wider bg-neutral-50 dark:bg-neutral-900/50 px-3 py-1.5 border-y border-neutral-200 dark:border-neutral-800 mt-4">
-                      Validity Period
-                    </div>
-                    <div className="grid grid-cols-[130px_1fr] gap-4 px-3 py-2 border-b border-neutral-100 dark:border-neutral-800/50 hover:bg-neutral-50/50 dark:hover:bg-neutral-900/20 text-xs transition-colors">
-                      <span className="text-neutral-500 font-medium whitespace-nowrap">Not Before</span>
-                      <span className="font-mono text-neutral-900 dark:text-neutral-200">{new Date(certData.notBefore).toLocaleString()}</span>
-                    </div>
-                    <div className="grid grid-cols-[130px_1fr] gap-4 px-3 py-2 border-b border-neutral-100 dark:border-neutral-800/50 hover:bg-neutral-50/50 dark:hover:bg-neutral-900/20 text-xs transition-colors">
-                      <span className="text-neutral-500 font-medium whitespace-nowrap flex items-center h-full">Not After</span>
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className="font-mono text-neutral-900 dark:text-neutral-200">{new Date(certData.notAfter).toLocaleString()}</span>
-                        {certData.isExpired ? (
-                          <span className="px-1.5 py-0.5 bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-800/50 rounded text-[9px] font-bold uppercase tracking-wider">Expired</span>
-                        ) : (
-                          <span className="px-1.5 py-0.5 bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-400 border border-green-200 dark:border-green-800/50 rounded text-[9px] font-bold uppercase tracking-wider">Valid</span>
-                        )}
-                      </div>
-                    </div>
-                  </>
-                )}
-
-                {certData.sans && certData.sans.length > 0 && (
-                  <>
-                    <div className="text-[11px] font-semibold text-neutral-500 uppercase tracking-wider bg-neutral-50 dark:bg-neutral-900/50 px-3 py-1.5 border-y border-neutral-200 dark:border-neutral-800 mt-4">
-                      Subject Alternative Names
-                    </div>
-                    <div className="grid grid-cols-[130px_1fr] gap-4 px-3 py-2 border-b border-neutral-100 dark:border-neutral-800/50 hover:bg-neutral-50/50 dark:hover:bg-neutral-900/20 text-xs transition-colors">
-                      <span className="text-neutral-500 font-medium whitespace-nowrap mt-0.5">SANs</span>
-                      <div className="flex flex-wrap gap-1.5">
-                        {certData.sans.map((san, i) => (
-                          <span key={i} className="bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 text-neutral-700 dark:text-neutral-300 px-2 py-0.5 rounded-md font-mono text-[11px]">
-                            {san}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  </>
-                )}
-
-                <div className="text-[11px] font-semibold text-neutral-500 uppercase tracking-wider bg-neutral-50 dark:bg-neutral-900/50 px-3 py-1.5 border-y border-neutral-200 dark:border-neutral-800 mt-4">
-                  Public Key Info
-                </div>
-                <div className="grid grid-cols-[130px_1fr] gap-4 px-3 py-2 border-b border-neutral-100 dark:border-neutral-800/50 hover:bg-neutral-50/50 dark:hover:bg-neutral-900/20 text-xs transition-colors">
-                  <span className="text-neutral-500 font-medium whitespace-nowrap">Algorithm</span>
-                  <span className="font-mono text-neutral-900 dark:text-neutral-200">{certData.publicKeyAlgorithm}</span>
-                </div>
-                <div className="grid grid-cols-[130px_1fr] gap-4 px-3 py-2 border-b border-neutral-100 dark:border-neutral-800/50 hover:bg-neutral-50/50 dark:hover:bg-neutral-900/20 text-xs transition-colors">
-                  <span className="text-neutral-500 font-medium whitespace-nowrap">Key Size</span>
-                  <span className="font-mono text-neutral-900 dark:text-neutral-200">{certData.publicKeySize}</span>
-                </div>
-
-                {(certData.fingerprintSha256 || certData.fingerprintSha1) && (
-                  <>
-                    <div className="text-[11px] font-semibold text-neutral-500 uppercase tracking-wider bg-neutral-50 dark:bg-neutral-900/50 px-3 py-1.5 border-y border-neutral-200 dark:border-neutral-800 mt-4">
-                      Fingerprints
-                    </div>
-                    {certData.fingerprintSha256 && (
-                      <div className="group grid grid-cols-[130px_1fr] gap-4 px-3 py-2 border-b border-neutral-100 dark:border-neutral-800/50 hover:bg-neutral-50/50 dark:hover:bg-neutral-900/20 text-xs transition-colors">
-                        <span className="text-neutral-500 font-medium whitespace-nowrap mt-0.5">SHA-256</span>
-                        <div className="flex items-start justify-between gap-2">
-                          <span className="font-mono text-neutral-900 dark:text-neutral-200 break-all">{certData.fingerprintSha256}</span>
-                          <button
-                            onClick={() => handleCopy(certData.fingerprintSha256!, "sha256")}
-                            className="opacity-0 group-hover:opacity-100 text-neutral-400 hover:text-neutral-900 dark:hover:text-white transition-all p-0.5 rounded hover:bg-neutral-200 dark:hover:bg-neutral-700 shrink-0"
-                            title="Copy SHA-256"
-                          >
-                            {copiedKey === "sha256" ? <Check className="w-3.5 h-3.5 text-green-600 dark:text-green-400" /> : <Copy className="w-3.5 h-3.5" />}
-                          </button>
-                        </div>
-                      </div>
-                    )}
-                    {certData.fingerprintSha1 && (
-                      <div className="group grid grid-cols-[130px_1fr] gap-4 px-3 py-2 border-b border-neutral-100 dark:border-neutral-800/50 hover:bg-neutral-50/50 dark:hover:bg-neutral-900/20 text-xs transition-colors">
-                        <span className="text-neutral-500 font-medium whitespace-nowrap mt-0.5">SHA-1</span>
-                        <div className="flex items-start justify-between gap-2">
-                          <span className="font-mono text-neutral-900 dark:text-neutral-200 break-all">{certData.fingerprintSha1}</span>
-                          <button
-                            onClick={() => handleCopy(certData.fingerprintSha1!, "sha1")}
-                            className="opacity-0 group-hover:opacity-100 text-neutral-400 hover:text-neutral-900 dark:hover:text-white transition-all p-0.5 rounded hover:bg-neutral-200 dark:hover:bg-neutral-700 shrink-0"
-                            title="Copy SHA-1"
-                          >
-                            {copiedKey === "sha1" ? <Check className="w-3.5 h-3.5 text-green-600 dark:text-green-400" /> : <Copy className="w-3.5 h-3.5" />}
-                          </button>
-                        </div>
-                      </div>
-                    )}
-                  </>
-                )}
-
-                {certData.keyUsages && certData.keyUsages.length > 0 && (
-                  <>
-                    <div className="text-[11px] font-semibold text-neutral-500 uppercase tracking-wider bg-neutral-50 dark:bg-neutral-900/50 px-3 py-1.5 border-y border-neutral-200 dark:border-neutral-800 mt-4">
-                      Key Usages
-                    </div>
-                    <div className="grid grid-cols-[130px_1fr] gap-4 px-3 py-2 border-b border-neutral-100 dark:border-neutral-800/50 hover:bg-neutral-50/50 dark:hover:bg-neutral-900/20 text-xs transition-colors">
-                      <span className="text-neutral-500 font-medium whitespace-nowrap mt-0.5">Usages</span>
-                      <div className="flex flex-wrap gap-1.5">
-                        {certData.keyUsages.map((usage, i) => (
-                          <span key={i} className="bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 text-neutral-700 dark:text-neutral-300 px-2 py-0.5 rounded-md font-mono text-[11px]">
-                            {usage}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  </>
-                )}
               </div>
+            ) : !current ? (
+              <p className="px-4 py-4 text-[13px] text-zinc-500">Decoding…</p>
+            ) : !current.valid ? (
+              /* Error state (flat) */
+              <div>
+                <div className="flex items-start gap-2 border-b border-red-100 bg-red-50 px-4 py-3 text-red-700">
+                  <ShieldAlert {...iconProps} className="mt-0.5 size-4 shrink-0" />
+                  <div className="min-w-0">
+                    <p className="text-[13px] font-medium">Could not decode this block</p>
+                    <p className="mt-1 break-words font-mono text-xs leading-5">{current.error}</p>
+                  </div>
+                </div>
+                <p className="px-4 py-3 text-xs leading-relaxed text-zinc-500">
+                  Tip: paste the whole block, including the <span className="break-all font-mono">-----BEGIN CERTIFICATE-----</span>{" "}
+                  and <span className="break-all font-mono">-----END CERTIFICATE-----</span> lines.
+                </p>
+              </div>
+            ) : (
+              <>
+                {decoded && decoded.bundle.skipped.length > 0 && (
+                  <p className="border-b border-zinc-100 px-4 py-2 text-xs text-zinc-500">
+                    Ignored {decoded.bundle.skipped.join(", ")} {decoded.bundle.skipped.length === 1 ? "block" : "blocks"}.
+                  </p>
+                )}
+                <CertDetails cert={current} items={items} copiedKey={copiedKey} onCopy={handleCopy} />
+              </>
             )}
           </div>
         </div>

@@ -1,7 +1,7 @@
 export function formatXml(xml: string, indentSize: number = 2): string {
  if (!xml || xml.trim() ==="") return"";
 
- const indentStr ="".repeat(indentSize);
+ const indentStr =" ".repeat(indentSize);
  let formatted ="";
  let pad = 0;
 
@@ -47,7 +47,7 @@ export function minifyXml(xml: string): string {
  return xml
  .replace(/\r?\n|\r/g,"")
  .replace(/>\s+</g,"><")
- .replace(/\s+/g,"")
+ .replace(/\s+/g," ")
  .replace(/>\s+/g,">")
  .replace(/\s+</g,"<")
  .trim();
@@ -81,8 +81,8 @@ export function validateXml(xml: string): {
  return { valid: false, error: cleanMsg, line };
  }
  return { valid: true };
- } catch (err: any) {
- return { valid: false, error: err.message ||"Invalid XML"};
+ } catch (err: unknown) {
+ return { valid: false, error: (err instanceof Error && err.message) ||"Invalid XML"};
  }
  }
 

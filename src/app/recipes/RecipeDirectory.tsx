@@ -4,6 +4,12 @@ import { useState } from "react";
 import Link from "next/link";
 import { Search, ArrowRight, ShieldCheck } from "lucide-react";
 import { RecipeMeta } from "@/lib/recipes/registry";
+import { guide } from "@/components/seo/guideUi";
+
+const chipBase =
+  "inline-flex h-10 shrink-0 items-center whitespace-nowrap rounded-full border px-3 text-xs font-medium transition-colors cursor-pointer sm:h-8";
+const chipActive = "border-zinc-900 bg-zinc-900 text-white";
+const chipIdle = "border-zinc-200 bg-white text-zinc-600 hover:border-zinc-400 hover:text-zinc-900";
 
 export function RecipeDirectory({ recipes }: { recipes: RecipeMeta[] }) {
   const [searchQuery, setSearchQuery] = useState("");
@@ -24,9 +30,9 @@ export function RecipeDirectory({ recipes }: { recipes: RecipeMeta[] }) {
   });
 
   return (
-    <div className="space-y-8" suppressHydrationWarning>
+    <div className="space-y-6" suppressHydrationWarning>
       {/* Search & Filter Controls */}
-      <div className="bg-white border border-zinc-200/90 rounded-2xl p-4 sm:p-6 shadow-2xs space-y-4" suppressHydrationWarning>
+      <div className="space-y-3 border-t border-zinc-200 pt-8" suppressHydrationWarning>
         <div className="relative max-w-xl">
           <Search className="w-4 h-4 text-zinc-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
           <input
@@ -35,22 +41,19 @@ export function RecipeDirectory({ recipes }: { recipes: RecipeMeta[] }) {
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             suppressHydrationWarning
-            className="w-full pl-10 pr-4 py-2.5 bg-zinc-50 border border-zinc-200 rounded-xl text-sm text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-orange-500/30 focus:border-orange-500 transition-all font-sans"
+            className="h-11 w-full rounded-lg border border-zinc-200 bg-white pl-10 pr-4 text-base text-zinc-900 placeholder:text-zinc-400 transition-colors focus:border-zinc-900 focus:outline-none focus:ring-2 focus:ring-zinc-900/10 sm:text-sm"
           />
         </div>
 
         {/* Tool Filter Chips */}
-        <div className="flex flex-wrap items-center gap-1.5 pt-1" suppressHydrationWarning>
-          <span className="text-xs font-mono text-zinc-500 mr-1">Filter by tool:</span>
+        <div className="space-y-2" suppressHydrationWarning>
+          <span className="block text-xs text-zinc-500">Filter by tool:</span>
+          <div className="-mx-4 flex gap-1.5 overflow-x-auto px-4 pb-1 [scrollbar-width:none] sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0 sm:pb-0">
           <button
             type="button"
             suppressHydrationWarning
             onClick={() => setSelectedTool("all")}
-            className={`text-xs px-2.5 py-1 rounded-full border transition-all cursor-pointer font-medium ${
-              selectedTool === "all"
-                ? "bg-orange-600 text-white border-orange-600 shadow-2xs"
-                : "bg-white border-zinc-200 text-zinc-600 hover:border-orange-300 hover:text-orange-700"
-            }`}
+            className={`${chipBase} ${selectedTool === "all" ? chipActive : chipIdle}`}
           >
             All ({recipes.length})
           </button>
@@ -63,30 +66,27 @@ export function RecipeDirectory({ recipes }: { recipes: RecipeMeta[] }) {
                 type="button"
                 suppressHydrationWarning
                 onClick={() => setSelectedTool(toolSlug)}
-                className={`text-xs px-2.5 py-1 rounded-full border transition-all cursor-pointer font-mono ${
-                  isSelected
-                    ? "bg-orange-600 text-white border-orange-600 shadow-2xs"
-                    : "bg-white border-zinc-200 text-zinc-600 hover:border-orange-300 hover:text-orange-700"
-                }`}
+                className={`${chipBase} font-mono ${isSelected ? chipActive : chipIdle}`}
               >
                 {toolSlug} ({count})
               </button>
             );
           })}
+          </div>
         </div>
       </div>
 
       {/* Results Header */}
-      <div className="flex items-center justify-between text-xs text-zinc-500 px-1 font-mono" suppressHydrationWarning>
-        <h2 className="text-xs sm:text-sm font-semibold text-zinc-800 font-sans">
-          Verified Developer Solutions <span className="font-mono text-zinc-500 text-xs font-normal">({filtered.length})</span>
+      <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-1 pt-4" suppressHydrationWarning>
+        <h2 className={guide.h2}>
+          Verified Developer Solutions <span className="text-sm font-normal text-zinc-400">({filtered.length})</span>
         </h2>
         {selectedTool !== "all" && (
           <button
             type="button"
             suppressHydrationWarning
             onClick={() => setSelectedTool("all")}
-            className="text-orange-600 hover:text-orange-700 font-semibold cursor-pointer underline"
+            className="min-h-10 text-sm font-medium text-zinc-900 underline decoration-zinc-300 underline-offset-4 transition-colors hover:decoration-zinc-900 cursor-pointer"
           >
             Reset filter
           </button>
@@ -94,11 +94,11 @@ export function RecipeDirectory({ recipes }: { recipes: RecipeMeta[] }) {
       </div>
 
       {/* Recipes Cards Grid */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {filtered.length === 0 ? (
-          <div className="col-span-full bg-white border border-zinc-200 rounded-2xl p-12 text-center space-y-3">
+          <div className="col-span-full rounded-lg border border-zinc-200 p-10 text-center space-y-2">
             <p className="text-sm font-semibold text-zinc-900">No troubleshooting recipes match your search.</p>
-            <p className="text-xs text-zinc-500 max-w-sm mx-auto">
+            <p className="text-[13px] text-zinc-500 max-w-sm mx-auto">
               Try searching for common error terms like &quot;SyntaxError&quot;, &quot;invalid signature&quot;, or &quot;TypeError&quot;.
             </p>
             <button
@@ -108,7 +108,7 @@ export function RecipeDirectory({ recipes }: { recipes: RecipeMeta[] }) {
                 setSearchQuery("");
                 setSelectedTool("all");
               }}
-              className="inline-flex items-center gap-1.5 text-xs font-semibold text-orange-600 hover:text-orange-700 mt-2"
+              className={`${guide.btnSecondary} mt-3`}
             >
               Clear all filters
             </button>
@@ -118,34 +118,34 @@ export function RecipeDirectory({ recipes }: { recipes: RecipeMeta[] }) {
             <Link
               key={recipe.slug}
               href={`/recipes/${recipe.slug}`}
-              className="flex flex-col justify-between border border-zinc-200/90 rounded-xl p-5 bg-white shadow-2xs hover:shadow-xs hover:border-orange-300 transition-all text-inherit no-underline group"
+              className={`${guide.card} justify-between text-inherit no-underline`}
             >
-              <div className="space-y-3">
+              <div className="space-y-2">
                 <div className="flex items-center justify-between gap-2">
-                  <span className="font-mono text-xs font-bold text-orange-600 bg-orange-50 border border-orange-200/80 px-2 py-0.5 rounded-md truncate max-w-[170px]">
+                  <span className="font-mono text-xs text-zinc-500 truncate max-w-[170px]">
                     {recipe.targetToolSlug}
                   </span>
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-400 shrink-0">
+                  <span className="text-[11px] font-medium uppercase tracking-wider text-zinc-400 shrink-0">
                     Verified Fix
                   </span>
                 </div>
 
-                <h3 className="font-bold text-zinc-900 text-sm sm:text-base group-hover:text-orange-600 transition-colors leading-snug line-clamp-2">
+                <h3 className="text-sm sm:text-[15px] font-medium leading-snug text-zinc-900 line-clamp-2">
                   {recipe.title}
                 </h3>
 
-                <p className="text-xs text-zinc-600 leading-relaxed line-clamp-3">
+                <p className="text-[13px] text-zinc-500 leading-relaxed line-clamp-3">
                   {recipe.problem}
                 </p>
               </div>
 
-              <div className="mt-4 pt-3 border-t border-zinc-100 flex items-center justify-between text-[11px] font-mono text-zinc-500">
-                <span className="flex items-center gap-1 text-emerald-700">
-                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+              <div className="mt-4 pt-3 border-t border-zinc-100 flex items-center justify-between text-xs text-zinc-500">
+                <span className="flex items-center gap-1">
+                  <ShieldCheck className="w-3.5 h-3.5 text-zinc-400" />
                   100% Client-Side
                 </span>
-                <span className="text-orange-600 font-semibold group-hover:translate-x-0.5 transition-transform flex items-center gap-0.5">
-                  Inspect Fix <ArrowRight className="w-3 h-3" />
+                <span className="flex items-center gap-1 font-medium text-zinc-900">
+                  Inspect Fix <ArrowRight className="w-3.5 h-3.5 text-zinc-400 transition-colors group-hover:text-zinc-900" />
                 </span>
               </div>
             </Link>

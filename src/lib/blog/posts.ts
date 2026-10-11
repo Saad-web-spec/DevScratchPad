@@ -1957,25 +1957,13 @@ This comprehensive guide breaks down modern AI agent steering architecture in 20
 
 ---
 
-<div class="my-8 p-6 rounded-2xl border border-orange-300 bg-gradient-to-r from-orange-50/90 via-amber-50/50 to-white shadow-xs" data-toc-ignore>
-  <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-5">
-    <div class="space-y-2">
-      <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-orange-600 text-white shadow-xs">
-        <img src="/orange-star.png" class="w-4 h-4 inline-block object-contain" alt="AI Skill Studio Star" />
-        <span>INTERACTIVE WORKSPACE</span>
-        <span class="text-orange-200">|</span>
-        <span>How to Use on Our AI Skill Studio Site</span>
-      </div>
-      <p class="text-lg sm:text-xl font-bold text-zinc-900 m-0 tracking-tight" data-toc-ignore>
-        Build Your Production AI Agent Configuration in 60 Seconds
-      </p>
-      <p class="text-xs sm:text-sm text-zinc-600 m-0 leading-relaxed max-w-xl">
-        Generate production-grade <code>SKILL.md</code>, <code>CLAUDE.md</code>, Cursor <code>.mdc</code>, and <code>AGENTS.md</code> files with 100% client-side privacy. Zero server transmission. Zero API keys required.
-      </p>
+<div class="my-8 p-5 rounded-lg border border-zinc-200 bg-white" data-toc-ignore>
+  <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div class="space-y-1 min-w-0">
+      <p class="text-base font-semibold text-zinc-900 m-0 tracking-tight" data-toc-ignore>Build Your Production AI Agent Configuration in 60 Seconds</p>
+      <p class="text-sm text-zinc-600 m-0 leading-relaxed max-w-xl">Generate production-grade <code>SKILL.md</code>, <code>CLAUDE.md</code>, Cursor <code>.mdc</code>, and <code>AGENTS.md</code> files with 100% client-side privacy. Zero server transmission. Zero API keys required.</p>
     </div>
-    <a href="/ai-skill-studio" class="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-orange-600 hover:bg-orange-500 text-white text-xs font-bold tracking-wide transition-all shrink-0 no-underline shadow-sm hover:shadow-md">
-      <span>Launch AI Skill Studio →</span>
-    </a>
+    <a href="/ai-skill-studio" class="inline-flex items-center justify-center h-10 px-4 rounded-md bg-zinc-900 hover:bg-zinc-800 text-white! text-sm font-medium transition-colors shrink-0 no-underline! hover:opacity-100!">Launch AI Skill Studio →</a>
   </div>
 </div>
 
@@ -2031,7 +2019,7 @@ Standardized coordination file for multi-agent runners (Antigravity, CrewAI, Aut
 
 ### E. Claude Model Context Protocol (\`claude.json\`)
 Anthropic's open standard for connecting AI coding assistants to external data sources, local systems, and developer tools.
-- **Location**: Project-root \`claude.json\` (for Claude Code CLI) or merged into \`claude_desktop_config.json\` (for Claude Desktop).
+- **Location**: Project-root \`.mcp.json\` (for Claude Code CLI) or merged into \`claude_desktop_config.json\` (for Claude Desktop).
 - **Tool Pipelines**: Configures stdio MCP servers such as local filesystem inspection, GitHub API integration, PostgreSQL schemas, and Brave web search.
 - **Security & Tokens**: Requires authentic Personal Access Tokens (such as GitHub PATs with \`repo\` scope) passed safely through local environment variable blocks.
 
@@ -2108,7 +2096,7 @@ Anthropic's open standard for connecting AI coding assistants to external data s
   │           └── SKILL.md
   ├── CLAUDE.md
   ├── AGENTS.md
-  ├── claude.json (MCP servers for Claude Code & Claude Desktop)
+  ├── .mcp.json (MCP servers for Claude Code & Claude Desktop)
   └── README.md (Contains copy-paste installation instructions)
   \`\`\`
 - **How to use it**: Click **"Export AI Kit (.zip)"** in the top-right toolbar. The archive is generated locally via JSZip and downloaded directly to your machine.
@@ -2222,25 +2210,13 @@ The **DevScratchpad CLI (\`npx devscratchpad\`)** eliminates manual prompt manag
 
 ---
 
-<div class="my-8 p-6 rounded-2xl border border-orange-300 bg-gradient-to-r from-orange-50/90 via-amber-50/50 to-white shadow-xs" data-toc-ignore>
-  <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-5">
-    <div class="space-y-2">
-      <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-orange-600 text-white shadow-xs">
-        <img src="/orange-star.png" class="w-4 h-4 inline-block object-contain" alt="DevScratchpad Star" />
-        <span>INTERACTIVE TERMINAL SIMULATOR</span>
-        <span class="text-orange-200">|</span>
-        <span>Live Web Companion</span>
-      </div>
-      <p class="text-lg sm:text-xl font-bold text-zinc-900 m-0 tracking-tight" data-toc-ignore>
-        Try the Headless Terminal AI Engine in Your Browser
-      </p>
-      <p class="text-xs sm:text-sm text-zinc-600 m-0 leading-relaxed max-w-xl">
-        Explore command execution, switch between 6 assistant formats and 8 technology presets, and test live terminal outputs directly on our dedicated CLI page.
-      </p>
+<div class="my-8 p-5 rounded-lg border border-zinc-200 bg-white" data-toc-ignore>
+  <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div class="space-y-1 min-w-0">
+      <p class="text-base font-semibold text-zinc-900 m-0 tracking-tight" data-toc-ignore>Try the Headless Terminal AI Engine in Your Browser</p>
+      <p class="text-sm text-zinc-600 m-0 leading-relaxed max-w-xl">Explore command execution, switch between 6 assistant formats and 8 technology presets, and test live terminal outputs directly on our dedicated CLI page.</p>
     </div>
-    <a href="/cli" class="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-orange-600 hover:bg-orange-500 text-white text-xs font-bold tracking-wide transition-all shrink-0 no-underline shadow-sm hover:shadow-md">
-      <span>Open CLI Terminal Simulator →</span>
-    </a>
+    <a href="/cli" class="inline-flex items-center justify-center h-10 px-4 rounded-md bg-zinc-900 hover:bg-zinc-800 text-white! text-sm font-medium transition-colors shrink-0 no-underline! hover:opacity-100!">Open CLI Terminal Simulator →</a>
   </div>
 </div>
 

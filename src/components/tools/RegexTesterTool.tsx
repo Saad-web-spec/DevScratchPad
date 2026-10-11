@@ -1,421 +1,346 @@
 "use client";
 
-import { useState, useEffect } from"react";
-import { MonacoEditor } from"@/components/MonacoEditor";
-import { testRegex, replaceRegex, type RegexMatch } from"@/lib/tools/regex";
-import { ShareButton } from"@/components/ShareButton";
-import { EmbedButton } from"@/components/EmbedButton";
-import { ExportImageButton } from"@/components/ExportImageButton";
-import { Copy, Trash2, Check, Regex as RegexIcon, Replace, AlertCircle } from"lucide-react";
-import { cn } from"@/lib/utils";
-import { addSnapshot } from"@/lib/storage";
+import { useState, useEffect, useMemo, useRef } from "react";
+import type { OnMount } from "@monaco-editor/react";
+import { MonacoEditor } from "@/components/MonacoEditor";
+import { ShareMenu } from "@/components/ShareMenu";
+import { Copy, Eraser, Check, Replace } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { addSnapshot } from "@/lib/storage";
+import { ToolHeader, PaneBar, MobilePaneTabs, btnPrimary, btnSecondary, btnGhost, btnIcon, segmentTrack, captionText, iconProps } from "@/components/tools/ToolChrome";
+import { getToolIcon } from "@/components/layout/toolIcons";
+import { ToolFooter, formatStats } from "@/components/tools/converters/ToolFooter";
+import { useCopyFeedback } from "@/components/tools/converters/useCopyFeedback";
+import { useRegexRun } from "@/components/tools/converters/regexEngine";
 
 interface RegexTesterToolProps {
- onValidationChange: (isValid: boolean, error?: string) => void;
- onStatsChange: (length: number, execMs: number) => void;
- onLogHistory?: (input: string) => void;
- restoredInput?: string | null;
+  onValidationChange: (isValid: boolean, error?: string) => void;
+  onStatsChange: (length: number, execMs: number) => void;
+  onLogHistory?: (input: string) => void;
+  restoredInput?: string | null;
 }
 
-const DEFAULT_PATTERN ="(\\b[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}\\b)";
+type EditorInstance = Parameters<OnMount>[0];
+type DecorationsCollection = ReturnType<EditorInstance["createDecorationsCollection"]>;
+
+const DEFAULT_PATTERN = "(\\b[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}\\b)";
 const DEFAULT_TEXT = `Contact us at support@example.com or sales.team@company.org.
 You can also reach out to admin@dev-tools.io for enterprise inquiries.
 Invalid address: user@.invalid or plain text.`;
 
-export function RegexTesterTool({
- onValidationChange,
- onStatsChange,
- onLogHistory,
- restoredInput,
-}: RegexTesterToolProps) {
- const [pattern, setPattern] = useState<string>(DEFAULT_PATTERN);
- const [flags, setFlags] = useState<{ [key: string]: boolean }>({
- g: true,
- i: true,
- m: false,
- s: false,
- u: false,
- y: false,
- });
- const [testString, setTestString] = useState<string>(DEFAULT_TEXT);
- const [replaceMode, setReplaceMode] = useState<boolean>(false);
- const [replacePattern, setReplacePattern] = useState<string>("[EMAIL REDACTED]");
- const [replacedOutput, setReplacedOutput] = useState<string>("");
- const [matches, setMatches] = useState<RegexMatch[]>([]);
- const [regexError, setRegexError] = useState<string | undefined>();
- const [copied, setCopied] = useState<string | null>(null);
- const [activeTab, setActiveTab] = useState<"input"|"output">("input");
+const FLAG_ORDER = "gimsuy";
+const FLAGS: { id: string; title: string }[] = [
+  { id: "g", title: "global: find all matches" },
+  { id: "i", title: "ignore case" },
+  { id: "m", title: "multiline: ^ and $ match at line breaks" },
+  { id: "s", title: "dotAll: . matches newlines" },
+  { id: "u", title: "unicode" },
+  { id: "y", title: "sticky: match from lastIndex only" },
+];
 
- // Save workspace snapshot
- useEffect(() => {
- const handleSave = () => {
- addSnapshot("regex","Regex Tester", pattern, testString);
- };
- window.addEventListener("save-workspace", handleSave);
- return () => window.removeEventListener("save-workspace", handleSave);
- }, [pattern, testString]);
+/** Matches rendered in the list; the editor still highlights up to the engine limit. */
+const LIST_LIMIT = 300;
+const MATCH_CLASS = "rounded-[2px] bg-amber-200/60";
 
- // Restore from history
- useEffect(() => {
- if (restoredInput) {
- try {
- const parsed = JSON.parse(restoredInput);
- // eslint-disable-next-line react-hooks/set-state-in-effect
- if (parsed.pattern) setPattern(parsed.pattern);
- if (parsed.testString) setTestString(parsed.testString);
- } catch {
- setPattern(restoredInput);
- }
- }
- }, [restoredInput]);
+const INPUT_OPTIONS = { wordWrap: "on" } as const;
+const OUTPUT_OPTIONS = { wordWrap: "on", readOnly: true, domReadOnly: true } as const;
 
- // Compile and match
- useEffect(() => {
- const start = performance.now();
- const flagStr = Object.entries(flags)
- .filter(([, active]) => active)
- .map(([f]) => f)
- .join("");
+function normalizeFlags(flags: string): string {
+  return FLAG_ORDER.split("").filter((f) => flags.includes(f)).join("");
+}
 
- const result = testRegex(pattern, flagStr, testString);
+export function RegexTesterTool({ onValidationChange, onStatsChange, onLogHistory, restoredInput }: RegexTesterToolProps) {
+  const [pattern, setPattern] = useState<string>(DEFAULT_PATTERN);
+  const [flags, setFlags] = useState<string>("gi");
+  const [testString, setTestString] = useState<string>(DEFAULT_TEXT);
+  const [replaceMode, setReplaceMode] = useState<boolean>(false);
+  const [replacePattern, setReplacePattern] = useState<string>("[EMAIL REDACTED]");
+  const [activeTab, setActiveTab] = useState<"input" | "output">("input");
+  const [copiedId, copy] = useCopyFeedback();
+  const editorRef = useRef<EditorInstance | null>(null);
+  const decorationsRef = useRef<DecorationsCollection | null>(null);
+  const [editorReady, setEditorReady] = useState(false);
 
- if (result.valid) {
- // eslint-disable-next-line react-hooks/set-state-in-effect
- setMatches(result.matches || []);
- setRegexError(undefined);
- onValidationChange(true);
- } else {
- setMatches([]);
- setRegexError(result.error);
- onValidationChange(false, result.error);
- }
+  // Save workspace snapshot
+  useEffect(() => {
+    const handleSave = () => {
+      addSnapshot("regex", "Regex Tester", pattern, testString);
+    };
+    window.addEventListener("save-workspace", handleSave);
+    return () => window.removeEventListener("save-workspace", handleSave);
+  }, [pattern, testString]);
 
- if (replaceMode && result.valid) {
- try {
- const replaced = replaceRegex(pattern, flagStr, testString, replacePattern);
- setReplacedOutput(replaced.result);
- } catch (err: any) {
- setReplacedOutput("");
- }
- }
+  // Restore from history / share link ({ pattern, flags, testString, replacePattern, replaceMode } or a bare pattern)
+  useEffect(() => {
+    if (!restoredInput) return;
+    try {
+      const parsed = JSON.parse(restoredInput) as Partial<{ pattern: string; flags: string; testString: string; replacePattern: string; replaceMode: boolean }>;
+      if (parsed && typeof parsed === "object") {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        if (typeof parsed.pattern === "string") setPattern(parsed.pattern);
+        if (typeof parsed.testString === "string") setTestString(parsed.testString);
+        if (typeof parsed.flags === "string") setFlags(normalizeFlags(parsed.flags));
+        if (typeof parsed.replacePattern === "string") setReplacePattern(parsed.replacePattern);
+        if (typeof parsed.replaceMode === "boolean") setReplaceMode(parsed.replaceMode);
+        return;
+      }
+    } catch {
+      // not JSON: treat as a bare pattern
+    }
+    setPattern(restoredInput);
+  }, [restoredInput]);
 
- const end = performance.now();
- onStatsChange(testString.length, end - start);
- }, [pattern, flags, testString, replaceMode, replacePattern, onValidationChange, onStatsChange]);
+  // Matching runs in a worker with a timeout, so a catastrophic pattern can't freeze the page
+  const run = useRegexRun({ pattern, flags, text: testString, replacement: replaceMode ? replacePattern : null });
+  const matches = useMemo(() => run?.matches ?? [], [run]);
+  const regexError = run && !run.ok ? run.error : undefined;
+  const replacedOutput = replaceMode && run?.ok ? (run.replaced ?? "") : "";
 
- const toggleFlag = (flag: string) => {
- setFlags((prev) => ({ ...prev, [flag]: !prev[flag] }));
- };
+  useEffect(() => {
+    if (!run) return;
+    if (run.ok) onValidationChange(true);
+    else onValidationChange(false, run.error);
+    onStatsChange(testString.length, run.ms);
+  }, [run, testString.length, onValidationChange, onStatsChange]);
 
- const handleCopy = (text: string, id: string) => {
- if (!text) return;
- navigator.clipboard.writeText(text);
- setCopied(id);
- onLogHistory?.(pattern);
- setTimeout(() => setCopied(null), 1500);
- };
+  // Highlight matches in the test string
+  useEffect(() => {
+    const ed = editorRef.current;
+    const model = ed?.getModel();
+    if (!ed || !model || !editorReady) return;
+    if (!decorationsRef.current) decorationsRef.current = ed.createDecorationsCollection();
+    const length = model.getValueLength();
+    const decorations = matches
+      .filter((m) => m.end > m.index && m.end <= length)
+      .map((m, i) => {
+        const s = model.getPositionAt(m.index);
+        const e = model.getPositionAt(m.end);
+        return {
+          range: { startLineNumber: s.lineNumber, startColumn: s.column, endLineNumber: e.lineNumber, endColumn: e.column },
+          options: { inlineClassName: MATCH_CLASS, hoverMessage: { value: `Match ${i + 1} · ${m.index}–${m.end}` } },
+        };
+      });
+    decorationsRef.current.set(decorations);
+  }, [matches, editorReady, testString]);
 
- const handleCopyAllMatches = () => {
- if (matches.length === 0) return;
- const all = matches.map((m, idx) => `Match ${idx + 1}: ${m.match}`).join("\n");
- navigator.clipboard.writeText(all);
- setCopied("all-matches");
- onLogHistory?.(pattern);
- setTimeout(() => setCopied(null), 1500);
- };
+  const toggleFlag = (flag: string) => {
+    setFlags((prev) => normalizeFlags(prev.includes(flag) ? prev.replace(flag, "") : prev + flag));
+  };
 
- return (
- <div className="flex flex-col h-full bg-[#09090B] w-full overflow-y-auto relative">
- {/* Tool Header */}
- <div className="min-h-14 border-b border-zinc-200 flex items-center justify-between gap-2 overflow-x-auto no-scrollbar py-2 px-3 md:px-4 bg-white shrink-0 sticky top-0 z-10">
- <div className="flex items-center gap-2">
- <RegexIcon className="w-4 h-4 text-zinc-900"/>
- <span className="text-sm font-semibold text-zinc-900">Regex Tester</span>
- </div>
+  const handleCopy = (text: string, id: string) => {
+    if (!text) return;
+    copy(text, id);
+    onLogHistory?.(pattern);
+  };
 
- <div className="flex items-center gap-2 flex-wrap">
- <ExportImageButton code={replacedOutput || testString} language="javascript"/>
- <EmbedButton toolSlug="regex-tester"data={{ pattern, testString, replacePattern, replaceMode }} />
- <ShareButton toolSlug="regex-tester"data={{ pattern, testString, replacePattern, replaceMode }} />
+  const handleCopyAllMatches = () => {
+    if (matches.length === 0) return;
+    handleCopy(matches.map((m) => m.match).join("\n"), "all-matches");
+  };
 
- {/* Replace Mode Toggle */}
- <button
- onClick={() => setReplaceMode(!replaceMode)}
- className={cn(
-"h-8 px-3 text-xs font-medium rounded-md border transition-colors flex items-center gap-1.5 ml-1",
- replaceMode
- ?"bg-zinc-900 text-zinc-900 border-zinc-900 font-semibold shadow-none"
- :"bg-zinc-100 hover:bg-zinc-200 text-zinc-700 border-zinc-200"
- )}
- >
- <Replace className="w-3.5 h-3.5"/>
- <span>Substitution</span>
- </button>
- </div>
- </div>
+  const total = run?.total ?? 0;
+  const footerStatus = !pattern ? "idle" : regexError ? "error" : total > 0 ? "ok" : "idle";
+  const footerMessage = !pattern
+    ? "Enter a pattern"
+    : regexError
+      ? regexError
+      : !run
+        ? "Matching…"
+        : total === 0
+          ? "No matches"
+          : `${total.toLocaleString()} match${total === 1 ? "" : "es"}${run.groupCount ? ` · ${run.groupCount} group${run.groupCount === 1 ? "" : "s"}` : ""}${run.truncated ? ` · showing first ${matches.length}` : ""}`;
 
- <div className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8 w-full mx-auto bg-white ] flex flex-col max-w-[1400px]">
- {/* Integrated Regex Pattern Input Bar */}
- <div className="bg-zinc-50 border border-zinc-200 rounded-xl p-3 shadow-none flex items-center justify-between gap-3 focus-within:border-zinc-400 transition-colors">
- <span className="text-zinc-400 font-mono font-bold select-none pl-1 text-sm md:text-base">/</span>
- <input
- type="text"
- value={pattern}
- onChange={(e) => setPattern(e.target.value)}
- placeholder="Enter regular expression pattern..."
- spellCheck={false}
- className="font-mono text-sm md:text-base tracking-wide bg-transparent border-0 focus:ring-0 focus:outline-none text-zinc-900 flex-1 placeholder:text-zinc-400 min-w-0"
- />
- <span className="text-zinc-400 font-mono font-bold select-none text-sm md:text-base pr-1">/</span>
+  return (
+    <div className="flex h-full w-full flex-col overflow-hidden bg-white">
+      <ToolHeader
+        icon={getToolIcon("regex")}
+        title="Regex Tester"
+        utilities={
+          <ShareMenu
+            toolSlug="regex"
+            data={{ pattern, flags, testString, replacePattern, replaceMode }}
+            imageCode={replaceMode && replacedOutput ? replacedOutput : `/${pattern}/${flags}\n\n${testString}`}
+            imageLanguage="javascript"
+          />
+        }
+        actions={
+          <>
+            <button type="button" onClick={() => setReplaceMode(!replaceMode)} aria-pressed={replaceMode} className={replaceMode ? btnPrimary : btnSecondary}>
+              <Replace {...iconProps} />
+              <span>Replace</span>
+            </button>
+          </>
+        }
+      />
 
- {/* Interactive Flag Toggles */}
- <div className="bg-zinc-100 p-1 rounded-lg flex items-center gap-0.5 shrink-0 ml-2">
- {[
- { id:"g", label:"g"},
- { id:"i", label:"i"},
- { id:"m", label:"m"},
- { id:"s", label:"s"},
- { id:"u", label:"u"},
- { id:"y", label:"y"},
- ].map((f) => (
- <button
- key={f.id}
- type="button"
- onClick={() => toggleFlag(f.id)}
- className={cn(
-"font-mono text-xs px-2 py-0.5 transition-colors",
- flags[f.id]
- ?"bg-zinc-900 text-zinc-900 font-bold rounded shadow-none"
- :"text-zinc-400 hover:text-zinc-700"
- )}
- >
- {f.label}
- </button>
- ))}
- </div>
- </div>
+      {/* Pattern + flags */}
+      <div className="flex shrink-0 flex-wrap items-center gap-2 border-b border-zinc-200 px-3 py-2 md:px-4">
+        <div
+          className={cn(
+            "flex h-10 min-w-0 flex-1 basis-60 items-center rounded-md border bg-white px-3 transition-colors focus-within:ring-1 md:h-9",
+            regexError ? "border-red-300 focus-within:border-red-500 focus-within:ring-red-500" : "border-zinc-200 hover:border-zinc-300 focus-within:border-zinc-900 focus-within:ring-zinc-900"
+          )}
+        >
+          <span className="select-none font-mono text-sm text-zinc-400" aria-hidden="true">/</span>
+          <input
+            type="text"
+            value={pattern}
+            onChange={(e) => setPattern(e.target.value)}
+            placeholder="pattern"
+            spellCheck={false}
+            autoCapitalize="off"
+            autoCorrect="off"
+            aria-label="Regular expression pattern"
+            aria-invalid={Boolean(regexError)}
+            className="h-full min-w-0 flex-1 bg-transparent px-1 font-mono text-sm text-zinc-900 outline-none placeholder:text-zinc-400"
+          />
+          <span className="select-none font-mono text-sm text-zinc-400" aria-hidden="true">/{flags}</span>
+        </div>
+        <div className={segmentTrack} role="group" aria-label="Regex flags">
+          {FLAGS.map((f) => {
+            const on = flags.includes(f.id);
+            return (
+              <button
+                key={f.id}
+                type="button"
+                onClick={() => toggleFlag(f.id)}
+                aria-pressed={on}
+                title={`${f.id}: ${f.title}`}
+                className={cn(
+                  "h-9 min-w-9 rounded-[5px] px-1.5 font-mono text-[13px] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-900 md:h-7 md:min-w-7 md:text-xs",
+                  on ? "bg-white font-semibold text-zinc-900 ring-1 ring-zinc-200" : "text-zinc-400 hover:text-zinc-900"
+                )}
+              >
+                {f.id}
+              </button>
+            );
+          })}
+        </div>
+        {replaceMode && (
+          <label className="flex h-10 w-full min-w-0 items-center gap-2 rounded-md border border-zinc-200 bg-white px-3 transition-colors focus-within:border-zinc-900 focus-within:ring-1 focus-within:ring-zinc-900 hover:border-zinc-300 md:h-9">
+            <span className={cn(captionText, "shrink-0 select-none")}>Replace</span>
+            <input
+              type="text"
+              value={replacePattern}
+              onChange={(e) => setReplacePattern(e.target.value)}
+              placeholder="$1, $<name>, text…"
+              spellCheck={false}
+              aria-label="Replacement pattern"
+              className="h-full min-w-0 flex-1 bg-transparent font-mono text-sm text-zinc-900 outline-none placeholder:text-zinc-400"
+            />
+          </label>
+        )}
+      </div>
 
- {/* Replace Pattern Bar (if enabled) */}
- {replaceMode && (
- <div className="bg-zinc-50 border border-zinc-200 rounded-xl p-3 shadow-none flex items-center justify-between gap-3 mt-3 focus-within:border-zinc-400 transition-colors">
- <span className="text-xs font-semibold text-zinc-400 uppercase tracking-wider select-none shrink-0 pl-1">
- Replace:
- </span>
- <input
- type="text"
- value={replacePattern}
- onChange={(e) => setReplacePattern(e.target.value)}
- placeholder="Replacement pattern (e.g. $1, [REDACTED])..."
- className="font-mono text-sm md:text-base tracking-wide bg-transparent border-0 focus:ring-0 focus:outline-none text-zinc-900 flex-1 placeholder:text-zinc-400 min-w-0"
- />
- </div>
- )}
+      <MobilePaneTabs
+        tabs={[
+          { id: "input", label: "Test string" },
+          { id: "output", label: replaceMode ? "Result" : `Matches (${total})` },
+        ]}
+        active={activeTab}
+        onChange={setActiveTab}
+      />
 
- {/* Error notification if regex syntax is invalid */}
- {regexError && (
- <div className="flex items-center gap-2 text-xs text-zinc-600 bg-zinc-50 border border-zinc-200 px-3.5 py-2 rounded-lg mt-3">
- <AlertCircle className="w-4 h-4 shrink-0"/>
- <span className="font-mono">{regexError}</span>
- </div>
- )}
+      <div className="flex min-h-0 w-full flex-1 flex-col md:flex-row">
+        <section className={cn("flex min-h-0 min-w-0 flex-1 flex-col border-zinc-200 md:border-r", activeTab !== "input" && "hidden md:flex")}>
+          <PaneBar label="Test string">
+            <button type="button" onClick={() => setTestString("")} disabled={!testString} className={btnGhost} title="Clear test string">
+              <Eraser {...iconProps} />
+              <span>Clear</span>
+            </button>
+          </PaneBar>
+          <div className="relative min-h-0 flex-1">
+            <MonacoEditor
+              height="100%"
+              defaultLanguage="plaintext"
+              value={testString}
+              onChange={(value) => setTestString(value || "")}
+              options={INPUT_OPTIONS}
+              onMount={(ed) => {
+                editorRef.current = ed;
+                decorationsRef.current = null;
+                setEditorReady(true);
+              }}
+            />
+          </div>
+        </section>
 
- {/* Mobile Segmented Tab Control */}
- <div className="flex lg:hidden bg-zinc-50 p-2 border-b border-zinc-200 shrink-0 mt-4 rounded-xl">
- <div className="bg-zinc-200/50 p-1 rounded-lg flex items-center w-full">
- <button
- onClick={() => setActiveTab("input")}
- className={cn(
-"flex-1 py-1.5 text-xs font-semibold rounded-md transition-all text-center",
- activeTab ==="input"
- ?"bg-white text-zinc-900 shadow-none"
- :"text-zinc-500 hover:text-zinc-900"
- )}
- >
- Test String
- </button>
- <button
- onClick={() => setActiveTab("output")}
- className={cn(
-"flex-1 py-1.5 text-xs font-semibold rounded-md transition-all text-center",
- activeTab ==="output"
- ?"bg-white text-zinc-900 shadow-none"
- :"text-zinc-500 hover:text-zinc-900"
- )}
- >
- {replaceMode ?"Replaced Result": `Matches (${matches.length})`}
- </button>
- </div>
- </div>
+        <section className={cn("flex min-h-0 min-w-0 flex-1 flex-col", activeTab !== "output" && "hidden md:flex")}>
+          {replaceMode ? (
+            <>
+              <PaneBar label="Result">
+                <button type="button" onClick={() => handleCopy(replacedOutput, "replaced")} disabled={!replacedOutput} className={cn(btnGhost, copiedId === "replaced" && "text-zinc-900")}>
+                  {copiedId === "replaced" ? <Check {...iconProps} /> : <Copy {...iconProps} />}
+                  <span>{copiedId === "replaced" ? "Copied" : "Copy"}</span>
+                </button>
+              </PaneBar>
+              <div className="relative min-h-0 flex-1">
+                <MonacoEditor height="100%" defaultLanguage="plaintext" value={replacedOutput} options={OUTPUT_OPTIONS} />
+              </div>
+            </>
+          ) : (
+            <>
+              <PaneBar label={`Matches · ${total.toLocaleString()}`}>
+                <button type="button" onClick={handleCopyAllMatches} disabled={matches.length === 0} className={cn(btnGhost, copiedId === "all-matches" && "text-zinc-900")}>
+                  {copiedId === "all-matches" ? <Check {...iconProps} /> : <Copy {...iconProps} />}
+                  <span>{copiedId === "all-matches" ? "Copied" : "Copy all"}</span>
+                </button>
+              </PaneBar>
+              <div className="min-h-0 flex-1 overflow-y-auto">
+                {matches.length > 0 ? (
+                  <ol className="divide-y divide-zinc-100">
+                    {matches.slice(0, LIST_LIMIT).map((m, idx) => (
+                      <li key={`${m.index}-${idx}`} className="group px-3 py-2 md:px-4">
+                        <div className="flex items-center gap-2">
+                          <span className="w-7 shrink-0 font-mono text-[11px] tabular-nums text-zinc-400">{idx + 1}</span>
+                          <code className="min-w-0 flex-1 truncate font-mono text-[13px] text-zinc-900">
+                            {m.match ? <span className={cn(MATCH_CLASS, "px-0.5")}>{m.match}</span> : <span className="italic text-zinc-400">empty match</span>}
+                          </code>
+                          <span className="shrink-0 font-mono text-[11px] tabular-nums text-zinc-400">
+                            {m.index}–{m.end}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => handleCopy(m.match, `match-${idx}`)}
+                            className={cn(btnIcon, "md:opacity-0 md:group-hover:opacity-100 md:focus-visible:opacity-100", copiedId === `match-${idx}` && "text-zinc-900 md:opacity-100")}
+                            title="Copy match"
+                            aria-label={`Copy match ${idx + 1}`}
+                          >
+                            {copiedId === `match-${idx}` ? <Check {...iconProps} /> : <Copy {...iconProps} />}
+                          </button>
+                        </div>
+                        {m.groups.length > 0 && (
+                          <dl className="ml-9 mt-1 grid grid-cols-[auto_minmax(0,1fr)] gap-x-3 gap-y-0.5 pr-10 text-xs">
+                            {m.groups.map((g) => (
+                              <div key={g.index} className="contents">
+                                <dt className="font-mono text-zinc-400">{g.name ? `${g.name}` : `$${g.index}`}</dt>
+                                <dd className="truncate font-mono text-zinc-700">
+                                  {g.value === undefined ? <span className="italic text-zinc-400">undefined</span> : g.value || <span className="italic text-zinc-400">empty</span>}
+                                </dd>
+                              </div>
+                            ))}
+                          </dl>
+                        )}
+                      </li>
+                    ))}
+                  </ol>
+                ) : (
+                  <p className="flex h-full items-center justify-center p-8 text-center text-sm text-zinc-500">
+                    {regexError ? "Fix the pattern to see matches." : !testString ? "Enter a test string to find matches." : !pattern ? "Enter a pattern." : "No matches in the test string."}
+                  </p>
+                )}
+                {matches.length > LIST_LIMIT && (
+                  <p className="border-t border-zinc-100 px-4 py-2 text-xs text-zinc-500">
+                    Showing the first {LIST_LIMIT} of {total.toLocaleString()} matches. All of them are highlighted in the test string.
+                  </p>
+                )}
+              </div>
+            </>
+          )}
+        </section>
+      </div>
 
- {/* Dual Workspace Panels */}
- <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6 mt-4 lg:h-[calc(100vh-220px)] min-h-[500px]">
- 
- {/* Left Panel: Test String */}
- <div
- className={cn(
-"border border-zinc-200 rounded-xl bg-zinc-50 flex flex-col p-4 shadow-none",
- activeTab !=="input"&&"hidden lg:flex"
- )}
- >
- <div className="flex items-center justify-between mb-3 shrink-0">
- <span className="text-xs font-semibold text-zinc-500 uppercase tracking-wider">
- Test String
- </span>
- <button
- onClick={() => setTestString("")}
- className="text-zinc-400 hover:text-zinc-500 transition-colors p-1"
- title="Clear test string"
- >
- <Trash2 className="w-3.5 h-3.5"/>
- </button>
- </div>
- 
- <div className="flex-1 relative w-full h-full min-h-[200px] border border-zinc-200 rounded-lg overflow-hidden bg-white ]">
- <MonacoEditor
- height="100%"
- defaultLanguage="plaintext"
- value={testString}
- onChange={(value) => setTestString(value ||"")}
- options={{
- minimap: { enabled: false },
- fontSize: 13,
- wordWrap:"on",
- scrollBeyondLastLine: false,
- padding: { top: 12, bottom: 12 },
- fontFamily:"'JetBrains Mono', 'Fira Code', Consolas, monospace",
- }}
- />
- </div>
- 
- {/* Integrated Footer Status */}
- <div className="h-[28px] mt-2 flex items-center justify-between shrink-0 px-1">
- <span className="text-xs text-zinc-500 font-mono tracking-tight">
- {testString.length.toLocaleString()} characters • {testString.split("\n").length} lines
- </span>
- {!regexError && (
- <span className="text-[10px] uppercase font-bold tracking-wider text-blue-600 flex items-center gap-1">
- <Check className="w-3 h-3"/> Valid Pattern
- </span>
- )}
- </div>
- </div>
-
- {/* Right Panel: Match Details or Replaced Result */}
- <div
- className={cn(
-"border border-zinc-200 rounded-xl bg-zinc-50 p-4 shadow-none flex flex-col",
- activeTab !=="output"&&"hidden lg:flex"
- )}
- >
- {replaceMode ? (
- <>
- <div className="flex items-center justify-between mb-3 shrink-0">
- <span className="text-xs font-semibold text-zinc-500 uppercase tracking-wider">
- Replaced Result
- </span>
- <button
- onClick={() => handleCopy(replacedOutput,"replaced")}
- className="text-zinc-400 hover:text-zinc-900 transition-colors flex items-center gap-1 p-1"
- >
- {copied ==="replaced"? <Check className="w-3.5 h-3.5 text-zinc-900"/> : <Copy className="w-3.5 h-3.5"/>}
- </button>
- </div>
- <div className="flex-1 relative w-full h-full min-h-[200px] border border-zinc-200 rounded-lg overflow-hidden bg-white ]">
- <MonacoEditor
- height="100%"
- defaultLanguage="plaintext"
- value={replacedOutput}
- options={{
- readOnly: false,
- minimap: { enabled: false },
- fontSize: 13,
- wordWrap:"on",
- scrollBeyondLastLine: false,
- padding: { top: 12, bottom: 12 },
- fontFamily:"'JetBrains Mono', 'Fira Code', Consolas, monospace",
- }}
- />
- </div>
- </>
- ) : (
- <>
- <div className="flex items-center justify-between mb-3 shrink-0">
- <div className="flex items-center gap-3">
- <span className="text-xs font-semibold text-zinc-500 uppercase tracking-wider">
- Matches Found
- </span>
- <span className="bg-zinc-200 text-zinc-800 border border-zinc-300 text-xs font-mono px-2.5 py-0.5 rounded-full">
- {matches.length}
- </span>
- </div>
- {matches.length > 0 && (
- <button
- onClick={handleCopyAllMatches}
- className="text-zinc-400 hover:text-zinc-900 transition-colors flex items-center gap-1.5 p-1 text-xs font-medium"
- >
- {copied ==="all-matches"? <Check className="w-3.5 h-3.5 text-zinc-900"/> : <Copy className="w-3.5 h-3.5"/>}
- <span className="hidden sm:inline">{copied ==="all-matches"?"Copied All":"Copy All"}</span>
- </button>
- )}
- </div>
-
- <div className="flex-1 overflow-y-auto space-y-3 pr-1">
- {matches.length > 0 ? (
- matches.map((m, idx) => (
- <div key={idx} className="bg-white border border-zinc-200 rounded-lg p-3.5 shadow-none relative group hover:border-zinc-300 transition-colors">
- 
- <div className="flex items-center justify-between mb-2">
- <div className="flex items-center">
- <span className="bg-zinc-900 text-zinc-900 text-[11px] font-mono font-bold px-2 py-0.5 rounded">
- Match {idx + 1}
- </span>
- <span className="text-xs font-mono text-zinc-500 ml-2 tracking-tight">
- Index: {m.index} - {m.index + m.match.length}
- </span>
- </div>
- 
- <button
- onClick={() => handleCopy(m.match, `match-${idx}`)}
- className="h-7 px-2 text-xs bg-zinc-100 hover:bg-zinc-200 text-zinc-700 rounded transition-colors flex items-center gap-1 opacity-0 group-hover:opacity-100 focus:opacity-100"
- title="Copy Match"
- >
- {copied === `match-${idx}` ? <Check className="w-3.5 h-3.5"/> : <Copy className="w-3.5 h-3.5"/>}
- </button>
- </div>
- 
- <div className="font-mono text-sm text-zinc-900 bg-zinc-50 p-2.5 rounded-md border border-zinc-200/60 mt-2 select-all break-all whitespace-pre-wrap">
- {m.match}
- </div>
- 
- {m.captures && m.captures.length > 0 && (
- <div className="mt-3 flex flex-wrap gap-2">
- {m.captures.map((g, gIdx) => (
- <div key={gIdx} className="flex items-center gap-1.5 bg-zinc-100 px-2 py-1 rounded border border-zinc-200">
- <span className="font-mono text-[10px] text-zinc-400 font-bold tracking-wider">${gIdx + 1}</span>
- <span className="font-mono text-xs text-zinc-700 select-all truncate max-w-[200px]">{g}</span>
- </div>
- ))}
- </div>
- )}
- </div>
- ))
- ) : (
- <div className="h-full flex flex-col items-center justify-center text-center text-zinc-500 p-8">
- {!regexError && testString.length > 0 ? (
- <p className="text-sm">No matches found in the test string.</p>
- ) : regexError ? (
- <p className="text-sm text-zinc-500">Fix the regex syntax error to see matches.</p>
- ) : (
- <p className="text-sm">Enter a test string to find matches.</p>
- )}
- </div>
- )}
- </div>
- </>
- )}
- </div>
- </div>
- </div>
- </div>
- );
+      <ToolFooter status={footerStatus} message={footerMessage} meta={formatStats(testString.length, run?.ms)} />
+    </div>
+  );
 }

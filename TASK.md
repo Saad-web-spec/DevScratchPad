@@ -213,6 +213,35 @@ node ./cli/bin/devscratchpad.mjs audit
 | 2026-10-09 | Antigravity (Gemini) | Minimalist InfoTooltip Redesign & Mobile View Card Hardening: overhauled `InfoTooltip.tsx` from harsh dark theme into an ultra-clean, minimal elevated surface (`bg-white/98 backdrop-blur-xl border border-zinc-200/90 shadow-[0_16px_36px_rgba(0,0,0,0.12),0_2px_10px_rgba(234,88,12,0.06)]`); replaced clunky brown monospace badge with warm orange pill (`bg-orange-50 border-orange-200/80 text-orange-800 font-medium rounded-full`); upgraded trigger button with touch-manipulation and radiant orange ring; modernized format guide into clean zinc-50 card (`text-[11px] font-mono text-zinc-800`); added dynamic viewport height clamping (`maxHeight: min(440, space-padding)`) with smooth internal scrolling (`overflow-y-auto overscroll-contain`); hardened all cards across `ClaudeSkillsClient.tsx` for mobile viewports (prevented ellipses truncation with `break-words leading-snug`, added `break-all sm:break-normal` to Target Location code paths, protected card headers with `min-w-0` and `shrink-0`, responsive profile buttons); verified all gates pass (validate-presets: 100/100, lint: 0 errors, build: 869 routes exit 0, localhost:3000 running) | ✅ All gates passed |
 | 2026-10-10 | Claude Code (Opus) | AI Skill Studio data-loss & editor hardening: per-format manual edit stash (format switch no longer discards Monaco edits; restored on return, included in ZIP, persisted); onFocus no longer wipes edits; "Restore edits" notice when a form change/Reset replaces manual edits; fixed dropped Monaco keystrokes (stale `value` overwrite, now `flushSync`); fixed mount-time draft restore being overwritten; format deep links now beat the saved draft format; persisted all 23 governance section fields; MCP inputs wired to marker/regeneration, env value masked and never persisted as a literal token, ingestion uses `${GITHUB_PERSONAL_ACCESS_TOKEN}`; GitHub PAT link narrowed to fine-grained read-only; auditor false positives fixed (negated guardrails, Vue `<script setup>`, code fences); Copilot procedures nested list + locator fix; MCP locator fix; added Vitest suite (562 tests) and `npm test`; verified 19/19 Playwright checks on localhost:3000 | ✅ All gates passed (validate-presets, lint 0 errors, 562 tests, build 869 routes exit 0) |
 | 2026-10-11 | Claude Code (Opus) | Self-hosted fonts (Fontsource, replacing the CSP-blocked Google Fonts import) and Monaco (`public/monaco/vs` via `scripts/copy-monaco.mjs`; jsdelivr removed from the CSP; editor mount 17.3s → 1.5s); split `ClaudeSkillsClient.tsx` 6,334 → 4,363 lines into `GovernanceSections` (data-driven), `IgnoreShieldSuite`, `McpServerConfigCard`, `FormatSelector`, `TargetLocationCard`; fixed Ignore Shield cards toggling twice per click (plus the same pattern in convention/behavior tiles); untracked stray local files; added the `studio-tests.yml` CI workflow; 26/26 Playwright checks on localhost:3000 | ✅ All gates passed (validate-presets, lint 0 errors, 562 tests, build 869 routes exit 0) |
+| 2026-10-11 | Claude Code (Opus) | Behavior-preserving split of `ClaudeSkillsClient.tsx` 4,371 → 2,887 lines: pure helpers to `lib/` (`auditQuickFixes`, `cliInstall`, `contextSynthesis`, `shareState`, `editorFileName`, 113 new unit tests) and presentational JSX to `components/` (`AuditPanel`, `CliInstallPopover`, `EditorStatusBar`, `MobileStudioControls`, `CursorRuleScopeCard`, `IdentityActivationCard`, `StandardSkillCards`); Monaco, White Marker, manual-edit state, header and H1 left in place; SSR markup identical on 760 renders (17 formats × 38 UI states) and handler logic identical on generated inputs | Verified: tsc exit 0, eslint 0 errors (no warnings in new files), 688 tests, validate-presets pass; build not run (per request) |
+| 2026-10-11 | Claude Code (Opus) | Main site UI pass: monochrome workspace chrome and all 24 tool panels on shared `ToolChrome`, one `ShareMenu` (link / embed / image), Geist + Geist Mono, minimal Monaco theme, short tool guides without studio promos, tool bug fixes (XML indent, CSS/SVG/HTML minify, cert SAN/EKU, SSH MD5, curl-to-go imports, cron next runs, SVG preview xmlns); 24 tools checked at 1440 and 390 px with no console errors or horizontal overflow | ✅ tsc 0, lint 0 errors, 829 tests, validate-presets pass, build exit 0 |
+
+---
+
+## 2026-10-11 — Studio Reference Section & SEO Fixes
+
+- [x] Rewrite studio information section (file table, examples, starters, FAQ shared with JSON-LD)
+- [x] Shorten studio title/description; visible H1 above editor; unique hub headings
+- [x] Sitemap lastModified from real commit/post dates
+- [x] Show hub FAQs visibly to match FAQPage JSON-LD
+- [x] Correct MCP path (.mcp.json), .claudeignore and Copilot claims
+- [x] Small orange download toast; ZIP export reports real file name and contents
+- [x] Shared nav on site/workspace headers (AI Skill Studio and Skill Hub keep their own headers)
+- [ ] Decide on noindexing synthesized preset spoke pages (needs Search Console data)
+
+## 2026-10-11 — Main Site UI Pass (Tools, Guides, Fonts, Mobile)
+
+- [x] Skill Hub: AI Skill Studio link uses the orange folder logo (not Zap); platform-aware Ctrl/⌘ K hint; "Show more" paging (24 per step)
+- [x] Workspace chrome: monochrome sidebar/tabs/top bar, shared tool icon map (`layout/toolIcons.ts`), single-button mobile header + drawer
+- [x] Command palette: shared icons, zinc selection, mobile Cancel
+- [x] Site fonts: Geist + Geist Mono (self-hosted fontsource); AI Skill area keeps Google Sans
+- [x] Monaco: shared minimal light theme + Geist Mono for every tool editor; export-image dark theme defined
+- [x] One `ShareMenu` (copy link, embed snippet, export image) replaces three header icons
+- [x] Tool guides: short monochrome articles, AI Skill Studio promos removed, ~60 factual corrections in tool copy
+- [x] Magic paste no longer hijacks pastes inside a tool's editor or same-family tools
+- [x] Tool panels: ToolChrome redesign, mobile overflow, bug fixes (see MEMORY.md session)
+- [x] Tool polish round 2: no Sample buttons/links or CIDR example chips, no green status (zinc), one-row `ToolHeader` that wraps controls only when needed (secondary actions icon-only on phones), lighter disabled primary, HMAC random-key icon is Dices
+- [ ] Decide: "offline" claims vs. layout.tsx unregistering service workers on every load
 
 ---
 

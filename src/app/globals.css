@@ -4,6 +4,14 @@
    and no network needed at build time. Files load only where `.font-gemini` text renders. */
 @import "@fontsource-variable/google-sans";
 @import "@fontsource-variable/plus-jakarta-sans";
+/* Site-wide UI and code fonts (self-hosted, variable, OFL). The AI Skill area keeps Google Sans via `.font-gemini`. */
+@import "@fontsource-variable/geist";
+@import "@fontsource-variable/geist-mono";
+
+@theme {
+  --font-sans: "Geist Variable", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-mono: "Geist Mono Variable", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
 
 .font-gemini {
   font-family: 'Google Sans Variable', 'Google Sans', 'Plus Jakarta Sans Variable', system-ui, -apple-system, sans-serif;
@@ -131,7 +139,7 @@
     color: #fafafa;
     border: 1px solid #27272a;
     overflow-x: auto;
-    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-family: var(--font-mono);
     font-size: 0.8125rem;
     line-height: 1.65;
     margin-top: 1.25em;
@@ -141,7 +149,7 @@
   }
   .prose code {
     color: #09090b;
-    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-family: var(--font-mono);
     font-size: 0.8125em;
     font-weight: 500;
     background-color: #f4f4f5;
@@ -177,7 +185,7 @@
     margin-bottom: 2em;
   }
   .prose kbd {
-    font-family: ui-monospace, monospace;
+    font-family: var(--font-mono);
     font-size: 0.75em;
     padding: 0.15em 0.35em;
     background-color: #f4f4f5;
@@ -211,8 +219,7 @@
 body {
   color: var(--foreground);
   background: var(--background);
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI',
-    Roboto, 'Helvetica Neue', Arial, sans-serif;
+  font-family: var(--font-sans);
   margin: 0;
   padding: 0;
   -webkit-font-smoothing: antialiased;
@@ -288,12 +295,12 @@ body {
   position: absolute;
   left: 50%;
   transform: translateX(-50%);
-  font-family: monospace;
+  font-family: var(--font-mono);
 }
 
 .terminal-body {
   padding: 1.25rem;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-family: var(--font-mono);
   font-size: 0.85rem;
   line-height: 1.65;
   min-height: 160px;
@@ -327,6 +334,12 @@ body {
 @keyframes cursor-blink {
   0%, 100% { opacity: 1; }
   50% { opacity: 0; }
+}
+
+/* AI Skill Studio download toast: the bar's animationend dismisses the toast, so this also sets how long it stays */
+@keyframes hud-countdown {
+  from { transform: scaleX(1); }
+  to { transform: scaleX(0); }
 }
 
 /* AI Skill Studio — Sleek White Marker in Monaco Editor */

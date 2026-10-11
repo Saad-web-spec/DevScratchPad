@@ -1,14 +1,15 @@
 "use client";
 
-import { useState, useEffect } from"react";
+import { useState, useEffect, useDeferredValue, useMemo } from"react";
 import { MonacoEditor } from"@/components/MonacoEditor";
-import { minifyCss, minifySvg, validateCss, validateSvg } from"@/lib/tools/minify";
-import { ShareButton } from"@/components/ShareButton";
-import { EmbedButton } from"@/components/EmbedButton";
-import { ExportImageButton } from"@/components/ExportImageButton";
+import { ShareMenu } from "@/components/ShareMenu";
+import { minifyCss, minifySvg, minifyHtml, validateCss, validateSvg, validateHtml } from"@/lib/tools/minify";
 import { Copy, Trash2, Check, Minimize2 } from "lucide-react";
 import { cn } from"@/lib/utils";
-import { StatusBar } from"@/components/layout/StatusBar";
+import { addSnapshot } from"@/lib/storage";
+import { EditorPanelFooter } from"@/components/layout/StatusBar";
+import { ToolHeader, PaneBar, MobilePaneTabs, EDITOR_OPTIONS, btnPrimary, btnGhost, btnIcon, segmentTrack, segmentBtn, iconProps, ICON_STROKE } from "@/components/tools/ToolChrome";
+import { getToolIcon } from "@/components/layout/toolIcons";
 
 interface MinifierToolProps {
  onValidationChange: (isValid: boolean, error?: string, line?: number) => void;
@@ -17,34 +18,74 @@ interface MinifierToolProps {
  restoredInput?: string | null;
 }
 
+type MinifyMode ="css"|"svg"|"html";
+
 const DEFAULT_CSS = `/* Main Application Layout Styles */
 .header-container {
- display: flex;
- justify-content: space-between;
- align-items: center;
- padding: 16px 24px;
- background-color: #ffffff;
- border-bottom: 1px solid #e2e8f0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 24px;
+  background-color: #ffffff;
+  border-bottom: 1px solid #e2e8f0;
 }
 
 .nav-link {
- color: #64748b;
- font-size: 14px;
- text-decoration: none;
- transition: color 0.2s ease;
+  color: #64748b;
+  font-size: 14px;
+  text-decoration: none;
+  transition: color 0.2s ease;
 }
 
 .nav-link:hover {
- color: #2563eb;
+  color: #2563eb;
 }
 `;
 
-const DEFAULT_SVG = `<svg xmlns="http://www.w3.org/2000/svg"width="24"height="24"viewBox="0 0 24 24"fill="none"stroke="currentColor"stroke-width="2"stroke-linecap="round"stroke-linejoin="round">
- <!-- Circle icon background -->
- <circle cx="12"cy="12"r="10"></circle>
- <!-- Inner path -->
- <polyline points="12 6 12 12 14 14"></polyline>
+const DEFAULT_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <!-- Circle icon background -->
+  <circle cx="12" cy="12" r="10"></circle>
+  <!-- Inner path -->
+  <polyline points="12 6 12 12 14 14"></polyline>
 </svg>`;
+
+const DEFAULT_HTML = `<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Landing page</title>
+    <!-- Inline critical styles -->
+    <style>
+      .hero { padding: 48px 24px; text-align: center; }
+    </style>
+  </head>
+  <body>
+    <section class="hero">
+      <h1>Ship <em>faster</em> with tiny pages</h1>
+      <p>
+        Every byte counts on a slow network.
+      </p>
+    </section>
+  </body>
+</html>
+`;
+
+const MODES: { id: MinifyMode; label: string; sample: string; editorLang: string; minify: (src: string) => string; validate: (src: string) => { valid: boolean; error?: string } }[] = [
+ { id:"css", label:"CSS", sample: DEFAULT_CSS, editorLang:"css", minify: minifyCss, validate: validateCss },
+ { id:"svg", label:"SVG", sample: DEFAULT_SVG, editorLang:"xml", minify: minifySvg, validate: validateSvg },
+ { id:"html", label:"HTML", sample: DEFAULT_HTML, editorLang:"html", minify: minifyHtml, validate: validateHtml },
+];
+const SAMPLES = new Set(MODES.map((m) => m.sample));
+
+/** Guess the mode of restored/shared input so it is not minified with the wrong rules. */
+function detectMode(src: string): MinifyMode {
+ const head = src.trimStart().slice(0, 200).toLowerCase();
+ if (head.startsWith("<svg") || (head.startsWith("<?xml") && head.includes("<svg"))) return"svg";
+ if (head.startsWith("<")) return"html";
+ return"css";
+}
+
+const byteLength = (s: string) => new TextEncoder().encode(s).length;
 
 export function MinifierTool({
  onValidationChange,
@@ -52,179 +93,155 @@ export function MinifierTool({
  onLogHistory,
  restoredInput,
 }: MinifierToolProps) {
- const [mode, setMode] = useState<"css"|"svg">("css");
+ const [mode, setMode] = useState<MinifyMode>("css");
  const [input, setInput] = useState<string>(DEFAULT_CSS);
  const [output, setOutput] = useState<string>("");
  const [copied, setCopied] = useState(false);
  const [activeTab, setActiveTab] = useState<"input"|"output">("input");
  const [isValid, setIsValid] = useState(true);
- const [execMs, setExecMs] = useState(0);
+ const [errorMsg, setErrorMsg] = useState<string | undefined>();
 
- // Restore from history
+ const current = MODES.find((m) => m.id === mode) ?? MODES[0];
+
+ // Restore from history / share link, switching to the matching mode
  useEffect(() => {
+ if (restoredInput) {
  // eslint-disable-next-line react-hooks/set-state-in-effect
- if (restoredInput) setInput(restoredInput);
+ setMode(detectMode(restoredInput));
+ setInput(restoredInput);
+ }
  }, [restoredInput]);
 
- // Real-time validation
+ // Save workspace snapshot (the tool previously fired events nothing listened to)
+ useEffect(() => {
+ const handleSave = () => {
+ addSnapshot("minifier","CSS / SVG / HTML Minifier", input, output);
+ };
+ window.addEventListener("save-workspace", handleSave);
+ return () => window.removeEventListener("save-workspace", handleSave);
+ }, [input, output]);
+
+ // Real-time validation + minification ("copy the compressed output and view the byte savings"),
+ // on a deferred copy of the input so large stylesheets never block typing.
+ const deferredInput = useDeferredValue(input);
  useEffect(() => {
  const start = performance.now();
- const validation = mode ==="css"? validateCss(input) : validateSvg(input);
- const end = performance.now();
- const ms = end - start;
+ const validation = current.validate(deferredInput);
+ if (validation.valid) setOutput(current.minify(deferredInput));
+ const ms = performance.now() - start;
 
- // eslint-disable-next-line react-hooks/set-state-in-effect
  setIsValid(validation.valid);
- setExecMs(ms);
+ setErrorMsg(validation.error);
  onValidationChange(validation.valid, validation.error);
- onStatsChange(input.length, ms);
- }, [input, mode, onValidationChange, onStatsChange]);
-
- // Dispatch custom events when input/output change
- useEffect(() => {
- if (typeof window !=="undefined") {
- window.dispatchEvent(
- new CustomEvent("update-workspace-state", {
- detail: { input, output },
- })
- );
- window.dispatchEvent(
- new CustomEvent("workspace-saved", {
- detail: { input, output },
- })
- );
- }
- }, [input, output]);
+ onStatsChange(deferredInput.length, ms);
+ }, [deferredInput, current, onValidationChange, onStatsChange]);
 
  const handleMinify = () => {
  const start = performance.now();
  try {
- const minified = mode ==="css"? minifyCss(input) : minifySvg(input);
+ const minified = current.minify(input);
  setOutput(minified);
  setIsValid(true);
+ setErrorMsg(undefined);
  onValidationChange(true);
  onLogHistory?.(input);
  setActiveTab("output");
- } catch (err: any) {
+ } catch (err: unknown) {
+ const message = err instanceof Error ? err.message :"Minification failed";
  setIsValid(false);
- onValidationChange(false, err.message);
+ setErrorMsg(message);
+ onValidationChange(false, message);
  }
- const end = performance.now();
- const ms = end - start;
- setExecMs(ms);
- onStatsChange(input.length, ms);
+ onStatsChange(input.length, performance.now() - start);
  };
 
- const handleModeChange = (newMode:"css"|"svg") => {
+ // Switching mode loads that mode's sample only when the editor holds a sample or nothing,
+ // so pasted code is never thrown away.
+ const handleModeChange = (newMode: MinifyMode) => {
+ if (newMode === mode) return;
  setMode(newMode);
- setInput(newMode ==="css"? DEFAULT_CSS : DEFAULT_SVG);
+ if (!input.trim() || SAMPLES.has(input)) {
+ setInput(MODES.find((m) => m.id === newMode)?.sample ??"");
+ }
  setOutput("");
  };
 
  const handleCopy = () => {
  if (!output) return;
- navigator.clipboard.writeText(output);
+ navigator.clipboard?.writeText(output).catch(() => {});
  setCopied(true);
  setTimeout(() => setCopied(false), 1500);
  };
 
- const savedBytes = input.length - output.length;
- const savingsPercent = input.length > 0 && output.length > 0
- ? ((savedBytes / input.length) * 100).toFixed(1)
- :"0";
+ // Real UTF-8 byte counts, recomputed only when the texts change
+ const inputBytes = useMemo(() => byteLength(deferredInput), [deferredInput]);
+ const outputBytes = useMemo(() => byteLength(output), [output]);
+ const savedBytes = Math.max(0, inputBytes - outputBytes);
+ const savingsPercent = inputBytes > 0 && outputBytes > 0 ? ((savedBytes / inputBytes) * 100).toFixed(1) :"0";
 
- const editorLang = mode ==="css"?"css":"xml";
+ const editorLang = current.editorLang;
+ const modeLabel = current.label;
 
  return (
  <div className="flex flex-col h-full bg-white w-full overflow-x-hidden">
  {/* Tool Header */}
- <div className="min-h-14 border-b border-[#e2e8f0] flex items-center justify-between gap-2 overflow-x-auto no-scrollbar py-2 px-3 md:px-4 px-3 md:px-4 py-2 md:py-0 bg-[#f8fafc] shrink-0">
- <div className="flex items-center gap-2">
- <Minimize2 className="w-4 h-4 text-zinc-900"/>
- <span className="text-sm font-semibold text-zinc-800">CSS & SVG Minifier</span>
- </div>
-
- <div className="flex items-center gap-2">
- <ExportImageButton code={output || input} language="css"/>
- <EmbedButton toolSlug="css-svg-minifier"data={input} />
- <ShareButton toolSlug="css-svg-minifier"data={input} />
- {/* Mode Dropdown */}
- <div className="flex items-center gap-1.5">
- <label htmlFor="minifier-mode-select"className="text-xs text-zinc-400 font-medium">
- Mode:
- </label>
- <select
- id="minifier-mode-select"
- value={mode}
- onChange={(e) => handleModeChange(e.target.value as"css"|"svg")}
- className="h-9 bg-white border border-zinc-200 text-zinc-700 text-xs rounded-md px-2 focus:outline-none font-medium"
+ <ToolHeader
+ icon={getToolIcon("minifier")}
+ title="CSS, SVG & HTML Minifier"
+ utilities={<ShareMenu toolSlug="minifier" data={input} imageCode={output || input} imageLanguage={editorLang} />}
+ options={<>
+ {/* Mode switch */}
+ <div className={segmentTrack} role="group" aria-label="Input type">
+ {MODES.map((m) => (
+ <button
+ key={m.id}
+ type="button"
+ aria-pressed={mode === m.id}
+ onClick={() => handleModeChange(m.id)}
+ className={segmentBtn(mode === m.id)}
  >
- <option value="css">CSS Minifier</option>
- <option value="svg">SVG Minifier</option>
- </select>
+ {m.label}
+ </button>
+ ))}
  </div>
 
  {/* Compression savings badge */}
  {output && (
- <span className="bg-zinc-100 text-zinc-700 border border-zinc-200 px-2 py-0.5 rounded-md text-xs font-mono flex items-center gap-1">
- <Check className="w-3 h-3 text-zinc-900"/>
- Saved {savedBytes > 0 ? savedBytes : 0} B ({savingsPercent}%)
+ <span className="inline-flex h-8 shrink-0 items-center gap-1 rounded-md bg-zinc-100 px-2 font-mono text-xs text-zinc-700" title={`${inputBytes} B → ${outputBytes} B`}>
+ <Check className="size-3.5" strokeWidth={ICON_STROKE} aria-hidden="true"/>
+ −{savedBytes} B ({savingsPercent}%)
  </span>
  )}
-
- {/* Action Button */}
+ </>}
+ actions={
+ /* Action Button */
  <button
  onClick={handleMinify}
- className="h-8 px-3 text-xs font-semibold rounded-md shadow-none transition-colors flex items-center gap-1.5 bg-zinc-900 hover:bg-zinc-800 text-white"
+ disabled={!isValid || !input.trim()}
+ className={btnPrimary}
  >
- <Minimize2 className="w-3.5 h-3.5"/>
- <span>Minify {mode.toUpperCase()}</span>
+ <Minimize2 {...iconProps}/>
+ <span>Minify {modeLabel}</span>
  </button>
- </div>
- </div>
+ }
+ />
 
  {/* Mobile Segmented Tab Control */}
- <div className="flex md:hidden bg-[#f1f5f9] p-1 border-b border-[#e2e8f0] shrink-0">
- <button
- onClick={() => setActiveTab("input")}
- className={cn(
-"flex-1 py-1.5 text-xs font-medium rounded-md transition-colors text-center",
- activeTab ==="input"
- ?"bg-white text-zinc-900 font-semibold shadow-none rounded-md px-2.5 py-1 text-xs"
- :"text-zinc-500 hover:text-zinc-900 px-2.5 py-1 text-xs"
- )}
- >
- Raw {mode.toUpperCase()} Input
- </button>
- <button
- onClick={() => setActiveTab("output")}
- className={cn(
-"flex-1 py-1.5 text-xs font-medium rounded-md transition-colors text-center",
- activeTab ==="output"
- ?"bg-white text-zinc-900 font-semibold shadow-none rounded-md px-2.5 py-1 text-xs"
- :"text-zinc-500 hover:text-zinc-900 px-2.5 py-1 text-xs"
- )}
- >
- Minified Output
- </button>
- </div>
+ <MobilePaneTabs
+ tabs={[{ id:"input", label:<>Raw {modeLabel} Input</>}, { id:"output", label:"Minified Output"}]}
+ active={activeTab}
+ onChange={setActiveTab}
+ />
 
  {/* Dual Editors */}
  <div className="flex-1 flex flex-col md:flex-row overflow-hidden w-full max-w-full">
  {/* Left: Input */}
- <div className={cn("flex-1 border-r-0 md:border-r border-b md:border-b-0 border-[#e2e8f0] flex flex-col min-w-0 w-full overflow-x-hidden", activeTab !=="input"&&"hidden md:flex")}>
- <div className="h-8 bg-[#f8fafc] border-b border-[#e2e8f0] flex items-center justify-between px-3 shrink-0">
- <span className="text-[11px] font-medium text-zinc-500 uppercase tracking-wider">
- Raw {mode.toUpperCase()} Input
- </span>
- <button
- onClick={() => setInput("")}
- className="text-zinc-400 hover:text-zinc-800 transition-colors"
- title="Clear"
- >
- <Trash2 className="w-3.5 h-3.5"/>
+ <div className={cn("flex-1 border-r-0 md:border-r border-b md:border-b-0 border-zinc-200 flex flex-col min-w-0 w-full overflow-x-hidden", activeTab !=="input"&&"hidden md:flex")}>
+ <PaneBar label={<>Raw {modeLabel} Input</>}>
+ <button onClick={() => setInput("")} className={btnIcon} title="Clear input" aria-label="Clear input">
+ <Trash2 {...iconProps}/>
  </button>
- </div>
+ </PaneBar>
  <div className="flex-1 relative w-full max-w-full overflow-x-hidden">
  <MonacoEditor
  height="100%"
@@ -232,35 +249,20 @@ export function MinifierTool({
  language={editorLang}
  value={input}
  onChange={(value) => setInput(value ||"")}
- options={{
- minimap: { enabled: false },
- fontSize: 13,
- wordWrap:"on",
- scrollBeyondLastLine: false,
- padding: { top: 16 },
- fontFamily:"'JetBrains Mono', 'Fira Code', Consolas, monospace",
- }}
+ options={EDITOR_OPTIONS}
  />
  </div>
+ <EditorPanelFooter isValid={isValid} errorMessage={errorMsg} />
  </div>
 
  {/* Right: Output */}
  <div className={cn("flex-1 flex flex-col min-w-0 w-full overflow-x-hidden", activeTab !=="output"&&"hidden md:flex")}>
- <div className="h-8 bg-[#f8fafc] border-b border-[#e2e8f0] flex items-center justify-between px-3 shrink-0">
- <span className="text-[11px] font-medium text-zinc-500 uppercase tracking-wider">
- Minified Output
- </span>
- <button
- onClick={handleCopy}
- className={cn(
-"flex items-center gap-1 text-[11px] transition-colors",
- copied ?"text-zinc-900 font-medium":"text-zinc-400 hover:text-zinc-700"
- )}
- >
- {copied ? <Check className="w-3.5 h-3.5 text-zinc-900"/> : <Copy className="w-3.5 h-3.5"/>}
+ <PaneBar label="Minified Output">
+ <button onClick={handleCopy} disabled={!output} className={cn(btnGhost, copied &&"text-zinc-900")}>
+ {copied ? <Check {...iconProps}/> : <Copy {...iconProps}/>}
  <span>{copied ?"Copied!":"Copy"}</span>
  </button>
- </div>
+ </PaneBar>
  <div className="flex-1 relative w-full max-w-full overflow-x-hidden">
  <MonacoEditor
  height="100%"
@@ -268,26 +270,11 @@ export function MinifierTool({
  language={editorLang}
  value={output}
  onChange={(value) => setOutput(value ||"")}
- options={{
- readOnly: false,
- minimap: { enabled: false },
- fontSize: 13,
- wordWrap:"on",
- scrollBeyondLastLine: false,
- padding: { top: 16 },
- fontFamily:"'JetBrains Mono', 'Fira Code', Consolas, monospace",
- }}
+ options={EDITOR_OPTIONS}
  />
  </div>
  </div>
  </div>
-
- {/* Embedded 32px Status Bar */}
- <StatusBar
- isValid={isValid}
- inputLength={input.length}
- executionMs={execMs}
- />
  </div>
  );
 }

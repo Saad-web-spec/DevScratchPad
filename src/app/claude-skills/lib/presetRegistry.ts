@@ -2308,6 +2308,21 @@ export function getPresetsByFormat(formatSlug: string): ProgrammaticPresetRoute[
   return routes;
 }
 
+/**
+ * True when the page has hand-written content in PRESET_ROUTES. Pages that are only synthesized from a
+ * format x stack template are thin and near-duplicate, so they are kept out of Google (noindex, no sitemap entry).
+ */
+export function isCuratedPreset(formatSlug: string, presetSlug: string): boolean {
+  const canonicalFormat = FORMAT_SLUG_ALIASES[formatSlug.toLowerCase()] || formatSlug;
+  const lowerPreset = presetSlug.toLowerCase();
+  const normalized = SLUG_ALIASES[lowerPreset] || lowerPreset;
+  return PRESET_ROUTES.some(
+    (r) =>
+      (r.formatSlug === formatSlug || r.formatSlug === canonicalFormat) &&
+      (r.presetSlug === presetSlug || r.presetSlug === normalized)
+  );
+}
+
 export function getPresetBySlug(formatSlug: string, presetSlug: string): ProgrammaticPresetRoute | null {
   const canonicalFormat = FORMAT_SLUG_ALIASES[formatSlug.toLowerCase()] || formatSlug;
 

@@ -1,15 +1,18 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { MonacoEditor } from "@/components/MonacoEditor";
 import { validateJsonForTs } from "@/lib/tools/json-to-ts";
-import { convertJsonToSchema, type TargetLanguage } from "@/lib/tools/polyglot-schema";
-import { ShareButton } from "@/components/ShareButton";
-import { EmbedButton } from "@/components/EmbedButton";
-import { ExportImageButton } from "@/components/ExportImageButton";
-import { Play, Copy, Trash2, Check, FileCode } from "lucide-react";
+import { convertValueToSchema, type TargetLanguage } from "@/lib/tools/polyglot-schema";
+import { ShareMenu } from "@/components/ShareMenu";
+import { Play, Copy, Eraser, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { StatusBar } from "@/components/layout/StatusBar";
+import { addSnapshot } from "@/lib/storage";
+import { ToolHeader, PaneBar, MobilePaneTabs, btnPrimary, btnGhost, inputBase, segmentTrack, segmentBtn, iconProps } from "@/components/tools/ToolChrome";
+import { getToolIcon } from "@/components/layout/toolIcons";
+import { ToolFooter, formatStats } from "@/components/tools/converters/ToolFooter";
+import { useSettledValue, timed } from "@/components/tools/converters/useSettledValue";
+import { useCopyFeedback } from "@/components/tools/converters/useCopyFeedback";
 
 interface JsonToTsToolProps {
   onValidationChange: (isValid: boolean, error?: string, line?: number) => void;
@@ -21,274 +24,181 @@ interface JsonToTsToolProps {
 
 const DEFAULT_JSON = `{\n  "id": 1,\n  "name": "Leanne Graham",\n  "username": "Bret",\n  "email": "Sincere@april.biz",\n  "address": {\n    "street": "Kulas Light",\n    "suite": "Apt. 556",\n    "city": "Gwenborough",\n    "zipcode": "92998-3874"\n  },\n  "phone": "1-770-736-8031 x56442",\n  "website": "hildegard.org",\n  "company": {\n    "name": "Romaguera-Crona",\n    "catchPhrase": "Multi-layered client-server neural-net"\n  },\n  "tags": ["developer", "admin"],\n  "isActive": true\n}`;
 
-const LANGUAGES: { id: TargetLanguage; label: string; monacoLang: string }[] = [
-  { id: "typescript", label: "TypeScript", monacoLang: "typescript" },
-  { id: "zod", label: "Zod Schema", monacoLang: "typescript" },
-  { id: "go", label: "Go Struct", monacoLang: "go" },
-  { id: "python", label: "Python (Pydantic)", monacoLang: "python" },
-  { id: "rust", label: "Rust (Serde)", monacoLang: "rust" },
+const LANGUAGES: { id: TargetLanguage; label: string; title: string; output: string; monacoLang: string }[] = [
+  { id: "typescript", label: "TypeScript", title: "TypeScript", output: "TypeScript interfaces", monacoLang: "typescript" },
+  { id: "zod", label: "Zod", title: "Zod", output: "Zod schema", monacoLang: "typescript" },
+  { id: "go", label: "Go", title: "Go Struct", output: "Go structs", monacoLang: "go" },
+  { id: "python", label: "Python", title: "Pydantic", output: "Pydantic models", monacoLang: "python" },
+  { id: "rust", label: "Rust", title: "Rust (Serde)", output: "Rust structs", monacoLang: "rust" },
 ];
 
-export function JsonToTsTool(props: JsonToTsToolProps) {
+/** Route (and sidebar id) for each target that has its own page. */
+const TARGET_ROUTE: Partial<Record<TargetLanguage, string>> = {
+  typescript: "json-to-ts",
+  zod: "json-to-zod",
+  go: "json-to-go",
+};
+
+const INPUT_OPTIONS = { wordWrap: "on" } as const;
+const OUTPUT_OPTIONS = { wordWrap: "on", readOnly: true, domReadOnly: true } as const;
+
+export function JsonToTsTool({ onValidationChange, onStatsChange, onLogHistory, restoredInput, fixedTarget }: JsonToTsToolProps) {
   const [input, setInput] = useState<string>(DEFAULT_JSON);
-  const [output, setOutput] = useState<string>("");
-  const [targetLang, setTargetLang] = useState<TargetLanguage>(props.fixedTarget || "typescript");
+  const [targetLang, setTargetLang] = useState<TargetLanguage>(fixedTarget || "typescript");
   const [rootName, setRootName] = useState<string>("User");
-  const [copied, setCopied] = useState(false);
   const [activeTab, setActiveTab] = useState<"input" | "output">("input");
-  const [isValid, setIsValid] = useState(true);
-  const [errorLine, setErrorLine] = useState<number | undefined>();
-  const [execMs, setExecMs] = useState(0);
+  const [copiedId, copy] = useCopyFeedback();
 
   useEffect(() => {
-    if (props.fixedTarget) setTargetLang(props.fixedTarget);
-  }, [props.fixedTarget]);
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (fixedTarget) setTargetLang(fixedTarget);
+  }, [fixedTarget]);
 
   // Restore from history / magic paste
   useEffect(() => {
-    if (props.restoredInput) setInput(props.restoredInput);
-  }, [props.restoredInput]);
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (restoredInput) setInput(restoredInput);
+  }, [restoredInput]);
 
-  // Real-time conversion & validation
+  // Parse once per settled input; generating for another language reuses the parsed value
+  const settledInput = useSettledValue(input);
+  const parsed = useMemo(() => timed(() => validateJsonForTs(settledInput)), [settledInput]);
+  const generated = useMemo(
+    () =>
+      timed(() => {
+        if (!parsed.valid || parsed.value === undefined) return { code: "", error: undefined as string | undefined };
+        try {
+          return { code: convertValueToSchema(parsed.value, targetLang, rootName), error: undefined };
+        } catch (err) {
+          return { code: "", error: err instanceof Error ? err.message : "Could not generate types" };
+        }
+      }),
+    [parsed, targetLang, rootName]
+  );
+
+  const output = generated.code;
+  const isValid = parsed.valid && !generated.error;
+  const errorMessage = parsed.error || generated.error;
+  const execMs = parsed.ms + generated.ms;
+
   useEffect(() => {
-    const start = performance.now();
-    const validation = validateJsonForTs(input);
-    const end = performance.now();
-    const ms = end - start;
+    onValidationChange(isValid, errorMessage, parsed.line);
+    onStatsChange(settledInput.length, execMs);
+  }, [isValid, errorMessage, parsed.line, settledInput, execMs, onValidationChange, onStatsChange]);
 
-    setIsValid(validation.valid);
-    setErrorLine(validation.line);
-    setExecMs(ms);
-    props.onValidationChange(validation.valid, validation.error, validation.line);
+  const lang = LANGUAGES.find((l) => l.id === targetLang) ?? LANGUAGES[0];
+  const routeId = TARGET_ROUTE[fixedTarget ?? "typescript"] ?? "json-to-ts";
+  const shareSlug = TARGET_ROUTE[targetLang] ?? routeId;
 
-    if (validation.valid && input.trim()) {
-      try {
-        const result = convertJsonToSchema(input, targetLang, rootName);
-        setOutput(result);
-      } catch (err: any) {
-        setOutput("");
-        setIsValid(false);
-        props.onValidationChange(false, err.message);
-      }
-    } else if (!input.trim()) {
-      setOutput("");
-    }
-
-    props.onStatsChange(input.length, ms);
-  }, [input, targetLang, rootName, props]);
+  // Save workspace snapshot
+  useEffect(() => {
+    const handleSave = () => addSnapshot(routeId, `JSON to ${lang.title}`, input, output);
+    window.addEventListener("save-workspace", handleSave);
+    return () => window.removeEventListener("save-workspace", handleSave);
+  }, [routeId, lang.title, input, output]);
 
   const handleGenerate = () => {
-    const start = performance.now();
-    try {
-      const result = convertJsonToSchema(input, targetLang, rootName);
-      setOutput(result);
-      setIsValid(true);
-      props.onValidationChange(true);
-      props.onLogHistory?.(input);
-      setActiveTab("output");
-    } catch (err: any) {
-      setIsValid(false);
-      props.onValidationChange(false, err.message);
-    }
-    const end = performance.now();
-    const ms = end - start;
-    setExecMs(ms);
-    props.onStatsChange(input.length, ms);
+    if (!input.trim()) return;
+    if (isValid) onLogHistory?.(input);
+    setActiveTab("output");
   };
 
-  const handleCopy = () => {
-    if (!output) return;
-    navigator.clipboard.writeText(output);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 1500);
-  };
-
-  const currentMonacoLang =
-    LANGUAGES.find((l) => l.id === targetLang)?.monacoLang || "typescript";
+  const empty = !input.trim();
+  const footerMessage = empty
+    ? "Paste JSON to generate types"
+    : isValid
+      ? `Valid JSON · ${lang.output}`
+      : `${parsed.line ? `Line ${parsed.line}${parsed.column ? `, Col ${parsed.column}` : ""}: ` : ""}${errorMessage}`;
 
   return (
-    <div className="flex flex-col h-full bg-white w-full overflow-x-hidden">
-      {/* Tool Header */}
-      <div className="min-h-14 border-b border-[#e2e8f0] flex items-center justify-between gap-2 overflow-x-auto no-scrollbar py-2 px-3 md:px-4 bg-[#f8fafc] shrink-0">
-        <div className="flex items-center gap-2">
-          <FileCode className="w-4 h-4 text-zinc-900" />
-          <span className="text-sm font-semibold text-zinc-800 whitespace-nowrap">
-            JSON to {LANGUAGES.find((l) => l.id === targetLang)?.label}
-          </span>
-        </div>
-
-        {/* Target Language Selector Pills */}
-        {!props.fixedTarget && (
-          <div className="flex items-center bg-zinc-200/70 p-0.5 rounded-lg overflow-x-auto no-scrollbar shrink-0">
-            {LANGUAGES.map((lang) => (
-              <button
-                key={lang.id}
-                onClick={() => setTargetLang(lang.id)}
-                className={cn(
-                  "px-2.5 py-1 text-xs font-medium rounded-md transition-all whitespace-nowrap",
-                  targetLang === lang.id
-                    ? "bg-white text-zinc-900 shadow-none font-semibold"
-                    : "text-zinc-600 hover:text-zinc-900"
-                )}
+    <div className="flex h-full w-full flex-col overflow-hidden bg-white">
+      <ToolHeader
+        icon={getToolIcon(routeId)}
+        title={`JSON to ${lang.title}`}
+        utilities={<ShareMenu toolSlug={shareSlug} data={input} imageCode={output || input} imageLanguage={output ? lang.monacoLang : "json"} />}
+        options={
+          <>
+            {/* Target language (scrolls inside its own track on narrow screens) */}
+            <div className="w-full min-w-0 md:w-auto">
+              <div
+                className={cn(segmentTrack, "flex max-w-full overflow-x-auto [scrollbar-width:none] md:inline-flex [&::-webkit-scrollbar]:hidden")}
+                role="group"
+                aria-label="Target language"
               >
-                {lang.label}
-              </button>
-            ))}
-          </div>
-        )}
-
-        <div className="flex items-center gap-2 shrink-0">
-          <ExportImageButton code={output || input} language={currentMonacoLang} />
-          <EmbedButton toolSlug="json-to-typescript" data={input} />
-          <ShareButton toolSlug="json-to-typescript" data={input} />
-
-          <div className="hidden sm:flex items-center gap-1.5">
-            <label
-              htmlFor="root-name-input"
-              className="text-xs text-zinc-500 font-medium whitespace-nowrap"
-            >
-              Root:
+                {LANGUAGES.map((l) => (
+                  <button
+                    key={l.id}
+                    type="button"
+                    aria-pressed={targetLang === l.id}
+                    onClick={() => setTargetLang(l.id)}
+                    className={cn(segmentBtn(targetLang === l.id), "shrink-0 grow md:grow-0")}
+                  >
+                    {l.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <label className="flex min-w-0 items-center gap-2">
+              <span className="whitespace-nowrap text-[13px] font-medium text-zinc-500 md:text-xs">Root</span>
+              <input
+                type="text"
+                value={rootName}
+                onChange={(e) => setRootName(e.target.value)}
+                placeholder="User"
+                spellCheck={false}
+                aria-label="Root type name"
+                className={cn(inputBase, "w-28 min-w-0 font-mono")}
+              />
             </label>
-            <input
-              id="root-name-input"
-              type="text"
-              value={rootName}
-              onChange={(e) => setRootName(e.target.value)}
-              placeholder="User"
-              className="h-8 bg-white border border-zinc-200 text-zinc-900 text-xs rounded-md px-2.5 focus:outline-none focus:ring-1 focus:ring-zinc-400 w-24 font-mono"
-            />
-          </div>
-
-          <button
-            onClick={handleGenerate}
-            className="h-8 px-3 text-xs font-semibold rounded-md shadow-none transition-colors flex items-center gap-1.5 bg-zinc-900 hover:bg-zinc-800 text-white"
-          >
-            <Play className="w-3.5 h-3.5" />
+          </>
+        }
+        actions={
+          <button type="button" onClick={handleGenerate} disabled={empty} className={btnPrimary}>
+            <Play {...iconProps} />
             <span>Generate</span>
           </button>
-        </div>
-      </div>
+        }
+      />
 
-      {/* Mobile Segmented Tab Control */}
-      <div className="flex md:hidden bg-[#f1f5f9] p-1 border-b border-[#e2e8f0] shrink-0">
-        <button
-          onClick={() => setActiveTab("input")}
-          className={cn(
-            "flex-1 py-1.5 text-xs font-medium rounded-md transition-colors text-center",
-            activeTab === "input"
-              ? "bg-white text-zinc-900 font-semibold shadow-none"
-              : "text-zinc-500 hover:text-zinc-900"
-          )}
-        >
-          JSON Input
-        </button>
-        <button
-          onClick={() => setActiveTab("output")}
-          className={cn(
-            "flex-1 py-1.5 text-xs font-medium rounded-md transition-colors text-center",
-            activeTab === "output"
-              ? "bg-white text-zinc-900 font-semibold shadow-none"
-              : "text-zinc-500 hover:text-zinc-900"
-          )}
-        >
-          {LANGUAGES.find((l) => l.id === targetLang)?.label} Output
-        </button>
-      </div>
+      <MobilePaneTabs
+        tabs={[
+          { id: "input", label: "JSON" },
+          { id: "output", label: lang.label },
+        ]}
+        active={activeTab}
+        onChange={setActiveTab}
+      />
 
-      {/* Dual Editors */}
-      <div className="flex-1 flex flex-col md:flex-row overflow-hidden w-full max-w-full">
-        {/* Left: Input */}
-        <div
-          className={cn(
-            "flex-1 border-r-0 md:border-r border-b md:border-b-0 border-[#e2e8f0] flex flex-col min-w-0 w-full overflow-x-hidden",
-            activeTab !== "input" && "hidden md:flex"
-          )}
-        >
-          <div className="h-8 bg-[#f8fafc] border-b border-[#e2e8f0] flex items-center justify-between px-3 shrink-0">
-            <span className="text-[11px] font-medium text-zinc-500 uppercase tracking-wider">
-              JSON Input
-            </span>
-            <button
-              onClick={() => setInput("")}
-              className="text-zinc-400 hover:text-zinc-800 transition-colors"
-              title="Clear"
-            >
-              <Trash2 className="w-3.5 h-3.5" />
+      <div className="flex min-h-0 w-full flex-1 flex-col md:flex-row">
+        <section className={cn("flex min-h-0 min-w-0 flex-1 flex-col border-zinc-200 md:border-r", activeTab !== "input" && "hidden md:flex")}>
+          <PaneBar label="JSON input">
+            <button type="button" onClick={() => setInput("")} disabled={empty} className={btnGhost} title="Clear input">
+              <Eraser {...iconProps} />
+              <span>Clear</span>
             </button>
+          </PaneBar>
+          <div className="relative min-h-0 flex-1">
+            <MonacoEditor height="100%" defaultLanguage="json" value={input} onChange={(value) => setInput(value || "")} options={INPUT_OPTIONS} />
           </div>
-          <div className="flex-1 relative w-full max-w-full overflow-x-hidden">
-            <MonacoEditor
-              height="100%"
-              defaultLanguage="json"
-              value={input}
-              onChange={(value) => setInput(value || "")}
-              options={{
-                minimap: { enabled: false },
-                fontSize: 13,
-                wordWrap: "on",
-                scrollBeyondLastLine: false,
-                padding: { top: 16 },
-                fontFamily: "'JetBrains Mono', 'Fira Code', Consolas, monospace",
-              }}
-            />
-          </div>
-        </div>
+        </section>
 
-        {/* Right: Output */}
-        <div
-          className={cn(
-            "flex-1 flex flex-col min-w-0 w-full overflow-x-hidden bg-[#fafafa]",
-            activeTab !== "output" && "hidden md:flex"
-          )}
-        >
-          <div className="h-8 bg-[#f8fafc] border-b border-[#e2e8f0] flex items-center justify-between px-3 shrink-0">
-            <span className="text-[11px] font-medium text-zinc-500 uppercase tracking-wider">
-              {LANGUAGES.find((l) => l.id === targetLang)?.label} Definitions
-            </span>
-            <button
-              onClick={handleCopy}
-              className={cn(
-                "flex items-center gap-1 text-[11px] transition-colors",
-                copied
-                  ? "text-zinc-900 font-medium"
-                  : "text-zinc-500 hover:text-zinc-800"
-              )}
-            >
-              {copied ? (
-                <Check className="w-3.5 h-3.5 text-emerald-600" />
-              ) : (
-                <Copy className="w-3.5 h-3.5" />
-              )}
-              <span>{copied ? "Copied!" : "Copy"}</span>
+        <section className={cn("flex min-h-0 min-w-0 flex-1 flex-col", activeTab !== "output" && "hidden md:flex")}>
+          <PaneBar label={lang.output}>
+            <button type="button" onClick={() => copy(output, "output")} disabled={!output} className={cn(btnGhost, copiedId === "output" && "text-zinc-900")}>
+              {copiedId === "output" ? <Check {...iconProps} /> : <Copy {...iconProps} />}
+              <span>{copiedId === "output" ? "Copied" : "Copy"}</span>
             </button>
+          </PaneBar>
+          <div className="relative min-h-0 flex-1">
+            <MonacoEditor height="100%" language={lang.monacoLang} value={output} options={OUTPUT_OPTIONS} />
           </div>
-          <div className="flex-1 relative w-full max-w-full overflow-x-hidden">
-            <MonacoEditor
-              key={targetLang}
-              height="100%"
-              defaultLanguage={currentMonacoLang}
-              value={output}
-              onChange={(value) => setOutput(value || "")}
-              options={{
-                readOnly: false,
-                minimap: { enabled: false },
-                fontSize: 13,
-                wordWrap: "on",
-                scrollBeyondLastLine: false,
-                padding: { top: 16 },
-                fontFamily: "'JetBrains Mono', 'Fira Code', Consolas, monospace",
-              }}
-            />
-          </div>
-        </div>
+        </section>
       </div>
 
-      {/* Embedded Status Bar */}
-      <StatusBar
-        isValid={isValid}
-        errorLine={errorLine}
-        inputLength={input.length}
-        executionMs={execMs}
+      <ToolFooter
+        status={empty ? "idle" : isValid ? "ok" : "error"}
+        message={footerMessage}
+        meta={formatStats(input.length, empty ? undefined : execMs)}
       />
     </div>
   );

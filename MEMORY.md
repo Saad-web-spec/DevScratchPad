@@ -148,8 +148,9 @@ When adding live features, ingestion capabilities, or protocol enhancements to p
 | `src/app/claude-skills/lib/ruleAuditor.ts` | Static quality scoring engine (0-100) |
 | `src/app/claude-skills/lib/manifestParser.ts` | Auto-detect stack from package.json / Cargo.toml |
 | `src/app/claude-skills/lib/formatHubs.ts` | Format hub metadata for 13 target formats |
-| `src/app/claude-skills/ClaudeSkillsClient.tsx` | Main AI Skill Studio UI component (state, editor panel, standard skill form) |
-| `src/app/claude-skills/components/` | Studio sections: `FormatSelector`, `GovernanceSections`, `IgnoreShieldSuite`, `McpServerConfigCard`, `TargetLocationCard`, modals |
+| `src/app/claude-skills/ClaudeSkillsClient.tsx` | Main AI Skill Studio UI component (state, handlers, persistence, Monaco editor, White Marker, manual-edit stash); renders the components below |
+| `src/app/claude-skills/components/` | Studio sections: `FormatSelector`, `GovernanceSections`, `IgnoreShieldSuite`, `McpServerConfigCard`, `CursorRuleScopeCard`, `IdentityActivationCard`, `StandardSkillCards` (tech stack, philosophy, conventions, guardrails, procedures), `TargetLocationCard`, editor chrome (`CliInstallPopover`, `AuditPanel`, `EditorStatusBar`, `MobileStudioControls`), modals |
+| `src/app/claude-skills/lib/{auditQuickFixes,cliInstall,contextSynthesis,shareState,editorFileName}.ts` | Pure studio helpers: audit report and quick fixes, CLI install commands, Synthesize from Context, share-link state, editor tab file name |
 | `src/app/claude-skills/lib/__tests__/` | Vitest suite for generator, section locator, auditor (`npm test`) |
 | `scripts/copy-monaco.mjs` | Copies Monaco into `public/monaco/vs` (same-origin editor; runs on predev/prebuild) |
 | `src/lib/tools/registry.ts` | Tool registry for all 28+ developer utilities |
@@ -527,9 +528,42 @@ All AI agents operating in this repository MUST follow this 5-step loop:
 - **Hygiene**: Untracked (kept on disk, now gitignored) `.idea/`, `install.log`, `push.ps1`, the one-off `add_*`/`fix_*` codemods, a personal video and a personal photo. `cli/bin/devscratchpad.js` is kept because it is the published CLI package's bin. Added `.github/workflows/studio-tests.yml` (runs `npm test` on studio changes). ESLint ignores `public/monaco/**`; linting it ran ESLint out of memory.
 - **Status**: ✅ Complete (validate-presets pass, lint 0 errors, 562 tests, build 869 routes exit 0, 26/26 Playwright checks on localhost:3000)
 
+### Session: 2026-10-11 — ClaudeSkillsClient Behavior-Preserving Split (Round 2)
+- **Agent**: Claude Code (Opus)
+- **Change**: `ClaudeSkillsClient.tsx` went from 4,371 to 2,887 lines. Pure logic moved to `lib/` (`auditQuickFixes.ts`, `cliInstall.ts`, `contextSynthesis.ts`, `shareState.ts`, `editorFileName.ts`) with unit tests; JSX moved verbatim to `components/` (`AuditPanel`, `CliInstallPopover`, `EditorStatusBar`, `MobileStudioControls`, `CursorRuleScopeCard`, `IdentityActivationCard`, `StandardSkillCards`), state and handlers passed as props. The CLI format slug now reuses `FORMAT_TO_URL_SLUG` (identical values, pinned by a test).
+- **Left in place on purpose**: Monaco element and `flushSync` `onChange`, White Marker effects and decorations, manual-edit stash machinery, persistence effects, the header/H1, and the editor toolbar and restore notice (they wire straight into the manual-edit state). `getEditorFileName` and `resolveTargetInstallFile` are not derived from `getExportTarget()`, because doing so would change displayed paths.
+- **Verification**: server-rendered markup compared byte-for-byte against the original on 760 renders (17 formats × 38 UI states, including the open audit panel and CLI popover); the original handler and derived-value code was compiled and compared with the new code on generated inputs. tsc exit 0, eslint 0 errors, 688 tests.
+- **Learning**: `vitest run` re-saves `__snapshots__/*.snap` with LF line endings on every local run, so git lists the file as modified with an empty `git diff`. That is not a snapshot change; restore CRLF or ignore it.
+- **Status**: ✅ Complete (build intentionally not run in this session)
+
 ---
 
 *This document is updated by AI agents after significant sessions. Human maintainers should review and correct any inaccuracies periodically.*
 
 
 
+
+### Session: 2026-10-11 — Studio Info Section, SEO Fixes, Download Toast, Shared Site Nav
+- **Task**: Rewrite the studio reference section, fix SEO findings, redesign the download toast, unify navigation on non-AI pages.
+- **Changes**:
+  1. `AiSkillStudioSeoContent.tsx` rewritten (no H1; file table linking all 17 hubs, good/vague examples, starters, FAQ from `components/studioFaqs.ts` shared with JSON-LD). Hubs pass `activeFormatSlug` and `formatFaqs={hub.faqs}` so hub FAQPage JSON-LD matches visible text.
+  2. `ClaudeSkillsClient` takes an optional `heading` prop (H1 above the editor); studio root and format hubs pass it, spokes do not (they have their own H1).
+  3. `lib/exportTargets.ts` is the single source for download names and repo paths; `downloadAiKitZip` returns `{ fileName, files }`. MCP config is written to `.mcp.json` (Claude Code's project MCP file), not `claude.json`.
+  4. Sitemap `lastModified` comes from git commit dates of each page's sources (fallback constant), blog posts use `updatedAt`.
+  5. `PrimaryNav`/`BrandLink` (`src/components/layout/PrimaryNav.tsx`) used by SiteHeader and the workspace TopBar only.
+- **Gotcha — AI Skill area keeps its own identity**: The AI Skill Studio and Skill Hub headers must stay their own branded headers (studio: AI Skill Studio title, SKILL folder link, "Cursor .mdc + Claude Ready" pill; hub: back-to-workspace + "AI Skill Hub"). Do not replace them with the shared site nav. The download toast must stay small, minimal and orange (one compact card, bottom-right).
+
+### Session: 2026-10-11 — Main Site UI Pass (Tools, Guides, Fonts, Mobile)
+- **Task**: Monochrome redesign of the main workspace and all tool panels, short tool guides without AI Skill Studio promos, better fonts/icons, mobile fixes, tool bug sweep.
+- **Changes**:
+  1. `src/components/tools/ToolChrome.tsx` holds the shared tool UI vocabulary (ToolHeader, PaneBar, MobilePaneTabs, button/select/input classes, `iconProps`). Tools use `getToolIcon(id)` from `src/components/layout/toolIcons.ts` so header, sidebar, tabs and command palette show the same icon.
+  2. `src/components/ShareMenu.tsx` is the single share entry point (copy link via `copyShareLink`, `EmbedDialog`, lazy `ExportImageModal`). Pass the real route slug as `toolSlug` (wrong slugs made share links 404).
+  3. `MonacoEditor.tsx` defines `devscratchpad-light` (default) and `devscratchpad-dark` (export image) themes, enforces Geist Mono + no overview ruler, merges `scrollbar` options key by key, and respects an explicit `theme` prop.
+  4. Fonts: `@theme { --font-sans: Geist; --font-mono: Geist Mono }` in globals.css. `.font-gemini` (Google Sans) stays on AI Skill Studio / Skill Hub.
+  5. `src/lib/useModKeyLabel.ts` renders "Ctrl" or "⌘" for shortcut hints (SSR-safe via useSyncExternalStore).
+  6. `useMagicPaste` skips pastes inside `.monaco-editor` on /tools/* and pastes on same-family tools (all cURL targets; JSON-family tools).
+  7. Tool bug fixes (with tests in `src/lib/tools/__tests__/` and `src/components/tools/generators/__tests__/`): XML indent width; CSS/SVG/HTML minify no longer strips needed spaces; cert decoder reads SAN/key usage/EKU (@peculiar/x509 v2); SSH "MD5" fingerprint is a real MD5; curl-to-go only imports what it uses; cron shows next runs. Tool helpers live in `tools/converters/`, `tools/generators/`, `tools/security/`.
+  8. tsconfig targets ES2017: no regex `s` flag (use `[\s\S]`). The React compiler lint rejects `useMemo` whose deps it can't preserve; move pure work into a plain function.
+  9. User feedback round 2: no "Sample" buttons / "Load sample" links in tools (initial editor content is fine), no green success styling (use zinc; red/amber only for errors/warnings), no sparkle/star icons. `ToolHeader` keeps title + controls on one row and wraps controls only when they do not fit; on phones, secondary actions in `actions` collapse to icons (put label text in a `<span>` and the primary button last).
+- **Gotcha — two visual identities**: Main site (tools, guides, blog, recipes) is strictly black/white/zinc with no AI Skill Studio promo boxes or star/sparkle icons. AI Skill Studio and Skill Hub keep orange accents, their own headers and the orange folder logo.
+- **Open question**: copy says "offline", but `layout.tsx` unregisters every service worker on each load, so the site does not work offline.

@@ -120,7 +120,7 @@ function getFormatMeta(formatSlug: string) {
       return {
         pill: "MCP CONFIG",
         scope: "Local stdio / JSON-RPC Process",
-        formatType: "JSON Schema (claude.json)",
+        formatType: "JSON Schema (.mcp.json)",
         aiSupport: "Claude Desktop & MCP Hosts",
       };
     default:

@@ -367,7 +367,7 @@ Every agent task must be verified with:
     seoTitle: "GitHub Copilot Instructions Generator",
     seoDescription: "Create repository-level instructions for GitHub Copilot (.github/copilot-instructions.md). Enforce coding standards, testing rules, and architectural guidelines across pull requests.",
     heroHeading: "GitHub Copilot Instructions Generator",
-    heroSubheading: "Standardize GitHub Copilot Chat and completions across your entire team with root repository instruction files.",
+    heroSubheading: "Give GitHub Copilot Chat, code review and the coding agent the same project instructions for everyone on your team.",
     overview: "GitHub Copilot reads instructions from `.github/copilot-instructions.md` automatically during chat sessions and code reviews. Defining explicit tech stack conventions, banned libraries, and test requirements eliminates repetitive prompts and keeps team contributions aligned.",
     filePlacementGuide: [
       {
@@ -557,12 +557,12 @@ yarn.lock`
     seoDescription: "Generate tailored .claudeignore files for Claude Code CLI. Prevent terminal AI agents from reading private credentials, build artifacts, and vendor files.",
     heroHeading: ".claudeignore Privacy & Boundary Generator",
     heroSubheading: "Establish strict inspection and modification boundaries for Anthropic's Claude Code terminal agent.",
-    overview: "Claude Code automatically respects .claudeignore at your project root. When running autonomous workflows or codebase refactors, .claudeignore ensures Claude Code never inspects, greps, or modifies restricted directories, local secrets, or compiled artifacts.",
+    overview: "A .claudeignore file keeps one reviewable list of the paths Claude Code should stay out of: local secrets, build output and vendor folders. Claude Code's documented way to enforce that list is permission deny rules, so mirror sensitive paths as Read(...) entries under permissions.deny in .claude/settings.json.",
     filePlacementGuide: [
       {
         path: "./.claudeignore",
         scope: "Repository Root",
-        description: "Specifies directory and file patterns that Claude Code CLI will never read, search, or edit."
+        description: "Lists the directory and file patterns Claude Code should not read, search, or edit. Enforce secret paths with permissions.deny in .claude/settings.json."
       }
     ],
     syntaxHighlights: [
@@ -577,14 +577,14 @@ coverage/
       }
     ],
     bestPractices: [
-      "Add .claudeignore to project root before launching Claude Code terminal sessions.",
+      "Mirror secret paths such as .env* as Read(...) rules under permissions.deny in .claude/settings.json, which Claude Code enforces.",
       "Ignore large generated databases (sqlite.db) and test fixtures to keep agent searches fast.",
       "Combine with CLAUDE.md for comprehensive guidance and boundary enforcement."
     ],
     faqs: [
       {
-        question: "How does Claude Code detect .claudeignore?",
-        answer: "Claude Code automatically searches for .claudeignore in the current working directory upon initialization."
+        question: "Does Claude Code enforce .claudeignore?",
+        answer: "Claude Code documents permission rules, not .claudeignore, as the way to block file access. Keep .claudeignore as your list of excluded paths and copy the sensitive ones into permissions.deny in .claude/settings.json, for example Read(./.env) and Read(./secrets/**)."
       }
     ]
   },

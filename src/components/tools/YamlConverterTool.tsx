@@ -1,323 +1,219 @@
 "use client";
 
-import { useState, useEffect } from"react";
-import { MonacoEditor } from"@/components/MonacoEditor";
-import { yamlToJson, jsonToYaml, validateYaml, validateJsonForYaml } from"@/lib/tools/yaml";
-import { ShareButton } from"@/components/ShareButton";
-import { EmbedButton } from"@/components/EmbedButton";
-import { ExportImageButton } from"@/components/ExportImageButton";
-import { Play, Copy, Trash2, ArrowLeftRight, Check } from"lucide-react";
-import { cn } from"@/lib/utils";
-import { StatusBar, ValidationBadge, EditorPanelFooter } from '@/components/layout/StatusBar';
+import { useState, useEffect, useMemo, useDeferredValue } from "react";
+import { MonacoEditor } from "@/components/MonacoEditor";
+import { convertYamlJson, type YamlMode } from "@/lib/tools/yaml";
+import { ShareMenu } from "@/components/ShareMenu";
+import { Play, Copy, Eraser, ArrowLeftRight, Check } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { addSnapshot } from "@/lib/storage";
+import { ToolHeader, PaneBar, MobilePaneTabs, btnPrimary, btnSecondary, btnGhost, selectBase, segmentTrack, segmentBtn, iconProps } from "@/components/tools/ToolChrome";
+import { getToolIcon } from "@/components/layout/toolIcons";
+import { ToolFooter, formatStats } from "@/components/tools/converters/ToolFooter";
+import { useSettledValue, timed } from "@/components/tools/converters/useSettledValue";
+import { useCopyFeedback } from "@/components/tools/converters/useCopyFeedback";
 
 interface YamlConverterToolProps {
- onValidationChange: (isValid: boolean, error?: string, line?: number) => void;
- onStatsChange: (length: number, execMs: number) => void;
- onLogHistory?: (input: string) => void;
- restoredInput?: string | null;
+  onValidationChange: (isValid: boolean, error?: string, line?: number) => void;
+  onStatsChange: (length: number, execMs: number) => void;
+  onLogHistory?: (input: string) => void;
+  restoredInput?: string | null;
+  /** Starting direction (defaults to YAML to JSON). */
+  defaultMode?: YamlMode;
 }
 
-const DEFAULT_YAML = `server:
- port: 8080
- host: localhost
+const SAMPLE_YAML = `# Service configuration
+server:
+  host: localhost
+  port: 8080
+  tls: false
 database:
- name: dev_db
- connections:
- max: 100
- idle: 10
+  name: dev_db
+  pool:
+    max: 100
+    idle: 10
 features:
- - auth
- - logging
- - metrics
+  - auth
+  - logging
+  - metrics
 logging:
- level: info
- format: json
+  level: info
+  format: json
 `;
 
+const SAMPLE_JSON = `{
+  "server": { "host": "localhost", "port": 8080, "tls": false },
+  "database": { "name": "dev_db", "pool": { "max": 100, "idle": 10 } },
+  "features": ["auth", "logging", "metrics"],
+  "logging": { "level": "info", "format": "json" }
+}
+`;
+
+/** Read-only output; everything else comes from the shared editor defaults. */
+const INPUT_OPTIONS = { wordWrap: "on" } as const;
+const OUTPUT_OPTIONS = { wordWrap: "on", readOnly: true, domReadOnly: true } as const;
+
 export function YamlConverterTool({
- onValidationChange,
- onStatsChange,
- onLogHistory,
- restoredInput,
+  onValidationChange,
+  onStatsChange,
+  onLogHistory,
+  restoredInput,
+  defaultMode = "yaml-to-json",
 }: YamlConverterToolProps) {
- const [mode, setMode] = useState<"yaml-to-json"|"json-to-yaml">("yaml-to-json");
- const [input, setInput] = useState<string>(DEFAULT_YAML);
- const [output, setOutput] = useState<string>("");
- const [indent, setIndent] = useState<number>(2);
- const [copied, setCopied] = useState(false);
- const [activeTab, setActiveTab] = useState<"input"|"output">("input");
- const [isValid, setIsValid] = useState(true);
- const [errorMsg, setErrorMsg] = useState<string | undefined>();
- const [errorLine, setErrorLine] = useState<number | undefined>();
- const [execMs, setExecMs] = useState(0);
+  const [mode, setMode] = useState<YamlMode>(defaultMode);
+  const [input, setInput] = useState<string>(defaultMode === "yaml-to-json" ? SAMPLE_YAML : SAMPLE_JSON);
+  const [indent, setIndent] = useState<number>(2);
+  const [activeTab, setActiveTab] = useState<"input" | "output">("input");
+  const [copiedId, copy] = useCopyFeedback();
 
- // Restore from history
- useEffect(() => {
- if (restoredInput) setInput(restoredInput);
- }, [restoredInput]);
+  // Restore from history
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (restoredInput) setInput(restoredInput);
+  }, [restoredInput]);
 
- // Real-time conversion & validation
- useEffect(() => {
- const start = performance.now();
- const isYamlMode = mode ==="yaml-to-json";
- const validation = isYamlMode ? validateYaml(input) : validateJsonForYaml(input);
- const end = performance.now();
- const ms = end - start;
- 
- setIsValid(validation.valid);
- setErrorLine(validation.line);
- setExecMs(ms);
- onValidationChange(validation.valid, validation.error, validation.line);
+  // Convert off the keystroke path: one parse per settled input
+  // (mode is deferred alongside the input so a direction switch never converts the old text in the new mode)
+  const settledInput = useSettledValue(input);
+  const settledMode = useDeferredValue(mode);
+  const result = useMemo(
+    () => timed(() => convertYamlJson(settledInput, settledMode, indent)),
+    [settledInput, settledMode, indent]
+  );
 
- if (validation.valid && input.trim()) {
- try {
- const result = isYamlMode ? yamlToJson(input, indent) : jsonToYaml(input);
- setOutput(result);
- } catch (err: any) {
- setOutput("");
- setIsValid(false);
- setErrorMsg(err.message);
- onValidationChange(false, err.message);
- }
- } else if (!input.trim()) {
- setOutput("");
- } else {
- setOutput("");
- }
+  useEffect(() => {
+    onValidationChange(result.ok, result.error, result.line);
+    onStatsChange(settledInput.length, result.ms);
+  }, [result, settledInput, onValidationChange, onStatsChange]);
 
- onStatsChange(input.length, ms);
- }, [input, mode, indent, onValidationChange, onStatsChange]);
+  // Dispatch custom events when input/output change
+  useEffect(() => {
+    window.dispatchEvent(new CustomEvent("update-workspace-state", { detail: { input: settledInput, output: result.output } }));
+    window.dispatchEvent(new CustomEvent("workspace-saved", { detail: { input: settledInput, output: result.output } }));
+  }, [settledInput, result.output]);
 
- // Dispatch custom events when input/output change
- useEffect(() => {
- if (typeof window !=="undefined") {
- window.dispatchEvent(
- new CustomEvent("update-workspace-state", {
- detail: { input, output },
- })
- );
- window.dispatchEvent(
- new CustomEvent("workspace-saved", {
- detail: { input, output },
- })
- );
- }
- }, [input, output]);
+  // Save workspace snapshot
+  useEffect(() => {
+    const handleSave = () => addSnapshot("yaml", "YAML / JSON Converter", input, result.output);
+    window.addEventListener("save-workspace", handleSave);
+    return () => window.removeEventListener("save-workspace", handleSave);
+  }, [input, result.output]);
 
- const handleConvert = () => {
- const start = performance.now();
- try {
- const isYamlMode = mode ==="yaml-to-json";
- const result = isYamlMode ? yamlToJson(input, indent) : jsonToYaml(input);
- setOutput(result);
- setIsValid(true);
- setErrorMsg(undefined);
- onValidationChange(true);
- onLogHistory?.(input);
- setActiveTab("output");
- } catch (err: any) {
- setIsValid(false);
- setErrorMsg(err.message);
- onValidationChange(false, err.message);
- }
- const end = performance.now();
- const ms = end - start;
- setExecMs(ms);
- onStatsChange(input.length, ms);
- };
+  const handleConvert = () => {
+    if (!input.trim()) return;
+    if (result.ok) onLogHistory?.(input);
+    setActiveTab("output");
+  };
 
- const handleSwap = () => {
- if (!output) return;
- const oldOutput = output;
- const newMode = mode ==="yaml-to-json"?"json-to-yaml":"yaml-to-json";
- setMode(newMode);
- setInput(oldOutput);
- };
+  const handleSwap = () => {
+    if (!result.ok || !result.output) return;
+    setMode(mode === "yaml-to-json" ? "json-to-yaml" : "yaml-to-json");
+    setInput(result.output);
+  };
 
- const handleCopy = () => {
- if (!output) return;
- navigator.clipboard.writeText(output);
- setCopied(true);
- setTimeout(() => setCopied(false), 1500);
- };
+  const handleMode = (next: YamlMode) => {
+    if (next === mode) return;
+    // Carry the current content across when it converts cleanly, so switching direction keeps the data
+    if (result.ok && result.output && settledInput === input) setInput(result.output);
+    setMode(next);
+  };
 
- const inputLang = mode ==="yaml-to-json"?"yaml":"json";
- const outputLang = mode ==="yaml-to-json"?"json":"yaml";
+  const handleCopy = () => copy(result.output, "output");
 
- return (
- <div className="flex flex-col h-full bg-white w-full overflow-x-hidden">
- {/* Tool Header */}
- <div className="min-h-14 border-b border-[#e2e8f0] flex items-center justify-between gap-2 overflow-x-auto no-scrollbar py-2 px-3 md:px-4 px-3 md:px-4 py-2 md:py-0 bg-[#f8fafc] shrink-0">
- <div className="flex items-center gap-2">
- <ArrowLeftRight className="w-4 h-4 text-zinc-900"/>
- <span className="text-sm font-semibold text-zinc-800">YAML / JSON Converter</span>
- </div>
+  const isYamlIn = mode === "yaml-to-json";
+  const inputLang = isYamlIn ? "yaml" : "json";
+  const outputLang = isYamlIn ? "json" : "yaml";
+  const inputLabel = isYamlIn ? "YAML" : "JSON";
+  const outputLabel = isYamlIn ? "JSON" : "YAML";
+  const empty = !input.trim();
 
- <div className="flex items-center gap-2">
- <ExportImageButton code={output || input} language="yaml"/>
- <EmbedButton toolSlug="yaml-json"data={input} />
- <ShareButton toolSlug="yaml-json"data={input} />
- {/* Mode Switcher */}
- <div className="bg-zinc-100 p-0.5 rounded-lg flex items-center h-8">
- <button
- onClick={() => setMode("yaml-to-json")}
- className={cn(
-"px-2.5 py-1 text-xs font-medium rounded-md transition-all",
- mode ==="yaml-to-json"
- ?"bg-white text-zinc-900 font-semibold shadow-none rounded-md px-2.5 py-1 text-xs"
- :"text-zinc-500 hover:text-zinc-900 px-2.5 py-1 text-xs"
- )}
- >
- YAML to JSON
- </button>
- <button
- onClick={() => setMode("json-to-yaml")}
- className={cn(
-"px-2.5 py-1 text-xs font-medium rounded-md transition-all",
- mode ==="json-to-yaml"
- ?"bg-white text-zinc-900 font-semibold shadow-none rounded-md px-2.5 py-1 text-xs"
- :"text-zinc-500 hover:text-zinc-900 px-2.5 py-1 text-xs"
- )}
- >
- JSON to YAML
- </button>
- </div>
+  const footerMessage = empty
+    ? `Paste ${inputLabel} to convert`
+    : result.ok
+      ? `Valid ${inputLabel}${result.documents && result.documents > 1 ? ` · ${result.documents} documents` : ""}`
+      : `${result.line ? `Line ${result.line}${result.column ? `, Col ${result.column}` : ""}: ` : ""}${result.error}`;
 
- {/* Indent selector when converting to JSON */}
- {mode ==="yaml-to-json"&& (
- <select
- value={indent}
- onChange={(e) => setIndent(Number(e.target.value))}
- className="h-9 bg-white border border-zinc-200 text-zinc-700 text-xs rounded-md px-2 focus:outline-none"
- >
- <option value={2}>2 Spaces</option>
- <option value={4}>4 Spaces</option>
- </select>
- )}
+  return (
+    <div className="flex h-full w-full flex-col overflow-hidden bg-white">
+      <ToolHeader
+        icon={getToolIcon("yaml")}
+        title="YAML / JSON Converter"
+        utilities={<ShareMenu toolSlug="yaml" data={input} imageCode={result.output || input} imageLanguage={result.output ? outputLang : inputLang} />}
+        options={
+          <>
+            <div className={segmentTrack} role="group" aria-label="Conversion direction">
+              <button type="button" aria-pressed={isYamlIn} onClick={() => handleMode("yaml-to-json")} className={segmentBtn(isYamlIn)}>
+                YAML → JSON
+              </button>
+              <button type="button" aria-pressed={!isYamlIn} onClick={() => handleMode("json-to-yaml")} className={segmentBtn(!isYamlIn)}>
+                JSON → YAML
+              </button>
+            </div>
+            <select value={indent} onChange={(e) => setIndent(Number(e.target.value))} className={selectBase} aria-label="Indentation">
+              <option value={2}>2 spaces</option>
+              <option value={4}>4 spaces</option>
+            </select>
+          </>
+        }
+        actions={
+          <>
+            <button type="button" onClick={handleSwap} disabled={!result.ok || !result.output} className={btnSecondary} title="Use the output as the new input">
+              <ArrowLeftRight {...iconProps} />
+              <span>Swap</span>
+            </button>
+            <button type="button" onClick={handleConvert} disabled={empty} className={btnPrimary}>
+              <Play {...iconProps} />
+              <span>Convert</span>
+            </button>
+          </>
+        }
+      />
 
- {/* Swap Button */}
- <button
- onClick={handleSwap}
- disabled={!output}
- className="h-9 px-3 bg-white hover:bg-zinc-100 border border-zinc-200 disabled:opacity-40 disabled:cursor-not-allowed text-zinc-700 rounded-md text-xs font-medium transition-colors flex items-center gap-1.5"
- title="Swap input and output"
- >
- <ArrowLeftRight className="w-3.5 h-3.5"/>
- <span>Swap</span>
- </button>
+      <MobilePaneTabs
+        tabs={[
+          { id: "input", label: inputLabel },
+          { id: "output", label: outputLabel },
+        ]}
+        active={activeTab}
+        onChange={setActiveTab}
+      />
 
- {/* Convert Button */}
- <button
- onClick={handleConvert}
- className="h-8 px-3 text-xs font-semibold rounded-md shadow-none transition-colors flex items-center gap-1.5 bg-zinc-900 hover:bg-zinc-800 text-white"
- >
- <Play className="w-3.5 h-3.5"/>
- <span>Convert</span>
- </button>
- </div>
- </div>
+      <div className="flex min-h-0 w-full flex-1 flex-col md:flex-row">
+        <section className={cn("flex min-h-0 min-w-0 flex-1 flex-col border-zinc-200 md:border-r", activeTab !== "input" && "hidden md:flex")}>
+          <PaneBar label={`${inputLabel} input`}>
+            <button type="button" onClick={() => setInput("")} disabled={empty} className={btnGhost} title="Clear input">
+              <Eraser {...iconProps} />
+              <span>Clear</span>
+            </button>
+          </PaneBar>
+          <div className="relative min-h-0 flex-1">
+            <MonacoEditor height="100%" language={inputLang} value={input} onChange={(value) => setInput(value || "")} options={INPUT_OPTIONS} />
+          </div>
+        </section>
 
- {/* Mobile Segmented Tab Control */}
- <div className="flex md:hidden bg-[#f1f5f9] p-1 border-b border-[#e2e8f0] shrink-0">
- <button
- onClick={() => setActiveTab("input")}
- className={cn(
-"flex-1 py-1.5 text-xs font-medium rounded-md transition-colors text-center",
- activeTab ==="input"
- ?"bg-white text-zinc-900 font-semibold shadow-none rounded-md px-2.5 py-1 text-xs"
- :"text-zinc-500 hover:text-zinc-900 px-2.5 py-1 text-xs"
- )}
- >
- {mode ==="yaml-to-json"?"YAML Input":"JSON Input"}
- </button>
- <button
- onClick={() => setActiveTab("output")}
- className={cn(
-"flex-1 py-1.5 text-xs font-medium rounded-md transition-colors text-center",
- activeTab ==="output"
- ?"bg-white text-zinc-900 font-semibold shadow-none rounded-md px-2.5 py-1 text-xs"
- :"text-zinc-500 hover:text-zinc-900 px-2.5 py-1 text-xs"
- )}
- >
- {mode ==="yaml-to-json"?"JSON Output":"YAML Output"}
- </button>
- </div>
+        <section className={cn("flex min-h-0 min-w-0 flex-1 flex-col", activeTab !== "output" && "hidden md:flex")}>
+          <PaneBar label={`${outputLabel} output`}>
+            <button type="button" onClick={handleCopy} disabled={!result.output} className={cn(btnGhost, copiedId === "output" && "text-zinc-900")}>
+              {copiedId === "output" ? <Check {...iconProps} /> : <Copy {...iconProps} />}
+              <span>{copiedId === "output" ? "Copied" : "Copy"}</span>
+            </button>
+          </PaneBar>
+          <div className="relative min-h-0 flex-1">
+            <MonacoEditor
+              height="100%"
+              language={outputLang}
+              value={result.output}
+              options={OUTPUT_OPTIONS}
+            />
+          </div>
+        </section>
+      </div>
 
- {/* Dual Editors */}
- <div className="flex-1 flex flex-col md:flex-row overflow-hidden w-full max-w-full">
- {/* Left: Input */}
- <div className={cn("flex-1 border-r-0 md:border-r border-b md:border-b-0 border-[#e2e8f0] flex flex-col min-w-0 w-full overflow-x-hidden", activeTab !=="input"&&"hidden md:flex")}>
- <div className="h-8 bg-[#f8fafc] border-b border-[#e2e8f0] flex items-center justify-between px-3 shrink-0">
- <span className="text-[11px] font-medium text-zinc-500 uppercase tracking-wider">
- {mode ==="yaml-to-json"?"YAML Input":"JSON Input"}
- </span>
- <button
- onClick={() => setInput("")}
- className="text-zinc-400 hover:text-zinc-800 transition-colors"
- title="Clear"
- >
- <Trash2 className="w-3.5 h-3.5"/>
- </button>
- </div>
- <div className="flex-1 relative w-full max-w-full overflow-x-hidden">
- <MonacoEditor
- height="100%"
- defaultLanguage={inputLang}
- language={inputLang}
- value={input}
- onChange={(value) => setInput(value ||"")}
- options={{
- minimap: { enabled: false },
- fontSize: 13,
- wordWrap:"on",
- scrollBeyondLastLine: false,
- padding: { top: 16 },
- fontFamily:"'JetBrains Mono', 'Fira Code', Consolas, monospace",
- }}
- />
- </div>
- <EditorPanelFooter isValid={isValid} errorMessage={errorMsg} errorLine={typeof errorLine !== 'undefined' ? errorLine : undefined} />
- </div>
-
- {/* Right: Output */}
- <div className={cn("flex-1 flex flex-col min-w-0 w-full overflow-x-hidden", activeTab !=="output"&&"hidden md:flex")}>
- <div className="h-8 bg-[#f8fafc] border-b border-[#e2e8f0] flex items-center justify-between px-3 shrink-0">
- <span className="text-[11px] font-medium text-zinc-500 uppercase tracking-wider">
- {mode ==="yaml-to-json"?"JSON Output":"YAML Output"}
- </span>
- <button
- onClick={handleCopy}
- className={cn(
-"flex items-center gap-1 text-[11px] transition-colors",
- copied ?"text-zinc-900 font-medium":"text-zinc-400 hover:text-zinc-700"
- )}
- >
- {copied ? <Check className="w-3.5 h-3.5 text-zinc-900"/> : <Copy className="w-3.5 h-3.5"/>}
- <span>{copied ?"Copied!":"Copy"}</span>
- </button>
- </div>
- <div className="flex-1 relative w-full max-w-full overflow-x-hidden">
- <MonacoEditor
- height="100%"
- defaultLanguage={outputLang}
- language={outputLang}
- value={output}
- onChange={(value) => setOutput(value ||"")}
- options={{
- readOnly: false,
- minimap: { enabled: false },
- fontSize: 13,
- wordWrap:"on",
- scrollBeyondLastLine: false,
- padding: { top: 16 },
- fontFamily:"'JetBrains Mono', 'Fira Code', Consolas, monospace",
- }}
- />
- </div>
- </div>
- </div>
-
- 
- </div>
- );
+      <ToolFooter
+        status={empty ? "idle" : result.ok ? "ok" : "error"}
+        message={footerMessage}
+        meta={formatStats(input.length, empty ? undefined : result.ms)}
+      />
+    </div>
+  );
 }

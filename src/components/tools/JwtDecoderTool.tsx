@@ -1,145 +1,87 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { ShareButton } from "@/components/ShareButton";
-import { EmbedButton } from "@/components/EmbedButton";
-import { ExportImageButton } from "@/components/ExportImageButton";
-import { Copy, Trash2, Check, Key, Database, ShieldCheck, ShieldAlert } from "lucide-react";
+import { useState, useEffect, useMemo, useRef, useDeferredValue, type ReactNode } from "react";
+import { ShareMenu } from "@/components/ShareMenu";
+import { Trash2, ShieldCheck, ShieldX, ShieldAlert, AlertCircle, Clock } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { addSnapshot } from "@/lib/storage";
-import { StatusBar } from "@/components/layout/StatusBar";
-import { formatDistanceToNow } from "date-fns";
+import { ToolHeader, PaneBar, MobilePaneTabs, btnGhost, inputBase, iconProps, ICON_STROKE } from "@/components/tools/ToolChrome";
+import { getToolIcon } from "@/components/layout/toolIcons";
+import { useCopyFlash, CopyIconButton, StatusPill, type PillTone } from "@/components/tools/security/securityUi";
+import {
+  decodeJwt,
+  verifyJwtSignature,
+  verificationKeyType,
+  relativeTime,
+  CLAIM_LABELS,
+  type JsonValue,
+  type VerifyOutcome,
+} from "@/components/tools/security/jwt";
 
-interface JwtDecodeResult {
-  valid: boolean;
-  headerObj?: any;
-  payloadObj?: any;
-  signature?: string;
-  error?: string;
-}
+const TIME_CLAIMS = new Set(["exp", "iat", "nbf", "auth_time"]);
+const pillIcon = "size-3.5 shrink-0";
 
-function base64UrlDecode(str: string): string {
-  let base64 = str.replace(/-/g, '+').replace(/_/g, '/');
-  while (base64.length % 4 !== 0) {
-    base64 += '=';
+// A simple recursive JSON viewer with smart claim annotations (dates for time claims, names for registered claims)
+function JsonViewer({ data, level = 0, isLast = true, nowMs }: { data: JsonValue; level?: number; isLast?: boolean; nowMs: number }): ReactNode {
+  const comma = isLast ? "" : ",";
+  if (data === null) return <span className="text-zinc-400">null{comma}</span>;
+  if (typeof data === "boolean" || typeof data === "number") {
+    return <span className="font-medium text-zinc-900">{String(data)}{comma}</span>;
   }
-  return decodeURIComponent(
-    atob(base64)
-      .split('')
-      .map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
-      .join('')
-  );
-}
+  if (typeof data === "string") return <span className="text-zinc-900">&quot;{data}&quot;{comma}</span>;
 
-function decodeJwt(token: string): JwtDecodeResult {
-  if (!token || token.trim() === '') {
-    return { valid: true };
-  }
-  const parts = token.trim().split('.');
-  if (parts.length !== 3) {
-    return { valid: false, error: 'Invalid JWT format (must have 3 parts separated by dots)' };
-  }
-  try {
-    const rawHeader = base64UrlDecode(parts[0]);
-    const rawPayload = base64UrlDecode(parts[1]);
-    const headerObj = JSON.parse(rawHeader);
-    const payloadObj = JSON.parse(rawPayload);
-    return { valid: true, headerObj, payloadObj, signature: parts[2] };
-  } catch (err: any) {
-    return { valid: false, error: 'Failed to parse JWT: ' + err.message };
-  }
-}
-
-async function verifyHs256(token: string, secret: string): Promise<boolean> {
-  try {
-    const parts = token.trim().split('.');
-    if (parts.length !== 3) return false;
-    
-    const encoder = new TextEncoder();
-    const data = encoder.encode(parts[0] + '.' + parts[1]);
-    const key = await crypto.subtle.importKey(
-      'raw',
-      encoder.encode(secret),
-      { name: 'HMAC', hash: 'SHA-256' },
-      false,
-      ['verify']
-    );
-    
-    let base64 = parts[2].replace(/-/g, '+').replace(/_/g, '/');
-    while (base64.length % 4) base64 += '=';
-    const sigBytes = Uint8Array.from(atob(base64), c => c.charCodeAt(0));
-    
-    return await crypto.subtle.verify('HMAC', key, sigBytes, data);
-  } catch {
-    return false;
-  }
-}
-
-// A simple recursive JSON viewer with smart claim badges
-const JsonViewer = ({ data, level = 0, isLast = true }: { data: any, level?: number, isLast?: boolean }) => {
-  if (data === null) return <span className="text-zinc-500">null{isLast ? '' : ','}</span>;
-  if (typeof data === 'boolean') return <span className="text-blue-500">{data ? 'true' : 'false'}{isLast ? '' : ','}</span>;
-  if (typeof data === 'number') return <span className="text-blue-500">{data}{isLast ? '' : ','}</span>;
-  if (typeof data === 'string') return <span className="text-amber-500">&quot;{data}&quot;{isLast ? '' : ','}</span>;
-
-  const indent = ' '.repeat(level);
-  const nextIndent = ' '.repeat(level + 1);
+  const indent = "  ".repeat(level);
+  const nextIndent = "  ".repeat(level + 1);
 
   if (Array.isArray(data)) {
-    if (data.length === 0) return <span>[]{isLast ? '' : ','}</span>;
+    if (data.length === 0) return <span>[]{comma}</span>;
     return (
       <span>
-        [
-        <br />
+        [{"\n"}
         {data.map((item, i) => (
           <span key={i}>
             {nextIndent}
-            <JsonViewer data={item} level={level + 1} isLast={i === data.length - 1} />
-            <br />
+            <JsonViewer data={item} level={level + 1} isLast={i === data.length - 1} nowMs={nowMs} />
+            {"\n"}
           </span>
         ))}
-        {indent}]{isLast ? '' : ','}
+        {indent}]{comma}
       </span>
     );
   }
 
   const entries = Object.entries(data);
-  if (entries.length === 0) return <span>{"{}"}{isLast ? '' : ','}</span>;
+  if (entries.length === 0) return <span>{"{}"}{comma}</span>;
 
   return (
     <span>
       {"{"}
-      <br />
+      {"\n"}
       {entries.map(([key, val], i) => {
-        const isTimeClaim = ['exp', 'iat', 'nbf'].includes(key) && typeof val === 'number';
-        let badge = null;
-        if (isTimeClaim) {
-          try {
-            const d = new Date((val as number) * 1000);
-            const dist = formatDistanceToNow(d, { addSuffix: true });
-            badge = (
-              <span className="ml-2 inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-sans font-medium bg-zinc-200 text-zinc-600">
-                {d.toLocaleString()} ({dist})
-              </span>
-            );
-          } catch (e) {}
+        const hint = level === 0 ? CLAIM_LABELS[key] : undefined;
+        let note: string | null = null;
+        if (level === 0 && TIME_CLAIMS.has(key) && typeof val === "number") {
+          const ms = val * 1000;
+          const date = new Date(ms);
+          if (!Number.isNaN(date.getTime())) note = `${date.toLocaleString()} · ${relativeTime(ms, nowMs)}`;
         }
-        
         return (
           <span key={key}>
             {nextIndent}
-            <span className="text-indigo-400">&quot;{key}&quot;</span>
-            <span className="text-zinc-400 mr-1">:</span>
-            <JsonViewer data={val} level={level + 1} isLast={i === entries.length - 1} />
-            {badge}
-            <br />
+            <span className="text-zinc-500" title={hint}>&quot;{key}&quot;</span>
+            <span className="text-zinc-400">: </span>
+            <JsonViewer data={val} level={level + 1} isLast={i === entries.length - 1} nowMs={nowMs} />
+            {note && <span className="select-none text-zinc-400">{"  "}{`// ${note}`}</span>}
+            {"\n"}
           </span>
         );
       })}
-      {indent}{"}"}{isLast ? '' : ','}
+      {indent}
+      {"}"}
+      {comma}
     </span>
   );
-};
+}
 
 interface JwtDecoderToolProps {
   onValidationChange: (isValid: boolean, error?: string) => void;
@@ -149,17 +91,12 @@ interface JwtDecoderToolProps {
 
 export function JwtDecoderTool({ onValidationChange, onStatsChange, restoredInput }: JwtDecoderToolProps) {
   const [input, setInput] = useState<string>("");
-  const [headerObj, setHeaderObj] = useState<any>(null);
-  const [payloadObj, setPayloadObj] = useState<any>(null);
-  const [signature, setSignature] = useState<string>("");
-  
   const [secret, setSecret] = useState<string>("");
-  const [sigStatus, setSigStatus] = useState<"unknown"|"valid"|"invalid">("unknown");
-
-  const [copied, setCopied] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<"input"|"output">("input");
-  const [isValid, setIsValid] = useState(true);
-  const [execMs, setExecMs] = useState(0);
+  const [verification, setVerification] = useState<(VerifyOutcome & { key: string }) | null>(null);
+  const [activeTab, setActiveTab] = useState<"input" | "output">("input");
+  const [nowMs, setNowMs] = useState(() => Date.now());
+  const { copiedKey, copy } = useCopyFlash();
+  const overlayRef = useRef<HTMLDivElement>(null);
 
   // Restore from history
   useEffect(() => {
@@ -167,214 +104,272 @@ export function JwtDecoderTool({ onValidationChange, onStatsChange, restoredInpu
     if (restoredInput) setInput(restoredInput);
   }, [restoredInput]);
 
+  // Keep relative times ("expires in 5 minutes") fresh without re-rendering on every tick.
+  useEffect(() => {
+    const id = setInterval(() => setNowMs(Date.now()), 30_000);
+    return () => clearInterval(id);
+  }, []);
+
+  // Decoding is cheap, but a deferred value keeps typing smooth when a huge blob is pasted.
+  const token = useDeferredValue(input);
+  const decoded = useMemo(() => decodeJwt(token), [token]);
+  const { header, payload, signature } = decoded;
+  const headerJson = useMemo(() => (header ? JSON.stringify(header, null, 2) : ""), [header]);
+  const payloadJson = useMemo(() => (payload ? JSON.stringify(payload, null, 2) : ""), [payload]);
+
+  useEffect(() => {
+    onValidationChange(decoded.valid, decoded.error);
+    onStatsChange(token.length, 0);
+  }, [decoded, token.length, onValidationChange, onStatsChange]);
+
   // Save workspace snapshot
   useEffect(() => {
     const handleSave = () => {
-      addSnapshot("jwt","JWT Decoder", input, payloadObj ? JSON.stringify(payloadObj, null, 2) :"");
+      addSnapshot("jwt", "JWT Decoder", input, payloadJson);
     };
     window.addEventListener("save-workspace", handleSave);
     return () => window.removeEventListener("save-workspace", handleSave);
-  }, [input, payloadObj]);
+  }, [input, payloadJson]);
 
+  const alg = typeof header?.alg === "string" ? header.alg : undefined;
+  const keyType = verificationKeyType(alg);
+  const verifyKey = `${alg}\u0000${token}\u0000${secret}`;
+
+  // Verify the signature whenever the token, algorithm or key changes (WebCrypto, async).
   useEffect(() => {
-    const start = performance.now();
-    const result = decodeJwt(input);
-    const end = performance.now();
-    const ms = end - start;
-    
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setIsValid(result.valid);
-    setExecMs(ms);
-    onValidationChange(result.valid, result.error);
-    onStatsChange(input.length, ms);
-
-    if (result.valid && result.headerObj) {
-      setHeaderObj(result.headerObj);
-      setPayloadObj(result.payloadObj);
-      setSignature(result.signature ||"");
-    } else {
-      setHeaderObj(null);
-      setPayloadObj(null);
-      setSignature("");
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setSigStatus("unknown");
-    }
-  }, [input, onValidationChange, onStatsChange]);
-
-  useEffect(() => {
+    if (!alg || !keyType || !signature || !secret.trim()) return;
     let active = true;
-    if (!input || !signature || !secret || !headerObj || headerObj.alg !== 'HS256') {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setSigStatus("unknown");
-      return;
-    }
-    verifyHs256(input, secret).then(res => {
-      if (active) {
-        setSigStatus(res ?"valid":"invalid");
-      }
+    verifyJwtSignature(token, alg, secret).then((res) => {
+      if (active) setVerification({ ...res, key: verifyKey });
     });
-    return () => { active = false; };
-  }, [input, signature, secret, headerObj]);
+    return () => {
+      active = false;
+    };
+  }, [alg, keyType, signature, secret, token, verifyKey]);
 
-  const handleCopy = (text: string, id: string) => {
-    if (!text) return;
-    navigator.clipboard.writeText(text);
-    setCopied(id);
-    setTimeout(() => setCopied(null), 1500);
-  };
+  const outcome = verification?.key === verifyKey ? verification : null;
+  const sigState: { tone: PillTone; label: string; icon: ReactNode } = !header
+    ? { tone: "neutral", label: "No token", icon: null }
+    : alg === "none"
+      ? { tone: "warning", label: "Unsigned (alg none)", icon: <ShieldAlert className={pillIcon} strokeWidth={ICON_STROKE} aria-hidden="true" /> }
+      : !keyType
+        ? { tone: "neutral", label: "Unsupported alg", icon: null }
+        : !secret.trim()
+          ? { tone: "neutral", label: "Not verified", icon: null }
+          : !outcome
+            ? { tone: "neutral", label: "Checking…", icon: null }
+            : outcome.status === "valid"
+              ? { tone: "success", label: "Signature verified", icon: <ShieldCheck className={pillIcon} strokeWidth={ICON_STROKE} aria-hidden="true" /> }
+              : outcome.status === "invalid"
+                ? { tone: "error", label: "Invalid signature", icon: <ShieldX className={pillIcon} strokeWidth={ICON_STROKE} aria-hidden="true" /> }
+                : { tone: "warning", label: "Key error", icon: <ShieldAlert className={pillIcon} strokeWidth={ICON_STROKE} aria-hidden="true" /> };
 
-  const parts = input.split('.');
-  const headerPart = parts[0] || '';
+  // Lifetime summary from exp / nbf.
+  const lifetime = useMemo((): { tone: PillTone; label: string } | null => {
+    if (!payload) return null;
+    const exp = typeof payload.exp === "number" ? payload.exp * 1000 : undefined;
+    const nbf = typeof payload.nbf === "number" ? payload.nbf * 1000 : undefined;
+    if (nbf !== undefined && nbf > nowMs) return { tone: "warning", label: `Not valid until ${relativeTime(nbf, nowMs).replace(/^in /, "")} from now` };
+    if (exp === undefined) return { tone: "neutral", label: "No expiry" };
+    return exp <= nowMs
+      ? { tone: "error", label: `Expired ${relativeTime(exp, nowMs)}` }
+      : { tone: "success", label: `Expires ${relativeTime(exp, nowMs)}` };
+  }, [payload, nowMs]);
+
+  const parts = input.split(".");
+  const headerPart = parts[0] || "";
   const payloadPart = parts[1] !== undefined ? parts[1] : null;
-  const signaturePart = parts[2] !== undefined ? parts[2] : null;
+  const signaturePart = parts[2] !== undefined ? parts.slice(2).join(".") : null;
 
   return (
-    <div className="flex flex-col h-full bg-white w-full overflow-y-auto relative">
+    <div className="flex h-full w-full flex-col overflow-hidden bg-white">
       {/* Top Controls Bar (Unified Clean Header) */}
-      <div className="h-10 border-b border-neutral-200 px-4 flex items-center justify-between gap-4 shrink-0 bg-white">
-        <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar">
-          <span className="text-xs font-mono font-medium text-neutral-600">JWT Decoder</span>
-        </div>
+      <ToolHeader
+        icon={getToolIcon("jwt")}
+        title="JWT Decoder"
+        utilities={
+          <ShareMenu toolSlug="jwt" data={input} imageCode={payloadJson || input} imageLanguage="json" />
+        }
+      />
 
-        <div className="flex items-center gap-1.5">
-          <ExportImageButton code={payloadObj ? JSON.stringify(payloadObj, null, 2) : input} language="json" />
-          <EmbedButton toolSlug="jwt" data={input} />
-          <ShareButton toolSlug="jwt" data={input} />
-        </div>
-      </div>
+      <MobilePaneTabs
+        tabs={[
+          { id: "input", label: "Token" },
+          { id: "output", label: "Decoded" },
+        ]}
+        active={activeTab}
+        onChange={setActiveTab}
+      />
 
-      {/* Main Workspace Layout (Strict Dual-Pane Grid) */}
-      <div className="flex-1 min-h-[520px] grid grid-cols-1 lg:grid-cols-2 divide-y lg:divide-y-0 lg:divide-x divide-neutral-200 overflow-hidden bg-neutral-50/30">
-        
+      {/* Main Workspace Layout (Dual Pane) */}
+      <div className="flex min-h-0 flex-1 flex-col md:flex-row">
         {/* Left Pane: Encoded Input */}
-        <div className="flex flex-col h-full bg-white relative min-h-0">
-          <div className="h-10 border-b border-neutral-200 bg-neutral-50/50 flex items-center justify-between px-4 shrink-0">
-            <span className="text-xs font-mono font-semibold text-neutral-700">ENCODED TOKEN</span>
-            <div className="flex items-center gap-1.5">
-              <button onClick={() => setInput("")} className="text-[11px] font-medium text-neutral-500 hover:text-neutral-900 transition-colors">Clear</button>
-              <button onClick={() => handleCopy(input, 'input')} className="text-neutral-400 hover:text-neutral-900 transition-colors p-0.5 ml-1" title="Copy">
-                {copied === 'input' ? <Check className="w-3.5 h-3.5 text-neutral-900" /> : <Copy className="w-3.5 h-3.5" />}
-              </button>
+        <section
+          className={cn(
+            "flex min-h-0 min-w-0 flex-1 flex-col md:border-r md:border-zinc-200",
+            activeTab !== "input" && "hidden md:flex"
+          )}
+        >
+          <PaneBar label="Encoded token">
+            <button type="button" onClick={() => setInput("")} disabled={!input} className={btnGhost} title="Clear token">
+              <Trash2 {...iconProps} />
+              <span>Clear</span>
+            </button>
+            <CopyIconButton copied={copiedKey === "input"} onClick={() => copy(input, "input")} disabled={!input} label="Copy token" />
+          </PaneBar>
+
+          {/* Colored overlay (header / payload / signature) behind a transparent textarea; scroll is mirrored */}
+          <div className="relative min-h-0 flex-1 overflow-hidden">
+            <div
+              ref={overlayRef}
+              aria-hidden="true"
+              className="pointer-events-none absolute inset-0 overflow-hidden whitespace-pre-wrap break-all p-3 font-mono text-[13px] leading-[1.6] md:p-4"
+            >
+              <span className="text-zinc-900">{headerPart}</span>
+              {payloadPart !== null && <span className="text-zinc-300">.</span>}
+              {payloadPart !== null && <span className="text-zinc-500">{payloadPart}</span>}
+              {signaturePart !== null && <span className="text-zinc-300">.</span>}
+              {signaturePart !== null && <span className="text-zinc-400">{signaturePart}</span>}
             </div>
-          </div>
-          
-          <div className="flex-1 relative bg-white overflow-hidden">
-            <div className="absolute inset-0 p-4 font-mono text-xs sm:text-[13px] break-all whitespace-pre-wrap pointer-events-none leading-[1.6]">
-              <span className="text-neutral-900 font-bold">{headerPart}</span>
-              {payloadPart !== null && <span className="text-neutral-400">.</span>}
-              {payloadPart !== null && <span className="text-neutral-600 font-medium">{payloadPart}</span>}
-              {signaturePart !== null && <span className="text-neutral-400">.</span>}
-              {signaturePart !== null && <span className="text-neutral-400 font-medium">{signaturePart}</span>}
-            </div>
-            <textarea 
+            <textarea
               value={input}
               onChange={(e) => setInput(e.target.value)}
+              onScroll={(e) => {
+                if (overlayRef.current) overlayRef.current.scrollTop = e.currentTarget.scrollTop;
+              }}
               spellCheck={false}
-              placeholder="Paste your JWT here (eyJ...)"
-              className="absolute inset-0 p-4 w-full h-full font-mono text-xs sm:text-[13px] bg-transparent text-transparent caret-neutral-900 resize-none outline-none break-all leading-[1.6] placeholder:text-neutral-400"
+              autoCapitalize="off"
+              autoComplete="off"
+              placeholder="Paste a JWT (eyJhbGciOi…)"
+              aria-label="Encoded JWT"
+              className="absolute inset-0 h-full w-full resize-none whitespace-pre-wrap break-all bg-transparent p-3 font-mono text-[13px] leading-[1.6] text-transparent caret-zinc-900 outline-none selection:bg-zinc-200 placeholder:text-zinc-400 md:p-4"
             />
           </div>
 
-          <div className="shrink-0 bg-white border-t border-neutral-200">
-            <StatusBar
-              isValid={isValid}
-              inputLength={input.length}
-              executionMs={execMs}
-            />
+          <div className="flex h-9 shrink-0 items-center gap-2 border-t border-zinc-200 bg-zinc-50 px-3 text-[11px] text-zinc-500">
+            {!decoded.valid ? (
+              <span className="flex min-w-0 items-center gap-1.5 font-medium text-red-600">
+                <AlertCircle className="size-3.5 shrink-0" strokeWidth={ICON_STROKE} aria-hidden="true" />
+                <span className="truncate">{decoded.error}</span>
+              </span>
+            ) : header ? (
+              <span className="flex min-w-0 items-center gap-3 truncate">
+                <span className="flex items-center gap-1.5"><span className="size-2 rounded-full bg-zinc-900" />Header</span>
+                <span className="flex items-center gap-1.5"><span className="size-2 rounded-full bg-zinc-500" />Payload</span>
+                <span className="flex items-center gap-1.5"><span className="size-2 rounded-full bg-zinc-300" />Signature</span>
+              </span>
+            ) : (
+              <span>Decoded locally. Tokens never leave your browser.</span>
+            )}
+            <span className="ml-auto shrink-0 tabular-nums">{input.length.toLocaleString()} chars</span>
           </div>
-        </div>
+        </section>
 
         {/* Right Pane: Decoded Output */}
-        <div className="flex flex-col h-full bg-neutral-50/30 min-h-0 overflow-y-auto">
-            <div className="flex flex-col h-full divide-y divide-neutral-200">
-              
-              {/* Header Section */}
-              <div className="flex flex-col shrink-0 bg-white">
-                <div className="h-10 bg-neutral-50 flex items-center justify-between px-4 border-b border-neutral-200">
-                  <div className="flex items-center gap-2">
-                    <span className="text-[11px] font-bold text-neutral-500 uppercase tracking-wider font-mono">HEADER</span>
-                    {headerObj?.alg && (
-                      <span className="px-1.5 py-0.5 bg-neutral-100 border border-neutral-200 text-neutral-700 text-[9px] font-bold rounded uppercase font-mono">
-                        {headerObj.alg}
-                      </span>
+        <section
+          className={cn(
+            "flex min-h-0 min-w-0 flex-1 flex-col overflow-y-auto",
+            activeTab !== "output" && "hidden md:flex"
+          )}
+        >
+          {!header || !payload ? (
+            <div className="flex flex-1 flex-col items-center justify-center gap-3 p-8 text-center">
+              <p className="text-sm text-zinc-500">
+                {decoded.valid ? "Paste a token to see its header, claims and signature." : "This token could not be decoded."}
+              </p>
+            </div>
+          ) : (
+            <>
+              <PaneBar
+                label={
+                  <span className="flex items-center gap-2">
+                    Header
+                    {alg && (
+                      <StatusPill tone={alg === "none" ? "warning" : "strong"} className="h-5 font-mono">
+                        {alg}
+                      </StatusPill>
                     )}
-                  </div>
-                  <button onClick={() => handleCopy(JSON.stringify(headerObj, null, 2), 'header')} className="text-neutral-400 hover:text-neutral-900 transition-colors p-1" title="Copy JSON">
-                    {copied === 'header' ? <Check className="w-3.5 h-3.5 text-neutral-900" /> : <Copy className="w-3.5 h-3.5" />}
-                  </button>
-                </div>
-                <div className="p-4">
-                  <div className="font-mono text-xs text-neutral-800 bg-neutral-50 p-3 rounded-md border border-neutral-200 overflow-x-auto">
-                    {headerObj ? <JsonViewer data={headerObj} /> : <span className="text-neutral-400 italic">No header data</span>}
-                  </div>
-                </div>
-              </div>
+                  </span>
+                }
+              >
+                <CopyIconButton copied={copiedKey === "header"} onClick={() => copy(headerJson, "header")} label="Copy header JSON" />
+              </PaneBar>
+              <pre className="shrink-0 overflow-x-auto whitespace-pre-wrap break-all px-3 py-3 font-mono text-[13px] leading-relaxed md:px-4">
+                <JsonViewer data={header} nowMs={nowMs} />
+              </pre>
 
-              {/* Payload Section */}
-              <div className="flex flex-col flex-1 bg-white">
-                <div className="h-10 bg-neutral-50 flex items-center justify-between px-4 border-b border-neutral-200 shrink-0">
-                  <div className="flex items-center gap-2">
-                    <span className="text-[11px] font-bold text-neutral-500 uppercase tracking-wider font-mono">PAYLOAD (CLAIMS)</span>
-                    <span className="px-1.5 py-0.5 bg-neutral-100 border border-neutral-200 text-neutral-700 text-[9px] font-bold rounded uppercase font-mono">
-                      DATA
-                    </span>
-                  </div>
-                  <button onClick={() => handleCopy(JSON.stringify(payloadObj, null, 2), 'payload')} className="text-neutral-400 hover:text-neutral-900 transition-colors p-1" title="Copy JSON">
-                    {copied === 'payload' ? <Check className="w-3.5 h-3.5 text-neutral-900" /> : <Copy className="w-3.5 h-3.5" />}
-                  </button>
-                </div>
-                <div className="p-4 flex-1">
-                  <div className="font-mono text-xs text-neutral-800 bg-neutral-50 p-3 rounded-md border border-neutral-200 h-full overflow-y-auto min-h-[160px]">
-                    {payloadObj ? <JsonViewer data={payloadObj} /> : <span className="text-neutral-400 italic">No payload data</span>}
-                  </div>
-                </div>
-              </div>
+              <PaneBar
+                label={
+                  <span className="flex items-center gap-2">
+                    Payload
+                    {lifetime && (
+                      <StatusPill tone={lifetime.tone} className="h-5" icon={<Clock className="size-3 shrink-0" strokeWidth={ICON_STROKE} aria-hidden="true" />}>
+                        {lifetime.label}
+                      </StatusPill>
+                    )}
+                  </span>
+                }
+                className="border-t"
+              >
+                <CopyIconButton copied={copiedKey === "payload"} onClick={() => copy(payloadJson, "payload")} label="Copy payload JSON" />
+              </PaneBar>
+              <pre className="shrink-0 overflow-x-auto whitespace-pre-wrap break-all px-3 py-3 font-mono text-[13px] leading-relaxed md:px-4">
+                <JsonViewer data={payload} nowMs={nowMs} />
+              </pre>
 
               {/* Signature Section */}
-              <div className="flex flex-col shrink-0 bg-white">
-                <div className="h-10 bg-neutral-50 flex items-center justify-between px-4 border-b border-neutral-200">
-                  <div className="flex items-center gap-2">
-                    <span className="text-[11px] font-bold text-neutral-500 uppercase tracking-wider font-mono">SIGNATURE STATUS</span>
-                  </div>
-                  {sigStatus === "valid" ? (
-                    <span className="px-1.5 py-0.5 bg-green-100 border border-green-200 text-green-800 text-[9px] font-bold rounded uppercase font-mono">
-                      VERIFIED
-                    </span>
-                  ) : sigStatus === "invalid" && secret.length > 0 ? (
-                    <span className="px-1.5 py-0.5 bg-red-100 border border-red-200 text-red-800 text-[9px] font-bold rounded uppercase font-mono">
-                      INVALID
-                    </span>
-                  ) : (
-                    <span className="px-1.5 py-0.5 bg-neutral-100 border border-neutral-200 text-neutral-600 text-[9px] font-bold rounded uppercase font-mono">
-                      UNVERIFIED
-                    </span>
-                  )}
-                </div>
-                <div className="p-4 flex flex-col gap-3">
-                  <div className="font-mono text-[11px] text-neutral-500 break-all bg-neutral-50 p-2 rounded border border-neutral-100">
-                    {signature || "No signature"}
-                  </div>
-                  {headerObj?.alg?.startsWith('HS') && (
-                    <div className="flex items-center gap-3 bg-white p-1.5 rounded-md border border-neutral-200 shadow-sm focus-within:border-neutral-400 focus-within:ring-1 focus-within:ring-neutral-400 transition-all">
-                      <input 
-                        type="text"
-                        value={secret}
-                        onChange={e => setSecret(e.target.value)}
-                        placeholder={`${headerObj.alg} Secret Key to Verify Signature...`}
-                        className="flex-1 bg-transparent border-none outline-none text-xs font-mono text-neutral-900 px-2 placeholder:text-neutral-400"
-                      />
-                    </div>
-                  )}
-                  {headerObj?.alg && !headerObj.alg.startsWith('HS') && (
-                    <p className="text-[10px] text-neutral-400 italic">
-                      Signature verification is currently supported for HMAC algorithms.
-                    </p>
-                  )}
-                </div>
+              <PaneBar label="Signature" className="border-t">
+                <span className="pr-3 md:pr-2">
+                  <StatusPill tone={sigState.tone} icon={sigState.icon}>{sigState.label}</StatusPill>
+                </span>
+              </PaneBar>
+              <div className="flex flex-col gap-3 px-3 py-3 md:px-4">
+                <p className="break-all font-mono text-xs leading-relaxed text-zinc-400">{signature || "No signature"}</p>
+                {keyType === "secret" && (
+                  <label className="flex flex-col gap-1.5">
+                    <span className="text-xs font-medium text-zinc-700">{alg} secret</span>
+                    <input
+                      type="text"
+                      value={secret}
+                      onChange={(e) => setSecret(e.target.value)}
+                      spellCheck={false}
+                      autoComplete="off"
+                      placeholder="Enter the secret to verify the signature"
+                      className={cn(inputBase, "w-full font-mono")}
+                    />
+                  </label>
+                )}
+                {keyType === "public-key" && (
+                  <label className="flex flex-col gap-1.5">
+                    <span className="text-xs font-medium text-zinc-700">{alg} public key</span>
+                    <textarea
+                      value={secret}
+                      onChange={(e) => setSecret(e.target.value)}
+                      spellCheck={false}
+                      rows={4}
+                      placeholder={"-----BEGIN PUBLIC KEY-----\n…\n-----END PUBLIC KEY-----   or a JWK"}
+                      className="w-full resize-y rounded-md border border-zinc-200 bg-white px-3 py-2 font-mono text-xs text-zinc-900 transition-colors placeholder:text-zinc-400 hover:border-zinc-300 focus:border-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-900"
+                    />
+                  </label>
+                )}
+                {outcome?.status === "error" && outcome.message && (
+                  <p className="flex items-start gap-1.5 text-xs text-red-600">
+                    <AlertCircle className="mt-px size-3.5 shrink-0" strokeWidth={ICON_STROKE} aria-hidden="true" />
+                    <span className="break-words">{outcome.message}</span>
+                  </p>
+                )}
+                {!keyType && alg && (
+                  <p className="text-xs text-zinc-500">
+                    {alg === "none"
+                      ? "This token is not signed. Never accept alg \"none\" on a server."
+                      : `Signature verification is not available for ${alg}.`}
+                  </p>
+                )}
+                <p className="text-[11px] text-zinc-400">Verified locally with WebCrypto. Secrets and keys are never stored or sent.</p>
               </div>
-
-            </div>
-        </div>
+            </>
+          )}
+        </section>
       </div>
     </div>
   );

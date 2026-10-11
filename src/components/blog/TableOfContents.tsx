@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState, useRef } from "react";
-import { List, ChevronDown, ChevronRight } from "lucide-react";
+import { List, ChevronDown } from "lucide-react";
 
 interface TocItem {
   id: string;
@@ -157,7 +157,7 @@ export function TableOfContents({ isMobile = false }: TableOfContentsProps) {
           aria-expanded={isMobileOpen}
         >
           <div className="flex items-center gap-2 text-xs font-mono font-semibold uppercase tracking-wider text-zinc-800">
-            <List className="w-3.5 h-3.5 text-orange-600 shrink-0" />
+            <List className="w-3.5 h-3.5 text-zinc-500 shrink-0" />
             <span>Table of Contents ({headings.length} sections)</span>
           </div>
           <ChevronDown
@@ -182,7 +182,7 @@ export function TableOfContents({ isMobile = false }: TableOfContentsProps) {
                       onClick={(e) => handleLinkClick(e, item.id)}
                       className={`block py-1.5 px-2 rounded-md text-xs leading-snug transition-colors ${
                         isActive
-                          ? "bg-orange-50 text-orange-950 font-semibold border-l-2 border-orange-600 pl-2.5"
+                          ? "bg-zinc-100 text-zinc-900 font-semibold border-l-2 border-zinc-900 pl-2.5"
                           : "text-zinc-600 hover:text-zinc-900 hover:bg-zinc-100/80 font-normal"
                       }`}
                     >
@@ -207,7 +207,7 @@ export function TableOfContents({ isMobile = false }: TableOfContentsProps) {
       {/* Fixed Header of TOC Card */}
       <div className="flex items-center justify-between px-3.5 py-2.5 bg-zinc-50 border-b border-zinc-200 shrink-0">
         <div className="flex items-center gap-2 text-xs font-mono font-semibold uppercase tracking-wider text-zinc-800">
-          <List className="w-3.5 h-3.5 text-orange-600 shrink-0" />
+          <List className="w-3.5 h-3.5 text-zinc-500 shrink-0" />
           <span>Table of Contents</span>
         </div>
         <span className="text-[10px] font-mono text-zinc-500 bg-zinc-200/60 px-1.5 py-0.5 rounded font-medium">
@@ -236,14 +236,14 @@ export function TableOfContents({ isMobile = false }: TableOfContentsProps) {
                   title={item.text}
                   className={`group flex items-start gap-1.5 py-1 px-2 rounded-md transition-all text-xs leading-snug ${
                     isActive
-                      ? "bg-orange-50 text-orange-950 font-semibold border-l-2 border-orange-600 pl-2.5"
+                      ? "bg-zinc-100 text-zinc-900 font-semibold border-l-2 border-zinc-900 pl-2.5"
                       : "text-zinc-600 hover:text-zinc-900 hover:bg-zinc-100/80 font-normal"
                   }`}
                 >
                   {item.level === 3 && (
                     <span
                       className={`text-[10px] transition-colors shrink-0 mt-0.5 ${
-                        isActive ? "text-orange-600 font-bold" : "text-zinc-400 group-hover:text-zinc-500"
+                        isActive ? "text-zinc-900 font-bold" : "text-zinc-400 group-hover:text-zinc-500"
                       }`}
                     >
                       ↳

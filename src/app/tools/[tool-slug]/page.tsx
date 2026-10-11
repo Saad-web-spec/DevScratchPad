@@ -1,11 +1,12 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { Wrench } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { getToolMeta, TOOL_SLUGS } from "@/lib/tools/registry";
 import { RECIPE_REGISTRY } from "@/lib/recipes/registry";
 import { WorkspaceShell } from "@/components/WorkspaceShell";
 import { SeoContent } from "@/components/seo/SeoContent";
+import { SectionHeading, guide } from "@/components/seo/guideUi";
 
 const SITE_URL ="https://www.devscratchpad.tech";
 
@@ -84,32 +85,31 @@ export default async function ToolPage({
       <SeoContent tool={toolMeta} />
       
       {toolRecipes.length > 0 && (
-        <div className="max-w-4xl mx-auto w-full px-4 py-8">
-          <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
-            <h2 className="text-2xl font-bold text-zinc-900 flex items-center gap-2">
-              <Wrench className="w-6 h-6 text-orange-500" />
-              Troubleshooting Recipes &amp; Fixes
-            </h2>
-            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-mono font-medium bg-orange-50 text-orange-800 border border-orange-200">
-              <img src="/orange-star.png" className="w-3.5 h-3.5 object-contain shrink-0" alt="Star" />
-              <span>{toolRecipes.length} Verified Solutions</span>
-            </span>
-          </div>
-          <div className="grid gap-4 md:grid-cols-2">
-            {toolRecipes.map(recipe => (
-              <Link 
-                key={recipe.slug} 
-                href={`/recipes/${recipe.slug}`}
-                className="block p-4 rounded-xl bg-white border border-zinc-200 hover:border-orange-500 hover:shadow-sm transition-all"
-              >
-                <h3 className="font-semibold text-zinc-900 mb-1">{recipe.title}</h3>
-                <p className="text-sm text-zinc-600 line-clamp-2">{recipe.problem}</p>
-              </Link>
-            ))}
-          </div>
+        <div className={`${guide.column} pb-10`}>
+          <section className={`${guide.section} max-w-3xl space-y-4`}>
+            <SectionHeading title="Troubleshooting Recipes & Fixes" />
+            <ul className="border-b border-zinc-200">
+              {toolRecipes.map(recipe => (
+                <li key={recipe.slug}>
+                  <Link
+                    href={`/recipes/${recipe.slug}`}
+                    className={guide.row}
+                  >
+                    <div className="min-w-0">
+                      <h3 className="text-sm font-medium leading-snug text-zinc-900 transition-colors group-hover:text-zinc-600 sm:text-[15px]">{recipe.title}</h3>
+                      <p className="mt-0.5 line-clamp-1 text-[13px] text-zinc-500">{recipe.problem}</p>
+                    </div>
+                    <ArrowRight
+                      className="h-4 w-4 shrink-0 text-zinc-300 transition-colors group-hover:text-zinc-900"
+                      aria-hidden="true"
+                    />
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </section>
         </div>
       )}
     </WorkspaceShell>
   );
 }
-

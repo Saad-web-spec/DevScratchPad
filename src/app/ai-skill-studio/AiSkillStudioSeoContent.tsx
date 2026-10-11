@@ -1,705 +1,493 @@
 import React from "react";
 import Link from "next/link";
-import {
-  ShieldCheck,
-  Layers,
-  HelpCircle,
-  ArrowRight,
-  CheckCircle2,
-  FileCode,
-  ShieldAlert,
-  FileText,
-  Cpu,
-} from "lucide-react";
+import { ArrowRight, ChevronDown } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { getAllFormatHubs, getFormatHub, type FormatHubMeta } from "../claude-skills/lib/formatHubs";
+import { getPresetBySlug, type OutputFormat, type ProgrammaticPresetRoute } from "../claude-skills/lib/presetRegistry";
+import { generateContentFromRoute } from "../claude-skills/lib/ruleGenerator";
+import { CopyTextButton } from "./components/CopyTextButton";
 import { StudioSupportSection } from "./components/StudioSupportSection";
+import { STUDIO_FAQS, type StudioFaq } from "./components/studioFaqs";
 
-export function AiSkillStudioSeoContent() {
+/* ---------------------------------------------------------------------------
+ * "Which file do I need?" table data.
+ * Rows come from getAllFormatHubs(); this map only adds what the hub data
+ * lacks (tool, load timing, grouping). Keyed by OutputFormat so TypeScript
+ * flags any new format that is missing a row.
+ * ------------------------------------------------------------------------- */
+
+type GroupId = "rules" | "ignore" | "docs" | "planning";
+
+const GROUPS: { id: GroupId; label: string }[] = [
+  { id: "rules", label: "Agent rules and tool config" },
+  { id: "ignore", label: "Ignore files" },
+  { id: "docs", label: "Reference docs" },
+  { id: "planning", label: "Planning docs" },
+];
+
+interface FormatRowInfo {
+  tool: string;
+  group: GroupId;
+  /** When the tool reads the file. Backticks mark inline code. */
+  loads: string;
+  /** Overrides the placement derived from the hub's targetDir. Backticks mark inline code. */
+  where?: string;
+  /** Overrides the hub's targetFile as the displayed file name. */
+  file?: string;
+}
+
+const FORMAT_ROWS: Record<OutputFormat, FormatRowInfo> = {
+  cursor_mdc: {
+    tool: "Cursor",
+    group: "rules",
+    loads:
+      "Per rule: always, when `globs` match the files in play, when the agent finds the `description` relevant, or on @-mention.",
+  },
+  skill_md: {
+    tool: "Claude Code",
+    group: "rules",
+    where: "`.claude/skills/<skill-name>/`, or `~/.claude/skills/` for all projects",
+    loads: "Name and description at startup. The full file only when a task matches or you run `/skill-name`.",
+  },
+  claude_md: {
+    tool: "Claude Code",
+    group: "rules",
+    where: "Repo root, or `~/.claude/CLAUDE.md` for all projects",
+    loads: "Every session, in full. A `CLAUDE.md` in a subfolder loads when Claude works there.",
+  },
+  agents_md: {
+    tool: "Codex, Cursor, Copilot coding agent and others",
+    group: "rules",
+    where: "Repo root. Nested files cover their subfolder.",
+    loads: "At the start of each task. For Claude Code, add `@AGENTS.md` to `CLAUDE.md`.",
+  },
+  windsurf_cascade: {
+    tool: "Windsurf",
+    group: "rules",
+    loads: "Per rule `trigger`: always on, glob match, model decision, or manual @-mention.",
+  },
+  copilot_instructions: {
+    tool: "GitHub Copilot",
+    group: "rules",
+    loads: "With every Copilot Chat, code review and coding agent request in the repo. Not used for inline completions.",
+  },
+  openai_instructions: {
+    tool: "ChatGPT / OpenAI API",
+    group: "rules",
+    where: "`prompts/`, as a copy you version",
+    loads: "Only when pasted into ChatGPT custom instructions or sent as the system message.",
+  },
+  gemini_prompts: {
+    tool: "Gemini API / AI Studio",
+    group: "rules",
+    where: "`prompts/`, as a copy you version",
+    loads: "Only when passed as `systemInstruction` or pasted into AI Studio.",
+  },
+  mcp_json: {
+    tool: "Claude Code, Claude Desktop, Cursor",
+    group: "rules",
+    file: ".mcp.json",
+    where:
+      "Repo root for Claude Code. Claude Desktop uses `claude_desktop_config.json`; Cursor uses `.cursor/mcp.json`.",
+    loads: "At startup, so restart after editing. Claude Code asks before using servers from `.mcp.json`.",
+  },
+  cursorignore: {
+    tool: "Cursor",
+    group: "ignore",
+    loads: "Always. Indexing and AI features skip matching files (best effort: terminal commands can still read them).",
+  },
+  claudeignore: {
+    tool: "Claude Code",
+    group: "ignore",
+    loads:
+      "Keep it as your pattern list, and mirror secret paths in `permissions.deny` in `.claude/settings.json`, the setting Claude Code documents for blocking reads.",
+  },
+  llms_txt: {
+    tool: "Any LLM or crawler",
+    group: "docs",
+    where: "Repo root, or your site root as `/llms.txt`",
+    loads: "Only when a tool or person fetches it. Nothing loads it automatically.",
+  },
+  architecture_md: {
+    tool: "Any agent",
+    group: "docs",
+    loads: "When your rules file points to it, or when the agent explores the repo.",
+  },
+  prd_md: {
+    tool: "Any agent",
+    group: "planning",
+    loads: "When your rules file tells the agent to read it.",
+  },
+  design_md: {
+    tool: "Any agent",
+    group: "planning",
+    loads: "When your rules file tells the agent to read it, usually before UI work.",
+  },
+  task_md: {
+    tool: "Any agent",
+    group: "planning",
+    loads: "At the start and end of a task, if your rules say to read and update it.",
+  },
+  memory_md: {
+    tool: "Any agent",
+    group: "planning",
+    loads: "At session start, if your rules say so. Agents add lessons as they go.",
+  },
+};
+
+/** Never drops a hub: formats without an entry still get a row (and their link). */
+function rowInfoFor(hub: FormatHubMeta): FormatRowInfo {
+  return FORMAT_ROWS[hub.format] ?? { tool: hub.badge, group: "rules", loads: "See the format page." };
+}
+
+function placementFor(hub: FormatHubMeta, info: FormatRowInfo): string {
+  if (info.where) return info.where;
+  if (hub.targetDir.startsWith("./")) return "Repo root";
+  return `\`${hub.targetDir}\``;
+}
+
+/* ---------------------------------------------------------------------------
+ * Good vs vague rule examples.
+ * ------------------------------------------------------------------------- */
+
+const RULE_EXAMPLES: { title: string; file: string; vague: string; specific: string; why: string }[] = [
+  {
+    title: "Give commands, not wishes",
+    file: "CLAUDE.md or AGENTS.md",
+    vague: `## Guidelines
+- Write clean code.
+- Follow best practices.
+- Make sure tests pass.`,
+    specific: `## Commands
+- Test one file: pnpm vitest run src/lib/date.test.ts
+- Typecheck: pnpm tsc --noEmit
+- Never run pnpm db:reset. It wipes the shared dev database.`,
+    why: "The agent can run each line as written, and the \"never\" rule names the exact command and the reason.",
+  },
+  {
+    title: "Scope rules to the files they cover",
+    file: ".cursor/rules/components.mdc",
+    vague: `---
+alwaysApply: true
+---
+Use React best practices.`,
+    specific: `---
+globs: src/components/**/*.tsx
+alwaysApply: false
+---
+- Reuse Button and Input from @/components/ui; never add a UI library.
+- One component per file, named export, props typed with an interface.`,
+    why: "It loads only when a component file is in play, and every line is something the model can check.",
+  },
+  {
+    title: "Tell a skill when to run",
+    file: "SKILL.md",
+    vague: `---
+name: helper
+description: Helps with code.
+---`,
+    specific: `---
+name: db-migration
+description: Writes and reviews Prisma migrations. Use when schema.prisma changes or the user asks for a migration.
+---`,
+    why: "Claude picks a skill by its description, so say what it does and when to use it.",
+  },
+];
+
+/* ---------------------------------------------------------------------------
+ * Copy-ready starters: popular presets, generated with the same function the
+ * raw preset endpoint and CLI use, so the copied file matches the spoke page.
+ * ------------------------------------------------------------------------- */
+
+const STARTER_PRESETS: readonly (readonly [formatSlug: string, presetSlug: string])[] = [
+  ["claude-md", "nextjs-15"],
+  ["cursor-rules", "nextjs-15"],
+  ["claude-skills", "codebase-auditor"],
+  ["agents-md", "fullstack-agent-team"],
+  ["cursor-rules", "fastapi"],
+  ["copilot-instructions", "react-19"],
+  ["cursor-rules", "tailwind-v4"],
+  ["mcp-config", "github"],
+];
+
+interface Starter {
+  route: ProgrammaticPresetRoute;
+  href: string;
+  formatLabel: string;
+  path: string;
+  content: string;
+}
+
+function buildStarters(): Starter[] {
+  return STARTER_PRESETS.flatMap(([formatSlug, presetSlug]) => {
+    const route = getPresetBySlug(formatSlug, presetSlug);
+    if (!route) return [];
+    return [
+      {
+        route,
+        href: `/ai-skill-studio/${route.formatSlug}/${route.presetSlug}`,
+        formatLabel: getFormatHub(route.formatSlug)?.badge ?? route.formatSlug,
+        path: route.format === "mcp_json" ? ".mcp.json or claude_desktop_config.json" : route.targetFile,
+        content: generateContentFromRoute(route),
+      },
+    ];
+  });
+}
+
+/* ---------------------------------------------------------------------------
+ * Shared bits.
+ * ------------------------------------------------------------------------- */
+
+/** Renders `backtick` segments as <code>, leaving the text content unchanged apart from the markers. */
+function InlineCode({ text }: { text: string }) {
   return (
-    <article className="w-full bg-white border-t border-zinc-200 mt-8 py-16 px-4 sm:px-6 lg:px-8 text-zinc-800 font-sans selection:bg-zinc-900 selection:text-white">
-      <div className="max-w-7xl mx-auto space-y-16">
-        
-        {/* 1. Header & Context */}
-        <section className="space-y-4 border-b border-zinc-200 pb-10">
-          <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full text-xs font-mono font-medium bg-orange-50 text-orange-800 border border-orange-200">
-            <img src="/orange-star.png" className="w-3.5 h-3.5 object-contain shrink-0" alt="Star" />
-            <span>Developer Reference &amp; 4-Layer Multi-Agent Architecture</span>
-          </div>
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-zinc-900">
-            AI Skill Studio — 17 Formats &amp; 4-Layer AI Agent Operating Suite
-          </h1>
-          <div className="p-4 sm:p-5 rounded-xl border border-orange-200/80 bg-gradient-to-b from-orange-50/50 via-white to-orange-50/20 shadow-2xs max-w-4xl space-y-2">
-            <p className="text-sm sm:text-base text-zinc-700 leading-relaxed font-sans">
-              Autonomous coding assistants (Cursor IDE, Claude Code, Windsurf, Copilot, Antigravity, Devin) are only as dependable as their operational boundaries. <strong className="text-zinc-900 font-semibold">AI Skill Studio</strong> is a 100% client-side workbench that generates, validates, and exports every critical artifact an AI agent requires: IDE rulebooks, privacy-first context shields, machine-readable architectural blueprints, and multi-agent governance documents (<code className="px-1.5 py-0.5 rounded-md bg-white border border-orange-200 text-orange-950 font-mono text-xs font-semibold shadow-2xs">PRD.md</code>, <code className="px-1.5 py-0.5 rounded-md bg-white border border-orange-200 text-orange-950 font-mono text-xs font-semibold shadow-2xs">DESIGN.md</code>, <code className="px-1.5 py-0.5 rounded-md bg-white border border-orange-200 text-orange-950 font-mono text-xs font-semibold shadow-2xs">TASK.md</code>, and <code className="px-1.5 py-0.5 rounded-md bg-white border border-orange-200 text-orange-950 font-mono text-xs font-semibold shadow-2xs">MEMORY.md</code>). Zero telemetry, zero server uploads, completely private.
-            </p>
-          </div>
-        </section>
+    <>
+      {text.split("`").map((part, i) =>
+        i % 2 === 1 ? (
+          <code key={i} className="rounded bg-zinc-100 px-1 py-0.5 font-mono text-[0.85em] text-zinc-800">
+            {part}
+          </code>
+        ) : (
+          <React.Fragment key={i}>{part}</React.Fragment>
+        )
+      )}
+    </>
+  );
+}
 
-        {/* 2. 4-Layer System Architecture Matrix */}
-        <section className="space-y-10">
+const h2Class = "text-xl font-semibold tracking-tight text-zinc-900 sm:text-2xl";
+const introClass = "max-w-3xl text-[15px] leading-7 text-zinc-600";
+
+interface AiSkillStudioSeoContentProps {
+  /** Hub slug of the format page being viewed; highlights its row in the file table. */
+  activeFormatSlug?: string;
+  /** Format-specific questions shown before the general FAQ. Must match any FAQPage JSON-LD the page emits. */
+  formatFaqs?: StudioFaq[];
+}
+
+export function AiSkillStudioSeoContent({ activeFormatSlug, formatFaqs = [] }: AiSkillStudioSeoContentProps = {}) {
+  const hubs = getAllFormatHubs();
+  const groupedHubs = GROUPS.map((group) => ({
+    ...group,
+    hubs: hubs.filter((hub) => rowInfoFor(hub).group === group.id),
+  })).filter((group) => group.hubs.length > 0);
+  const starters = buildStarters();
+
+  return (
+    <article
+      aria-label="AI instruction file reference"
+      className="mt-8 w-full border-t border-zinc-200 bg-white px-4 py-16 text-zinc-700 sm:px-6 lg:px-8"
+    >
+      <div className="mx-auto max-w-7xl space-y-20">
+        {/* 1. Which file do I need? */}
+        <section id="which-file" aria-labelledby="which-file-heading" className="scroll-mt-24 space-y-6">
           <div className="space-y-2">
-            <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-zinc-900 flex items-center gap-2">
-              <Layers className="w-5 h-5 text-orange-600" />
-              The 4-Layer AI Agent Operating Suite
+            <h2 id="which-file-heading" className={h2Class}>
+              Which file do I need?
             </h2>
-            <p className="text-xs sm:text-sm text-zinc-600">
-              Modern AI pair programming requires more than raw prompts. DevScratchpad organizes agent steering into 4 coordinated layers covering 17 distinct formats:
+            <p className={introClass}>
+              Each AI coding tool reads its own file from its own place. Find your tool, put the file where the table
+              says, and check when it actually gets loaded. Every file name opens a generator for that format.
             </p>
           </div>
 
-          {/* Group 1: Agent Rules & Execution Skills */}
-          <div className="space-y-4">
-            <div className="flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-orange-500"></span>
-              <h3 className="text-sm font-bold uppercase tracking-wider text-zinc-700 font-mono">
-                Layer 1: AI Agent Rules &amp; Runtime Skills
-              </h3>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              {/* Cursor .mdc */}
-              <Link
-                href="/ai-skill-studio/cursor-rules"
-                className="flex flex-col justify-between border border-zinc-200/90 rounded-xl p-4 bg-white shadow-2xs hover:shadow-xs hover:border-zinc-300 transition-all text-inherit no-underline group"
-              >
-                <div className="space-y-2.5">
-                  <div className="flex items-center justify-between">
-                    <span className="font-mono text-xs font-bold text-blue-600 bg-blue-50 border border-blue-200/80 px-2 py-0.5 rounded-md">
-                      .cursor/rules/*.mdc
-                    </span>
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">Cursor IDE</span>
-                  </div>
-                  <h4 className="font-semibold text-zinc-900 text-sm group-hover:text-orange-600 transition-colors">
-                    Modular Cursor Rules
-                  </h4>
-                  <p className="text-xs text-zinc-600 leading-relaxed">
-                    Glob-scoped rules with frontmatter triggers. Loads conditionally only when relevant code is edited to keep token overhead minimal.
-                  </p>
-                </div>
-                <div className="mt-3 pt-2.5 border-t border-zinc-100 flex items-center gap-1.5 text-[11px] font-mono text-zinc-500">
-                  <FileCode className="w-3.5 h-3.5 text-blue-500 shrink-0" />
-                  <span className="truncate">.cursor/rules/&lt;name&gt;.mdc</span>
-                </div>
-              </Link>
-
-              {/* Claude SKILL.md */}
-              <Link
-                href="/ai-skill-studio/claude-skills"
-                className="flex flex-col justify-between border border-zinc-200/90 rounded-xl p-4 bg-white shadow-2xs hover:shadow-xs hover:border-zinc-300 transition-all text-inherit no-underline group"
-              >
-                <div className="space-y-2.5">
-                  <div className="flex items-center justify-between">
-                    <span className="font-mono text-xs font-bold text-orange-600 bg-orange-50 border border-orange-200/80 px-2 py-0.5 rounded-md">
-                      SKILL.md
-                    </span>
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">Claude Code</span>
-                  </div>
-                  <h4 className="font-semibold text-zinc-900 text-sm group-hover:text-orange-600 transition-colors">
-                    Claude Code Agent Skills
-                  </h4>
-                  <p className="text-xs text-zinc-600 leading-relaxed">
-                    On-demand capabilities loaded semantically based on task intent or explicit slash commands (e.g. <code className="text-[11px] font-mono">/audit</code>).
-                  </p>
-                </div>
-                <div className="mt-3 pt-2.5 border-t border-zinc-100 flex items-center gap-1.5 text-[11px] font-mono text-zinc-500">
-                  <FileCode className="w-3.5 h-3.5 text-orange-500 shrink-0" />
-                  <span className="truncate">.claude/skills/&lt;name&gt;/SKILL.md</span>
-                </div>
-              </Link>
-
-              {/* CLAUDE.md */}
-              <Link
-                href="/ai-skill-studio/claude-md"
-                className="flex flex-col justify-between border border-zinc-200/90 rounded-xl p-4 bg-white shadow-2xs hover:shadow-xs hover:border-zinc-300 transition-all text-inherit no-underline group"
-              >
-                <div className="space-y-2.5">
-                  <div className="flex items-center justify-between">
-                    <span className="font-mono text-xs font-bold text-emerald-600 bg-emerald-50 border border-emerald-200/80 px-2 py-0.5 rounded-md">
-                      CLAUDE.md
-                    </span>
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">Project Root</span>
-                  </div>
-                  <h4 className="font-semibold text-zinc-900 text-sm group-hover:text-orange-600 transition-colors">
-                    Anthropic Project Guidelines
-                  </h4>
-                  <p className="text-xs text-zinc-600 leading-relaxed">
-                    Repository onboarding manual. Ingested immediately upon session startup to supply build, test, and architecture rules.
-                  </p>
-                </div>
-                <div className="mt-3 pt-2.5 border-t border-zinc-100 flex items-center gap-1.5 text-[11px] font-mono text-zinc-500">
-                  <FileCode className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
-                  <span className="truncate">/CLAUDE.md (Root)</span>
-                </div>
-              </Link>
-
-              {/* AGENTS.md */}
-              <Link
-                href="/ai-skill-studio/agents-md"
-                className="flex flex-col justify-between border border-zinc-200/90 rounded-xl p-4 bg-white shadow-2xs hover:shadow-xs hover:border-zinc-300 transition-all text-inherit no-underline group"
-              >
-                <div className="space-y-2.5">
-                  <div className="flex items-center justify-between">
-                    <span className="font-mono text-xs font-bold text-purple-600 bg-purple-50 border border-purple-200/80 px-2 py-0.5 rounded-md">
-                      AGENTS.md
-                    </span>
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">Multi-Agent</span>
-                  </div>
-                  <h4 className="font-semibold text-zinc-900 text-sm group-hover:text-orange-600 transition-colors">
-                    Universal Agent Protocol
-                  </h4>
-                  <p className="text-xs text-zinc-600 leading-relaxed">
-                    Cross-framework directives for autonomous agent teams (Antigravity, Codex, Devin) with strict testing gates.
-                  </p>
-                </div>
-                <div className="mt-3 pt-2.5 border-t border-zinc-100 flex items-center gap-1.5 text-[11px] font-mono text-zinc-500">
-                  <FileCode className="w-3.5 h-3.5 text-purple-500 shrink-0" />
-                  <span className="truncate">/AGENTS.md (Root)</span>
-                </div>
-              </Link>
-
-              {/* Windsurf Cascade */}
-              <Link
-                href="/ai-skill-studio/windsurf-rules"
-                className="flex flex-col justify-between border border-zinc-200/90 rounded-xl p-4 bg-white shadow-2xs hover:shadow-xs hover:border-zinc-300 transition-all text-inherit no-underline group"
-              >
-                <div className="space-y-2.5">
-                  <div className="flex items-center justify-between">
-                    <span className="font-mono text-xs font-bold text-teal-600 bg-teal-50 border border-teal-200/80 px-2 py-0.5 rounded-md">
-                      .windsurf/rules/*.md
-                    </span>
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">Windsurf IDE</span>
-                  </div>
-                  <h4 className="font-semibold text-zinc-900 text-sm group-hover:text-orange-600 transition-colors">
-                    Windsurf Cascade Rules
-                  </h4>
-                  <p className="text-xs text-zinc-600 leading-relaxed">
-                    Targeted rules for Codeium&apos;s Windsurf Cascade. Steers Supercomplete and chat with project idioms and framework constraints.
-                  </p>
-                </div>
-                <div className="mt-3 pt-2.5 border-t border-zinc-100 flex items-center gap-1.5 text-[11px] font-mono text-zinc-500">
-                  <FileCode className="w-3.5 h-3.5 text-teal-500 shrink-0" />
-                  <span className="truncate">.windsurf/rules/&lt;name&gt;.md</span>
-                </div>
-              </Link>
-
-              {/* GitHub Copilot Instructions */}
-              <Link
-                href="/ai-skill-studio/copilot-instructions"
-                className="flex flex-col justify-between border border-zinc-200/90 rounded-xl p-4 bg-white shadow-2xs hover:shadow-xs hover:border-zinc-300 transition-all text-inherit no-underline group"
-              >
-                <div className="space-y-2.5">
-                  <div className="flex items-center justify-between">
-                    <span className="font-mono text-xs font-bold text-sky-600 bg-sky-50 border border-sky-200/80 px-2 py-0.5 rounded-md">
-                      copilot-instructions.md
-                    </span>
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">GitHub Copilot</span>
-                  </div>
-                  <h4 className="font-semibold text-zinc-900 text-sm group-hover:text-orange-600 transition-colors">
-                    Copilot Instructions
-                  </h4>
-                  <p className="text-xs text-zinc-600 leading-relaxed">
-                    Grounds GitHub Copilot chat and completions in VS Code and JetBrains to your team&apos;s architecture, avoiding deprecated patterns.
-                  </p>
-                </div>
-                <div className="mt-3 pt-2.5 border-t border-zinc-100 flex items-center gap-1.5 text-[11px] font-mono text-zinc-500">
-                  <FileCode className="w-3.5 h-3.5 text-sky-500 shrink-0" />
-                  <span className="truncate">.github/copilot-instructions.md</span>
-                </div>
-              </Link>
-
-              {/* OpenAI Custom Instructions */}
-              <Link
-                href="/ai-skill-studio/openai-instructions"
-                className="flex flex-col justify-between border border-zinc-200/90 rounded-xl p-4 bg-white shadow-2xs hover:shadow-xs hover:border-zinc-300 transition-all text-inherit no-underline group"
-              >
-                <div className="space-y-2.5">
-                  <div className="flex items-center justify-between">
-                    <span className="font-mono text-xs font-bold text-violet-600 bg-violet-50 border border-violet-200/80 px-2 py-0.5 rounded-md">
-                      openai-instructions
-                    </span>
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">ChatGPT &amp; API</span>
-                  </div>
-                  <h4 className="font-semibold text-zinc-900 text-sm group-hover:text-orange-600 transition-colors">
-                    OpenAI Custom Instructions
-                  </h4>
-                  <p className="text-xs text-zinc-600 leading-relaxed">
-                    Directives tailored for GPT-4o, o1, and Playground. Enforces concise code diffs, typed schemas, and zero conversational filler.
-                  </p>
-                </div>
-                <div className="mt-3 pt-2.5 border-t border-zinc-100 flex items-center gap-1.5 text-[11px] font-mono text-zinc-500">
-                  <FileCode className="w-3.5 h-3.5 text-violet-500 shrink-0" />
-                  <span className="truncate">prompts/openai-custom-instructions.md</span>
-                </div>
-              </Link>
-
-              {/* Gemini System Prompts */}
-              <Link
-                href="/ai-skill-studio/gemini-prompts"
-                className="flex flex-col justify-between border border-zinc-200/90 rounded-xl p-4 bg-white shadow-2xs hover:shadow-xs hover:border-zinc-300 transition-all text-inherit no-underline group"
-              >
-                <div className="space-y-2.5">
-                  <div className="flex items-center justify-between">
-                    <span className="font-mono text-xs font-bold text-indigo-600 bg-indigo-50 border border-indigo-200/80 px-2 py-0.5 rounded-md">
-                      gemini-prompts
-                    </span>
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">Google AI Studio</span>
-                  </div>
-                  <h4 className="font-semibold text-zinc-900 text-sm group-hover:text-orange-600 transition-colors">
-                    Gemini System Instructions
-                  </h4>
-                  <p className="text-xs text-zinc-600 leading-relaxed">
-                    Structured system instructions for Google AI Studio, Gemini 2.0, and Gemini SDK with strict role definitions and structured JSON outputs.
-                  </p>
-                </div>
-                <div className="mt-3 pt-2.5 border-t border-zinc-100 flex items-center gap-1.5 text-[11px] font-mono text-zinc-500">
-                  <FileCode className="w-3.5 h-3.5 text-indigo-500 shrink-0" />
-                  <span className="truncate">prompts/gemini-system-instructions.json</span>
-                </div>
-              </Link>
-            </div>
-          </div>
-
-          {/* Group 2: Context Shields & Privacy */}
-          <div className="space-y-4">
-            <div className="flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-rose-500"></span>
-              <h3 className="text-sm font-bold uppercase tracking-wider text-zinc-700 font-mono">
-                Layer 2: Context Shields &amp; Zero-Leak Privacy (New Editions)
-              </h3>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {/* .cursorignore */}
-              <Link
-                href="/ai-skill-studio/cursorignore"
-                className="flex flex-col justify-between border border-zinc-200/90 rounded-xl p-4.5 bg-white shadow-2xs hover:shadow-xs hover:border-zinc-300 transition-all text-inherit no-underline group"
-              >
-                <div className="space-y-2.5">
-                  <div className="flex items-center justify-between">
-                    <span className="font-mono text-xs font-bold text-rose-600 bg-rose-50 border border-rose-200/80 px-2 py-0.5 rounded-md">
-                      .cursorignore
-                    </span>
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">Token &amp; Privacy Shield</span>
-                  </div>
-                  <h4 className="font-semibold text-zinc-900 text-sm group-hover:text-orange-600 transition-colors">
-                    Cursor Context Shield
-                  </h4>
-                  <p className="text-xs text-zinc-600 leading-relaxed">
-                    Prevents Cursor AI from indexing sensitive credentials (<code className="text-[11px] font-mono">.env</code>, <code className="text-[11px] font-mono">*.pem</code>), test fixtures, and bloated lockfiles. Saves 50,000+ context window tokens per prompt and eliminates data leakage into LLM queries.
-                  </p>
-                </div>
-                <div className="mt-3 pt-2.5 border-t border-zinc-100 flex items-center gap-1.5 text-[11px] font-mono text-zinc-500">
-                  <ShieldAlert className="w-3.5 h-3.5 text-rose-500 shrink-0" />
-                  <span className="truncate">/.cursorignore (Repository Root)</span>
-                </div>
-              </Link>
-
-              {/* .claudeignore */}
-              <Link
-                href="/ai-skill-studio/claudeignore"
-                className="flex flex-col justify-between border border-zinc-200/90 rounded-xl p-4.5 bg-white shadow-2xs hover:shadow-xs hover:border-zinc-300 transition-all text-inherit no-underline group"
-              >
-                <div className="space-y-2.5">
-                  <div className="flex items-center justify-between">
-                    <span className="font-mono text-xs font-bold text-amber-600 bg-amber-50 border border-amber-200/80 px-2 py-0.5 rounded-md">
-                      .claudeignore
-                    </span>
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">Terminal Boundary Shield</span>
-                  </div>
-                  <h4 className="font-semibold text-zinc-900 text-sm group-hover:text-orange-600 transition-colors">
-                    Claude Code Privacy Shield
-                  </h4>
-                  <p className="text-xs text-zinc-600 leading-relaxed">
-                    Establishes strict boundaries for Anthropic&apos;s Claude Code CLI. Guarantees that autonomous terminal agent searches and automated refactoring routines never inspect or mutate sensitive directories or vendor files.
-                  </p>
-                </div>
-                <div className="mt-3 pt-2.5 border-t border-zinc-100 flex items-center gap-1.5 text-[11px] font-mono text-zinc-500">
-                  <ShieldAlert className="w-3.5 h-3.5 text-amber-500 shrink-0" />
-                  <span className="truncate">/.claudeignore (Repository Root)</span>
-                </div>
-              </Link>
-            </div>
-          </div>
-
-          {/* Group 3: Machine Documentation & Integrations */}
-          <div className="space-y-4">
-            <div className="flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-indigo-500"></span>
-              <h3 className="text-sm font-bold uppercase tracking-wider text-zinc-700 font-mono">
-                Layer 3: Machine Roadmaps &amp; Architectural Blueprints (New Editions)
-              </h3>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              {/* llms.txt */}
-              <Link
-                href="/ai-skill-studio/llms-txt"
-                className="flex flex-col justify-between border border-zinc-200/90 rounded-xl p-4 bg-white shadow-2xs hover:shadow-xs hover:border-zinc-300 transition-all text-inherit no-underline group"
-              >
-                <div className="space-y-2.5">
-                  <div className="flex items-center justify-between">
-                    <span className="font-mono text-xs font-bold text-indigo-600 bg-indigo-50 border border-indigo-200/80 px-2 py-0.5 rounded-md">
-                      llms.txt
-                    </span>
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">Open Standard</span>
-                  </div>
-                  <h4 className="font-semibold text-zinc-900 text-sm group-hover:text-orange-600 transition-colors">
-                    llms.txt Codebase Roadmap
-                  </h4>
-                  <p className="text-xs text-zinc-600 leading-relaxed">
-                    Standardized, machine-readable markdown orientation for web-crawling LLMs and AI coding assistants. Eliminates HTML parsing overhead.
-                  </p>
-                </div>
-                <div className="mt-3 pt-2.5 border-t border-zinc-100 flex items-center gap-1.5 text-[11px] font-mono text-zinc-500">
-                  <FileText className="w-3.5 h-3.5 text-indigo-500 shrink-0" />
-                  <span className="truncate">/llms.txt (Repo / Domain Root)</span>
-                </div>
-              </Link>
-
-              {/* ARCHITECTURE.md */}
-              <Link
-                href="/ai-skill-studio/architecture-md"
-                className="flex flex-col justify-between border border-zinc-200/90 rounded-xl p-4 bg-white shadow-2xs hover:shadow-xs hover:border-zinc-300 transition-all text-inherit no-underline group"
-              >
-                <div className="space-y-2.5">
-                  <div className="flex items-center justify-between">
-                    <span className="font-mono text-xs font-bold text-teal-600 bg-teal-50 border border-teal-200/80 px-2 py-0.5 rounded-md">
-                      ARCHITECTURE.md
-                    </span>
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">System Blueprint</span>
-                  </div>
-                  <h4 className="font-semibold text-zinc-900 text-sm group-hover:text-orange-600 transition-colors">
-                    ARCHITECTURE.md Spec
-                  </h4>
-                  <p className="text-xs text-zinc-600 leading-relaxed">
-                    Defines non-negotiable system invariants, unidirectional data flows, and prohibited anti-patterns that every AI agent must obey before coding.
-                  </p>
-                </div>
-                <div className="mt-3 pt-2.5 border-t border-zinc-100 flex items-center gap-1.5 text-[11px] font-mono text-zinc-500">
-                  <FileText className="w-3.5 h-3.5 text-teal-500 shrink-0" />
-                  <span className="truncate">/ARCHITECTURE.md (Repository Root)</span>
-                </div>
-              </Link>
-
-              {/* claude.json (MCP) */}
-              <Link
-                href="/ai-skill-studio/mcp-config"
-                className="flex flex-col justify-between border border-zinc-200/90 rounded-xl p-4 bg-white shadow-2xs hover:shadow-xs hover:border-zinc-300 transition-all text-inherit no-underline group"
-              >
-                <div className="space-y-2.5">
-                  <div className="flex items-center justify-between">
-                    <span className="font-mono text-xs font-bold text-sky-600 bg-sky-50 border border-sky-200/80 px-2 py-0.5 rounded-md">
-                      claude.json
-                    </span>
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">MCP Runtime</span>
-                  </div>
-                  <h4 className="font-semibold text-zinc-900 text-sm group-hover:text-orange-600 transition-colors">
-                    MCP Server Schemas
-                  </h4>
-                  <p className="text-xs text-zinc-600 leading-relaxed">
-                    Model Context Protocol tool configurations. Connects your AI coding agents directly to databases, local filesystems, GitHub, and APIs.
-                  </p>
-                </div>
-                <div className="mt-3 pt-2.5 border-t border-zinc-100 flex items-center gap-1.5 text-[11px] font-mono text-zinc-500">
-                  <FileCode className="w-3.5 h-3.5 text-sky-500 shrink-0" />
-                  <span className="truncate">~/.claude.json / config</span>
-                </div>
-              </Link>
-            </div>
-          </div>
-
-          {/* Group 4: AI Governance & Multi-Agent Planning Suite */}
-          <div className="space-y-4">
-            <div className="flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-blue-500"></span>
-              <h3 className="text-sm font-bold uppercase tracking-wider text-zinc-700 font-mono">
-                Layer 4: AI Governance &amp; Multi-Agent Planning Suite (New Editions)
-              </h3>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              {/* PRD.md */}
-              <Link
-                href="/ai-skill-studio/prd-md"
-                className="flex flex-col justify-between border border-zinc-200/90 rounded-xl p-4 bg-white shadow-2xs hover:shadow-xs hover:border-zinc-300 transition-all text-inherit no-underline group"
-              >
-                <div className="space-y-2.5">
-                  <div className="flex items-center justify-between">
-                    <span className="font-mono text-xs font-bold text-blue-600 bg-blue-50 border border-blue-200/80 px-2 py-0.5 rounded-md">
-                      PRD.md
-                    </span>
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">Governance</span>
-                  </div>
-                  <h4 className="font-semibold text-zinc-900 text-sm group-hover:text-blue-600 transition-colors">
-                    Product Requirements
-                  </h4>
-                  <p className="text-xs text-zinc-600 leading-relaxed">
-                    Product vision, user personas, functional matrix, and milestone roadmap. Defines explicit success criteria so agents never build out of scope.
-                  </p>
-                </div>
-                <div className="mt-3 pt-2.5 border-t border-zinc-100 flex items-center gap-1.5 text-[11px] font-mono text-zinc-500">
-                  <FileText className="w-3.5 h-3.5 text-blue-500 shrink-0" />
-                  <span className="truncate">/PRD.md (Repository Root)</span>
-                </div>
-              </Link>
-
-              {/* DESIGN.md */}
-              <Link
-                href="/ai-skill-studio/design-md"
-                className="flex flex-col justify-between border border-zinc-200/90 rounded-xl p-4 bg-white shadow-2xs hover:shadow-xs hover:border-zinc-300 transition-all text-inherit no-underline group"
-              >
-                <div className="space-y-2.5">
-                  <div className="flex items-center justify-between">
-                    <span className="font-mono text-xs font-bold text-indigo-600 bg-indigo-50 border border-indigo-200/80 px-2 py-0.5 rounded-md">
-                      DESIGN.md
-                    </span>
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">Design System</span>
-                  </div>
-                  <h4 className="font-semibold text-zinc-900 text-sm group-hover:text-indigo-600 transition-colors">
-                    UI Design System &amp; Tokens
-                  </h4>
-                  <p className="text-xs text-zinc-600 leading-relaxed">
-                    Color tokens, typography scales, single-canvas layout constraints, and negative UI guardrails. Prevents arbitrary styling and nested card traps.
-                  </p>
-                </div>
-                <div className="mt-3 pt-2.5 border-t border-zinc-100 flex items-center gap-1.5 text-[11px] font-mono text-zinc-500">
-                  <Layers className="w-3.5 h-3.5 text-indigo-500 shrink-0" />
-                  <span className="truncate">/DESIGN.md (Repository Root)</span>
-                </div>
-              </Link>
-
-              {/* TASK.md */}
-              <Link
-                href="/ai-skill-studio/task-md"
-                className="flex flex-col justify-between border border-zinc-200/90 rounded-xl p-4 bg-white shadow-2xs hover:shadow-xs hover:border-zinc-300 transition-all text-inherit no-underline group"
-              >
-                <div className="space-y-2.5">
-                  <div className="flex items-center justify-between">
-                    <span className="font-mono text-xs font-bold text-emerald-600 bg-emerald-50 border border-emerald-200/80 px-2 py-0.5 rounded-md">
-                      TASK.md
-                    </span>
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">Sprint Engine</span>
-                  </div>
-                  <h4 className="font-semibold text-zinc-900 text-sm group-hover:text-emerald-600 transition-colors">
-                    Sprint Tracker &amp; Quality Gates
-                  </h4>
-                  <p className="text-xs text-zinc-600 leading-relaxed">
-                    Tracks active sprints, task checklists, mandatory verification commands (<code className="font-mono text-[11px]">npm run lint && npm run build</code>), and agent session logs.
-                  </p>
-                </div>
-                <div className="mt-3 pt-2.5 border-t border-zinc-100 flex items-center gap-1.5 text-[11px] font-mono text-zinc-500">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
-                  <span className="truncate">/TASK.md (Repository Root)</span>
-                </div>
-              </Link>
-
-              {/* MEMORY.md */}
-              <Link
-                href="/ai-skill-studio/memory-md"
-                className="flex flex-col justify-between border border-zinc-200/90 rounded-xl p-4 bg-white shadow-2xs hover:shadow-xs hover:border-zinc-300 transition-all text-inherit no-underline group"
-              >
-                <div className="space-y-2.5">
-                  <div className="flex items-center justify-between">
-                    <span className="font-mono text-xs font-bold text-amber-600 bg-amber-50 border border-amber-200/80 px-2 py-0.5 rounded-md">
-                      MEMORY.md
-                    </span>
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">Agent Brain</span>
-                  </div>
-                  <h4 className="font-semibold text-zinc-900 text-sm group-hover:text-amber-600 transition-colors">
-                    Persistent Brain &amp; ADRs
-                  </h4>
-                  <p className="text-xs text-zinc-600 leading-relaxed">
-                    Persistent memory for autonomous agents: technical context, architectural decision records (ADRs), operational gotchas, and the 5-step loop.
-                  </p>
-                </div>
-                <div className="mt-3 pt-2.5 border-t border-zinc-100 flex items-center gap-1.5 text-[11px] font-mono text-zinc-500">
-                  <Cpu className="w-3.5 h-3.5 text-amber-500 shrink-0" />
-                  <span className="truncate">/MEMORY.md (Repository Root)</span>
-                </div>
-              </Link>
-            </div>
-          </div>
+          <table className="block w-full border-collapse text-left text-sm leading-6 md:table">
+            <caption className="sr-only">AI instruction files by tool, with location and load timing</caption>
+            <thead className="hidden md:table-header-group">
+              <tr className="border-b border-zinc-300 text-xs uppercase tracking-wide text-zinc-500">
+                <th scope="col" className="py-2 pl-3 pr-6 font-medium md:w-[18%]">
+                  AI tool
+                </th>
+                <th scope="col" className="py-2 pr-6 font-medium md:w-[20%]">
+                  File
+                </th>
+                <th scope="col" className="py-2 pr-6 font-medium md:w-[27%]">
+                  Where it goes
+                </th>
+                <th scope="col" className="py-2 pr-3 font-medium">
+                  When it&apos;s loaded
+                </th>
+              </tr>
+            </thead>
+            {groupedHubs.map((group) => (
+              <tbody key={group.id} className="block md:table-row-group">
+                <tr className="block md:table-row">
+                  <th
+                    scope="rowgroup"
+                    colSpan={4}
+                    className="block px-3 pb-2 pt-8 text-left text-[13px] font-semibold text-zinc-900 md:table-cell"
+                  >
+                    {group.label}
+                  </th>
+                </tr>
+                {group.hubs.map((hub) => {
+                  const info = rowInfoFor(hub);
+                  const isActive = hub.slug === activeFormatSlug;
+                  return (
+                    <tr
+                      key={hub.slug}
+                      className={cn(
+                        "block border-t border-zinc-200 px-3 py-4 md:table-row md:px-0 md:py-0",
+                        isActive && "bg-orange-50/70"
+                      )}
+                    >
+                      <td className="block text-[13px] text-zinc-500 md:table-cell md:py-3 md:pl-3 md:pr-6 md:align-top md:text-sm md:text-zinc-700">
+                        {info.tool}
+                      </td>
+                      <td className="block md:table-cell md:py-3 md:pr-6 md:align-top">
+                        <Link
+                          href={`/ai-skill-studio/${hub.slug}`}
+                          aria-current={isActive ? "page" : undefined}
+                          className="break-all font-mono text-[13px] font-medium text-zinc-900 underline decoration-zinc-300 underline-offset-4 transition-colors hover:text-orange-700 hover:decoration-orange-600"
+                        >
+                          {info.file ?? hub.targetFile}
+                        </Link>
+                      </td>
+                      <td className="mt-1 block text-zinc-700 md:mt-0 md:table-cell md:py-3 md:pr-6 md:align-top">
+                        <span className="text-zinc-500 md:hidden">Goes in: </span>
+                        <InlineCode text={placementFor(hub, info)} />
+                      </td>
+                      <td className="mt-1 block text-zinc-600 md:mt-0 md:table-cell md:py-3 md:pr-3 md:align-top">
+                        <span className="text-zinc-500 md:hidden">Loaded: </span>
+                        <InlineCode text={info.loads} />
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            ))}
+          </table>
         </section>
 
-        {/* 3. How to Generate in 3 Steps */}
-        <section className="space-y-6">
+        {/* 2. Good vs vague examples */}
+        <section id="rule-examples" aria-labelledby="rule-examples-heading" className="scroll-mt-24 space-y-10">
           <div className="space-y-2">
-            <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-zinc-900 flex items-center gap-2">
-              <CheckCircle2 className="w-5 h-5 text-emerald-600" />
-              How to Generate &amp; Scaffold the Complete AI Suite
+            <h2 id="rule-examples-heading" className={h2Class}>
+              What a good rule looks like
             </h2>
-            <p className="text-xs sm:text-sm text-zinc-600">
-              Streamline your prompt engineering, context shield setup, architecture specs, and governance documents:
+            <p className={introClass}>
+              Agents follow rules they can check. Swap advice for commands, paths and explicit &ldquo;never&rdquo;
+              lines.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="border border-zinc-200 p-5 rounded-lg bg-white space-y-2 shadow-2xs">
-              <span className="font-mono text-xs font-bold text-zinc-400">STEP 01</span>
-              <h3 className="font-semibold text-zinc-900 text-sm">Select Preset or Import Manifest</h3>
-              <p className="text-xs text-zinc-600 leading-relaxed">
-                Choose a production-grade preset (Next.js 15, React 19, FastAPI, Go, Rust, Cursor Pro) or drop your <code className="font-mono text-[11px]">package.json</code> or <code className="font-mono text-[11px]">Cargo.toml</code> to auto-detect dependencies.
+          {RULE_EXAMPLES.map((example) => (
+            <div key={example.title} className="space-y-4">
+              <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+                <h3 className="text-base font-semibold text-zinc-900">{example.title}</h3>
+                <span className="font-mono text-xs text-zinc-500">{example.file}</span>
+              </div>
+              <div className="grid gap-4 md:grid-cols-2">
+                <figure className="space-y-2">
+                  <figcaption className="text-xs font-medium uppercase tracking-wide text-zinc-500">Vague</figcaption>
+                  <pre className="overflow-x-auto whitespace-pre-wrap break-words rounded-r-md border-l-2 border-zinc-300 bg-zinc-50 px-4 py-3 font-mono text-[13px] leading-6 text-zinc-500">
+                    {example.vague}
+                  </pre>
+                </figure>
+                <figure className="space-y-2">
+                  <figcaption className="text-xs font-medium uppercase tracking-wide text-orange-600">Specific</figcaption>
+                  <pre className="overflow-x-auto whitespace-pre-wrap break-words rounded-r-md border-l-2 border-orange-600 bg-zinc-50 px-4 py-3 font-mono text-[13px] leading-6 text-zinc-800">
+                    {example.specific}
+                  </pre>
+                </figure>
+              </div>
+              <p className="max-w-3xl text-[15px] leading-7 text-zinc-600">
+                <span className="font-medium text-zinc-900">Why it works:</span> {example.why}
               </p>
             </div>
-            <div className="border border-zinc-200 p-5 rounded-lg bg-white space-y-2 shadow-2xs">
-              <span className="font-mono text-xs font-bold text-zinc-400">STEP 02</span>
-              <h3 className="font-semibold text-zinc-900 text-sm">Customize with Guided Cards &amp; Info Tooltips</h3>
-              <p className="text-xs text-zinc-600 leading-relaxed">
-                Customize rules, negative bounds (&quot;Never do X&quot;), and governance specs (<code className="font-mono text-[11px]">PRD.md</code>, <code className="font-mono text-[11px]">DESIGN.md</code>, <code className="font-mono text-[11px]">TASK.md</code>, <code className="font-mono text-[11px]">MEMORY.md</code>). Hover or tap the small circular info <span className="inline-flex items-center justify-center w-3.5 h-3.5 rounded-full bg-zinc-100 text-zinc-600 font-mono text-[9px] font-bold border border-zinc-300">i</span> badges beside any section for instant editing instructions and syntax examples.
-              </p>
-            </div>
-            <div className="border border-zinc-200 p-5 rounded-lg bg-white space-y-2 shadow-2xs">
-              <span className="font-mono text-xs font-bold text-zinc-400">STEP 03</span>
-              <h3 className="font-semibold text-zinc-900 text-sm">Export ZIP or Scaffold with CLI</h3>
-              <p className="text-xs text-zinc-600 leading-relaxed">
-                Click <strong>Export All as AI Agent Kit (.zip)</strong> or run <code className="font-mono text-[11px] bg-zinc-100 px-1 py-0.5 rounded text-zinc-800">npx devscratchpad init</code> to scaffold all 17 files across 4 layers directly into your repository with pre-structured folder paths.
-              </p>
-            </div>
-          </div>
+          ))}
         </section>
 
-        {/* 4. Privacy & Zero-Data-Leakage Guarantee */}
-        <section className="bg-zinc-50 border border-zinc-200 rounded-xl p-6 sm:p-8 space-y-4">
-          <div className="flex items-center gap-2 font-semibold text-zinc-900 text-sm">
-            <ShieldCheck className="w-5 h-5 text-emerald-600" />
-            <span>Zero-Telemetry Client-Side Security Guarantee</span>
+        {/* 3. Copy-ready starters */}
+        <section id="starters" aria-labelledby="starters-heading" className="scroll-mt-24 space-y-6">
+          <div className="space-y-2">
+            <h2 id="starters-heading" className={h2Class}>
+              Copy-ready starters
+            </h2>
+            <p className={introClass}>
+              Complete files from the preset library. Copy one as it is, or open it to change the stack, commands and
+              rules before you download it.
+            </p>
           </div>
-          <h2 className="text-lg sm:text-xl font-bold text-zinc-900 tracking-tight">
-            Why Enterprise Engineers Use In-Browser AI Rule Generation
-          </h2>
-          <p className="text-xs sm:text-sm text-zinc-600 leading-relaxed">
-            Cloud-based prompt builders require uploading proprietary project architectures and confidential guidelines to remote databases. <strong>AI Skill Studio executes 100% in local browser memory.</strong> No network requests transmit your prompt inputs, manifests, or generated rules. It operates offline, requires zero API keys, and creates zero telemetry footprint.
+
+          <ul className="grid md:grid-cols-2 md:gap-x-12">
+            {starters.map((starter) => (
+              <li key={starter.href} className="flex items-start justify-between gap-4 border-t border-zinc-200 py-4">
+                <div className="min-w-0 space-y-1">
+                  <Link
+                    href={starter.href}
+                    className="group inline-flex flex-wrap items-baseline gap-x-2 text-[15px] font-medium text-zinc-900 transition-colors hover:text-orange-700"
+                  >
+                    <span>{starter.route.techName}</span>
+                    <span className="text-[13px] font-normal text-zinc-500 group-hover:text-orange-700">
+                      {starter.formatLabel}
+                    </span>
+                  </Link>
+                  <p className="break-all font-mono text-xs text-zinc-500">{starter.path}</p>
+                  {starter.route.keyRules[0] ? (
+                    <p className="text-sm leading-6 text-zinc-600">
+                      <InlineCode text={starter.route.keyRules[0]} />
+                    </p>
+                  ) : null}
+                </div>
+                <CopyTextButton
+                  text={starter.content}
+                  ariaLabel={`Copy ${starter.route.techName} ${starter.formatLabel} file`}
+                />
+              </li>
+            ))}
+          </ul>
+
+          <p>
+            <Link
+              href="/skill"
+              className="inline-flex items-center gap-1.5 text-[15px] font-medium text-orange-600 transition-colors hover:text-orange-700"
+            >
+              Browse the full preset library
+              <ArrowRight className="h-4 w-4" aria-hidden="true" />
+            </Link>
           </p>
         </section>
 
-        {/* 5. Frequently Asked Questions (FAQ) Accordion */}
-        <section className="space-y-6">
-          <div className="space-y-2">
-            <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-zinc-900 flex items-center gap-2">
-              <HelpCircle className="w-5 h-5 text-orange-600" />
-              Frequently Asked Questions (FAQ)
-            </h2>
-            <p className="text-xs sm:text-sm text-zinc-600">
-              Everything you need to know about the 17 formats, 4-layer AI agent operating suite, and multi-agent governance.
-            </p>
-          </div>
-
-          <div className="space-y-3">
-            <details className="group border border-zinc-200 rounded-lg bg-white p-4 open:bg-zinc-50/50 transition-colors">
-              <summary className="font-medium text-sm text-zinc-900 cursor-pointer list-none flex items-center justify-between">
-                <span>How do PRD.md, DESIGN.md, TASK.md, and MEMORY.md govern autonomous agent teams?</span>
-                <span className="text-xs font-mono text-zinc-400 group-open:rotate-90 transition-transform">▸</span>
-              </summary>
-              <p className="mt-3 text-xs text-zinc-600 leading-relaxed">
-                These four documents form a complete autonomous multi-agent governance loop:
-                <br />• <strong>PRD.md</strong>: Authoritative product requirements, user personas, non-functional requirements, and roadmap milestones so agents build only what was specified.
-                <br />• <strong>DESIGN.md</strong>: Design system tokens, color palettes, single-canvas layout hierarchy, and negative UI guardrails preventing arbitrary styles or nested card traps.
-                <br />• <strong>TASK.md</strong>: Active sprint engine with task statuses, execution phases, mandatory test verification quality gates (<code className="font-mono">npm run validate-presets && npm run lint && npm run build</code>), and chronological agent session logs.
-                <br />• <strong>MEMORY.md</strong>: Persistent agent brain storing architectural decision records (ADRs), operational gotchas, and the mandatory 5-step execution loop across multi-agent sessions.
-              </p>
-            </details>
-
-            <details className="group border border-zinc-200 rounded-lg bg-white p-4 open:bg-zinc-50/50 transition-colors">
-              <summary className="font-medium text-sm text-zinc-900 cursor-pointer list-none flex items-center justify-between">
-                <span>How do the circular info (i) badges explain how to edit each section?</span>
-                <span className="text-xs font-mono text-zinc-400 group-open:rotate-90 transition-transform">▸</span>
-              </summary>
-              <p className="mt-3 text-xs text-zinc-600 leading-relaxed">
-                Every section card and input field across all 17 formats features a small circular info <span className="inline-flex items-center justify-center w-3.5 h-3.5 rounded-full bg-zinc-100 text-zinc-600 font-mono text-[9px] font-bold border border-zinc-300">i</span> badge. Hovering or clicking reveals an interactive guidance popover with a concise explanation of what the section controls, step-by-step editing instructions, and practical copy-pasteable syntax examples. This eliminates confusing colored tags and makes customizing any rulebook effortless.
-              </p>
-            </details>
-
-            <details className="group border border-zinc-200 rounded-lg bg-white p-4 open:bg-zinc-50/50 transition-colors">
-              <summary className="font-medium text-sm text-zinc-900 cursor-pointer list-none flex items-center justify-between">
-                <span>Why do AI agents need .cursorignore and .claudeignore alongside rules?</span>
-                <span className="text-xs font-mono text-zinc-400 group-open:rotate-90 transition-transform">▸</span>
-              </summary>
-              <p className="mt-3 text-xs text-zinc-600 leading-relaxed">
-                Rules files tell agents <em>how</em> to write code, but without ignore shields, agents scan massive lockfiles (<code className="font-mono">package-lock.json</code>), build caches, and sensitive environment variables (<code className="font-mono">.env</code>). This wastes 50,000+ context tokens and leaks credentials into LLM queries. Context shields keep reasoning focused strictly on application code.
-              </p>
-            </details>
-
-            <details className="group border border-zinc-200 rounded-lg bg-white p-4 open:bg-zinc-50/50 transition-colors">
-              <summary className="font-medium text-sm text-zinc-900 cursor-pointer list-none flex items-center justify-between">
-                <span>What is the difference between Cursor .mdc rules and legacy .cursorrules?</span>
-                <span className="text-xs font-mono text-zinc-400 group-open:rotate-90 transition-transform">▸</span>
-              </summary>
-              <p className="mt-3 text-xs text-zinc-600 leading-relaxed">
-                The legacy <code className="font-mono">.cursorrules</code> file is a single monolithic file loaded on every AI interaction, rapidly consuming context tokens. Modern Cursor Project Rules (<code className="font-mono">.cursor/rules/*.mdc</code>) allow modular rulebooks with file glob patterns (e.g. <code className="font-mono">src/components/**/*.tsx</code>) and <code className="font-mono">alwaysApply: false</code>, so rules attach only when relevant code is being modified.
-              </p>
-            </details>
-
-            <details className="group border border-zinc-200 rounded-lg bg-white p-4 open:bg-zinc-50/50 transition-colors">
-              <summary className="font-medium text-sm text-zinc-900 cursor-pointer list-none flex items-center justify-between">
-                <span>What role do llms.txt and ARCHITECTURE.md play?</span>
-                <span className="text-xs font-mono text-zinc-400 group-open:rotate-90 transition-transform">▸</span>
-              </summary>
-              <p className="mt-3 text-xs text-zinc-600 leading-relaxed">
-                <code className="font-mono">llms.txt</code> is an open standard providing a concise, machine-readable index of your codebase for LLMs. <code className="font-mono">ARCHITECTURE.md</code> defines system invariants, state machines, and non-negotiable architectural boundaries. Together, they prevent AI assistants from introducing architectural drift or reinventing existing services.
-              </p>
-            </details>
-
-            <details className="group border border-zinc-200 rounded-lg bg-white p-4 open:bg-zinc-50/50 transition-colors">
-              <summary className="font-medium text-sm text-zinc-900 cursor-pointer list-none flex items-center justify-between">
-                <span>Where should the 17-format files be placed in my repository?</span>
-                <span className="text-xs font-mono text-zinc-400 group-open:rotate-90 transition-transform">▸</span>
-              </summary>
-              <p className="mt-3 text-xs text-zinc-600 leading-relaxed">
-                Exporting the AI Kit ZIP automatically arranges all files:
-                <br />• Cursor rules: <code className="font-mono">.cursor/rules/&lt;name&gt;.mdc</code>
-                <br />• Claude skills: <code className="font-mono">.claude/skills/&lt;name&gt;/SKILL.md</code>
-                <br />• Project rules: <code className="font-mono">CLAUDE.md</code> and <code className="font-mono">AGENTS.md</code> at repo root
-                <br />• Governance suite: <code className="font-mono">PRD.md</code>, <code className="font-mono">DESIGN.md</code>, <code className="font-mono">TASK.md</code>, and <code className="font-mono">MEMORY.md</code> at repo root
-                <br />• Context shields: <code className="font-mono">.cursorignore</code> and <code className="font-mono">.claudeignore</code> at repo root
-                <br />• Specifications: <code className="font-mono">llms.txt</code> and <code className="font-mono">ARCHITECTURE.md</code> at repo root
-                <br />• Runtime MCP config: <code className="font-mono">claude.json</code> at repo root or merged into Claude Desktop config
-                <br />• Alternate IDEs: Windsurf (<code className="font-mono">.windsurf/rules/</code>), Copilot (<code className="font-mono">.github/copilot-instructions.md</code>), OpenAI &amp; Gemini (<code className="font-mono">prompts/</code>)
-              </p>
-            </details>
-
-            <details className="group border border-zinc-200 rounded-lg bg-white p-4 open:bg-zinc-50/50 transition-colors">
-              <summary className="font-medium text-sm text-zinc-900 cursor-pointer list-none flex items-center justify-between">
-                <span>How can I scaffold all 17 files using the CLI?</span>
-                <span className="text-xs font-mono text-zinc-400 group-open:rotate-90 transition-transform">▸</span>
-              </summary>
-              <p className="mt-3 text-xs text-zinc-600 leading-relaxed">
-                Run <code className="font-mono bg-zinc-100 px-1 py-0.5 rounded text-zinc-800">npx devscratchpad init</code> in your terminal. It installs the universal 17-file 4-layer suite into your repository with zero setup, completely offline.
-              </p>
-            </details>
-
-            <details className="group border border-zinc-200 rounded-lg bg-white p-4 open:bg-zinc-50/50 transition-colors">
-              <summary className="font-medium text-sm text-zinc-900 cursor-pointer list-none flex items-center justify-between">
-                <span>How can I get support or request custom AI skill presets?</span>
-                <span className="text-xs font-mono text-zinc-400 group-open:rotate-90 transition-transform">▸</span>
-              </summary>
-              <p className="mt-3 text-xs text-zinc-600 leading-relaxed">
-                If you encounter any issues, need assistance configuring multi-agent governance, or want custom presets tailored for your engineering team, copy or email our support team directly at{" "}
-                <code className="text-zinc-900 bg-zinc-100 px-1.5 py-0.5 rounded font-mono text-[11px] font-semibold border border-zinc-200 break-all">
-                  support@devscratchpad.tech
-                </code>
-                .
-              </p>
-            </details>
+        {/* 4. FAQ (text shared with the FAQPage JSON-LD in page.tsx; format hubs prepend their own questions) */}
+        <section id="faq" aria-labelledby="faq-heading" className="scroll-mt-24 space-y-6">
+          <h2 id="faq-heading" className={h2Class}>
+            Frequently asked questions
+          </h2>
+          <div className="border-b border-zinc-200">
+            {[...formatFaqs, ...STUDIO_FAQS].map((faq) => (
+              <details key={faq.question} className="group border-t border-zinc-200">
+                <summary className="flex cursor-pointer list-none items-center justify-between gap-4 py-4 [&::-webkit-details-marker]:hidden">
+                  <h3 className="text-[15px] font-medium text-zinc-900 group-hover:text-orange-700">
+                    <InlineCode text={faq.question} />
+                  </h3>
+                  <ChevronDown
+                    className="h-4 w-4 shrink-0 text-zinc-400 transition-transform group-open:rotate-180"
+                    aria-hidden="true"
+                  />
+                </summary>
+                <p className="max-w-3xl pb-5 text-[15px] leading-7 text-zinc-600">
+                  <InlineCode text={faq.answer} />
+                </p>
+              </details>
+            ))}
           </div>
         </section>
 
-        {/* 6. Contextual Link to Blog Guide */}
-        <section className="border border-zinc-200 rounded-lg p-6 bg-gradient-to-r from-zinc-50 to-white flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div className="space-y-1">
-            <h4 className="font-semibold text-zinc-900 text-sm">
-              Want a comprehensive deep dive into AI agent architecture?
-            </h4>
-            <p className="text-xs text-zinc-500">
-              Read our full engineering guide on Claude Code skills, Cursor rules best practices, and multi-agent coordination.
-            </p>
-          </div>
-          <Link
-            href="/blog/claude-code-skills-cursor-rules-guide"
-            className="inline-flex items-center gap-1.5 text-xs font-semibold text-orange-600 hover:text-orange-700 transition-colors shrink-0"
-          >
-            <span>Read Complete Guide</span>
-            <ArrowRight className="w-3.5 h-3.5" />
-          </Link>
-        </section>
-
-        {/* 7. Dedicated Developer Support & Assistance */}
-        <StudioSupportSection />
-
+        {/* 5. Privacy, support and further reading */}
+        <footer className="space-y-4 border-t border-zinc-200 pt-8">
+          <StudioSupportSection />
+          <p className="text-[15px] leading-7 text-zinc-600">
+            Want the longer version? Read{" "}
+            <Link
+              href="/blog/claude-code-skills-cursor-rules-guide"
+              className="font-medium text-orange-600 underline decoration-orange-600/30 underline-offset-4 transition-colors hover:text-orange-700 hover:decoration-orange-700"
+            >
+              the guide to Claude Code skills, Cursor rules, CLAUDE.md and MCP
+            </Link>
+            .
+          </p>
+        </footer>
       </div>
     </article>
   );

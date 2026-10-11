@@ -27,6 +27,8 @@ export interface InspectorConversions {
   byteLength: number;
   charLength: number;
   detectedFormat: DetectedFormat;
+  /** Set when the input could not be decoded as the detected / forced format (conversions then fall back to UTF-8 text). */
+  error?: string;
 }
 
 // Convert bytes to Base64 (Standard)
@@ -41,7 +43,8 @@ export function bytesToBase64(bytes: Uint8Array): string {
 
 // Convert Base64 to bytes
 export function base64ToBytes(b64: string): Uint8Array {
-  let normalized = b64.trim().replace(/-/g, "+").replace(/_/g, "/");
+  // Whitespace is ignored so MIME-wrapped (76-column) Base64 decodes too.
+  let normalized = b64.replace(/\s/g, "").replace(/-/g, "+").replace(/_/g, "/");
   while (normalized.length % 4 !== 0) {
     normalized += "=";
   }
@@ -106,7 +109,11 @@ export function bytesToBinary(bytes: Uint8Array): string {
 
 // Convert Hex string (with or without spaces/delimiters) to bytes
 export function hexToBytes(hex: string): Uint8Array {
-  const cleaned = hex.replace(/[^0-9a-fA-F]/g, "");
+  // Separators (spaces, commas, colons, dashes) and 0x / \x prefixes are allowed; anything else is an error.
+  const cleaned = hex.replace(/0x|\\x/gi, "").replace(/[\s,:-]/g, "");
+  if (/[^0-9a-fA-F]/.test(cleaned)) {
+    throw new Error("Invalid hex string (unexpected non-hex characters)");
+  }
   if (cleaned.length % 2 !== 0) {
     throw new Error("Invalid hex string (must have an even number of hex digits)");
   }
@@ -166,7 +173,8 @@ export function detectFormat(input: string): DetectedFormat {
   // Check Base64
   const base64Clean = trimmed.replace(/\s/g, "");
   const isBase64 = /^[A-Za-z0-9+/]+={0,2}$/.test(base64Clean) && base64Clean.length % 4 === 0 && base64Clean.length >= 4;
-  const isBase64Url = /^[A-Za-z0-9_-]+={0,2}$/.test(base64Clean) && base64Clean.length % 4 === 0 && (base64Clean.includes("-") || base64Clean.includes("_"));
+  // URL-safe Base64 is usually unpadded, so any length except 4n+1 is accepted.
+  const isBase64Url = /^[A-Za-z0-9_-]+={0,2}$/.test(base64Clean) && base64Clean.length % 4 !== 1 && (base64Clean.includes("-") || base64Clean.includes("_"));
 
   if (isBase64Url) return "base64-url";
   if (isBase64) {
@@ -259,6 +267,7 @@ export function inspectAndConvert(
   const dataUrlInfo = parseDataUrl(input);
 
   let rawBytes: Uint8Array;
+  let error: string | undefined;
 
   try {
     if (format === "data-url" && dataUrlInfo.rawBase64) {
@@ -276,8 +285,9 @@ export function inspectAndConvert(
       // Default plain text (UTF-8)
       rawBytes = new TextEncoder().encode(input);
     }
-  } catch {
-    // Fallback on error: treat as plain text UTF-8
+  } catch (err) {
+    // Fallback on error: treat as plain text UTF-8, but report why decoding failed
+    error = `Not valid ${format.replace("-", " ")}: ${err instanceof Error ? err.message : String(err)}`;
     rawBytes = new TextEncoder().encode(input);
   }
 
@@ -308,5 +318,6 @@ export function inspectAndConvert(
     byteLength: rawBytes.byteLength,
     charLength: plainText.length,
     detectedFormat: format,
+    error,
   };
 }

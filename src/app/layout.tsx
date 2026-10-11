@@ -57,13 +57,13 @@ export const metadata: Metadata = {
     url: SITE_URL,
     title: "DevScratchpad — Free Offline Developer Tools & AI Skill Studio",
     description:
-      "Massive collection of 28 free offline developer tools across 5 categories and AI Skill Studio supporting 13 formats and 5-layer AI agent suite. 100% client-side privacy, zero server transmission.",
+      "28 free developer tools that run in your browser, plus AI Skill Studio for CLAUDE.md, AGENTS.md, Cursor rules and agent skills. Nothing you paste is uploaded.",
     images: [
       {
         url: `${SITE_URL}/opengraph-image`,
         width: 1200,
         height: 630,
-        alt: "DevScratchpad — Free Offline Developer Tools & AI Skill Studio (13 Formats, 5-Layer Agent Suite, 28 Tools)",
+        alt: "DevScratchpad: free developer tools and AI Skill Studio",
       },
     ],
   },
@@ -71,13 +71,13 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "DevScratchpad — Free Offline Developer Tools & AI Skill Studio",
     description:
-      "28 free offline developer tools across 5 categories and AI Skill Studio supporting 13 formats and 5-layer AI agent suite. Zero server transmission.",
+      "28 free developer tools that run in your browser, plus AI Skill Studio for CLAUDE.md, AGENTS.md, Cursor rules and agent skills. Nothing you paste is uploaded.",
     images: [
       {
         url: `${SITE_URL}/opengraph-image`,
         width: 1200,
         height: 630,
-        alt: "DevScratchpad — Free Offline Developer Tools & AI Skill Studio (13 Formats, 5-Layer Agent Suite, 28 Tools)",
+        alt: "DevScratchpad: free developer tools and AI Skill Studio",
       },
     ],
   },

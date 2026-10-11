@@ -1,30 +1,46 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useMemo, type KeyboardEvent, type ReactNode } from "react";
 import {
   generatePasswordHash,
   verifyPasswordHash,
   detectHashAlgorithm,
   generateRandomSalt,
+  BCRYPT_MAX_BYTES,
   type PasswordAlgorithm,
   type HashGenerationResult,
   type HashVerificationResult,
 } from "@/lib/tools/password-hash";
-import { ShareButton } from "@/components/ShareButton";
-import { EmbedButton } from "@/components/EmbedButton";
-import { ExportImageButton } from "@/components/ExportImageButton";
+import { ShareMenu } from "@/components/ShareMenu";
 import {
-  Copy,
-  Check,
   RefreshCw,
   Eye,
   EyeOff,
-  X,
   AlertCircle,
+  Trash2,
+  Loader2,
+  ShieldCheck,
+  ShieldX,
+  KeyRound,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { VerificationBadge } from "@/components/ui/VerificationBadge";
 import { addSnapshot } from "@/lib/storage";
+import {
+  ToolHeader,
+  PaneBar,
+  btnPrimary,
+  btnSecondary,
+  btnGhost,
+  btnIcon,
+  inputBase,
+  segmentTrack,
+  segmentBtn,
+  chipBtn,
+  iconProps,
+  ICON_STROKE,
+} from "@/components/tools/ToolChrome";
+import { getToolIcon } from "@/components/layout/toolIcons";
+import { useCopyFlash, CopyIconButton, StatusPill } from "@/components/tools/security/securityUi";
 
 interface PasswordHashToolProps {
   onValidationChange: (isValid: boolean, error?: string) => void;
@@ -66,35 +82,65 @@ const ALGORITHMS: { id: PasswordAlgorithm; name: string; tag: string; descriptio
   },
 ];
 
+const SAMPLE_PASSWORD = "CorrectHorseBatteryStaple!2026";
+// bcryptjs-generated $2b$ hash of SAMPLE_PASSWORD (cost 10), so the verify sample reports a match.
+const SAMPLE_HASH = "$2b$10$N7pwhXq2cppNAoMs/jZcCuk6q7ax/3o0eVNZveDi8bzDQs71eTcPy";
+
+const labelClass = "text-xs font-medium text-zinc-700";
+const pillIcon = "size-3.5 shrink-0";
+
 export function PasswordHashTool({
   onValidationChange,
   onStatsChange,
   onLogHistory,
+  restoredInput,
 }: PasswordHashToolProps) {
   const [mode, setMode] = useState<"generate" | "verify">("generate");
 
   // Generator State
   const [algo, setAlgo] = useState<PasswordAlgorithm>("bcrypt");
-  const [password, setPassword] = useState<string>("CorrectHorseBatteryStaple!2026");
+  const [password, setPassword] = useState<string>(SAMPLE_PASSWORD);
   const [showPassword, setShowPassword] = useState(false);
   const [bcryptRounds, setBcryptRounds] = useState(10);
   const [pbkdf2Iterations, setPbkdf2Iterations] = useState(100000);
   const [salt, setSalt] = useState<string>(() => generateRandomSalt(16));
-  const [genResult, setGenResult] = useState<HashGenerationResult | null>(null);
-  const [, setIsGenerating] = useState(false);
+  const [genResult, setGenResult] = useState<(HashGenerationResult & { key: string }) | null>(null);
+  const [genError, setGenError] = useState<string | null>(null);
+  const [isBusy, setIsBusy] = useState(false);
 
   // Verifier State
-  const [verifyHash, setVerifyHash] = useState<string>(
-    "$2b$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy"
-  );
-  const [verifyPassword, setVerifyPassword] = useState<string>("CorrectHorseBatteryStaple!2026");
-  const [verifyResult, setVerifyResult] = useState<HashVerificationResult | null>(null);
+  const [verifyHash, setVerifyHash] = useState<string>(SAMPLE_HASH);
+  const [verifyPassword, setVerifyPassword] = useState<string>(SAMPLE_PASSWORD);
+  const [verifyResult, setVerifyResult] = useState<(HashVerificationResult & { key: string }) | null>(null);
 
-  const [copiedKey, setCopiedKey] = useState<string | null>(null);
+  const { copiedKey, copy } = useCopyFlash();
+  // Ignore results from an older run if the user fires again before it finishes.
+  const runId = useRef(0);
 
-  // Generate Hash
+  const genKey = `${algo}\u0000${password}\u0000${algo === "bcrypt" ? bcryptRounds : pbkdf2Iterations}\u0000${algo === "bcrypt" ? "" : salt}`;
+  const verifyKey = `${verifyHash}\u0000${verifyPassword}`;
+  const genStale = genResult !== null && genResult.key !== genKey;
+  const verifyStale = verifyResult !== null && verifyResult.key !== verifyKey;
+  const passwordBytes = useMemo(() => new TextEncoder().encode(password).length, [password]);
+  const detected = detectHashAlgorithm(verifyHash);
+
+  // Restore from history / share link: a shared hash string opens the verifier.
+  useEffect(() => {
+    if (restoredInput && restoredInput.trim().startsWith("$")) {
+      /* eslint-disable react-hooks/set-state-in-effect */
+      setMode("verify");
+      setVerifyHash(restoredInput.trim());
+      setVerifyPassword("");
+      /* eslint-enable react-hooks/set-state-in-effect */
+    }
+  }, [restoredInput]);
+
+  // Generate Hash (heavy libraries are lazy-loaded inside the lib on first use)
   const handleGenerate = async () => {
-    setIsGenerating(true);
+    const id = ++runId.current;
+    const key = genKey;
+    setIsBusy(true);
+    setGenError(null);
     const start = performance.now();
     try {
       const res = await generatePasswordHash({
@@ -104,39 +150,43 @@ export function PasswordHashTool({
         pbkdf2Iterations,
         salt,
       });
-      const end = performance.now();
-      setGenResult(res);
+      if (id !== runId.current) return;
+      setGenResult({ ...res, key });
       onValidationChange(true);
-      onStatsChange(password.length, Math.round((end - start) * 10) / 10);
+      onStatsChange(password.length, Math.round((performance.now() - start) * 10) / 10);
       onLogHistory?.(`Hashed password with ${algo}`);
-    } catch (err: any) {
-      onValidationChange(false, err.message);
+    } catch (err: unknown) {
+      if (id !== runId.current) return;
+      const message = err instanceof Error ? err.message : "Hash generation failed";
+      setGenError(message);
+      onValidationChange(false, message);
     } finally {
-      setIsGenerating(false);
+      if (id === runId.current) setIsBusy(false);
     }
   };
 
-  useEffect(() => {
-    if (mode === "generate") {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      handleGenerate();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [algo, password, bcryptRounds, pbkdf2Iterations, salt, mode]);
-
   // Verify Hash
-  useEffect(() => {
-    if (mode === "verify") {
-      const start = performance.now();
-      verifyPasswordHash(verifyPassword, verifyHash).then((res) => {
-        const end = performance.now();
-        setVerifyResult(res);
-        onValidationChange(!res.error, res.error);
-        onStatsChange(verifyHash.length, Math.round((end - start) * 10) / 10);
-      });
+  const handleVerify = async () => {
+    const id = ++runId.current;
+    const key = verifyKey;
+    setIsBusy(true);
+    const start = performance.now();
+    try {
+      const res = await verifyPasswordHash(verifyPassword, verifyHash);
+      if (id !== runId.current) return;
+      setVerifyResult({ ...res, key });
+      onValidationChange(!res.error, res.error);
+      onStatsChange(verifyHash.length, Math.round((performance.now() - start) * 10) / 10);
+    } finally {
+      if (id === runId.current) setIsBusy(false);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [verifyHash, verifyPassword, mode]);
+  };
+
+  const runAction = () => {
+    if (isBusy) return;
+    if (mode === "generate") void handleGenerate();
+    else void handleVerify();
+  };
 
   // Save workspace snapshot
   useEffect(() => {
@@ -151,328 +201,357 @@ export function PasswordHashTool({
     return () => window.removeEventListener("save-workspace", handleSave);
   }, [mode, algo, password, genResult, verifyHash, verifyResult]);
 
-  const handleCopy = (text: string, key: string) => {
-    if (!text) return;
-    navigator.clipboard.writeText(text);
-    setCopiedKey(key);
-    setTimeout(() => setCopiedKey(null), 1500);
+  const handleClear = () => {
+    runId.current++;
+    setIsBusy(false);
+    if (mode === "generate") {
+      setPassword("");
+      setGenResult(null);
+      setGenError(null);
+    } else {
+      setVerifyHash("");
+      setVerifyPassword("");
+      setVerifyResult(null);
+    }
   };
 
-  return (
-    <div className="flex flex-col h-full bg-white overflow-y-auto relative">
-      {/* Top Controls Bar (Unified Clean Header) */}
-      <div className="h-10 border-b border-neutral-200 px-4 flex items-center justify-between gap-4 shrink-0 bg-white">
-        <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar">
-          <div className="bg-neutral-100 p-0.5 rounded-md inline-flex gap-0.5 border border-neutral-200 shadow-sm">
-            <button
-              onClick={() => setMode("generate")}
-              className={cn(
-                "text-[11px] px-3 py-1 rounded transition-all font-medium",
-                mode === "generate" ? "bg-white text-neutral-900 shadow-xs" : "text-neutral-500 hover:text-neutral-900"
-              )}
-            >
-              Generate Hash
-            </button>
-            <button
-              onClick={() => setMode("verify")}
-              className={cn(
-                "text-[11px] px-3 py-1 rounded transition-all font-medium",
-                mode === "verify" ? "bg-white text-neutral-900 shadow-xs" : "text-neutral-500 hover:text-neutral-900"
-              )}
-            >
-              Verify Password Against Hash
-            </button>
-          </div>
-        </div>
-        <div className="flex items-center gap-1.5">
-          <ShareButton toolSlug="password-hash" data={genResult?.hash || ""} />
-          <EmbedButton toolSlug="password-hash" data={genResult?.hash || ""} />
-          <ExportImageButton code={genResult?.hash || ""} language="text" />
-        </div>
-      </div>
+  const switchMode = (next: "generate" | "verify") => {
+    runId.current++;
+    setIsBusy(false);
+    setMode(next);
+  };
 
-      <div className="flex-1 min-h-[520px] grid grid-cols-1 lg:grid-cols-2 divide-y lg:divide-y-0 lg:divide-x divide-neutral-200 overflow-hidden bg-neutral-50/30" id="password-hash-export">
-        
-        {/* Left Pane: Configuration & Input */}
-        <div className="flex flex-col h-full bg-white relative min-h-0">
-          <div className="h-10 border-b border-neutral-200 bg-neutral-50/50 flex items-center justify-between px-4 shrink-0">
-            <span className="text-xs font-semibold text-neutral-800 tracking-wide font-sans">
-              {mode === "generate" ? "Hash Configuration" : "Verification Inputs"}
-            </span>
+  const onEnter = (e: KeyboardEvent) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      runAction();
+    }
+  };
+
+  const selectedAlgo = ALGORITHMS.find((a) => a.id === algo) ?? ALGORITHMS[0];
+  const canRun = mode === "generate" ? password.length > 0 : verifyPassword.length > 0 && verifyHash.trim().length > 0;
+
+  const passwordField = (value: string, onChange: (v: string) => void, label: string) => (
+    <div className="relative">
+      <input
+        type={showPassword ? "text" : "password"}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        onKeyDown={onEnter}
+        placeholder="Enter password…"
+        aria-label={label}
+        autoComplete="off"
+        spellCheck={false}
+        className={cn(inputBase, "w-full pr-11 font-mono")}
+      />
+      <button
+        type="button"
+        onClick={() => setShowPassword(!showPassword)}
+        className={cn(btnIcon, "absolute right-0.5 top-1/2 -translate-y-1/2 md:right-0")}
+        title={showPassword ? "Hide password" : "Show password"}
+        aria-label={showPassword ? "Hide password" : "Show password"}
+      >
+        {showPassword ? <EyeOff {...iconProps} /> : <Eye {...iconProps} />}
+      </button>
+    </div>
+  );
+
+  return (
+    <div className="flex h-full w-full flex-col overflow-y-auto overflow-x-hidden bg-white md:overflow-hidden">
+      {/* Top Controls Bar (Unified Clean Header) */}
+      <ToolHeader
+        icon={getToolIcon("password-hash")}
+        title="Password Hash"
+        utilities={
+          <ShareMenu
+            toolSlug="password-hash"
+            data={mode === "generate" ? genResult?.hash ?? "" : verifyHash}
+            imageCode={genResult?.hash ?? ""}
+            imageLanguage="plaintext"
+          />
+        }
+        options={
+          <div className={segmentTrack} role="group" aria-label="Mode">
+            <button type="button" onClick={() => switchMode("generate")} aria-pressed={mode === "generate"} className={segmentBtn(mode === "generate")}>
+              Generate
+            </button>
+            <button type="button" onClick={() => switchMode("verify")} aria-pressed={mode === "verify"} className={segmentBtn(mode === "verify")}>
+              Verify
+            </button>
           </div>
-          
-          <div className="flex-1 overflow-y-auto p-4 relative space-y-4">
+        }
+        actions={
+          <>
+            <button type="button" onClick={handleClear} className={btnSecondary} title="Clear inputs">
+              <Trash2 {...iconProps} />
+              <span className="hidden sm:inline">Clear</span>
+            </button>
+            <button type="button" onClick={runAction} disabled={!canRun || isBusy} className={btnPrimary} title="Run (Enter)">
+              {isBusy ? <Loader2 {...iconProps} className="size-4 shrink-0 animate-spin" /> : <KeyRound {...iconProps} />}
+              <span>{mode === "generate" ? "Generate" : "Verify"}</span>
+            </button>
+          </>
+        }
+      />
+
+      <div className="flex flex-1 flex-col md:min-h-0 md:flex-row" id="password-hash-export">
+        {/* Left Pane: Configuration & Input */}
+        <section className="flex shrink-0 flex-col border-b border-zinc-200 md:min-h-0 md:w-1/2 md:shrink md:overflow-y-auto md:border-b-0 md:border-r">
+          <PaneBar label={mode === "generate" ? "Hash configuration" : "Verification inputs"} />
+
+          <div className="flex flex-col gap-5 p-3 md:p-4">
             {mode === "generate" ? (
               <>
                 {/* Algorithm Selector */}
-                <div className="space-y-2">
-                  <label className="text-[11px] font-semibold text-neutral-900 uppercase tracking-wider block">
-                    Hashing Algorithm
-                  </label>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-2">
-                    {ALGORITHMS.map((a) => {
-                      const isSelected = algo === a.id;
-                      return (
-                        <button
-                          key={a.id}
-                          onClick={() => setAlgo(a.id)}
-                          className={cn(
-                            "p-2 rounded-md border text-left transition-all flex flex-col gap-1 focus:outline-none",
-                            isSelected
-                              ? "border-neutral-900 bg-neutral-50 font-medium shadow-sm"
-                              : "border-neutral-200 bg-white hover:border-neutral-400"
-                          )}
-                        >
-                          <span className={cn("text-xs w-full block", isSelected ? "text-neutral-900 font-semibold" : "text-neutral-700")}>{a.name}</span>
-                          <span className="text-[9px] text-neutral-500 bg-neutral-100 border border-neutral-200/60 px-1.5 py-0.5 rounded w-fit">{a.tag}</span>
-                        </button>
-                      );
-                    })}
+                <div className="flex flex-col gap-2">
+                  <span className={labelClass}>Algorithm</span>
+                  <div className="flex flex-wrap gap-2" role="group" aria-label="Hashing algorithm">
+                    {ALGORITHMS.map((a) => (
+                      <button
+                        key={a.id}
+                        type="button"
+                        onClick={() => setAlgo(a.id)}
+                        aria-pressed={algo === a.id}
+                        className={cn(chipBtn(algo === a.id), "h-10 md:h-8")}
+                        title={a.tag}
+                      >
+                        {a.name}
+                      </button>
+                    ))}
                   </div>
+                  <p className="text-xs text-zinc-500">
+                    <span className="font-medium text-zinc-700">{selectedAlgo.tag}.</span> {selectedAlgo.description}
+                  </p>
                 </div>
 
                 {/* Password Input */}
-                <div className="space-y-2">
-                  <label className="text-[11px] font-semibold text-neutral-900 uppercase tracking-wider block">
-                    Plaintext Password
-                  </label>
-                  <div className="relative">
-                    <input
-                      type={showPassword ? "text" : "password"}
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      placeholder="Enter password to hash..."
-                      className="w-full h-9 pl-3 pr-10 bg-white border border-neutral-200 rounded-md text-sm font-mono text-neutral-900 focus:outline-none focus:border-neutral-400 focus:ring-1 focus:ring-neutral-400 placeholder:text-neutral-400 transition-shadow"
-                    />
-                    <button
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-neutral-400 hover:text-neutral-700 transition-colors"
-                      title={showPassword ? "Hide password" : "Show password"}
-                    >
-                      {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                    </button>
-                  </div>
-                </div>
-
-                {/* Parameters Box */}
-                <div className="bg-neutral-50 p-3 rounded-md border border-neutral-200 mt-3 space-y-4">
-                  {algo === "bcrypt" && (
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between">
-                        <span className="text-[11px] font-semibold text-neutral-800 uppercase tracking-wider">Bcrypt Cost Factor</span>
-                        <span className="font-mono text-xs font-bold text-neutral-900">{bcryptRounds}</span>
-                      </div>
-                      <input
-                        type="range"
-                        min="4"
-                        max="14"
-                        value={bcryptRounds}
-                        onChange={(e) => setBcryptRounds(parseInt(e.target.value, 10))}
-                        className="w-full accent-neutral-900 cursor-pointer"
-                      />
-                      <div className="flex justify-between text-[10px] text-neutral-500 font-medium">
-                        <span>Fast (4)</span>
-                        <span>OWASP Rec (10-12)</span>
-                        <span>Heavy (14)</span>
-                      </div>
-                    </div>
+                <label className="flex flex-col gap-2">
+                  <span className={labelClass}>Plaintext password</span>
+                  {passwordField(password, setPassword, "Plaintext password")}
+                  {algo === "bcrypt" && passwordBytes > BCRYPT_MAX_BYTES && (
+                    <span className="flex items-start gap-1.5 text-xs text-amber-700">
+                      <AlertCircle className="mt-px size-3.5 shrink-0" strokeWidth={ICON_STROKE} aria-hidden="true" />
+                      <span>
+                        Password is {passwordBytes} bytes. Bcrypt ignores everything after {BCRYPT_MAX_BYTES} bytes.
+                      </span>
+                    </span>
                   )}
+                </label>
 
-                  {(algo === "pbkdf2-sha256" || algo === "pbkdf2-sha512") && (
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between">
-                        <span className="text-[11px] font-semibold text-neutral-800 uppercase tracking-wider">Iterations</span>
-                        <span className="font-mono text-xs font-bold text-neutral-900">{pbkdf2Iterations.toLocaleString()}</span>
-                      </div>
-                      <input
-                        type="range"
-                        min="10000"
-                        max="600000"
-                        step="10000"
-                        value={pbkdf2Iterations}
-                        onChange={(e) => setPbkdf2Iterations(parseInt(e.target.value, 10))}
-                        className="w-full accent-neutral-900 cursor-pointer"
-                      />
-                      <div className="flex justify-between text-[10px] text-neutral-500 font-medium">
-                        <span>10k</span>
-                        <span>OWASP High (600k)</span>
-                      </div>
-                    </div>
-                  )}
-
-                  <div className="space-y-2">
+                {/* Parameters */}
+                {algo === "bcrypt" && (
+                  <div className="flex flex-col gap-1">
                     <div className="flex items-center justify-between">
-                      <span className="text-[11px] font-semibold text-neutral-800 uppercase tracking-wider">Cryptographic Salt</span>
-                      <button
-                        onClick={() => setSalt(generateRandomSalt(16))}
-                        className="text-[10px] text-neutral-500 hover:text-neutral-900 font-medium transition-colors flex items-center gap-1 bg-white border border-neutral-200 px-1.5 py-0.5 rounded shadow-sm"
-                      >
-                        <RefreshCw className="w-3 h-3" /> Generate New
+                      <span className={labelClass}>Cost factor</span>
+                      <span className="font-mono text-xs font-semibold tabular-nums text-zinc-900">{bcryptRounds}</span>
+                    </div>
+                    <input
+                      type="range"
+                      min="4"
+                      max="14"
+                      value={bcryptRounds}
+                      onChange={(e) => setBcryptRounds(parseInt(e.target.value, 10))}
+                      aria-label="Bcrypt cost factor"
+                      className="h-10 w-full cursor-pointer accent-zinc-900"
+                    />
+                    <div className="flex justify-between text-[11px] text-zinc-500">
+                      <span>Fast (4)</span>
+                      <span>OWASP 10–12</span>
+                      <span>Heavy (14)</span>
+                    </div>
+                    <p className="mt-2 text-xs text-zinc-500">Bcrypt generates its own random salt and embeds it in the hash.</p>
+                  </div>
+                )}
+
+                {(algo === "pbkdf2-sha256" || algo === "pbkdf2-sha512") && (
+                  <div className="flex flex-col gap-1">
+                    <div className="flex items-center justify-between">
+                      <span className={labelClass}>Iterations</span>
+                      <span className="font-mono text-xs font-semibold tabular-nums text-zinc-900">{pbkdf2Iterations.toLocaleString()}</span>
+                    </div>
+                    <input
+                      type="range"
+                      min="10000"
+                      max="600000"
+                      step="10000"
+                      value={pbkdf2Iterations}
+                      onChange={(e) => setPbkdf2Iterations(parseInt(e.target.value, 10))}
+                      aria-label="PBKDF2 iterations"
+                      className="h-10 w-full cursor-pointer accent-zinc-900"
+                    />
+                    <div className="flex justify-between text-[11px] text-zinc-500">
+                      <span>10k</span>
+                      <span>OWASP High (600k)</span>
+                    </div>
+                  </div>
+                )}
+
+                {algo !== "bcrypt" && (
+                  <div className="flex flex-col gap-2">
+                    <div className="flex items-center justify-between">
+                      <span className={labelClass}>Salt</span>
+                      <button type="button" onClick={() => setSalt(generateRandomSalt(16))} className={cn(btnGhost, "-my-1.5 -mr-1.5")}>
+                        <RefreshCw {...iconProps} />
+                        <span>New salt</span>
                       </button>
                     </div>
                     <input
                       type="text"
                       value={salt}
                       onChange={(e) => setSalt(e.target.value)}
-                      className="w-full h-8 px-2.5 border border-neutral-200 bg-white rounded font-mono text-[11px] text-neutral-800 focus:outline-none focus:border-neutral-400 focus:ring-1 focus:ring-neutral-400"
+                      aria-label="Salt"
+                      spellCheck={false}
+                      className={cn(inputBase, "w-full font-mono")}
                     />
                   </div>
-                </div>
+                )}
               </>
             ) : (
               <>
                 {/* Verify Mode Left Pane */}
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <label className="text-[11px] font-semibold text-neutral-900 uppercase tracking-wider block">
-                        Existing Stored Hash String
-                      </label>
-                      <span className="text-[10px] font-mono text-neutral-500 font-medium bg-neutral-100 border border-neutral-200 px-1.5 py-0.5 rounded">
-                        {detectHashAlgorithm(verifyHash) || "Unknown"}
-                      </span>
-                    </div>
-                    <input
-                      type="text"
-                      value={verifyHash}
-                      onChange={(e) => setVerifyHash(e.target.value)}
-                      placeholder="Paste $2b$10$..., $argon2id$..., etc."
-                      className="w-full h-9 px-3 bg-white border border-neutral-200 rounded-md text-xs font-mono text-neutral-900 focus:outline-none focus:border-neutral-400 focus:ring-1 focus:ring-neutral-400 transition-shadow"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-[11px] font-semibold text-neutral-900 uppercase tracking-wider block">
-                      Candidate Password to Test
-                    </label>
-                    <div className="relative">
-                      <input
-                        type={showPassword ? "text" : "password"}
-                        value={verifyPassword}
-                        onChange={(e) => setVerifyPassword(e.target.value)}
-                        placeholder="Enter password..."
-                        className="w-full h-9 pl-3 pr-10 bg-white border border-neutral-200 rounded-md text-sm font-mono text-neutral-900 focus:outline-none focus:border-neutral-400 focus:ring-1 focus:ring-neutral-400 placeholder:text-neutral-400 transition-shadow"
-                      />
-                      <button
-                        onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-neutral-400 hover:text-neutral-700 transition-colors"
-                      >
-                        {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                      </button>
-                    </div>
-                  </div>
-                </div>
+                <label className="flex flex-col gap-2">
+                  <span className="flex items-center justify-between gap-2">
+                    <span className={labelClass}>Stored hash</span>
+                    <StatusPill tone={detected === "unknown" ? "neutral" : "strong"} className="h-5 font-mono">
+                      {detected}
+                    </StatusPill>
+                  </span>
+                  <textarea
+                    value={verifyHash}
+                    onChange={(e) => setVerifyHash(e.target.value)}
+                    onKeyDown={onEnter}
+                    rows={3}
+                    placeholder="Paste $2b$10$…, $argon2id$…, $pbkdf2-…, $scrypt$…"
+                    aria-label="Stored hash"
+                    spellCheck={false}
+                    className="min-h-20 w-full resize-y break-all rounded-md border border-zinc-200 bg-white px-3 py-2 font-mono text-[13px] text-zinc-900 transition-colors placeholder:text-zinc-400 hover:border-zinc-300 focus:border-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-900 md:text-xs"
+                  />
+                </label>
+                <label className="flex flex-col gap-2">
+                  <span className={labelClass}>Candidate password</span>
+                  {passwordField(verifyPassword, setVerifyPassword, "Candidate password")}
+                </label>
               </>
             )}
           </div>
-        </div>
+        </section>
 
         {/* Right Pane: Output */}
-        <div className="flex flex-col h-full bg-neutral-50/30 min-h-0">
-          <div className="h-10 border-b border-neutral-200 bg-neutral-50/50 flex items-center justify-between px-4 shrink-0">
-            <div className="flex items-center gap-2.5">
-              <span className="text-xs font-semibold text-neutral-800 tracking-wide font-sans">
-                {mode === "generate" ? "Generated Hash Output" : "Verification Status"}
-              </span>
-              {mode === "verify" && (
-                <VerificationBadge 
-                  status={!verifyResult ? 'idle' : verifyResult.isMatch ? 'success' : 'error'}
-                  text={!verifyResult ? 'Waiting for input' : verifyResult.isMatch ? 'Match' : 'Mismatch'}
-                />
-              )}
-            </div>
-            {mode === "generate" && genResult && (
-              <button
-                onClick={() => handleCopy(genResult.hash, "gen_hash")}
-                className="flex items-center gap-1.5 px-2.5 py-1 rounded border border-neutral-200 bg-white hover:bg-neutral-50 text-neutral-700 text-[11px] font-medium transition-colors shadow-sm"
-              >
-                {copiedKey === "gen_hash" ? <Check className="w-3.5 h-3.5 text-neutral-900" /> : <Copy className="w-3.5 h-3.5" />}
-                <span>Copy Hash</span>
-              </button>
-            )}
-          </div>
-          
-          <div className="flex-1 overflow-y-auto p-4 relative flex flex-col gap-4">
-            {mode === "generate" ? (
-              <>
-                <div className="bg-white border border-neutral-200 rounded-lg shadow-sm flex flex-col">
-                   <div className="p-3.5 bg-neutral-50 border-b border-neutral-200 font-mono text-xs text-neutral-900 break-all select-all whitespace-pre-wrap rounded-t-lg">
-                      {genResult?.hash || "Computing hash..."}
-                   </div>
-                   <div className="grid grid-cols-3 divide-x divide-neutral-200 bg-white rounded-b-lg">
-                      <div className="p-2.5 flex flex-col gap-0.5">
-                         <span className="text-[10px] text-neutral-500 uppercase tracking-wider font-semibold">Time</span>
-                         <span className="font-mono text-xs font-semibold text-neutral-800">{genResult?.executionMs ?? 0} ms</span>
-                      </div>
-                      <div className="p-2.5 flex flex-col gap-0.5">
-                         <span className="text-[10px] text-neutral-500 uppercase tracking-wider font-semibold">Length</span>
-                         <span className="font-mono text-xs font-semibold text-neutral-800">{genResult?.hash.length ?? 0} chars</span>
-                      </div>
-                      <div className="p-2.5 flex flex-col gap-0.5">
-                         <span className="text-[10px] text-neutral-500 uppercase tracking-wider font-semibold">Status</span>
-                         <span className="font-sans text-xs font-semibold text-neutral-800">Production Ready</span>
-                      </div>
-                   </div>
+        <section className="flex min-w-0 flex-1 flex-col md:min-h-0 md:overflow-y-auto">
+          {mode === "generate" ? (
+            <>
+              <PaneBar label="Generated hash" className="pr-0.5 md:pr-0.5">
+                {genStale && (
+                  <StatusPill tone="warning" className="mr-2">
+                    Inputs changed
+                  </StatusPill>
+                )}
+              </PaneBar>
+              {genError ? (
+                <p className="flex items-start gap-1.5 p-3 text-xs text-red-600 md:p-4">
+                  <AlertCircle className="mt-px size-3.5 shrink-0" strokeWidth={ICON_STROKE} aria-hidden="true" />
+                  <span className="break-words">{genError}</span>
+                </p>
+              ) : genResult ? (
+                <div className="divide-y divide-zinc-200 border-b border-zinc-200">
+                  <div className="flex items-start gap-3 py-2.5 pl-3 pr-1.5 md:pl-4 md:pr-2">
+                    <p
+                      className={cn(
+                        "min-w-0 flex-1 select-all break-all py-1.5 font-mono text-[13px] leading-relaxed text-zinc-900",
+                        genStale && "opacity-50"
+                      )}
+                    >
+                      {genResult.hash}
+                    </p>
+                    <CopyIconButton copied={copiedKey === "gen_hash"} onClick={() => copy(genResult.hash, "gen_hash")} label="Copy hash" />
+                  </div>
+                  <ResultRow label="Algorithm" value={ALGORITHMS.find((a) => a.id === genResult.algorithm)?.name ?? genResult.algorithm} />
+                  {genResult.algorithm !== "bcrypt" && (
+                    <ResultRow
+                      label="Salt"
+                      value={genResult.salt}
+                      mono
+                      action={<CopyIconButton copied={copiedKey === "gen_salt"} onClick={() => copy(genResult.salt, "gen_salt")} label="Copy salt" />}
+                    />
+                  )}
+                  <ResultRow label="Time" value={`${genResult.executionMs} ms`} mono />
+                  <ResultRow label="Length" value={`${genResult.hash.length} chars`} mono />
                 </div>
-              </>
-            ) : (
-              <>
-                {verifyResult ? (
+              ) : (
+                <EmptyState busy={isBusy} text="Press Generate (or Enter) to hash the password." />
+              )}
+            </>
+          ) : (
+            <>
+              <PaneBar label="Verification result" className="pr-3 md:pr-3">
+                {verifyResult && !verifyStale && (
+                  <StatusPill
+                    tone={verifyResult.isMatch ? "success" : verifyResult.error ? "warning" : "error"}
+                    icon={
+                      verifyResult.isMatch ? (
+                        <ShieldCheck className={pillIcon} strokeWidth={ICON_STROKE} aria-hidden="true" />
+                      ) : (
+                        <ShieldX className={pillIcon} strokeWidth={ICON_STROKE} aria-hidden="true" />
+                      )
+                    }
+                  >
+                    {verifyResult.isMatch ? "Match" : verifyResult.error ? "Error" : "No match"}
+                  </StatusPill>
+                )}
+                {verifyStale && <StatusPill tone="warning">Inputs changed</StatusPill>}
+              </PaneBar>
+              {verifyResult ? (
+                <div className={cn("divide-y divide-zinc-200 border-b border-zinc-200", verifyStale && "opacity-50")}>
                   <div
                     className={cn(
-                      "p-5 rounded-xl border flex flex-col items-start gap-3.5 transition-all",
-                      verifyResult.isMatch
-                        ? "bg-emerald-50/60 border-emerald-200/80 text-emerald-950"
-                        : verifyResult.error
-                        ? "bg-amber-50/60 border-amber-200/80 text-amber-950"
-                        : "bg-rose-50/60 border-rose-200/80 text-rose-950"
+                      "flex items-start gap-2 px-3 py-3 text-sm font-medium md:px-4",
+                      verifyResult.isMatch ? "text-zinc-900" : verifyResult.error ? "text-amber-700" : "text-red-700"
                     )}
                   >
-                    <div className="flex items-start gap-3 w-full">
-                      {verifyResult.isMatch ? (
-                        <div className="w-8 h-8 rounded-lg bg-emerald-100/80 border border-emerald-200 text-emerald-700 flex items-center justify-center shrink-0 mt-0.5">
-                          <Check className="w-4 h-4 stroke-[2.5]" />
-                        </div>
-                      ) : verifyResult.error ? (
-                        <div className="w-8 h-8 rounded-lg bg-amber-100/80 border border-amber-200 text-amber-700 flex items-center justify-center shrink-0 mt-0.5">
-                          <AlertCircle className="w-4 h-4 stroke-[2.5]" />
-                        </div>
-                      ) : (
-                        <div className="w-8 h-8 rounded-lg bg-rose-100/80 border border-rose-200 text-rose-700 flex items-center justify-center shrink-0 mt-0.5">
-                          <X className="w-4 h-4 stroke-[2.5]" />
-                        </div>
-                      )}
-                      <div className="flex-1 min-w-0">
-                        <div className="font-semibold text-sm tracking-tight text-neutral-900">
-                          {verifyResult.isMatch
-                            ? "Password Matches Hash"
-                            : verifyResult.error
-                            ? "Verification Failed"
-                            : "Password Does Not Match Hash"}
-                        </div>
-                        <div className="text-[11px] text-neutral-500 mt-0.5 font-mono">
-                          {verifyResult.error ||
-                            `Algorithm: ${verifyResult.algorithmDetected} • Checked in ${verifyResult.executionMs} ms`}
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="pt-1">
-                      <VerificationBadge 
-                        status={verifyResult.isMatch ? "success" : "error"}
-                        text={verifyResult.isMatch ? "Valid Match" : verifyResult.error ? "Format Error" : "No Match"}
-                      />
-                    </div>
+                    {verifyResult.isMatch ? (
+                      <ShieldCheck className="mt-0.5 size-4 shrink-0" strokeWidth={ICON_STROKE} aria-hidden="true" />
+                    ) : verifyResult.error ? (
+                      <AlertCircle className="mt-0.5 size-4 shrink-0" strokeWidth={ICON_STROKE} aria-hidden="true" />
+                    ) : (
+                      <ShieldX className="mt-0.5 size-4 shrink-0" strokeWidth={ICON_STROKE} aria-hidden="true" />
+                    )}
+                    <span className="break-words">
+                      {verifyResult.isMatch
+                        ? "Password matches the hash"
+                        : verifyResult.error
+                          ? verifyResult.error
+                          : "Password does not match the hash"}
+                    </span>
                   </div>
-                ) : (
-                  <div className="p-8 text-center text-neutral-400 font-mono text-sm">
-                    Awaiting verification inputs...
-                  </div>
-                )}
-              </>
-            )}
-          </div>
-        </div>
+                  <ResultRow label="Algorithm" value={verifyResult.algorithmDetected} mono />
+                  <ResultRow label="Time" value={`${verifyResult.executionMs} ms`} mono />
+                </div>
+              ) : (
+                <EmptyState busy={isBusy} text="Press Verify (or Enter) to check the password against the hash." />
+              )}
+            </>
+          )}
+        </section>
       </div>
+    </div>
+  );
+}
+
+function ResultRow({ label, value, mono, action }: { label: string; value: string; mono?: boolean; action?: ReactNode }) {
+  return (
+    <div className={cn("flex min-h-10 items-center gap-3 pl-3 md:pl-4", action ? "pr-1.5 md:pr-2" : "pr-3 md:pr-4")}>
+      <span className="w-20 shrink-0 text-xs text-zinc-500">{label}</span>
+      <span className={cn("min-w-0 flex-1 break-all py-2 text-xs text-zinc-900", mono && "font-mono")}>{value}</span>
+      {action}
+    </div>
+  );
+}
+
+function EmptyState({ busy, text }: { busy: boolean; text: string }) {
+  return (
+    <div className="flex items-center gap-2 p-3 text-sm text-zinc-500 md:p-4">
+      {busy && <Loader2 className="size-4 shrink-0 animate-spin" strokeWidth={ICON_STROKE} aria-hidden="true" />}
+      <span>{busy ? "Working…" : text}</span>
     </div>
   );
 }

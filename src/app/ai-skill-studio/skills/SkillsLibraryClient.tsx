@@ -1,10 +1,12 @@
 "use client";
 
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { 
-  Search, 
+import Image from "next/image";
+import {
+  ArrowLeft,
+  Search,
   UploadCloud, 
   FolderGit2, 
   ShieldCheck, 
@@ -23,11 +25,10 @@ import {
   Download,
   ChevronDown,
   SlidersHorizontal,
-  ArrowUpDown,
-  ArrowLeft,
-  Zap
+  ArrowUpDown
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useModKeyLabel } from "@/lib/useModKeyLabel";
 import { getAllSkills } from "@/data/skills/skillsData";
 import { SkillItem, UserUploadedSkill, SkillCategory, SkillPlatform } from "@/data/skills/skillTypes";
 import { loadFromStorageEnvelope } from "@/app/claude-skills/lib/storageEnvelope";
@@ -43,6 +44,69 @@ import {
 } from "@/components/icons/AssistantBrandIcons";
 
 const USER_SKILLS_STORAGE_KEY = "devscratchpad_user_skills_v1";
+
+/** Cards per "Show more" step; divisible by the 1, 2 and 3 column grid layouts so rows stay full. */
+const SKILLS_PAGE_SIZE = 24;
+
+/** Visible keyboard focus for every interactive element in the hub (orange-600 is the single accent). */
+const FOCUS_RING =
+  "focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-orange-600 focus-visible:ring-offset-2";
+
+/** Short platform names shown on cards. */
+const PLATFORM_SHORT_LABEL: Record<SkillPlatform, string> = {
+  cursor: "Cursor .mdc",
+  claude: "Claude Code",
+  windsurf: "Windsurf",
+  copilot: "GitHub Copilot",
+  gemini: "Google Gemini",
+  openai: "ChatGPT",
+  mcp: "MCP Server",
+  universal: "Universal",
+};
+
+/** AI Skill Hub header: keeps the AI Skill area's own identity (back to workspace, link to the Studio). */
+function HubHeader() {
+  return (
+    <header className="sticky top-0 z-40 w-full bg-white border-b border-zinc-200 shadow-xs">
+      <div className="max-w-[1600px] mx-auto px-3 sm:px-6 lg:px-8 h-14 flex items-center justify-between gap-2">
+        {/* Left: Back button to Workspace */}
+        <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+          <Link
+            href="/"
+            className="flex items-center gap-1.5 px-2 py-1.5 sm:px-2.5 sm:py-1.5 rounded-lg text-xs font-semibold text-zinc-700 hover:text-zinc-900 bg-zinc-100 hover:bg-zinc-200 transition-all border border-zinc-200/80 active:scale-95 shrink-0"
+            title="Open Developer Tools Workspace"
+          >
+            <ArrowLeft className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">Developer Tools </span>
+            <span>Workspace</span>
+          </Link>
+
+          <div className="h-4 w-px bg-zinc-200 shrink-0 hidden sm:block" />
+
+          <span className="text-xs sm:text-base font-bold text-zinc-900 tracking-tight truncate hidden sm:inline">
+            AI Skill Hub
+          </span>
+        </div>
+
+        {/* Right: Link to AI Skill Studio */}
+        <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+          <Link
+            href="/ai-skill-studio"
+            className="text-zinc-700 hover:text-zinc-900 hover:bg-zinc-100 text-xs px-2.5 py-1.5 rounded-md flex items-center gap-1.5 transition-colors font-semibold"
+            title="AI Skill Studio (Rules & Prompts Generator)"
+          >
+            <Image src="/ai-skill-icon.png" width={20} height={16} alt="" className="w-4.5 h-3.5 object-contain shrink-0" />
+            <span className="hidden sm:inline">AI Skill Studio</span>
+            <span className="sm:hidden text-xs">Studio</span>
+          </Link>
+          <div className="hidden sm:flex bg-neutral-900 text-neutral-100 text-xs px-2.5 py-1 rounded-md items-center gap-1.5">
+            <Lock className="w-3 h-3" /> 100% Local
+          </div>
+        </div>
+      </div>
+    </header>
+  );
+}
 
 export type SortOption = "popular" | "score" | "recent";
 
@@ -60,6 +124,7 @@ export const PLATFORMS: { id: SkillPlatform | "all"; label: string; mobileLabel:
 
 export function SkillsLibraryClient() {
   const router = useRouter();
+  const modKeyLabel = useModKeyLabel();
   const [mounted, setMounted] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [activeCategory, setActiveCategory] = useState<SkillCategory | "All">("All");
@@ -84,6 +149,29 @@ export function SkillsLibraryClient() {
       setUserSkills(stored.skills);
     }
   }, []);
+
+  // Cmd/Ctrl+K focuses the skill search (the shortcut advertised in the search field)
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
+        event.preventDefault();
+        searchInputRef.current?.focus();
+      }
+    };
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, []);
+
+  // Escape closes the Inspect dialog
+  useEffect(() => {
+    if (!inspectSkill) return;
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setInspectSkill(null);
+    };
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [inspectSkill]);
 
   const allSkills = useMemo(() => {
     return [...getAllSkills(), ...userSkills];
@@ -154,6 +242,13 @@ export function SkillsLibraryClient() {
       return 0;
     });
   }, [allSkills, searchQuery, activeCategory, activeSource, activePlatform, sortBy]);
+
+  // Render the grid in pages: 136 cards at once is a 38k px scroll on phones. Changing any filter starts again at one page.
+  const filterKey = `${searchQuery}|${activeCategory}|${activeSource}|${activePlatform}|${sortBy}`;
+  const [pageState, setPageState] = useState({ key: filterKey, count: SKILLS_PAGE_SIZE });
+  const visibleCount = pageState.key === filterKey ? pageState.count : SKILLS_PAGE_SIZE;
+  const visibleSkills = filteredSkills.slice(0, visibleCount);
+  const remainingCount = filteredSkills.length - visibleSkills.length;
 
   const handleCopyCommand = (slug: string) => {
     copyToClipboard(`npx devscratchpad add ${slug}`);
@@ -347,49 +442,20 @@ export function SkillsLibraryClient() {
     }
   };
 
-  if (!mounted) return null;
+  // The library body waits for mount (user uploads come from localStorage); the shared header renders immediately
+  // so navigation never pops in.
+  if (!mounted) {
+    return (
+      <div className="min-h-screen bg-white text-zinc-900 font-gemini">
+        <HubHeader />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-white text-zinc-900 font-gemini selection:bg-orange-500/20 selection:text-orange-950">
       {/* Top Sticky Navigation Header */}
-      <header className="sticky top-0 z-40 w-full bg-white border-b border-zinc-200 shadow-xs">
-        <div className="max-w-[1600px] mx-auto px-3 sm:px-6 lg:px-8 h-14 flex items-center justify-between gap-2">
-          {/* Left: Back button to Workspace */}
-          <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-            <Link
-              href="/"
-              className="flex items-center gap-1.5 px-2 py-1.5 sm:px-2.5 sm:py-1.5 rounded-lg text-xs font-semibold text-zinc-700 hover:text-zinc-900 bg-zinc-100 hover:bg-zinc-200 transition-all border border-zinc-200/80 active:scale-95 shrink-0"
-              title="Open Developer Tools Workspace"
-            >
-              <ArrowLeft className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Developer Tools </span>
-              <span>Workspace</span>
-            </Link>
-
-            <div className="h-4 w-px bg-zinc-200 shrink-0 hidden sm:block" />
-
-            <span className="text-xs sm:text-base font-bold text-zinc-900 tracking-tight truncate hidden sm:inline">
-              AI Skill Hub
-            </span>
-          </div>
-
-          {/* Right: Link to AI Skill Studio */}
-          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
-            <Link
-              href="/ai-skill-studio"
-              className="text-zinc-700 hover:text-zinc-900 hover:bg-zinc-100 text-xs px-2.5 py-1.5 rounded-md flex items-center gap-1.5 transition-colors font-semibold"
-              title="AI Skill Studio (Rules & Prompts Generator)"
-            >
-              <Zap className="w-3.5 h-3.5 text-zinc-600" />
-              <span className="hidden sm:inline">AI Skill Studio</span>
-              <span className="sm:hidden text-xs">Studio</span>
-            </Link>
-            <div className="hidden sm:flex bg-neutral-900 text-neutral-100 text-xs px-2.5 py-1 rounded-md items-center gap-1.5">
-              <Lock className="w-3 h-3" /> 100% Local
-            </div>
-          </div>
-        </div>
-      </header>
+      <HubHeader />
 
       {/* Front-Side Hero Banner */}
       <section className="border-b border-zinc-200 bg-white">
@@ -398,10 +464,13 @@ export function SkillsLibraryClient() {
             {/* Logo Container */}
             <div className="flex items-center gap-3 sm:block">
               <div className="w-11 h-11 sm:w-14 sm:h-14 rounded-xl border border-zinc-200 bg-white flex items-center justify-center shrink-0 shadow-2xs sm:mt-0.5">
-                <img 
-                  src="/skill-folder-icon.png" 
-                  alt="Skill Hub Logo" 
-                  className="w-7 h-5.5 sm:w-9 sm:h-7 object-contain" 
+                <Image
+                  src="/skill-folder-icon.png"
+                  alt=""
+                  width={36}
+                  height={28}
+                  loading="eager"
+                  className="w-7 h-5.5 sm:w-9 sm:h-7 object-contain"
                 />
               </div>
               
@@ -437,15 +506,16 @@ export function SkillsLibraryClient() {
           </div>
 
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 sm:gap-3 shrink-0">
-            <button 
+            <button
+              type="button"
               onClick={() => setIsUploadModalOpen(true)}
-              className="flex items-center justify-center gap-2 bg-zinc-950 hover:bg-zinc-800 text-white font-medium py-2.5 px-5 rounded-xl border border-zinc-900 transition-colors text-sm cursor-pointer active:scale-98 font-gemini shadow-xs"
+              className={cn("flex items-center justify-center gap-2 bg-zinc-950 hover:bg-zinc-800 text-white font-medium py-2.5 px-5 rounded-xl border border-zinc-900 transition-colors text-sm cursor-pointer active:scale-98 font-gemini shadow-xs", FOCUS_RING)}
             >
               <UploadCloud className="w-4 h-4 text-white" />
               Upload Custom Skill
             </button>
-            <div className="flex items-center justify-center sm:justify-start gap-1.5 text-xs text-zinc-400 font-gemini">
-              <Lock className="w-3.5 h-3.5 text-zinc-400" /> 100% Local Browser Privacy
+            <div className="flex items-center justify-center sm:justify-start gap-1.5 text-xs text-zinc-500 font-gemini">
+              <Lock className="w-3.5 h-3.5 text-zinc-400" aria-hidden="true" /> Uploads stay in this browser
             </div>
           </div>
         </div>
@@ -464,12 +534,15 @@ export function SkillsLibraryClient() {
               {["All", "Official", "Community", "My Uploads"].map((src) => (
                 <button
                   key={src}
+                  type="button"
+                  aria-pressed={activeSource === src}
                   onClick={() => setActiveSource(activeSource === src ? "All" : src)}
                   className={cn(
                     "flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium transition-colors text-left cursor-pointer font-gemini",
-                    activeSource === src 
-                      ? "bg-orange-50 text-orange-800 border border-orange-200 font-semibold" 
-                      : "text-zinc-600 hover:text-black hover:bg-zinc-100 border border-transparent"
+                    activeSource === src
+                      ? "bg-orange-50 text-orange-800 border border-orange-200 font-semibold"
+                      : "text-zinc-600 hover:text-black hover:bg-zinc-100 border border-transparent",
+                    FOCUS_RING
                   )}
                 >
                   <div className="flex items-center gap-2.5 min-w-0">
@@ -490,8 +563,8 @@ export function SkillsLibraryClient() {
                 </button>
               ))}
             </div>
-            <div className="px-3 pt-1 text-[11px] text-zinc-400 font-gemini">
-              No account required • 100% local
+            <div className="px-3 pt-1 text-[11px] text-zinc-500 font-gemini">
+              No account required. Uploads stay in this browser.
             </div>
           </div>
 
@@ -504,12 +577,15 @@ export function SkillsLibraryClient() {
                 return (
                   <button
                     key={plat.id}
+                    type="button"
+                    aria-pressed={isActive}
                     onClick={() => setActivePlatform(activePlatform === plat.id ? "all" : (plat.id as SkillPlatform | "all"))}
                     className={cn(
                       "flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium transition-all text-left cursor-pointer font-gemini border",
-                      isActive 
+                      isActive
                         ? getPlatformActiveClasses(plat.id)
-                        : "text-zinc-600 hover:text-black hover:bg-zinc-100 border-transparent"
+                        : "text-zinc-600 hover:text-black hover:bg-zinc-100 border-transparent",
+                      FOCUS_RING
                     )}
                   >
                     <div className="flex items-center gap-2.5 min-w-0">
@@ -542,13 +618,14 @@ export function SkillsLibraryClient() {
               <h3 className="text-xs font-semibold uppercase tracking-wider text-zinc-400 font-gemini">Categories</h3>
               {(activeSource !== "All" || activePlatform !== "all" || activeCategory !== "All" || searchQuery.trim() !== "") && (
                 <button
+                  type="button"
                   onClick={() => {
                     setActiveSource("All");
                     setActivePlatform("all");
                     setActiveCategory("All");
                     setSearchQuery("");
                   }}
-                  className="text-[11px] text-orange-600 hover:text-orange-700 font-semibold cursor-pointer"
+                  className={cn("rounded-sm text-[11px] text-orange-600 hover:text-orange-700 font-semibold cursor-pointer", FOCUS_RING)}
                 >
                   Reset
                 </button>
@@ -558,12 +635,15 @@ export function SkillsLibraryClient() {
               {["All", "Frontend & UI", "Backend & APIs", "Database & SQL", "DevOps & Cloud", "Mobile & Apps", "Testing & QA", "AI & Agents", "Security & Auth", "Architecture & Governance"].map((cat) => (
                 <button
                   key={cat}
+                  type="button"
+                  aria-pressed={activeCategory === cat}
                   onClick={() => setActiveCategory(activeCategory === cat ? "All" : (cat as SkillCategory | "All"))}
                   className={cn(
                     "px-3 py-1.5 rounded-lg text-xs font-medium transition-colors text-left cursor-pointer font-gemini",
-                    activeCategory === cat 
-                      ? "bg-orange-50 text-orange-800 border border-orange-200 font-semibold" 
-                      : "text-zinc-600 hover:text-black hover:bg-zinc-100 border border-transparent"
+                    activeCategory === cat
+                      ? "bg-orange-50 text-orange-800 border border-orange-200 font-semibold"
+                      : "text-zinc-600 hover:text-black hover:bg-zinc-100 border border-transparent",
+                    FOCUS_RING
                   )}
                 >
                   {cat}
@@ -577,18 +657,21 @@ export function SkillsLibraryClient() {
         <main className="flex-1 flex flex-col gap-5 min-w-0">
           
           {/* Mobile-Only Platform Selector Carousel */}
-          <div className="lg:hidden -mx-4 px-4 overflow-x-auto pb-1 scrollbar-none flex items-center gap-1.5">
+          <div className="lg:hidden -mx-4 px-4 overflow-x-auto py-1 scrollbar-none flex items-center gap-1.5">
             {PLATFORMS.map((plat) => {
               const isActive = activePlatform === plat.id;
               return (
                 <button
                   key={plat.id}
+                  type="button"
+                  aria-pressed={isActive}
                   onClick={() => setActivePlatform(activePlatform === plat.id ? "all" : (plat.id as SkillPlatform | "all"))}
                   className={cn(
                     "flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium whitespace-nowrap shrink-0 transition-all border cursor-pointer font-gemini",
                     isActive
                       ? getPlatformActiveClasses(plat.id)
-                      : "bg-white text-zinc-600 border-zinc-200 hover:border-zinc-300 hover:text-black shadow-2xs"
+                      : "bg-white text-zinc-600 border-zinc-200 hover:border-zinc-300 hover:text-black shadow-2xs",
+                    FOCUS_RING
                   )}
                 >
                   <div className="w-3.5 h-3.5 flex items-center justify-center shrink-0">
@@ -617,9 +700,11 @@ export function SkillsLibraryClient() {
                 <Search className="h-5 w-5 text-zinc-400 group-focus-within:text-orange-600 transition-colors" />
               </div>
               <input
+                ref={searchInputRef}
                 type="text"
+                aria-label="Search skills"
                 className="w-full bg-zinc-50 border border-zinc-200 rounded-2xl py-3 pl-12 pr-10 text-zinc-900 placeholder-zinc-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all text-sm font-gemini"
-                placeholder="Search skills, procedures, tags, or trigger keywords (Cmd+K)..."
+                placeholder="Search skills, tags or keywords…"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
@@ -627,15 +712,16 @@ export function SkillsLibraryClient() {
                 <button
                   type="button"
                   onClick={() => setSearchQuery("")}
-                  className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-zinc-400 hover:text-zinc-600 cursor-pointer"
+                  className={cn("absolute inset-y-1 right-1 px-2.5 rounded-xl flex items-center text-zinc-400 hover:text-zinc-600 cursor-pointer", FOCUS_RING)}
                   title="Clear search"
+                  aria-label="Clear search"
                 >
                   <X className="w-4 h-4" />
                 </button>
               ) : (
                 <div className="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none">
                   <kbd className="hidden sm:inline-flex items-center gap-1 bg-zinc-100 border border-zinc-200 text-zinc-500 rounded px-1.5 py-0.5 text-[10px] font-mono font-medium">
-                    <span className="text-[12px]">⌘</span>K
+                    {modKeyLabel} K
                   </kbd>
                 </div>
               )}
@@ -645,15 +731,18 @@ export function SkillsLibraryClient() {
             <button
               type="button"
               onClick={() => setIsMobileFiltersOpen(!isMobileFiltersOpen)}
+              aria-expanded={isMobileFiltersOpen}
               className={cn(
                 "lg:hidden flex items-center gap-1.5 px-3 py-3 rounded-2xl border text-xs font-semibold transition-all shrink-0 cursor-pointer font-gemini shadow-xs",
                 (activeSource !== "All" || activeCategory !== "All" || isMobileFiltersOpen)
                   ? "bg-orange-50 text-orange-900 border-orange-300"
-                  : "bg-zinc-50 hover:bg-white text-zinc-700 border-zinc-200"
+                  : "bg-zinc-50 hover:bg-white text-zinc-700 border-zinc-200",
+                FOCUS_RING
               )}
             >
-              <SlidersHorizontal className="w-4 h-4 text-zinc-600" />
-              <span className="hidden xs:inline">Filters</span>
+              <SlidersHorizontal className="w-4 h-4 text-zinc-600" aria-hidden="true" />
+              {/* sr-only below sm keeps the icon-only button named */}
+              <span className="sr-only sm:not-sr-only">Filters</span>
               {(activeSource !== "All" || activeCategory !== "All") && (
                 <span className="w-2 h-2 rounded-full bg-orange-600 shrink-0" />
               )}
@@ -667,13 +756,14 @@ export function SkillsLibraryClient() {
                 <span className="text-xs font-bold uppercase tracking-wider text-zinc-600 font-gemini">Filters & Sources</span>
                 {(activeSource !== "All" || activeCategory !== "All" || activePlatform !== "all" || searchQuery !== "") && (
                   <button
+                    type="button"
                     onClick={() => {
                       setActiveSource("All");
                       setActiveCategory("All");
                       setActivePlatform("all");
                       setSearchQuery("");
                     }}
-                    className="text-xs text-orange-600 font-bold hover:underline cursor-pointer font-gemini"
+                    className={cn("rounded-sm text-xs text-orange-600 font-bold hover:underline cursor-pointer font-gemini", FOCUS_RING)}
                   >
                     Reset All
                   </button>
@@ -687,12 +777,15 @@ export function SkillsLibraryClient() {
                   {["All", "Official", "Community", "My Uploads"].map((src) => (
                     <button
                       key={src}
+                      type="button"
+                      aria-pressed={activeSource === src}
                       onClick={() => setActiveSource(activeSource === src ? "All" : src)}
                       className={cn(
                         "px-3 py-1.5 rounded-lg text-xs font-medium transition-colors border cursor-pointer font-gemini",
                         activeSource === src
                           ? "bg-orange-50 text-orange-900 border-orange-300 font-semibold"
-                          : "bg-white text-zinc-700 border-zinc-200 hover:border-zinc-300"
+                          : "bg-white text-zinc-700 border-zinc-200 hover:border-zinc-300",
+                        FOCUS_RING
                       )}
                     >
                       {src} ({sourceCounts[src as keyof typeof sourceCounts] || 0})
@@ -708,12 +801,15 @@ export function SkillsLibraryClient() {
                   {["All", "Frontend & UI", "Backend & APIs", "Database & SQL", "DevOps & Cloud", "Mobile & Apps", "Testing & QA", "AI & Agents", "Security & Auth", "Architecture & Governance"].map((cat) => (
                     <button
                       key={cat}
+                      type="button"
+                      aria-pressed={activeCategory === cat}
                       onClick={() => setActiveCategory(activeCategory === cat ? "All" : (cat as SkillCategory | "All"))}
                       className={cn(
                         "px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors border cursor-pointer font-gemini",
                         activeCategory === cat
                           ? "bg-orange-50 text-orange-900 border-orange-300 font-semibold"
-                          : "bg-white text-zinc-700 border-zinc-200 hover:border-zinc-300"
+                          : "bg-white text-zinc-700 border-zinc-200 hover:border-zinc-300",
+                        FOCUS_RING
                       )}
                     >
                       {cat}
@@ -735,10 +831,11 @@ export function SkillsLibraryClient() {
               <button
                 type="button"
                 onClick={() => setIsSortOpen(!isSortOpen)}
-                className="flex items-center gap-1.5 text-xs text-zinc-700 font-medium px-2.5 py-1.5 rounded-lg border border-zinc-200 bg-white hover:border-zinc-300 hover:text-black transition-colors cursor-pointer shadow-2xs font-gemini"
+                aria-expanded={isSortOpen}
+                className={cn("flex items-center gap-1.5 text-xs text-zinc-700 font-medium px-2.5 py-1.5 rounded-lg border border-zinc-200 bg-white hover:border-zinc-300 hover:text-black transition-colors cursor-pointer shadow-2xs font-gemini", FOCUS_RING)}
               >
-                <ArrowUpDown className="w-3.5 h-3.5 text-zinc-400" />
-                <span className="text-zinc-400 hidden xs:inline">Sort:</span>
+                <ArrowUpDown className="w-3.5 h-3.5 text-zinc-400" aria-hidden="true" />
+                <span className="text-zinc-500 sr-only sm:not-sr-only">Sort:</span>
                 <span className="font-semibold text-zinc-900">
                   {sortBy === "score" ? "Highest Score" : sortBy === "popular" ? "Most Popular" : "Recently Added"}
                 </span>
@@ -761,11 +858,13 @@ export function SkillsLibraryClient() {
                           setSortBy(opt.id as SortOption);
                           setIsSortOpen(false);
                         }}
+                        aria-pressed={sortBy === opt.id}
                         className={cn(
                           "flex items-center justify-between px-3 py-2 text-xs rounded-lg transition-colors text-left cursor-pointer font-gemini",
                           sortBy === opt.id
                             ? "bg-zinc-100 font-semibold text-zinc-900"
-                            : "text-zinc-600 hover:bg-zinc-50 hover:text-zinc-900"
+                            : "text-zinc-600 hover:bg-zinc-50 hover:text-zinc-900",
+                          "focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-orange-600"
                         )}
                       >
                         <span>{opt.label}</span>
@@ -791,13 +890,13 @@ export function SkillsLibraryClient() {
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-5">
-              {filteredSkills.map((skill) => {
+              {visibleSkills.map((skill) => {
                 const theme = getPlatformTheme(skill.primaryPlatform);
                 return (
-                  <div 
-                    key={skill.id} 
+                  <div
+                    key={skill.id}
                     className={cn(
-                      "bg-white border border-zinc-200 rounded-xl p-4 sm:p-5 flex flex-col justify-between transition-all duration-200 group relative",
+                      "bg-white border border-zinc-200 rounded-xl p-4 sm:p-5 flex flex-col transition-all duration-200 group relative",
                       theme.cardHover
                     )}
                   >
@@ -806,34 +905,31 @@ export function SkillsLibraryClient() {
                       <div className="flex items-center justify-between gap-2.5 mb-2.5">
                         <div className="flex items-center gap-2 min-w-0">
                           <div className={cn("w-6 h-6 rounded-md border flex items-center justify-center shrink-0", theme.iconBg)}>
-                            {renderPlatformBrandIcon(skill.primaryPlatform, "w-3 h-3")}
+                            {renderPlatformBrandIcon(skill.primaryPlatform, "w-3.5 h-3.5")}
                           </div>
-                          <span className="text-xs font-semibold text-zinc-800 font-gemini shrink-0">
-                            {skill.primaryPlatform === "cursor" ? "Cursor .mdc" :
-                             skill.primaryPlatform === "claude" ? "Claude Code" :
-                             skill.primaryPlatform === "windsurf" ? "Windsurf" :
-                             skill.primaryPlatform === "copilot" ? "GitHub Copilot" :
-                             skill.primaryPlatform === "gemini" ? "Google Gemini" :
-                             skill.primaryPlatform === "openai" ? "ChatGPT" :
-                             skill.primaryPlatform === "mcp" ? "MCP Server" : "Universal"}
+                          <span className="text-xs font-medium text-zinc-600 font-gemini shrink-0">
+                            {PLATFORM_SHORT_LABEL[skill.primaryPlatform] ?? "Universal"}
                           </span>
-                          <span className="text-zinc-300">•</span>
-                          <span className="text-[11px] font-mono text-zinc-400 truncate max-w-[110px] xs:max-w-[160px] sm:max-w-none">
+                          <span className="text-zinc-300" aria-hidden="true">•</span>
+                          <span className="min-w-0 text-[11px] font-mono text-zinc-400 truncate">
                             {skill.fileTarget ? skill.fileTarget.split("/").pop() : `${skill.slug}.md`}
                           </span>
                         </div>
 
                         {/* Prominent Direct Download Icon Button */}
-                        <button 
+                        <button
+                          type="button"
                           onClick={(e) => {
                             e.stopPropagation();
                             handleDownloadSkill(skill);
                           }}
                           className={cn(
                             "w-8 h-8 rounded-lg border border-zinc-200 text-zinc-600 flex items-center justify-center transition-all cursor-pointer shrink-0",
-                            theme.downloadHover
+                            theme.downloadHover,
+                            FOCUS_RING
                           )}
                           title={`Download native file (${skill.fileTarget || skill.slug})`}
+                          aria-label={`Download ${skill.title}`}
                         >
                           {downloadedId === skill.id ? (
                             <Check className={cn("w-4 h-4", theme.checkText)} />
@@ -844,43 +940,48 @@ export function SkillsLibraryClient() {
                       </div>
 
                       {/* Skill Title - Matches Model Icon Color On Hover */}
-                      <h3 
+                      <h3
                         className={cn(
-                          "text-[15px] font-bold text-zinc-950 transition-colors leading-snug tracking-tight mb-1.5 font-gemini line-clamp-2",
+                          "text-[15px] font-semibold text-zinc-950 transition-colors leading-snug tracking-tight mb-1.5 font-gemini line-clamp-2",
                           theme.hoverText
-                        )} 
+                        )}
                         title={skill.title}
                       >
                         {skill.title}
                       </h3>
 
-                      {/* Description (Full natural text flow without truncation) */}
-                      <p className="text-xs text-zinc-600 leading-relaxed mb-3 font-gemini">
+                      {/* Description (clamped to 3 lines so cards in a row line up; full text on hover and in Inspect) */}
+                      <p className="text-[13px] text-zinc-600 leading-relaxed mb-3 font-gemini line-clamp-3" title={skill.description}>
                         {skill.description}
                       </p>
 
                       {/* Minimalistic Prominent Capability Highlight (Matches Model Color) */}
                       {skill.capabilities && skill.capabilities.length > 0 && (
-                        <div className="flex items-start gap-1.5 text-xs text-zinc-700 mb-4 font-gemini">
-                          <span className={cn("w-1.5 h-1.5 rounded-full shrink-0 mt-1.5", theme.bullet)} />
-                          <span className="font-medium leading-relaxed">{skill.capabilities[0].replace(/^[✅•\s-]+/, "")}</span>
+                        <div className="flex items-start gap-1.5 text-xs text-zinc-600 mb-4 font-gemini">
+                          <span className={cn("w-1.5 h-1.5 rounded-full shrink-0 mt-1.5", theme.bullet)} aria-hidden="true" />
+                          <span className="font-medium leading-relaxed line-clamp-2">{skill.capabilities[0].replace(/^[✅•\s-]+/, "")}</span>
                         </div>
                       )}
                     </div>
 
-                    {/* Actions Row: Clean Open in Studio (No Lightning Logo) + Copy CLI + Inspect */}
+                    {/* Actions Row: Open in Studio (outlined; solid black only on hover/focus so 11 cards don't shout) + Copy CLI + Inspect */}
                     <div className="flex items-center gap-2 pt-3 border-t border-zinc-100 mt-auto">
-                      <button 
-                        onClick={() => handleOpenInStudio(skill)}
-                        className="flex-1 flex items-center justify-center bg-zinc-950 hover:bg-zinc-800 text-white text-xs font-semibold py-2 px-3 rounded-lg transition-colors cursor-pointer font-gemini"
+                      <Link
+                        href={`/ai-skill-studio?preset=${encodeURIComponent(skill.slug)}`}
+                        className={cn(
+                          "flex-1 flex items-center justify-center h-8 px-3 rounded-lg border border-zinc-300 bg-white text-zinc-900 text-xs font-semibold transition-colors font-gemini hover:bg-zinc-900 hover:border-zinc-900 hover:text-white focus-visible:bg-zinc-900 focus-visible:border-zinc-900 focus-visible:text-white",
+                          FOCUS_RING
+                        )}
                       >
                         Open in Studio
-                      </button>
-                      
-                      <button 
+                      </Link>
+
+                      <button
+                        type="button"
                         onClick={() => handleCopyCommand(skill.slug)}
-                        className="flex items-center justify-center w-8 h-8 rounded-lg border border-zinc-200 hover:border-zinc-300 text-zinc-500 hover:text-zinc-950 hover:bg-zinc-50 transition-colors cursor-pointer"
+                        className={cn("flex items-center justify-center w-8 h-8 rounded-lg border border-zinc-200 hover:border-zinc-300 text-zinc-500 hover:text-zinc-950 hover:bg-zinc-50 transition-colors cursor-pointer", FOCUS_RING)}
                         title="Copy CLI command"
+                        aria-label={`Copy CLI command for ${skill.title}`}
                       >
                         {copiedId === skill.slug ? (
                           <Check className={cn("w-3.5 h-3.5", theme.checkText)} />
@@ -888,11 +989,13 @@ export function SkillsLibraryClient() {
                           <Terminal className="w-3.5 h-3.5" />
                         )}
                       </button>
-                      
-                      <button 
+
+                      <button
+                        type="button"
                         onClick={() => setInspectSkill(skill)}
-                        className="flex items-center justify-center w-8 h-8 rounded-lg border border-zinc-200 hover:border-zinc-300 text-zinc-500 hover:text-zinc-950 hover:bg-zinc-50 transition-colors cursor-pointer"
+                        className={cn("flex items-center justify-center w-8 h-8 rounded-lg border border-zinc-200 hover:border-zinc-300 text-zinc-500 hover:text-zinc-950 hover:bg-zinc-50 transition-colors cursor-pointer", FOCUS_RING)}
                         title="Inspect rule code"
+                        aria-label={`Inspect rule code for ${skill.title}`}
                       >
                         <BookOpen className="w-3.5 h-3.5" />
                       </button>
@@ -900,6 +1003,21 @@ export function SkillsLibraryClient() {
                   </div>
                 );
               })}
+            </div>
+          )}
+
+          {remainingCount > 0 && (
+            <div className="flex flex-col items-center gap-2 pt-8">
+              <button
+                type="button"
+                onClick={() => setPageState({ key: filterKey, count: visibleCount + SKILLS_PAGE_SIZE })}
+                className={cn("h-10 px-5 rounded-lg border border-zinc-300 bg-white text-sm font-semibold text-zinc-900 hover:bg-zinc-900 hover:border-zinc-900 hover:text-white transition-colors cursor-pointer font-gemini", FOCUS_RING)}
+              >
+                Show {Math.min(SKILLS_PAGE_SIZE, remainingCount)} more
+              </button>
+              <span className="text-xs text-zinc-500 font-gemini">
+                {visibleSkills.length} of {filteredSkills.length} shown
+              </span>
             </div>
           )}
         </main>
@@ -937,7 +1055,10 @@ export function SkillsLibraryClient() {
             className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-in fade-in duration-200"
             onClick={() => setInspectSkill(null)}
           >
-            <div 
+            <div
+              role="dialog"
+              aria-modal="true"
+              aria-label={inspectSkill.title}
               className="w-full max-w-4xl bg-white border border-zinc-200 rounded-xl sm:rounded-2xl shadow-2xl flex flex-col max-h-[92vh] sm:max-h-[90vh] overflow-hidden text-zinc-900 mx-2 sm:mx-auto"
               onClick={(e) => e.stopPropagation()}
             >
@@ -966,8 +1087,9 @@ export function SkillsLibraryClient() {
 
                   {/* Close button always in top-right corner, 1-tap accessible */}
                   <button
+                    type="button"
                     onClick={() => setInspectSkill(null)}
-                    className="p-1.5 -mr-1 -mt-1 rounded-lg text-zinc-400 hover:text-zinc-900 hover:bg-zinc-200/70 transition-colors shrink-0 cursor-pointer"
+                    className={cn("p-1.5 -mr-1 -mt-1 rounded-lg text-zinc-400 hover:text-zinc-900 hover:bg-zinc-200/70 transition-colors shrink-0 cursor-pointer", FOCUS_RING)}
                     aria-label="Close modal"
                   >
                     <X className="w-5 h-5" />
@@ -977,28 +1099,31 @@ export function SkillsLibraryClient() {
                 {/* Actions Row: Optimized across all viewports */}
                 <div className="flex items-center gap-2 pt-1 border-t border-zinc-200/60 sm:border-0 sm:pt-0 sm:justify-end">
                   <button
+                    type="button"
                     onClick={() => {
                       handleOpenInStudio(inspectSkill);
                       setInspectSkill(null);
                     }}
-                    className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-3 py-1.5 bg-zinc-950 hover:bg-zinc-800 text-white rounded-lg text-xs font-semibold shadow-xs transition-colors cursor-pointer font-gemini"
+                    className={cn("flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-3 py-1.5 bg-zinc-950 hover:bg-zinc-800 text-white rounded-lg text-xs font-semibold shadow-xs transition-colors cursor-pointer font-gemini", FOCUS_RING)}
                   >
                     Open in Studio
                   </button>
                   <button
+                    type="button"
                     onClick={() => {
                       copyToClipboard(inspectSkill.rawContent);
                       setCopiedRaw(true);
                       setTimeout(() => setCopiedRaw(false), 2000);
                     }}
-                    className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-3 py-1.5 bg-zinc-100 hover:bg-zinc-200 text-zinc-800 rounded-lg text-xs font-semibold transition-colors cursor-pointer border border-zinc-200"
+                    className={cn("flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-3 py-1.5 bg-zinc-100 hover:bg-zinc-200 text-zinc-800 rounded-lg text-xs font-semibold transition-colors cursor-pointer border border-zinc-200", FOCUS_RING)}
                   >
                     {copiedRaw ? <Check className={cn("w-3.5 h-3.5", inspectTheme.checkText)} /> : <Copy className="w-3.5 h-3.5" />}
                     {copiedRaw ? "Copied!" : "Copy Code"}
                   </button>
                   <button
+                    type="button"
                     onClick={() => handleDownloadSkill(inspectSkill)}
-                    className={cn("flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-3 py-1.5 bg-zinc-100 text-zinc-800 rounded-lg text-xs font-semibold transition-colors cursor-pointer border border-zinc-200", inspectTheme.downloadHover)}
+                    className={cn("flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-3 py-1.5 bg-zinc-100 text-zinc-800 rounded-lg text-xs font-semibold transition-colors cursor-pointer border border-zinc-200", inspectTheme.downloadHover, FOCUS_RING)}
                   >
                     <Download className="w-3.5 h-3.5" />
                     Download

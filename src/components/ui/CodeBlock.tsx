@@ -29,7 +29,7 @@ export function CodeBlock({ code, title = "Verified Implementation & Fix" }: { c
             <span className="w-2.5 h-2.5 rounded-full bg-zinc-300 inline-block" />
           </div>
           <div className="flex items-center gap-1.5 text-xs font-mono text-zinc-700 font-semibold ml-1">
-            <Terminal className="w-3.5 h-3.5 text-orange-600" />
+            <Terminal className="w-3.5 h-3.5 text-zinc-500" />
             <span>{title}</span>
           </div>
         </div>

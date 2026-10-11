@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, ArrowRight, ArrowUpRight, Clock } from "lucide-react";
+import { ArrowUpRight, Clock } from "lucide-react";
 import { Marked } from "marked";
 import { markedHighlight } from "marked-highlight";
 import hljs from "highlight.js";
@@ -13,6 +13,7 @@ import { TableOfContents } from "@/components/blog/TableOfContents";
 import { InteractiveToolWidget } from "@/components/blog/InteractiveToolWidget";
 import { FaqAccordion } from "@/components/blog/FaqAccordion";
 import { CodeBlockEnricher } from "@/components/blog/CodeBlockEnricher";
+import { GuideCta, guide } from "@/components/seo/guideUi";
 
 const marked = new Marked(
   markedHighlight({
@@ -183,7 +184,7 @@ export default async function BlogPostPage({
       : null;
 
   return (
-    <div className="min-h-screen bg-zinc-50 flex flex-col font-sans selection:bg-zinc-900 selection:text-white">
+    <div className="min-h-screen bg-white flex flex-col font-sans selection:bg-zinc-900 selection:text-white">
       <SiteHeader />
 
       <script
@@ -201,18 +202,18 @@ export default async function BlogPostPage({
         />
       )}
 
-      <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 py-8 md:py-12">
-        <div className="flex flex-col lg:flex-row gap-8 items-start relative">
-          
+      <main className="flex-1 w-full max-w-6xl mx-auto px-4 sm:px-6 py-6 sm:py-10">
+        <div className="flex flex-col lg:flex-row gap-10 lg:gap-14 items-start relative">
+
           {/* Left Column: Main Content */}
           <div className="flex-1 w-full min-w-0">
             {/* Minimalist Breadcrumb Navigation */}
-            <div className="flex flex-wrap items-center gap-2 text-xs font-mono text-zinc-500 mb-6">
-              <Link href="/" className="hover:text-zinc-900 transition-colors">
+            <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs font-mono text-zinc-400">
+              <Link href="/" className="inline-flex min-h-10 items-center text-zinc-500 hover:text-zinc-900 transition-colors sm:min-h-0">
                 root
               </Link>
               <span>/</span>
-              <Link href="/blog" className="hover:text-zinc-900 transition-colors">
+              <Link href="/blog" className="inline-flex min-h-10 items-center text-zinc-500 hover:text-zinc-900 transition-colors sm:min-h-0">
                 learning-hub
               </Link>
               <span>/</span>
@@ -226,48 +227,47 @@ export default async function BlogPostPage({
             {/* Back Link */}
             <Link
               href="/blog"
-              className="inline-flex items-center text-xs font-mono text-zinc-500 hover:text-zinc-900 transition-colors mb-6 group"
+              className="mt-2 inline-flex min-h-10 items-center text-[13px] font-medium text-zinc-500 hover:text-zinc-900 transition-colors"
             >
-              <ArrowLeft className="w-3.5 h-3.5 mr-1 group-hover:-translate-x-1 transition-transform" />
               <span>← Back to Learning Hub</span>
             </Link>
 
-            {/* Main Article Document Card */}
-            <article className="bg-white border border-zinc-200 rounded-xl p-6 sm:p-10 md:p-12 mb-12 shadow-sm relative">
+            {/* Main Article Document */}
+            <article className="relative mt-6 mb-12">
               {/* Inject the Client Component to enrich code blocks with Copy buttons */}
               <CodeBlockEnricher />
 
               {/* Article Header Metadata */}
-              <header className="border-b border-zinc-200 pb-6 mb-8">
-                <div className="flex flex-wrap items-center gap-2 text-xs font-mono text-zinc-500 mb-4">
-                  <span className="px-2 py-0.5 bg-zinc-100 border border-zinc-200 text-zinc-700 rounded font-medium">
+              <header className="border-b border-zinc-200 pb-8 mb-8">
+                <div className="flex flex-wrap items-center gap-x-2 gap-y-1.5 text-xs text-zinc-500 mb-4">
+                  <span className={guide.chip}>
                     {post.category.toUpperCase()}
                   </span>
                   {post.type === "cheat-sheet" && (
-                    <span className="px-2 py-0.5 bg-amber-50 border border-amber-200 text-amber-800 rounded font-medium">
+                    <span className="inline-flex items-center rounded-md bg-zinc-900 px-2 py-0.5 text-xs font-medium text-white">
                       CHEAT SHEET
                     </span>
                   )}
-                  <span>•</span>
+                  <span className="text-zinc-300">•</span>
                   <span className="flex items-center gap-1">
                     <Clock className="w-3 h-3 text-zinc-400" />
                     {post.readTime}
                   </span>
-                  <span>•</span>
+                  <span className="text-zinc-300">•</span>
                   <span>{post.difficulty}</span>
-                  <span>•</span>
+                  <span className="text-zinc-300">•</span>
                   <time suppressHydrationWarning>
                     {formatUtcDate(post.publishedAt)}
                   </time>
-                  <span>•</span>
-                  <span className="text-emerald-700 font-medium">100% Client-Side Verified</span>
+                  <span className="text-zinc-300">•</span>
+                  <span className="font-medium text-zinc-700">100% Client-Side Verified</span>
                 </div>
 
-                <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight text-zinc-900 leading-tight mb-3">
+                <h1 className="text-2xl sm:text-3xl lg:text-[2.125rem] font-semibold tracking-tight text-zinc-900 leading-tight mb-3">
                   {post.title}
                 </h1>
 
-                <p className="text-sm sm:text-base text-zinc-600 leading-relaxed max-w-3xl mb-4">
+                <p className={`${guide.lead} max-w-3xl mb-4`}>
                   {post.description}
                 </p>
 
@@ -277,7 +277,7 @@ export default async function BlogPostPage({
                     {post.tags.map((tag) => (
                       <span
                         key={tag}
-                        className="text-[10px] font-mono text-zinc-500 bg-zinc-50 border border-zinc-200 px-1.5 py-0.5 rounded"
+                        className="text-[11px] font-mono text-zinc-500 bg-zinc-100 px-1.5 py-0.5 rounded"
                       >
                         #{tag}
                       </span>
@@ -300,63 +300,20 @@ export default async function BlogPostPage({
           )}
 
           {/* Rendered Markdown Body */}
-          <div className="prose max-w-none">
+          <div className="prose max-w-none [&_table]:block [&_table]:overflow-x-auto!">
             <div dangerouslySetInnerHTML={{ __html: htmlContent }} />
           </div>
 
-          {/* Integrated Interactive Tool Card (Monochromatic IDE Style or AI Studio Spotlight) */}
-          {post.relatedToolSlug === "ai-skill-studio" ? (
-            <div className="mt-12 p-6 bg-gradient-to-r from-orange-50/80 via-amber-50/40 to-white border border-orange-200 rounded-xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-5 shadow-xs">
-              <div className="space-y-1.5">
-                <div className="flex items-center gap-2">
-                  <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-orange-100 text-orange-800 border border-orange-200">
-                    <img src="/orange-star.png" className="w-3.5 h-3.5 object-contain shrink-0" alt="Star" />
-                    <span>Live Interactive Studio</span>
-                  </span>
-                  <span className="text-[10px] font-mono text-zinc-500 bg-white border border-zinc-200 px-1.5 py-0.5 rounded">
-                    100% Client-Side Privacy
-                  </span>
-                </div>
-                <h3 className="text-base font-bold text-zinc-900">
-                  Live Tool: AI Skill Studio — SKILL.md, CLAUDE.md & Cursor Rules
-                </h3>
-                <p className="text-xs text-zinc-600 leading-relaxed max-w-xl">
-                  Visually configure, preview in Monaco, and export production-ready Claude Code skills, Cursor <code className="font-mono text-xs bg-orange-100/60 px-1 py-0.5 rounded text-orange-900">.mdc</code> rules, and multi-agent directives in a single ZIP kit.
-                </p>
-              </div>
-
-              <Link
-                href="/ai-skill-studio"
-                className="px-4 py-2.5 bg-orange-600 hover:bg-orange-500 text-white font-semibold rounded-lg text-xs transition-all whitespace-nowrap shrink-0 flex items-center gap-2 shadow-sm"
-              >
-                <span>Launch AI Skill Studio</span>
-                <ArrowRight className="w-3.5 h-3.5" />
-              </Link>
-            </div>
-          ) : toolMeta ? (
-            <div className="mt-12 p-5 sm:p-6 bg-zinc-50 border border-zinc-200 rounded-xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-              <div className="space-y-1">
-                <div className="flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-emerald-500" />
-                  <h3 className="text-sm font-semibold text-zinc-900">
-                    Live Tool: {toolMeta.name}
-                  </h3>
-                  <span className="text-[10px] font-mono text-zinc-500 bg-white border border-zinc-200 px-1.5 py-0.5 rounded">
-                    Client-Side Engine
-                  </span>
-                </div>
-                <p className="text-xs text-zinc-500 leading-relaxed max-w-lg">
-                  {toolMeta.description}
-                </p>
-              </div>
-
-              <Link
+          {/* Integrated Interactive Tool Card */}
+          {toolMeta ? (
+            <div className="mt-12">
+              <GuideCta
+                title={`Live Tool: ${toolMeta.name}`}
+                badge="Client-Side Engine"
+                description={toolMeta.description}
                 href={`/tools/${toolMeta.slug}`}
-                className="px-3.5 py-2 bg-zinc-900 hover:bg-zinc-800 text-white font-medium rounded-md text-xs transition-colors whitespace-nowrap shrink-0 flex items-center gap-1.5 shadow-none"
-              >
-                <span>Launch Tool Workspace</span>
-                <ArrowRight className="w-3.5 h-3.5" />
-              </Link>
+                label="Launch Tool Workspace"
+              />
             </div>
           ) : null}
 
@@ -368,44 +325,45 @@ export default async function BlogPostPage({
 
         {/* Related Guides Section */}
         {relatedPosts.length > 0 && (
-          <div className="mb-12">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-sm font-mono uppercase tracking-wider text-zinc-500 font-semibold">
+          <section className="mb-12 border-t border-zinc-200 pt-10 space-y-5">
+            <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-1">
+              <h3 className={guide.h2}>
                 Related Guides & References
               </h3>
-              <Link href="/blog" className="text-xs font-mono text-zinc-500 hover:text-zinc-900 transition-colors">
+              <Link href="/blog" className={guide.link}>
                 view learning hub →
               </Link>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {relatedPosts.map((other) => (
                 <Link
                   key={other.slug}
                   href={`/blog/${other.slug}`}
-                  className="group bg-white border border-zinc-200 rounded-xl p-4 hover:border-zinc-400 transition-all flex flex-col justify-between shadow-sm"
+                  className={guide.card}
                 >
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="text-[10px] font-mono font-medium px-1.5 py-0.5 bg-zinc-100 text-zinc-600 rounded">
+                  <div className="space-y-1.5">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-medium text-zinc-500">
                         {other.category}
                       </span>
-                      <span className="text-[10px] font-mono text-zinc-400">
+                      <span className="text-zinc-300">•</span>
+                      <span className="text-xs text-zinc-400">
                         {other.readTime}
                       </span>
                     </div>
-                    <h4 className="font-semibold text-zinc-900 group-hover:text-zinc-600 transition-colors text-sm tracking-tight flex items-center justify-between">
-                      <span className="line-clamp-1">{other.title}</span>
-                      <ArrowUpRight className="w-3.5 h-3.5 text-zinc-400 group-hover:text-zinc-900 shrink-0 ml-1" />
+                    <h4 className="text-sm sm:text-[15px] font-medium text-zinc-900 tracking-tight flex items-start justify-between gap-3">
+                      <span className="line-clamp-2">{other.title}</span>
+                      <ArrowUpRight className="w-4 h-4 text-zinc-300 group-hover:text-zinc-900 transition-colors shrink-0 mt-0.5" />
                     </h4>
-                    <p className="text-xs text-zinc-500 line-clamp-2 leading-relaxed">
+                    <p className="text-[13px] text-zinc-500 line-clamp-2 leading-relaxed">
                       {other.description}
                     </p>
                   </div>
                 </Link>
               ))}
             </div>
-          </div>
+          </section>
         )}
           </div> {/* End Left Column */}
 
