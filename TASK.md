@@ -252,7 +252,7 @@ node ./cli/bin/devscratchpad.mjs audit
 - [x] Preset catalogue matches the server's `/api/raw` presets; templates for claude-md, agents-md, mcp-config (valid JSON)
 - [x] Generated files pass the CLI's own audit; site generator no longer emits "clean code"
 - [x] Single bin `cli/bin/devscratchpad.mjs`; repo URL fixed; README rewritten; 20 node:test cases + `cli-tests.yml` (Node 18/20/22)
-- [ ] Publish: `cd cli && npm publish` (needs the owner's npm login)
+- [x] Published `devscratchpad@2.2.0` to npm (2FA via passkey: `npm publish --auth-type=web`)
 - [ ] Decide CLI licence: MIT (current) vs BSL 1.1
 
 ---
