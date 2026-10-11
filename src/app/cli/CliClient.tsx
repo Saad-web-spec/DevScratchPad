@@ -2,18 +2,8 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
-import {
-  Terminal,
-  Copy,
-  Check,
-  ShieldCheck,
-  ArrowRight,
-  FileCode2,
-  ExternalLink,
-  Lock,
-  RefreshCw,
-  BookOpen,
-} from "lucide-react";
+import Image from "next/image";
+import { Copy, Check, ArrowUpRight, BookOpen, RefreshCw, Wrench } from "lucide-react";
 import {
   CursorIcon,
   ClaudeIcon,
@@ -22,64 +12,37 @@ import {
   GeminiIcon,
   CopilotIcon,
 } from "@/components/icons/AssistantBrandIcons";
+import { cn } from "@/lib/utils";
 
 interface PresetItem {
   slug: string;
   name: string;
   category: string;
-  defaultFormat: string;
 }
 
 const POPULAR_PRESETS: PresetItem[] = [
-  { slug: "nextjs-15", name: "Next.js 15 App Router", category: "Fullstack", defaultFormat: "cursor-rules" },
-  { slug: "fastapi", name: "FastAPI & Pydantic v2", category: "Backend", defaultFormat: "claude-skills" },
-  { slug: "tailwind-v4", name: "Tailwind CSS v4 (CSS-First)", category: "Styling", defaultFormat: "windsurf" },
-  { slug: "react-19", name: "React 19 & Server Components", category: "Frontend", defaultFormat: "cursor-rules" },
-  { slug: "typescript-strict", name: "Strict TypeScript Invariants", category: "Language", defaultFormat: "copilot" },
-  { slug: "codebase-auditor", name: "Codebase Security & Lint Auditor", category: "Quality", defaultFormat: "claude-skills" },
-  { slug: "docker-compose", name: "Docker & Container Hardening", category: "DevOps", defaultFormat: "cursor-rules" },
-  { slug: "go-standard", name: "Idiomatic Go (net/http & slog)", category: "Backend", defaultFormat: "cursor-rules" },
+  { slug: "nextjs-15", name: "Next.js 15 App Router", category: "Fullstack" },
+  { slug: "react-19", name: "React 19 & Server Components", category: "Frontend" },
+  { slug: "tailwind-v4", name: "Tailwind CSS v4", category: "Styling" },
+  { slug: "typescript-strict", name: "Strict TypeScript", category: "Language" },
+  { slug: "fastapi", name: "FastAPI & Pydantic v2", category: "Backend" },
+  { slug: "go-standard", name: "Idiomatic Go", category: "Backend" },
+  { slug: "docker-compose", name: "Docker hardening", category: "DevOps" },
+  { slug: "codebase-auditor", name: "Codebase auditor", category: "Quality" },
 ];
 
-const FORMAT_TABS = [
-  {
-    id: "cursor-rules",
-    label: "Cursor .mdc",
-    file: ".cursor/rules/*.mdc",
-    icon: <CursorIcon white className="w-4 h-4 mr-2 inline-flex items-center shrink-0" />,
-  },
-  {
-    id: "claude-skills",
-    label: "Claude Skill",
-    file: ".claude/skills/*/SKILL.md",
-    icon: <ClaudeIcon className="w-4 h-4 mr-2 inline-flex items-center shrink-0" />,
-  },
-  {
-    id: "windsurf",
-    label: "Windsurf",
-    file: ".windsurf/rules/*.md",
-    icon: <WindsurfIcon className="w-4 h-4 mr-2 inline-flex items-center shrink-0" />,
-  },
-  {
-    id: "copilot",
-    label: "Copilot",
-    file: ".github/copilot-instructions.md",
-    icon: <CopilotIcon className="w-4 h-4 mr-2 inline-flex items-center shrink-0" />,
-  },
-  {
-    id: "openai",
-    label: "OpenAI",
-    file: ".openai/system-instructions.md",
-    icon: <OpenAIIcon className="w-4 h-4 mr-2 inline-flex items-center shrink-0" />,
-  },
-  {
-    id: "gemini",
-    label: "Gemini",
-    file: ".gemini/*.json",
-    icon: <GeminiIcon className="w-4 h-4 mr-2 inline-flex items-center shrink-0" />,
-  },
+const ICON = "size-4 shrink-0";
+
+const FORMAT_TABS: { id: string; label: string; icon: React.ReactNode }[] = [
+  { id: "cursor-rules", label: "Cursor", icon: <CursorIcon className={ICON} /> },
+  { id: "claude-skills", label: "Claude Skill", icon: <ClaudeIcon className={ICON} /> },
+  { id: "windsurf", label: "Windsurf", icon: <WindsurfIcon className={ICON} /> },
+  { id: "copilot", label: "Copilot", icon: <CopilotIcon className={ICON} /> },
+  { id: "openai", label: "OpenAI", icon: <OpenAIIcon className={ICON} /> },
+  { id: "gemini", label: "Gemini", icon: <GeminiIcon className={ICON} /> },
 ];
 
+/** Same target paths the CLI writes (cli/bin/devscratchpad.mjs). */
 function getTargetFilePath(format: string, preset: string) {
   switch (format) {
     case "cursor-rules":
@@ -99,16 +62,67 @@ function getTargetFilePath(format: string, preset: string) {
   }
 }
 
+const ALL_FORMATS = [
+  "cursor-rules",
+  "claude-skills",
+  "claude-md",
+  "agents-md",
+  "windsurf",
+  "copilot",
+  "mcp-config",
+  "openai",
+  "gemini",
+  "cursorignore",
+  "claudeignore",
+  "llms-txt",
+  "architecture-md",
+];
+
+const INIT_FILES = [
+  ".cursor/rules/cursor-rules-pro.mdc",
+  "CLAUDE.md",
+  "AGENTS.md",
+  ".cursorignore",
+  ".claudeignore",
+  "llms.txt",
+  "ARCHITECTURE.md",
+];
+
 type Runtime = "npx" | "pnpm dlx" | "bunx";
+type CommandTab = "add" | "audit" | "list" | "init";
+
+const focusRing = "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-900 focus-visible:ring-offset-1";
+const label = "text-[11px] font-semibold uppercase tracking-wider text-zinc-500";
+
+function chip(active: boolean) {
+  return cn(
+    "inline-flex h-9 items-center gap-2 rounded-md border px-3 text-[13px] font-medium transition-colors cursor-pointer",
+    focusRing,
+    active
+      ? "border-zinc-900 bg-zinc-50 text-zinc-900 ring-1 ring-zinc-900"
+      : "border-zinc-200 bg-white text-zinc-600 hover:border-zinc-300 hover:text-zinc-900"
+  );
+}
+
+function segment(active: boolean) {
+  return cn(
+    "h-7 rounded-[5px] px-2.5 font-mono text-xs font-medium transition-colors cursor-pointer",
+    focusRing,
+    active ? "bg-white text-zinc-900 ring-1 ring-zinc-200" : "text-zinc-500 hover:text-zinc-900"
+  );
+}
 
 export function CliClient() {
-  const [activeCommandTab, setActiveCommandTab] = useState<"add" | "audit" | "list" | "init">("add");
+  const [activeCommandTab, setActiveCommandTab] = useState<CommandTab>("add");
   const [selectedFormat, setSelectedFormat] = useState("cursor-rules");
   const [selectedPreset, setSelectedPreset] = useState("nextjs-15");
   const [selectedRuntime, setSelectedRuntime] = useState<Runtime>("npx");
   const [copiedCmd, setCopiedCmd] = useState(false);
 
   const currentAddCommand = `${selectedRuntime} devscratchpad add ${selectedFormat}/${selectedPreset}`;
+  const targetPath = getTargetFilePath(selectedFormat, selectedPreset);
+  const commandFor = (cmd: CommandTab) =>
+    cmd === "add" ? currentAddCommand : `${selectedRuntime} devscratchpad ${cmd}`;
 
   const handleCopy = (text: string) => {
     navigator.clipboard.writeText(text);
@@ -117,138 +131,90 @@ export function CliClient() {
   };
 
   return (
-    <div className="space-y-12">
-      {/* Quick Install Hero Card */}
-      <div className="relative group">
-        {/* Ambient radial glow to ground the dark container */}
-        <div className="absolute -inset-1.5 bg-gradient-to-r from-orange-500/20 via-sky-500/15 to-violet-500/20 rounded-3xl blur-xl opacity-70 group-hover:opacity-90 transition duration-700 -z-10" />
+    <div className="space-y-14">
+      {/* Command builder */}
+      <section aria-labelledby="builder-heading" className="rounded-xl border border-zinc-200 bg-white">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-zinc-200 px-4 py-3 sm:px-5">
+          <h2 id="builder-heading" className="text-sm font-semibold text-zinc-900">
+            Build your command
+          </h2>
+          <div className="inline-flex items-center gap-0.5 rounded-md bg-zinc-100 p-0.5" role="group" aria-label="Package runner">
+            {(["npx", "pnpm dlx", "bunx"] as const).map((rt) => (
+              <button
+                key={rt}
+                type="button"
+                onClick={() => setSelectedRuntime(rt)}
+                aria-pressed={selectedRuntime === rt}
+                className={segment(selectedRuntime === rt)}
+              >
+                {rt}
+              </button>
+            ))}
+          </div>
+        </div>
 
-        <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 sm:p-8 shadow-2xl relative overflow-hidden">
-          {/* Internal gradient lighting */}
-          <div className="absolute -right-20 -top-20 w-80 h-80 bg-sky-500/10 rounded-full blur-3xl pointer-events-none" />
-          <div className="absolute -left-20 -bottom-20 w-80 h-80 bg-orange-500/10 rounded-full blur-3xl pointer-events-none" />
-
-          <div className="relative z-10 space-y-6">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <div className="flex items-center gap-2">
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-sky-500/10 text-sky-400 border border-sky-500/20 shadow-xs">
-                  <span className="w-2 h-2 rounded-full bg-sky-400 animate-pulse" />
-                  Live on NPM Registry
+        <div className="space-y-5 p-4 sm:p-5">
+          {/* Command line */}
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+            <div className="flex min-w-0 flex-1 items-center gap-2 overflow-x-auto rounded-lg border border-zinc-200 bg-zinc-50 px-3.5 py-3 font-mono text-sm">
+              <span className="select-none text-zinc-400">$</span>
+              <span className="whitespace-nowrap text-zinc-900">
+                <span className="text-zinc-500">{selectedRuntime}</span> devscratchpad add{" "}
+                <span className="rounded bg-zinc-200/70 px-1 py-0.5 font-semibold">
+                  {selectedFormat}/{selectedPreset}
                 </span>
-                <a
-                  href="https://www.npmjs.com/package/devscratchpad"
-                  target="_blank"
-                  rel="noreferrer"
-                  className="inline-flex items-center gap-1 text-xs text-zinc-400 hover:text-white transition-colors font-mono focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:outline-none rounded px-1"
-                >
-                  <span>v2.1.0</span>
-                  <ExternalLink className="w-3 h-3" />
-                </a>
-              </div>
-
-              <div className="flex items-center gap-2 text-xs text-zinc-400">
-                <ShieldCheck className="w-3.5 h-3.5 text-sky-400" />
-                <span>Zero Dependencies</span>
-                <span className="text-zinc-600">·</span>
-                <Lock className="w-3.5 h-3.5 text-amber-400" />
-                <span>100% Offline-First</span>
-              </div>
+              </span>
             </div>
+            <button
+              type="button"
+              onClick={() => handleCopy(currentAddCommand)}
+              aria-label="Copy command"
+              className={cn(
+                "inline-flex h-11 shrink-0 items-center justify-center gap-2 rounded-lg bg-zinc-900 px-4 text-sm font-medium text-white transition-colors hover:bg-zinc-800 cursor-pointer",
+                focusRing
+              )}
+            >
+              {copiedCmd ? <Check className="size-4" /> : <Copy className="size-4" />}
+              <span aria-live="polite">{copiedCmd ? "Copied" : "Copy"}</span>
+            </button>
+          </div>
+          <p className="-mt-2 font-mono text-xs text-zinc-500">
+            Writes <span className="text-zinc-900">{targetPath}</span>
+          </p>
 
-            {/* Interactive Command Display with Runtime Switcher */}
-            <div className="space-y-3">
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <span className="text-xs font-bold text-zinc-400 uppercase tracking-wider">
-                  Run Instantly via Terminal (No Installation Required)
-                </span>
-
-                {/* Multi-Runtime Tabs */}
-                <div className="flex items-center gap-1 bg-zinc-950 p-1 rounded-lg border border-zinc-800 text-[11px] font-mono">
-                  {(["npx", "pnpm dlx", "bunx"] as const).map((rt) => (
+          <div className="grid gap-5 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
+            <div className="space-y-2">
+              <span className={label}>Assistant</span>
+              <div className="flex flex-wrap gap-1.5">
+                {FORMAT_TABS.map((fmt) => {
+                  const active = selectedFormat === fmt.id;
+                  return (
                     <button
-                      key={rt}
-                      onClick={() => setSelectedRuntime(rt)}
-                      className={`px-2.5 py-0.5 rounded transition-all cursor-pointer focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:outline-none ${
-                        selectedRuntime === rt
-                          ? "bg-orange-600 text-white font-bold shadow-xs"
-                          : "text-zinc-400 hover:text-white hover:bg-zinc-800/60"
-                      }`}
+                      key={fmt.id}
+                      type="button"
+                      onClick={() => setSelectedFormat(fmt.id)}
+                      aria-pressed={active}
+                      className={chip(active)}
                     >
-                      {rt}
+                      {fmt.icon}
+                      {fmt.label}
                     </button>
-                  ))}
-                </div>
-              </div>
-
-              <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-zinc-950 border border-zinc-800 p-3 sm:p-4 rounded-xl font-mono text-sm shadow-inner">
-                <div className="flex items-center gap-2 overflow-x-auto py-1 select-all">
-                  <span className="text-[#94A3B8] font-bold select-none">$</span>
-                  <span className="text-[#A855F7] font-semibold">{selectedRuntime}</span>
-                  <span className="text-[#38BDF8] font-semibold">devscratchpad</span>
-                  <span className="text-[#F8FAFC] font-semibold">add</span>
-                  <span
-                    key={`${selectedFormat}-${selectedPreset}`}
-                    className="text-[#F8FAFC] font-semibold bg-orange-500/20 text-orange-200 px-1.5 py-0.5 rounded border border-orange-500/30 animate-pulse transition-all"
-                  >
-                    {selectedFormat}/{selectedPreset}
-                  </span>
-                </div>
-
-                <button
-                  onClick={() => handleCopy(currentAddCommand)}
-                  aria-label="Copy terminal command to clipboard"
-                  aria-live="polite"
-                  className="flex items-center justify-center gap-2 px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-white rounded-lg text-xs font-medium transition-all shrink-0 cursor-pointer active:scale-95 shadow-xs focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:outline-none"
-                >
-                  {copiedCmd ? (
-                    <>
-                      <Check className="w-3.5 h-3.5 text-[#38BDF8]" />
-                      <span className="text-[#38BDF8] font-semibold">Copied!</span>
-                    </>
-                  ) : (
-                    <>
-                      <Copy className="w-3.5 h-3.5" />
-                      <span>Copy Command</span>
-                    </>
-                  )}
-                </button>
-              </div>
-            </div>
-
-          {/* Preset & Format Quick Selectors */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
-            <div className="space-y-2">
-              <label className="text-xs font-semibold text-zinc-400">Select Assistant Format:</label>
-              <div className="grid grid-cols-3 gap-1.5">
-                {FORMAT_TABS.map((fmt) => (
-                  <button
-                    key={fmt.id}
-                    onClick={() => setSelectedFormat(fmt.id)}
-                    className={`flex items-center justify-center px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all truncate cursor-pointer focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:outline-none ${
-                      selectedFormat === fmt.id
-                        ? "bg-orange-600 text-white shadow-xs font-semibold"
-                        : "bg-zinc-800/80 hover:bg-zinc-800 text-zinc-300"
-                    }`}
-                  >
-                    {fmt.icon}
-                    <span className="truncate">{fmt.label}</span>
-                  </button>
-                ))}
+                  );
+                })}
               </div>
             </div>
 
             <div className="space-y-2">
-              <label className="text-xs font-semibold text-zinc-400">Select Technology Stack:</label>
-              <div className="grid grid-cols-2 gap-1.5">
+              <span className={label}>Stack preset</span>
+              <div className="flex flex-wrap gap-1.5">
                 {POPULAR_PRESETS.map((p) => (
                   <button
                     key={p.slug}
+                    type="button"
                     onClick={() => setSelectedPreset(p.slug)}
-                    className={`px-2.5 py-1.5 rounded-lg text-xs font-medium text-left transition-all truncate cursor-pointer focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:outline-none ${
-                      selectedPreset === p.slug
-                        ? "bg-zinc-100 text-zinc-950 font-bold shadow-xs"
-                        : "bg-zinc-800/80 hover:bg-zinc-800 text-zinc-300"
-                    }`}
+                    aria-pressed={selectedPreset === p.slug}
+                    className={chip(selectedPreset === p.slug)}
+                    title={p.category}
                   >
                     {p.name}
                   </button>
@@ -257,321 +223,197 @@ export function CliClient() {
             </div>
           </div>
         </div>
-      </div>
-    </div>
+      </section>
 
-      {/* Interactive Terminal Output Simulator */}
-      <div className="space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-zinc-200 dark:border-zinc-800 pb-3">
+      {/* Terminal preview */}
+      <section aria-labelledby="preview-heading" className="space-y-4">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <h3 className="text-lg font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
-              <Terminal className="w-5 h-5 text-orange-600" />
-              <span>Live Terminal Command Simulator</span>
-            </h3>
-            <p className="text-xs text-zinc-500">Preview exact terminal stdout responses and local filesystem actions</p>
+            <h2 id="preview-heading" className="text-xl font-semibold tracking-tight text-zinc-900">
+              What each command prints
+            </h2>
+            <p className="mt-1 text-sm text-zinc-500">Sample output and the files written to your repository.</p>
           </div>
-
-          {/* Command Switcher Tabs */}
-          <div className="flex items-center gap-1 bg-zinc-100 dark:bg-zinc-800 p-1 rounded-xl">
+          <div className="inline-flex items-center gap-0.5 self-start rounded-md bg-zinc-100 p-0.5 sm:self-auto" role="tablist" aria-label="Command">
             {(["add", "audit", "list", "init"] as const).map((cmd) => (
               <button
                 key={cmd}
+                type="button"
+                role="tab"
+                aria-selected={activeCommandTab === cmd}
                 onClick={() => setActiveCommandTab(cmd)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-semibold capitalize transition-all cursor-pointer focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:outline-none ${
-                  activeCommandTab === cmd
-                    ? "bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 shadow-xs font-bold"
-                    : "text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white"
-                }`}
+                className={segment(activeCommandTab === cmd)}
               >
-                {cmd === "add" ? "add <rule>" : cmd === "audit" ? "audit [dir]" : cmd === "list" ? "list" : "init"}
+                {cmd}
               </button>
             ))}
           </div>
         </div>
 
-        {/* Terminal Window with Ambient Glow */}
-        <div className="relative group">
-          <div className="absolute -inset-1 bg-gradient-to-r from-orange-500/10 via-sky-500/10 to-violet-500/10 rounded-2xl blur-xl opacity-60 group-hover:opacity-80 transition duration-700 -z-10" />
+        <div className="overflow-hidden rounded-xl border border-zinc-200 bg-white font-mono text-[13px] leading-relaxed">
+          <div className="flex items-center gap-2 border-b border-zinc-200 bg-zinc-50 px-4 py-2.5">
+            <span className="select-none text-zinc-400">$</span>
+            <span className="truncate text-zinc-900">{commandFor(activeCommandTab)}</span>
+          </div>
 
-          <div className="bg-zinc-950 rounded-xl border border-zinc-800 overflow-hidden shadow-xl font-mono text-xs">
-            {/* Terminal Titlebar */}
-            <div className="flex items-center justify-between px-4 py-2.5 bg-zinc-900 border-b border-zinc-800 select-none">
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full bg-rose-500/80" />
-                <div className="w-3 h-3 rounded-full bg-amber-500/80" />
-                <div className="w-3 h-3 rounded-full bg-sky-500/80" />
-                <span className="text-[11px] text-zinc-400 ml-2">bash — {selectedRuntime} devscratchpad {activeCommandTab}</span>
-              </div>
-              <span className="text-[10px] text-zinc-500">Node.js ESM · Zero Telemetry</span>
-            </div>
-
-            {/* Terminal Body */}
-            <div className="p-4 sm:p-5 space-y-3 leading-relaxed text-zinc-300">
-              {/* Syntax Highlighted Command Line */}
-              <div className="flex flex-wrap items-center gap-2 text-xs sm:text-[13px] font-mono pb-2 border-b border-zinc-800/80">
-                <span className="text-[#94A3B8] select-none">$</span>
-                <span className="text-[#A855F7] font-semibold">{selectedRuntime}</span>
-                <span className="text-[#38BDF8] font-semibold">devscratchpad</span>
-                {activeCommandTab === "add" && (
-                  <>
-                    <span className="text-[#F8FAFC] font-semibold">add</span>
-                    <span className="text-[#F8FAFC] font-semibold">{selectedFormat}/{selectedPreset}</span>
-                  </>
-                )}
-                {activeCommandTab === "audit" && (
-                  <span className="text-[#F8FAFC] font-semibold">audit</span>
-                )}
-                {activeCommandTab === "list" && (
-                  <span className="text-[#F8FAFC] font-semibold">list</span>
-                )}
-                {activeCommandTab === "init" && (
-                  <span className="text-[#F8FAFC] font-semibold">init</span>
-                )}
-              </div>
-
-              {activeCommandTab === "add" && (
-                <div className="space-y-3 pt-1">
-                  <div className="text-slate-400 text-xs flex items-center gap-2">
-                    <img src="/orange-star.png" className="w-3.5 h-3.5 object-contain shrink-0" alt="DevScratchpad Star" />
-                    <span>Fetching rules for &quot;{selectedPreset}&quot; in format &quot;{selectedFormat}&quot;...</span>
-                  </div>
-                  <div className="text-[#2DD4BF] font-semibold flex items-center gap-1.5 text-xs">
-                    <Check className="w-3.5 h-3.5 text-[#2DD4BF]" />
-                    <span>Successfully installed!</span>
-                  </div>
-                  <div className="pl-3 border-l-2 border-zinc-800 space-y-1 text-xs text-slate-300">
-                    <div>Target:  <span className="font-mono font-medium text-white">{getTargetFilePath(selectedFormat, selectedPreset)}</span></div>
-                    <div>Format:  <span className="text-slate-200">{selectedFormat}</span></div>
-                    <div>Privacy: <span className="text-slate-200">100% Client-Side Confined</span></div>
-                  </div>
-
-                  {/* Realistic ASCII Directory Tree */}
-                  <div className="p-3 bg-zinc-900/60 rounded-lg border border-zinc-800/80 font-mono text-xs text-slate-300 space-y-1">
-                    <div className="text-zinc-500 select-none text-[11px]"># Workspace Directory Structure</div>
-                    <div className="text-sky-400 font-semibold">.</div>
-                    {selectedFormat === "cursor-rules" && (
-                      <>
-                        <div>├── <span className="text-amber-400 font-semibold">.cursor/</span></div>
-                        <div>│   └── <span className="text-amber-400 font-semibold">rules/</span></div>
-                        <div>│       └── <span className="text-white font-bold">{selectedPreset}.mdc</span> <span className="text-teal-400 text-[11px]">(Created · Cursor .mdc)</span></div>
-                        <div>└── <span className="text-zinc-400">package.json</span></div>
-                      </>
-                    )}
-                    {selectedFormat === "claude-skills" && (
-                      <>
-                        <div>├── <span className="text-amber-400 font-semibold">.claude/</span></div>
-                        <div>│   └── <span className="text-amber-400 font-semibold">skills/</span></div>
-                        <div>│       └── <span className="text-amber-400 font-semibold">{selectedPreset}/</span></div>
-                        <div>│           └── <span className="text-white font-bold">SKILL.md</span> <span className="text-teal-400 text-[11px]">(Created · Claude Code)</span></div>
-                        <div>└── <span className="text-zinc-400">pyproject.toml</span></div>
-                      </>
-                    )}
-                    {selectedFormat === "windsurf" && (
-                      <>
-                        <div>├── <span className="text-amber-400 font-semibold">.windsurf/</span></div>
-                        <div>│   └── <span className="text-amber-400 font-semibold">rules/</span></div>
-                        <div>│       └── <span className="text-white font-bold">{selectedPreset}.md</span> <span className="text-teal-400 text-[11px]">(Created · Cascade Rulebook)</span></div>
-                        <div>└── <span className="text-zinc-400">package.json</span></div>
-                      </>
-                    )}
-                    {selectedFormat === "copilot" && (
-                      <>
-                        <div>├── <span className="text-amber-400 font-semibold">.github/</span></div>
-                        <div>│   └── <span className="text-white font-bold">copilot-instructions.md</span> <span className="text-teal-400 text-[11px]">(Updated · Copilot spec)</span></div>
-                        <div>└── <span className="text-zinc-400">package.json</span></div>
-                      </>
-                    )}
-                    {selectedFormat === "openai" && (
-                      <>
-                        <div>├── <span className="text-amber-400 font-semibold">.openai/</span></div>
-                        <div>│   └── <span className="text-white font-bold">system-instructions.md</span> <span className="text-teal-400 text-[11px]">(Created · System prompt)</span></div>
-                        <div>└── <span className="text-zinc-400">package.json</span></div>
-                      </>
-                    )}
-                    {selectedFormat === "gemini" && (
-                      <>
-                        <div>├── <span className="text-amber-400 font-semibold">.gemini/</span></div>
-                        <div>│   └── <span className="text-white font-bold">{selectedPreset}.json</span> <span className="text-teal-400 text-[11px]">(Created · Structured prompt)</span></div>
-                        <div>└── <span className="text-zinc-400">package.json</span></div>
-                      </>
-                    )}
-                  </div>
-
-                  <div className="text-xs text-slate-400 pt-1">
-                    👉 Customize interactively in AI Skill Studio:{" "}
-                    <Link
-                      href={`/ai-skill-studio/${selectedFormat}/${selectedPreset}`}
-                      className="text-[#38BDF8] hover:text-[#7DD3FC] underline font-medium transition-colors focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:outline-none rounded"
-                    >
-                      https://www.devscratchpad.tech/ai-skill-studio/{selectedFormat}/{selectedPreset}
-                    </Link>
-                  </div>
+          <div className="space-y-4 p-4 text-zinc-600 sm:p-5">
+            {activeCommandTab === "add" && (
+              <>
+                <div className="space-y-1">
+                  <p>
+                    Fetching rules for &quot;{selectedPreset}&quot; in format &quot;{selectedFormat}&quot;…
+                  </p>
+                  <p className="flex items-center gap-1.5 text-zinc-900">
+                    <Check className="size-3.5" /> Installed
+                  </p>
                 </div>
-              )}
+                <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-0.5 border-l-2 border-zinc-200 pl-3">
+                  <dt className="text-zinc-400">target</dt>
+                  <dd className="break-all text-zinc-900">{targetPath}</dd>
+                  <dt className="text-zinc-400">format</dt>
+                  <dd>{selectedFormat}</dd>
+                  <dt className="text-zinc-400">network</dt>
+                  <dd>public preset only; nothing from your repo is sent</dd>
+                </dl>
+                <FileTree
+                  files={[targetPath]}
+                  note={selectedFormat === "copilot" ? "updated" : "created"}
+                />
+                <p className="text-zinc-500">
+                  Customize it in AI Skill Studio:{" "}
+                  <Link
+                    href={`/ai-skill-studio/${selectedFormat}/${selectedPreset}`}
+                    className="break-all text-zinc-900 underline underline-offset-2 hover:text-zinc-600"
+                  >
+                    /ai-skill-studio/{selectedFormat}/{selectedPreset}
+                  </Link>
+                </p>
+              </>
+            )}
 
-              {activeCommandTab === "audit" && (
-                <div className="space-y-3 pt-1 text-xs">
-                  <div className="text-[#38BDF8] font-medium">🔍 Scanning repository for AI rulebooks in current workspace...</div>
-                  <div className="p-3 bg-zinc-900/50 rounded-lg border border-zinc-800/80 space-y-1 text-slate-200">
-                    <div><span className="font-semibold text-slate-100">File:</span> .cursor/rules/nextjs-15.mdc</div>
-                    <div><span className="font-semibold text-slate-100">Quality Score:</span> <span className="text-[#2DD4BF] font-bold">95 / 100</span></div>
-                    <div className="text-[#2DD4BF] flex items-center gap-1">
-                      <Check className="w-3.5 h-3.5 text-[#2DD4BF]" />
-                      <span>Passed negative constraint & glob specificity checks!</span>
+            {activeCommandTab === "audit" && (
+              <>
+                <p>Scanning the workspace for AI rule files…</p>
+                <div className="divide-y divide-zinc-100 rounded-lg border border-zinc-200">
+                  <div className="flex items-start justify-between gap-4 px-3 py-2.5">
+                    <div className="min-w-0">
+                      <div className="truncate text-zinc-900">.cursor/rules/nextjs-15.mdc</div>
+                      <div className="flex items-center gap-1.5 text-zinc-500">
+                        <Check className="size-3.5" /> Passed all static checks
+                      </div>
                     </div>
+                    <span className="shrink-0 font-semibold text-zinc-900">95/100</span>
                   </div>
-                  <div className="p-3 bg-zinc-900/50 rounded-lg border border-zinc-800/80 space-y-1 text-slate-200">
-                    <div><span className="font-semibold text-slate-100">File:</span> CLAUDE.md</div>
-                    <div><span className="font-semibold text-slate-100">Quality Score:</span> <span className="text-amber-400 font-bold">70 / 100</span></div>
-                    <div className="text-amber-400">⚠ Missing negative guardrails (&quot;never do X&quot;, &quot;avoid Y&quot;). Without negative bounds, LLMs hallucinate.</div>
-                  </div>
-                  <div className="pt-2 border-t border-zinc-800 text-slate-200 font-semibold">
-                    Repository AI Rule Health: <span className="text-[#38BDF8] font-bold">83 / 100</span> (2 files analyzed)
-                  </div>
-                  <div className="text-slate-400 pt-0.5">
-                    💡 Auto-fix and enhance your rules with zero data leakage:{" "}
-                    <Link
-                      href="/ai-skill-studio"
-                      className="text-[#38BDF8] hover:text-[#7DD3FC] underline font-medium transition-colors focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:outline-none rounded"
-                    >
-                      https://www.devscratchpad.tech/ai-skill-studio
-                    </Link>
+                  <div className="flex items-start justify-between gap-4 px-3 py-2.5">
+                    <div className="min-w-0">
+                      <div className="truncate text-zinc-900">CLAUDE.md</div>
+                      <div className="text-amber-700">⚠ No negative guardrails (&quot;never do X&quot;, &quot;avoid Y&quot;).</div>
+                    </div>
+                    <span className="shrink-0 font-semibold text-amber-700">70/100</span>
                   </div>
                 </div>
-              )}
+                <p className="text-zinc-900">
+                  Repository rule health: <span className="font-semibold">83/100</span>{" "}
+                  <span className="text-zinc-500">(2 files)</span>
+                </p>
+              </>
+            )}
 
-              {activeCommandTab === "list" && (
-                <div className="space-y-3 pt-1 text-xs">
-                  <div className="text-[#F97316] font-semibold">Available Formats:</div>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-1 pl-2 text-slate-300 font-mono">
-                    <div>• cursor-rules (Cursor .mdc)</div>
-                    <div>• claude-skills (Claude SKILL.md)</div>
-                    <div>• windsurf (Cascade Rules)</div>
-                    <div>• copilot (GitHub Copilot)</div>
-                    <div>• openai (Custom Instructions)</div>
-                    <div>• gemini (Structured Prompts)</div>
-                  </div>
-                  <div className="text-[#F97316] font-semibold pt-1">Available Presets:</div>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-1 pl-2 text-slate-300 font-mono">
-                    <div>• nextjs-15 (Fullstack)</div>
-                    <div>• react-19 (Frontend)</div>
-                    <div>• tailwind-v4 (Styling)</div>
-                    <div>• fastapi (Backend)</div>
-                    <div>• typescript-strict (Quality)</div>
-                    <div>• docker-compose (DevOps)</div>
-                    <div>• codebase-auditor (Security)</div>
-                    <div>• go-standard (Backend)</div>
-                  </div>
+            {activeCommandTab === "list" && (
+              <div className="grid gap-5 sm:grid-cols-2">
+                <div className="space-y-1.5">
+                  <p className="text-[11px] font-sans font-semibold uppercase tracking-wider text-zinc-500">
+                    Formats ({ALL_FORMATS.length})
+                  </p>
+                  <ul className="grid grid-cols-2 gap-x-4 gap-y-0.5 text-zinc-900">
+                    {ALL_FORMATS.map((f) => (
+                      <li key={f}>{f}</li>
+                    ))}
+                  </ul>
                 </div>
-              )}
-
-              {activeCommandTab === "init" && (
-                <div className="space-y-3 pt-1 text-xs">
-                  <div className="text-[#38BDF8] font-medium">🚀 Initializing DevScratchpad starter rules for repository...</div>
-                  <div className="text-[#2DD4BF] font-semibold flex items-center gap-1.5">
-                    <Check className="w-3.5 h-3.5 text-[#2DD4BF]" />
-                    <span>Scaffolding universal multi-agent guidelines:</span>
-                  </div>
-                  <div className="pl-3 border-l-2 border-zinc-800 space-y-1 text-slate-300 font-mono">
-                    <div>• Created .cursor/rules/cursor-rules-pro.mdc</div>
-                    <div>• Created CLAUDE.md with architectural invariants</div>
-                    <div>• Initialized negative guardrails against hallucinations</div>
-                  </div>
-
-                  {/* Realistic ASCII Directory Tree for Init */}
-                  <div className="p-3 bg-zinc-900/60 rounded-lg border border-zinc-800/80 font-mono text-xs text-slate-300 space-y-1 mt-2">
-                    <div className="text-zinc-500 select-none text-[11px]"># Scaffolded Multi-Agent Structure</div>
-                    <div className="text-sky-400 font-semibold">.</div>
-                    <div>├── <span className="text-amber-400 font-semibold">.cursor/rules/</span></div>
-                    <div>│   └── <span className="text-white font-bold">cursor-rules-pro.mdc</span> <span className="text-teal-400 text-[11px]">(Created · Multi-agent core)</span></div>
-                    <div>├── <span className="text-white font-bold">CLAUDE.md</span> <span className="text-teal-400 text-[11px]">(Created · Invariant memory)</span></div>
-                    <div>└── <span className="text-zinc-400">package.json</span></div>
-                  </div>
+                <div className="space-y-1.5">
+                  <p className="text-[11px] font-sans font-semibold uppercase tracking-wider text-zinc-500">Popular presets</p>
+                  <ul className="grid grid-cols-1 gap-y-0.5">
+                    {POPULAR_PRESETS.map((p) => (
+                      <li key={p.slug} className="flex justify-between gap-4">
+                        <span className="text-zinc-900">{p.slug}</span>
+                        <span className="text-zinc-400">{p.category}</span>
+                      </li>
+                    ))}
+                  </ul>
                 </div>
-              )}
-            </div>
+              </div>
+            )}
+
+            {activeCommandTab === "init" && (
+              <>
+                <div className="space-y-1">
+                  <p>Initializing the 5-layer AI agent suite…</p>
+                  <p className="flex items-center gap-1.5 text-zinc-900">
+                    <Check className="size-3.5" /> {INIT_FILES.length} files written
+                  </p>
+                </div>
+                <FileTree files={INIT_FILES} note="created" />
+              </>
+            )}
           </div>
         </div>
-      </div>
+      </section>
 
-      {/* Reciprocal Traffic Bridge Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 pt-4">
-        <Link
-          href="/ai-skill-studio"
-          className="group p-5 bg-gradient-to-br from-orange-50 to-amber-50 dark:from-zinc-900 dark:to-zinc-800/80 border border-orange-200 dark:border-zinc-700 rounded-2xl transition-all hover:shadow-md hover:border-orange-300 flex flex-col justify-between"
-        >
-          <div>
-            <div className="w-10 h-10 rounded-xl bg-orange-100 dark:bg-orange-950/60 border border-orange-200 dark:border-orange-800/60 flex items-center justify-center mb-3">
-              <img src="/ai-skill-icon.png" className="w-5 h-5 object-contain" alt="AI Skill Studio logo" />
-            </div>
-            <h4 className="font-bold text-sm text-zinc-900 dark:text-zinc-100 mb-1">Visual AI Skill Studio</h4>
-            <p className="text-xs text-zinc-600 dark:text-zinc-400 leading-relaxed">
-              Design, customize, and test AI rules in an interactive editor with real-time heuristic quality scoring.
-            </p>
-          </div>
-          <div className="flex items-center gap-1 text-xs font-bold text-orange-600 dark:text-orange-400 mt-4 group-hover:translate-x-1 transition-transform">
-            <span>Open Studio</span>
-            <ArrowRight className="w-3.5 h-3.5" />
-          </div>
-        </Link>
+      {/* Related */}
+      <nav aria-label="Related" className="grid gap-px overflow-hidden rounded-xl border border-zinc-200 bg-zinc-200 sm:grid-cols-2 lg:grid-cols-4">
+        {[
+          {
+            href: "/ai-skill-studio",
+            title: "AI Skill Studio",
+            body: "Edit rules visually with a live quality score.",
+            icon: <Image src="/ai-skill-icon.png" width={20} height={16} className="h-4 w-5 object-contain" alt="" />,
+          },
+          {
+            href: "/blog/how-to-manage-ai-rules-with-cli-guide",
+            title: "CLI guide",
+            body: "Guardrails, multi-agent sync and CI audits.",
+            icon: <BookOpen className="size-4 text-zinc-500" />,
+          },
+          {
+            href: "/ai-skill-studio/rules-converter",
+            title: "Rules converter",
+            body: "Turn .cursorrules or CLAUDE.md into any format.",
+            icon: <RefreshCw className="size-4 text-zinc-500" />,
+          },
+          {
+            href: "/developer-tools",
+            title: "Developer tools",
+            body: "Formatters, JWT, hashing and more, in your browser.",
+            icon: <Wrench className="size-4 text-zinc-500" />,
+          },
+        ].map((item) => (
+          <Link key={item.href} href={item.href} className={cn("group flex flex-col gap-1.5 bg-white p-4 transition-colors hover:bg-zinc-50", focusRing)}>
+            <span className="flex items-center gap-2 text-sm font-semibold text-zinc-900">
+              {item.icon}
+              {item.title}
+              <ArrowUpRight className="ml-auto size-4 text-zinc-300 transition-colors group-hover:text-zinc-900" />
+            </span>
+            <span className="text-[13px] leading-relaxed text-zinc-500">{item.body}</span>
+          </Link>
+        ))}
+      </nav>
+    </div>
+  );
+}
 
-        <Link
-          href="/blog/how-to-manage-ai-rules-with-cli-guide"
-          className="group p-5 bg-gradient-to-br from-amber-50 to-orange-50 dark:from-zinc-900 dark:to-zinc-800/80 border border-amber-200 dark:border-zinc-700 rounded-2xl transition-all hover:shadow-md hover:border-amber-300 flex flex-col justify-between"
-        >
-          <div>
-            <div className="w-10 h-10 rounded-xl bg-amber-100 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-800/60 text-amber-600 dark:text-amber-400 flex items-center justify-center mb-3">
-              <BookOpen className="w-5 h-5" />
-            </div>
-            <h4 className="font-bold text-sm text-zinc-900 dark:text-zinc-100 mb-1">CLI Engineering Guide</h4>
-            <p className="text-xs text-zinc-600 dark:text-zinc-400 leading-relaxed">
-              Step-by-step tutorial on negative guardrails, multi-agent synchronization, and CI/CD audit setup.
-            </p>
-          </div>
-          <div className="flex items-center gap-1 text-xs font-bold text-amber-600 dark:text-amber-400 mt-4 group-hover:translate-x-1 transition-transform">
-            <span>Read Architecture Guide</span>
-            <ArrowRight className="w-3.5 h-3.5" />
-          </div>
-        </Link>
-
-        <Link
-          href="/ai-skill-studio/rules-converter"
-          className="group p-5 bg-gradient-to-br from-purple-50 to-indigo-50 dark:from-zinc-900 dark:to-zinc-800/80 border border-purple-200 dark:border-zinc-700 rounded-2xl transition-all hover:shadow-md hover:border-purple-300 flex flex-col justify-between"
-        >
-          <div>
-            <div className="w-10 h-10 rounded-xl bg-purple-100 dark:bg-purple-950/60 border border-purple-200 dark:border-purple-800/60 text-purple-600 dark:text-purple-400 flex items-center justify-center mb-3">
-              <RefreshCw className="w-5 h-5" />
-            </div>
-            <h4 className="font-bold text-sm text-zinc-900 dark:text-zinc-100 mb-1">Universal Rules Converter</h4>
-            <p className="text-xs text-zinc-600 dark:text-zinc-400 leading-relaxed">
-              Deconstruct legacy .cursorrules or CLAUDE.md into modular rules for Windsurf, Copilot, or Gemini.
-            </p>
-          </div>
-          <div className="flex items-center gap-1 text-xs font-bold text-purple-600 dark:text-purple-400 mt-4 group-hover:translate-x-1 transition-transform">
-            <span>Convert Legacy Rules</span>
-            <ArrowRight className="w-3.5 h-3.5" />
-          </div>
-        </Link>
-
-        <Link
-          href="/developer-tools"
-          className="group p-5 bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-zinc-900 dark:to-zinc-800/80 border border-blue-200 dark:border-zinc-700 rounded-2xl transition-all hover:shadow-md hover:border-blue-300 flex flex-col justify-between"
-        >
-          <div>
-            <div className="w-10 h-10 rounded-xl bg-blue-100 dark:bg-blue-950/60 border border-blue-200 dark:border-blue-800/60 text-blue-600 dark:text-blue-400 flex items-center justify-center mb-3">
-              <FileCode2 className="w-5 h-5" />
-            </div>
-            <h4 className="font-bold text-sm text-zinc-900 dark:text-zinc-100 mb-1">28 Offline Dev Utilities</h4>
-            <p className="text-xs text-zinc-600 dark:text-zinc-400 leading-relaxed">
-              Formatters, cryptographic hashing, JWT inspectors, regex testing, and JSON schema tools in local memory.
-            </p>
-          </div>
-          <div className="flex items-center gap-1 text-xs font-bold text-blue-600 dark:text-blue-400 mt-4 group-hover:translate-x-1 transition-transform">
-            <span>Browse All Tools</span>
-            <ArrowRight className="w-3.5 h-3.5" />
-          </div>
-        </Link>
-      </div>
+/** Minimal ASCII tree of the files a command writes. */
+function FileTree({ files, note }: { files: string[]; note: string }) {
+  return (
+    <div className="rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2.5 text-zinc-500">
+      <div className="text-zinc-400">.</div>
+      {files.map((file, i) => (
+        <div key={file} className="flex gap-2">
+          <span className="select-none text-zinc-300">{i === files.length - 1 ? "└──" : "├──"}</span>
+          <span className="break-all text-zinc-900">{file}</span>
+          <span className="hidden shrink-0 text-zinc-400 sm:inline">{note}</span>
+        </div>
+      ))}
     </div>
   );
 }
