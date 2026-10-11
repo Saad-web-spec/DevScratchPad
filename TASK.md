@@ -265,6 +265,13 @@ node ./cli/bin/devscratchpad.mjs audit
 - [x] CLI v2.3.0: bundled templates carry the baseline (site test keeps the two copies in sync); `audit` deducts 10 for no trust boundary and 5 for no confirmation gate
 - [ ] Publish `devscratchpad@2.3.0` to npm (`cd cli && npm publish --auth-type=web`)
 
+## 2026-10-11 — MCP Section Redesign (AI Skill Studio)
+
+- [x] MCP card: preset tiles with icons and short labels (orange selection, no blue), one "context import" row per preset family instead of three different banners, flat live checks, neutral "Valid" status
+- [x] Secret-safe checks: `${VAR}` references are the expected value; literal tokens, placeholders and literal Postgres passwords get a warning instead of the old "Token required" push to paste a real token
+- [x] Shared `IntakeModal` shell for the GitHub, local folder, DDL and Docker modals: compact header, flat result panel (no card-in-card), segmented "Write to" switch, solid orange primary, Escape/backdrop close; removed fake "Load sample" / "Quick try" chips
+- [x] Docker compose parser no longer counts block-style `ports:` / `depends_on:` keys as services; flow-style lists (`ports: ["3000:3000"]`) are read (tests in `dockerParser.test.ts`)
+
 ---
 
 *This document is a living tracker. AI agents MUST update task statuses when completing work and log their actions in the Agent Session Log.*

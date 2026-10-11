@@ -582,3 +582,10 @@ All AI agents operating in this repository MUST follow this 5-step loop:
 - **Status**: ✅ Complete (831 tests, validate-presets, lint 0 errors, build)
 - **Follow-up (CLI v2.3.0)**: `SECURITY_BASELINE` is duplicated in `cli/bin/devscratchpad.mjs` (the CLI has zero deps and cannot import TS); `ruleGenerator.test.ts` fails if the two copies drift, so edit both together. CLI `audit` adds trust-boundary (-10) and confirmation-gate (-5) checks, skipped for llms.txt, ARCHITECTURE.md and ignore files; deductions stay small so an otherwise perfect file still clears `--min-score 80`.
 - **Gotcha**: Writing JS through Python/bash heredocs on this machine mangled `\b` (became backspace) and `\n` (became a real newline). Use the Edit tool for regexes and escape sequences.
+
+### Session: 2026-10-11 — MCP Section Redesign
+- **Task**: Redesign the AI Skill Studio MCP card and its four intake modals (compact, consistent icons, not bloated).
+- **Changes**: `McpServerConfigCard.tsx` rewritten (PRESET_UI icon/short-label map, single context-import row, flat checks). New `components/IntakeModal.tsx` (shell, `IntakeFormatSwitch`, `IntakeRow`, `ScriptList`, `initialIntakeFormat`) used by `GitHubRepoModal`, `LocalFolderModal`, `DdlIntrospectModal`, `DockerInspectModal`. Each modal mounts its body only while open, so the "Write to" format initialises from props without a `useEffect` (removed 3 set-state-in-effect warnings and one `any`).
+- **Decision**: MCP env values default to `${VAR}` references (Claude Code expands them from the shell when loading `.mcp.json`). Literal secrets are a warning, never a requirement.
+- **Gotcha**: `dockerParser.ts` must fix the service indent from the first service; matching any `name:` within 4 spaces of `services:` turned `ports:` / `depends_on:` into fake services.
+- **Status**: ✅ Complete (836 tests, validate-presets, lint 0 errors, build)

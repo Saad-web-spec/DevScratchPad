@@ -48,6 +48,8 @@ export function inspectDockerCompose(input: string): ParsedDockerCompose {
   return parseComposeYaml(trimmed);
 }
 
+type ComposeListKey = "ports" | "volumes" | "depends_on" | "environment";
+
 /**
  * Lightweight client-side YAML parser for docker-compose services
  */
@@ -59,8 +61,26 @@ function parseComposeYaml(input: string): ParsedDockerCompose {
 
   let inServicesBlock = false;
   let currentService: Partial<DockerService> | null = null;
-  let currentArrayKey: "ports" | "volumes" | "depends_on" | "environment" | null = null;
+  let currentArrayKey: ComposeListKey | null = null;
   let baseIndent = 0;
+  // Indent of service names, fixed by the first service; deeper "key:" lines (ports:, depends_on:) are properties
+  let serviceIndent = -1;
+
+  const addItem = (service: Partial<DockerService>, key: ComposeListKey, rawValue: string) => {
+    const itemVal = rawValue.trim().replace(/['"]/g, "");
+    if (!itemVal) return;
+    if (key === "ports") {
+      service.ports?.push(itemVal);
+      allExposedPorts.push(itemVal);
+    } else if (key === "volumes") {
+      service.volumes?.push(itemVal);
+    } else if (key === "depends_on") {
+      service.dependsOn?.push(itemVal);
+    } else {
+      const envKey = itemVal.split("=")[0].trim();
+      if (envKey) service.environmentKeys?.push(envKey);
+    }
+  };
 
   for (let i = 0; i < lines.length; i++) {
     const rawLine = lines[i];
@@ -75,6 +95,7 @@ function parseComposeYaml(input: string): ParsedDockerCompose {
     if (trimmed.startsWith("services:")) {
       inServicesBlock = true;
       baseIndent = indent;
+      serviceIndent = -1;
       continue;
     }
 
@@ -101,9 +122,10 @@ function parseComposeYaml(input: string): ParsedDockerCompose {
     }
 
     if (inServicesBlock) {
-      // Check for a new service declaration (indent usually baseIndent + 2)
+      // A new service declaration sits at the same indent as the first service
       const serviceMatch = trimmed.match(/^([a-zA-Z0-9_.-]+):$/);
-      if (serviceMatch && indent > baseIndent && indent <= baseIndent + 4) {
+      if (serviceMatch && (serviceIndent === -1 ? indent > baseIndent : indent === serviceIndent)) {
+        serviceIndent = indent;
         if (currentService && currentService.name) {
           services.push(finalizeService(currentService));
         }
@@ -130,28 +152,18 @@ function parseComposeYaml(input: string): ParsedDockerCompose {
       } else if (trimmed.startsWith("command:")) {
         currentService.command = trimmed.replace("command:", "").trim().replace(/['"]/g, "");
         currentArrayKey = null;
-      } else if (trimmed.startsWith("ports:")) {
-        currentArrayKey = "ports";
-      } else if (trimmed.startsWith("volumes:")) {
-        currentArrayKey = "volumes";
-      } else if (trimmed.startsWith("depends_on:")) {
-        currentArrayKey = "depends_on";
-      } else if (trimmed.startsWith("environment:")) {
-        currentArrayKey = "environment";
-      } else if (trimmed.startsWith("- ") && currentArrayKey) {
-        // Array item
-        const itemVal = trimmed.replace("- ", "").trim().replace(/['"]/g, "");
-        if (currentArrayKey === "ports") {
-          currentService.ports?.push(itemVal);
-          allExposedPorts.push(itemVal);
-        } else if (currentArrayKey === "volumes") {
-          currentService.volumes?.push(itemVal);
-        } else if (currentArrayKey === "depends_on") {
-          currentService.dependsOn?.push(itemVal);
-        } else if (currentArrayKey === "environment") {
-          const envKey = itemVal.split("=")[0].trim();
-          if (envKey) currentService.environmentKeys?.push(envKey);
+      } else if (/^(ports|volumes|depends_on|environment):/.test(trimmed)) {
+        const key = trimmed.slice(0, trimmed.indexOf(":")) as ComposeListKey;
+        // Flow-style list on the same line: ports: ["3000:3000"]
+        const inline = trimmed.match(/^[a-z_]+:\s*\[(.*)\]\s*$/);
+        if (inline) {
+          for (const item of inline[1].split(",")) addItem(currentService, key, item);
+          currentArrayKey = null;
+        } else {
+          currentArrayKey = key;
         }
+      } else if (trimmed.startsWith("- ") && currentArrayKey) {
+        addItem(currentService, currentArrayKey, trimmed.slice(2));
       } else if (currentArrayKey === "environment" && trimmed.includes(":") && !trimmed.endsWith(":")) {
         // Dictionary-style environment: KEY: value
         const envKey = trimmed.split(":")[0].trim();
