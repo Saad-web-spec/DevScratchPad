@@ -262,7 +262,8 @@ node ./cli/bin/devscratchpad.mjs audit
 - [x] "Schema-Driven Boundaries" convention says what to do on validation failure (SEM-008)
 - [x] Studio guardrails card shows the baseline as an "Always included" strip; removed the now-redundant opt-in shield/secret toggles
 - [x] Gemini output no longer emits "- - **" double bullets; missing blank lines before SKILL.md / Windsurf headings fixed
-- [ ] CLI offline fallback templates (`generateLocalFallback`) do not carry the baseline yet (needs version bump + npm publish)
+- [x] CLI v2.3.0: bundled templates carry the baseline (site test keeps the two copies in sync); `audit` deducts 10 for no trust boundary and 5 for no confirmation gate
+- [ ] Publish `devscratchpad@2.3.0` to npm (`cd cli && npm publish --auth-type=web`)
 
 ---
 

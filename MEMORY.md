@@ -580,3 +580,5 @@ All AI agents operating in this repository MUST follow this 5-step loop:
 - **Gotcha**: Section numbers in SKILL.md / Windsurf output are matched by `sectionLocator.ts`; renumbering headings breaks editor highlighting unless patterns use `\d+`.
 - **Gotcha**: Lines in the baseline that mention secrets/tokens must start with "Never"/"Do not" (optionally after a `**Label**:`), or `ruleAuditor`'s exfiltration pattern flags them.
 - **Status**: ✅ Complete (831 tests, validate-presets, lint 0 errors, build)
+- **Follow-up (CLI v2.3.0)**: `SECURITY_BASELINE` is duplicated in `cli/bin/devscratchpad.mjs` (the CLI has zero deps and cannot import TS); `ruleGenerator.test.ts` fails if the two copies drift, so edit both together. CLI `audit` adds trust-boundary (-10) and confirmation-gate (-5) checks, skipped for llms.txt, ARCHITECTURE.md and ignore files; deductions stay small so an otherwise perfect file still clears `--min-score 80`.
+- **Gotcha**: Writing JS through Python/bash heredocs on this machine mangled `\b` (became backspace) and `\n` (became a real newline). Use the Edit tool for regexes and escape sequences.

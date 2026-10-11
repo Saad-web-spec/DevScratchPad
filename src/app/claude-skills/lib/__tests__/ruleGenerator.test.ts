@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { ALL_FORMATS, PRESETS, buildFromPreset } from "./fixtures";
 import { SECURITY_BASELINE } from "../ruleGenerator";
@@ -72,6 +74,13 @@ describe("buildRuleContent", () => {
           expect(out, `${preset.id}/${format}: ${rule.label}`).toContain(rule.label);
         }
       }
+    }
+  });
+
+  it("keeps the CLI's bundled security baseline in sync with the generator", () => {
+    const cli = readFileSync(join(process.cwd(), "cli", "bin", "devscratchpad.mjs"), "utf8");
+    for (const rule of SECURITY_BASELINE) {
+      expect(cli, rule.label).toContain(`[${JSON.stringify(rule.label)}, ${JSON.stringify(rule.desc)}]`);
     }
   });
 

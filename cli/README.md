@@ -26,7 +26,7 @@ Works the same with `pnpm dlx devscratchpad` and `bunx devscratchpad`.
 | --- | --- |
 | `add <format>/<preset>` | Install one rulebook. Also `add <preset> -f <format>`. |
 | `init` | Write `.cursor/rules/cursor-rules-pro.mdc`, `CLAUDE.md`, `AGENTS.md`, `.cursorignore`, `.claudeignore`, `llms.txt`, `ARCHITECTURE.md`. Existing files are skipped. |
-| `audit [dir]` | Score every AI rule file (0–100) with concrete fixes. |
+| `audit [dir]` | Score every AI rule file (0–100) with concrete fixes: negative guardrails, a trust boundary against instructions hidden in file contents, confirmation gates for irreversible actions, length, globs and vague directives. |
 | `list` | Show all formats and presets. |
 
 ## Options

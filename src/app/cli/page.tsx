@@ -81,7 +81,7 @@ const jsonLdGraph = {
       },
       "description":
         "Zero-dependency, 100% offline-first terminal CLI for managing, auditing, and installing AI rulebooks across Cursor, Claude Code, Windsurf, Copilot, and Gemini.",
-      "softwareVersion": "2.2.0",
+      "softwareVersion": "2.3.0",
       "downloadUrl": "https://www.npmjs.com/package/devscratchpad",
     },
     {
@@ -197,7 +197,7 @@ const FAQS: { q: string; a: React.ReactNode }[] = [
   },
   {
     q: "How does audit score my rules?",
-    a: "It runs static checks on every rule file it finds: negative guardrails, rule length and density, trigger and glob specificity, and vague directives such as “write clean code”. Each file gets a 0–100 score with fixes.",
+    a: "It runs static checks on every rule file it finds: negative guardrails, a trust boundary against instructions hidden in file contents, confirmation gates for irreversible actions, rule length and density, trigger and glob specificity, and vague directives such as “write clean code”. Each file gets a 0–100 score with fixes.",
   },
   {
     q: "How do I migrate a legacy .cursorrules file?",
@@ -281,7 +281,7 @@ export default function CliPage() {
               rel="noreferrer"
               className={`inline-flex h-8 items-center gap-1.5 rounded-md px-2 font-mono text-xs text-zinc-600 transition-colors hover:bg-zinc-100 hover:text-zinc-900 ${focusRing}`}
             >
-              npm <span className="text-zinc-400">v2.2.0</span>
+              npm <span className="text-zinc-400">v2.3.0</span>
             </a>
           </div>
         </div>

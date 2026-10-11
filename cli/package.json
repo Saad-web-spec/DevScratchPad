@@ -1,6 +1,6 @@
 {
   "name": "devscratchpad",
-  "version": "2.2.0",
+  "version": "2.3.0",
   "description": "Zero-dependency AI rulebook manager: install, scaffold and audit rules for Cursor, Claude Code, Windsurf, Copilot, OpenAI & Gemini",
   "bin": {
     "devscratchpad": "bin/devscratchpad.mjs"
