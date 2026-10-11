@@ -1,10 +1,10 @@
 "use client";
 
 import React from "react";
-import { BookOpen, Check, FileText, Layers, Settings2, ShieldCheck, Sliders, UploadCloud } from "lucide-react";
+import { BookOpen, Check, FileText, Layers, Lock, Settings2, ShieldCheck, Sliders, UploadCloud } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { InfoTooltip } from "./InfoTooltip";
-import { BEHAVIOR_OPTIONS, CONVENTION_OPTIONS, PHILOSOPHIES, type SkillPreset } from "../lib/ruleGenerator";
+import { BEHAVIOR_OPTIONS, CONVENTION_OPTIONS, PHILOSOPHIES, SECURITY_BASELINE, type SkillPreset } from "../lib/ruleGenerator";
 
 type Philosophy = SkillPreset["philosophy"];
 
@@ -240,13 +240,13 @@ export interface BehaviorGuardrailsCardProps extends FieldMarkerProps {
   setBehaviors: React.Dispatch<React.SetStateAction<string[]>>;
 }
 
-/** Agent Behavioral Guardrails card: checkbox tiles over BEHAVIOR_OPTIONS. */
+/** Agent Behavioral Guardrails card: checkbox tiles over BEHAVIOR_OPTIONS, plus the always-on SECURITY_BASELINE strip. */
 export function BehaviorGuardrailsCard({ behaviors, setBehaviors, setActiveFieldKey, setIsManuallyEdited }: BehaviorGuardrailsCardProps) {
   return (
     <div data-section="behaviors" className="bg-white rounded-xl border border-zinc-200 p-4 sm:p-5 shadow-xs space-y-3">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-zinc-100 pb-3 gap-1">
         <div className="flex items-center gap-2">
-          <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
+          <ShieldCheck className="w-4 h-4 text-orange-600 shrink-0" />
           <h3 className="text-sm font-bold text-zinc-900">Agent Behavioral Guardrails</h3>
           <InfoTooltip
             title="Agent Behavioral Guardrails"
@@ -285,6 +285,30 @@ export function BehaviorGuardrailsCard({ behaviors, setBehaviors, setActiveField
             </label>
           );
         })}
+      </div>
+
+      <div className="rounded-lg border border-zinc-200 bg-zinc-50/60 p-2.5 space-y-2">
+        <div className="flex items-center gap-2">
+          <Lock className="w-3.5 h-3.5 text-orange-600 shrink-0" />
+          <span className="text-xs font-semibold text-zinc-800">Security &amp; Trust Boundaries</span>
+          <InfoTooltip
+            title="Security & Trust Boundaries"
+            description="Emitted in every generated rule file: embedded or encoded instructions are treated as data, file access is scoped, irreversible actions need confirmation, and secrets are masked."
+            align="left"
+          />
+          <span className="ml-auto text-[11px] text-zinc-500">Always included</span>
+        </div>
+        <ul className="flex flex-wrap gap-1.5">
+          {SECURITY_BASELINE.map((rule) => (
+            <li
+              key={rule.label}
+              title={rule.desc}
+              className="text-[11px] leading-none px-2 py-1 rounded-full border border-zinc-200 bg-white text-zinc-700 cursor-help"
+            >
+              {rule.label}
+            </li>
+          ))}
+        </ul>
       </div>
     </div>
   );

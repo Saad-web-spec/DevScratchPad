@@ -574,3 +574,9 @@ All AI agents operating in this repository MUST follow this 5-step loop:
 - **Gotcha**: The published npm 2.1.0 had drifted from the repo (9 formats vs 13) under the same version. Bump `VERSION` in the bin and `cli/package.json` together and publish after every CLI change. When adding presets to `presetRegistry.ts`, add them to the CLI catalogue too.
 - **Gotcha**: `node --test <dir>` fails on Node 22+; pass the test file path.
 
+### Session: 2026-10-11 — Generator Security Baseline (TAR audit follow-up)
+- **Task**: Fix findings from the external TAR Engine audit of `codebase-auditor` (tarai.dev, 35/100 D: SEM-002/003/004/006/007/008, AR-003/005) at the template level.
+- **Changes**: `SECURITY_BASELINE` in `ruleGenerator.ts` is rendered as a "Security & Trust Boundaries" section in every instruction format (SKILL.md/Windsurf sections renumbered 5-8). Rewrote the `claude-auditor` preset procedures/directives and its `presetRegistry.ts` keyRules. Removed `meta-prompt-shield` / `credential-safety` behaviors (superseded; old share-state IDs are filtered out harmlessly). `BehaviorGuardrailsCard` shows the baseline as a locked strip. `sectionLocator.ts` patterns for Project-Specific Directives and Implementation Reference are now number-agnostic. Tests assert the baseline in all formats for every preset and that the auditor output has zero `security-*` issues in our own `ruleAuditor`.
+- **Gotcha**: Section numbers in SKILL.md / Windsurf output are matched by `sectionLocator.ts`; renumbering headings breaks editor highlighting unless patterns use `\d+`.
+- **Gotcha**: Lines in the baseline that mention secrets/tokens must start with "Never"/"Do not" (optionally after a `**Label**:`), or `ruleAuditor`'s exfiltration pattern flags them.
+- **Status**: ✅ Complete (831 tests, validate-presets, lint 0 errors, build)

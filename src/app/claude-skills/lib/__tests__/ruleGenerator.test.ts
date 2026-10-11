@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { ALL_FORMATS, PRESETS, buildFromPreset } from "./fixtures";
+import { SECURITY_BASELINE } from "../ruleGenerator";
+import { auditRuleQuality } from "../ruleAuditor";
 
 describe("buildRuleContent", () => {
   for (const preset of PRESETS) {
@@ -49,6 +51,41 @@ describe("buildRuleContent", () => {
       expect(skill.startsWith("---\n"), preset.id).toBe(true);
       expect(skill).toMatch(/^name:\s*\S+/m);
       expect(skill).toMatch(/^description:\s*\S+/m);
+    }
+  });
+
+  it("emits the security baseline in every instruction format", () => {
+    const instructionFormats = [
+      "skill_md",
+      "claude_md",
+      "cursor_mdc",
+      "agents_md",
+      "windsurf_cascade",
+      "copilot_instructions",
+      "openai_instructions",
+      "gemini_prompts",
+    ] as const;
+    for (const preset of PRESETS) {
+      for (const format of instructionFormats) {
+        const out = buildFromPreset(preset, format);
+        for (const rule of SECURITY_BASELINE) {
+          expect(out, `${preset.id}/${format}: ${rule.label}`).toContain(rule.label);
+        }
+      }
+    }
+  });
+
+  it("keeps the codebase auditor read-only, scoped, and free of security findings", () => {
+    const auditor = PRESETS.find((p) => p.id === "claude-auditor")!;
+    for (const format of ["skill_md", "claude_md", "cursor_mdc", "agents_md"] as const) {
+      const content = buildFromPreset(auditor, format);
+      expect(content).toMatch(/risk rubric/i);
+      expect(content).toMatch(/read-only by default/i);
+      expect(content).toMatch(/mask the value/i);
+      expect(content).not.toMatch(/without explaining risk level/i);
+      const report = auditRuleQuality({ content, format, description: auditor.description });
+      const securityIssues = report.allIssues.filter((i) => i.id.startsWith("security-"));
+      expect(securityIssues, format).toEqual([]);
     }
   });
 

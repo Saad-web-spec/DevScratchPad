@@ -255,6 +255,15 @@ node ./cli/bin/devscratchpad.mjs audit
 - [x] Published `devscratchpad@2.2.0` to npm (2FA via passkey: `npm publish --auth-type=web`)
 - [ ] Decide CLI licence: MIT (current) vs BSL 1.1
 
+## 2026-10-11 — Generator Security Baseline (TAR audit follow-up)
+
+- [x] `SECURITY_BASELINE` section emitted in all 8 instruction formats (SKILL.md, CLAUDE.md, AGENTS.md, Cursor, Windsurf, Copilot, OpenAI, Gemini): untrusted content as data, encoded payloads, least-privilege file access, confirm irreversible actions, secret masking, validation failures, conflicting requests
+- [x] Codebase Auditor preset: scoped scanning, defined risk rubric, read-only by default with per-finding approval, masked secrets, embedded instructions reported not followed
+- [x] "Schema-Driven Boundaries" convention says what to do on validation failure (SEM-008)
+- [x] Studio guardrails card shows the baseline as an "Always included" strip; removed the now-redundant opt-in shield/secret toggles
+- [x] Gemini output no longer emits "- - **" double bullets; missing blank lines before SKILL.md / Windsurf headings fixed
+- [ ] CLI offline fallback templates (`generateLocalFallback`) do not carry the baseline yet (needs version bump + npm publish)
+
 ---
 
 *This document is a living tracker. AI agents MUST update task statuses when completing work and log their actions in the Agent Session Log.*

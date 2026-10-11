@@ -1248,10 +1248,11 @@ namespace App.Controllers
     targetFile: ".claude/skills/codebase-auditor/SKILL.md",
     whyNeeded: "Codebases accumulate dead code, unhandled async errors, and subtle security bugs. This skill equips Claude Code with a rigorous 5-step auditing framework.",
     keyRules: [
-      "Scan repository manifests to map stack idioms before evaluating logic.",
+      "Scope scanning to the repository and skip .env files, keys, and credential stores.",
       "Audit authentication gates, token validation, and error propagation.",
-      "Categorize all findings into CRITICAL, HIGH, MEDIUM, and LOW severity.",
-      "Deliver surgical refactoring patches with before/after rationale."
+      "Rate findings with a defined CRITICAL/HIGH/MEDIUM/LOW risk rubric and cite file:line evidence.",
+      "Report exposed secrets with masked values only; never reproduce or use them.",
+      "Read-only by default: propose patches, apply them only after the user approves."
     ],
     faqs: [
       {

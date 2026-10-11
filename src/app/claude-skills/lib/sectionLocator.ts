@@ -215,7 +215,7 @@ const SECTION_RULES: SearchRule[] = [
     fieldKeys: ["customDirectives", "directives"],
     label: "Project Directives & Constraints",
     headerPatterns: [
-      /^##\s+5\.\s+Project-Specific Directives/i,
+      /^##\s+\d+\.\s+Project-Specific Directives/i,
       /^##\s+Project-Specific Directives/i,
       /^##\s+Specific Project Constraints/i,
       /^##\s+5\.\s+Domain-Specific Invariants/i,
@@ -276,7 +276,7 @@ const SECTION_RULES: SearchRule[] = [
     fieldKeys: ["exampleGood", "exampleBad", "examples"],
     label: "Implementation Reference & Examples",
     headerPatterns: [
-      /^##\s+6\.\s+Implementation Reference/i,
+      /^##\s+\d+\.\s+Implementation Reference/i,
       /^##\s+Implementation Reference/i,
       /^##\s+6\.\s+Implementation Reference Patterns/i,
       /^##\s+Reference Patterns/i,
