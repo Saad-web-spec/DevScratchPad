@@ -2454,7 +2454,7 @@ export function ClaudeSkillsClient({
           className={cn(
             "lg:col-span-6 flex flex-col space-y-2.5 w-full",
             mobileTab === "form" ? "hidden lg:flex" : "flex",
-            "lg:sticky lg:top-6 lg:max-h-[calc(100vh-3rem)]"
+            "lg:sticky lg:top-28 lg:max-h-[calc(100vh-8rem)] lg:overflow-y-auto lg:overscroll-contain lg:[scrollbar-width:none]"
           )}
         >
           {/* Main Card containing Header + Monaco Editor */}
@@ -2633,7 +2633,7 @@ export function ClaudeSkillsClient({
 
             {/* Editor Container — Always full height */}
             <div
-              className="h-[430px] sm:h-[520px] lg:h-[calc(100vh-16rem)] min-h-[380px] relative overflow-hidden bg-zinc-950 group"
+              className="h-[430px] sm:h-[520px] lg:h-[calc(100vh-23rem)] min-h-[300px] relative overflow-hidden bg-zinc-950 group"
               onClick={() => {
                 if (!shouldLoadEditor) setShouldLoadEditor(true);
               }}
