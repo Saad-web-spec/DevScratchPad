@@ -1,81 +1,66 @@
 # devscratchpad
 
-> **Zero-dependency, offline-first AI rulebook manager for Cursor, Claude Code, Windsurf, GitHub Copilot & Gemini.**
+AI agent rulebooks from your terminal. Install, scaffold and audit rule files for Cursor, Claude Code, Windsurf, GitHub Copilot, OpenAI and Gemini.
 
-Manage, install, and audit production-grade AI agent guidelines directly from your terminal. Built with 100% privacy and zero remote telemetry.
+- Zero dependencies (Node.js standard library only), Node 18.3+
+- Never overwrites your files unless you pass `--force` (and then keeps a `.bak`)
+- Zero telemetry; the only network request downloads a public preset, with bundled templates as an offline fallback
 
-- 💻 **Interactive Web CLI**: [https://www.devscratchpad.tech/cli](https://www.devscratchpad.tech/cli)
-- 📖 **In-Depth Engineering Guide**: [https://www.devscratchpad.tech/blog/how-to-manage-ai-rules-with-cli-guide](https://www.devscratchpad.tech/blog/how-to-manage-ai-rules-with-cli-guide)
-- 🎨 **Visual AI Skill Studio**: [https://www.devscratchpad.tech/ai-skill-studio](https://www.devscratchpad.tech/ai-skill-studio)
+Website: [devscratchpad.tech/cli](https://www.devscratchpad.tech/cli) · Guide: [How to manage AI rules with the CLI](https://www.devscratchpad.tech/blog/how-to-manage-ai-rules-with-cli-guide)
 
----
-
-## ⚡ Quick Start (No Install Needed)
-
-Run instantly with \`npx\`:
+## Quick start
 
 ```bash
-# Browse all available formats and tech presets
-npx devscratchpad list
-
-# Install Cursor rules (.cursor/rules/nextjs-15.mdc)
-npx devscratchpad add cursor-rules/nextjs-15
-
-# Install Claude Code skill (.claude/skills/fastapi/SKILL.md)
-npx devscratchpad add claude-skills/fastapi
-
-# Install Windsurf Cascade rules (.windsurf/rules/tailwind-v4.md)
-npx devscratchpad add windsurf/tailwind-v4
-
-# Install GitHub Copilot repo instructions (.github/copilot-instructions.md)
-npx devscratchpad add copilot/typescript-strict
-
-# Audit existing project rules for quality and hallucinations
-npx devscratchpad audit
-
-# Scaffold starter rules for a new project
-npx devscratchpad init
+npx devscratchpad list                          # formats and presets
+npx devscratchpad add cursor-rules/nextjs-15    # .cursor/rules/nextjs-15.mdc
+npx devscratchpad add claude-skills/fastapi     # .claude/skills/fastapi/SKILL.md
+npx devscratchpad init                          # 7-file AI agent suite
+npx devscratchpad audit --min-score 80          # score rule files, fail below 80
 ```
 
----
+Works the same with `pnpm dlx devscratchpad` and `bunx devscratchpad`.
 
-## 🎯 Features
+## Commands
 
-- **9 Supported Formats**:
-  - **Cursor Rules** (\`.cursor/rules/*.mdc\`)
-  - **Claude Code Skills** (\`.claude/skills/*/SKILL.md\`)
-  - **Project Guidelines** (\`CLAUDE.md\`)
-  - **Multi-Agent Directives** (\`AGENTS.md\`)
-  - **Model Context Protocol** (\`claude.json\`)
-  - **Windsurf Cascade** (\`.windsurf/rules/*.md\`)
-  - **GitHub Copilot** (\`.github/copilot-instructions.md\`)
-  - **OpenAI Instructions** (\`.openai/system-instructions.md\`)
-  - **Gemini Structured Prompts** (\`.gemini/*.json\`)
-- **23+ Technology Presets**: Next.js 15, React 19, Tailwind v4, FastAPI, Strict TypeScript, Docker, PostgreSQL, Go, Rust, and more.
-- **Rule Quality Auditor**: Static heuristics check for missing negative guardrails, trigger specificity, and monolithic prompt degradation.
-- **Offline Reliability**: Bundled local fallbacks ensure `devscratchpad` functions even without internet access.
-- **Zero Dependencies**: Pure Node.js runtime with strict workspace boundary assertions.
+| Command | What it does |
+| --- | --- |
+| `add <format>/<preset>` | Install one rulebook. Also `add <preset> -f <format>`. |
+| `init` | Write `.cursor/rules/cursor-rules-pro.mdc`, `CLAUDE.md`, `AGENTS.md`, `.cursorignore`, `.claudeignore`, `llms.txt`, `ARCHITECTURE.md`. Existing files are skipped. |
+| `audit [dir]` | Score every AI rule file (0–100) with concrete fixes. |
+| `list` | Show all formats and presets. |
 
----
+## Options
 
-## 🌐 Web Companion, Guide & Tools
+| Option | Applies to | Effect |
+| --- | --- | --- |
+| `--force` | add, init | Replace existing files; the previous version is saved as `<file>.bak` |
+| `--dry-run` | add, init | Print what would be written; change nothing |
+| `--offline` | add, init | Skip the network and use bundled templates |
+| `--min-score <n>` | audit | Exit 1 if any file scores below `n` (or no rule files exist) |
+| `--json` | audit, list | Machine-readable output |
+| `--no-color` | all | Disable colours (`NO_COLOR` is honoured too) |
 
-- **[Interactive Web CLI & Terminal Simulator](https://www.devscratchpad.tech/cli)**: Test commands online, preview directory structures, and explore formats in your browser.
-- **[Complete CLI Engineering Guide](https://www.devscratchpad.tech/blog/how-to-manage-ai-rules-with-cli-guide)**: In-depth tutorial covering zero-install execution, negative constraint engineering, and CI/CD quality auditing.
-- **[AI Skill Studio](https://www.devscratchpad.tech/ai-skill-studio)**: Full-featured visual rule generator with live preview and quality scoring.
-- **[Universal AI Rules Converter](https://www.devscratchpad.tech/ai-skill-studio/rules-converter)**: Convert legacy `.cursorrules` or prompt markdown to any modern agent format with 100% client-side privacy.
-- **[Developer Tools Suite](https://www.devscratchpad.tech/developer-tools)**: 28 offline utilities (Formatters, Encoders, Crypto, JWT, RegEx).
+Exit codes: `0` success, `1` failure (unknown preset, audit below `--min-score`, write error), `2` usage error.
 
----
+## Formats
 
-## 🔒 Security & Privacy
+`cursor-rules`, `claude-skills`, `claude-md`, `agents-md`, `windsurf`, `copilot`, `mcp-config`, `openai`, `gemini`, `cursorignore`, `claudeignore`, `llms-txt`, `architecture-md`
 
-- **100% Client-Side**: No code or prompts are sent to any external server.
-- **Path Confinement**: All file writes are strictly confined within your project root to prevent path traversal.
-- **No Telemetry**: Zero tracking, zero analytics in the CLI.
+Presets include `nextjs-15`, `react-19`, `tailwind-v4`, `fastapi`, `python-django`, `go-fiber`, `rust-axum`, `prisma`, `docker-devops`, `kubernetes-helm`, `codebase-auditor`, `security-guard` and more. Run `npx devscratchpad list` for the full list. MCP server presets (`github`, `postgres`, `filesystem`, …) work with `mcp-config`.
 
----
+## Use in CI
 
-## 📄 License
+```yaml
+- run: npx devscratchpad@2 audit --min-score 80
+```
 
-MIT © [DevScratchpad Team](https://www.devscratchpad.tech)
+## Development
+
+```bash
+cd cli
+npm test   # node:test suite, runs offline
+```
+
+## License
+
+MIT © [DevScratchpad](https://www.devscratchpad.tech)

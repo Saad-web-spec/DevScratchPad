@@ -172,7 +172,7 @@ The DevScratchpad CLI is a dependency-free, zero-install Node.js utility enablin
    npx devscratchpad add cursor-rules/nextjs-15
    npx devscratchpad add claude-skills/fastapi
    npx devscratchpad add windsurf/tailwind-v4
-   npx devscratchpad add copilot/typescript-strict
+   npx devscratchpad add copilot/nextjs-15
 
    # Flag syntax:
    npx devscratchpad add nextjs-15 --format cursor-rules

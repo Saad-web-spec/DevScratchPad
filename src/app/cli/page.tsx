@@ -81,7 +81,7 @@ const jsonLdGraph = {
       },
       "description":
         "Zero-dependency, 100% offline-first terminal CLI for managing, auditing, and installing AI rulebooks across Cursor, Claude Code, Windsurf, Copilot, and Gemini.",
-      "softwareVersion": "2.1.0",
+      "softwareVersion": "2.2.0",
       "downloadUrl": "https://www.npmjs.com/package/devscratchpad",
     },
     {
@@ -170,6 +170,24 @@ const FAQS: { q: string; a: React.ReactNode }[] = [
     ),
   },
   {
+    q: "Will it overwrite files I already have?",
+    a: (
+      <>
+        No. Existing files are skipped. Pass <code>--force</code> to replace one (the previous version is kept as{" "}
+        <code>&lt;file&gt;.bak</code>), or <code>--dry-run</code> to see what would be written first.
+      </>
+    ),
+  },
+  {
+    q: "Can I run the audit in CI?",
+    a: (
+      <>
+        Yes. <code>npx devscratchpad audit --min-score 80</code> exits with code 1 when any rule file scores below 80, and{" "}
+        <code>--json</code> prints a machine-readable report.
+      </>
+    ),
+  },
+  {
     q: "Does the CLI upload my code or prompts?",
     a: "No. It has zero telemetry. The only network request is fetching a public preset, and it falls back to bundled templates when you are offline.",
   },
@@ -198,7 +216,10 @@ const FAQS: { q: string; a: React.ReactNode }[] = [
 const COMMANDS: { cmd: string; does: string; example: string; output: string }[] = [
   { cmd: "add <format>/<preset>", does: "Install a rulebook", example: "npx devscratchpad add cursor-rules/nextjs-15", output: ".cursor/rules/nextjs-15.mdc" },
   { cmd: "add <preset> -f <format>", does: "Same, flag syntax", example: "npx devscratchpad add fastapi -f claude-skills", output: ".claude/skills/fastapi/SKILL.md" },
+  { cmd: "add … --dry-run", does: "Preview, change nothing", example: "npx devscratchpad add claude-skills/fastapi --dry-run", output: "Nothing (prints the plan)" },
+  { cmd: "add … --force", does: "Replace an existing file", example: "npx devscratchpad add cursor-rules/nextjs-15 --force", output: "New file + <file>.bak" },
   { cmd: "audit [dir]", does: "Score existing rule files", example: "npx devscratchpad audit", output: "Read-only report" },
+  { cmd: "audit --min-score <n>", does: "Fail CI below a score", example: "npx devscratchpad audit --min-score 80 --json", output: "Exit code 1 if any file < n" },
   { cmd: "list", does: "Show formats and presets", example: "npx devscratchpad list", output: "Printed to terminal" },
   { cmd: "init", does: "Scaffold the 5-layer suite", example: "npx devscratchpad init", output: "7 files (rules, CLAUDE.md, AGENTS.md…)" },
 ];
@@ -260,7 +281,7 @@ export default function CliPage() {
               rel="noreferrer"
               className={`inline-flex h-8 items-center gap-1.5 rounded-md px-2 font-mono text-xs text-zinc-600 transition-colors hover:bg-zinc-100 hover:text-zinc-900 ${focusRing}`}
             >
-              npm <span className="text-zinc-400">v2.1.0</span>
+              npm <span className="text-zinc-400">v2.2.0</span>
             </a>
           </div>
         </div>

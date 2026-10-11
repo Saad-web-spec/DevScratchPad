@@ -1,29 +1,35 @@
 {
   "name": "devscratchpad",
-  "version": "2.1.0",
-  "description": "Zero-dependency, offline-first AI rulebook manager for Cursor, Claude Code, Windsurf, Copilot & Gemini",
+  "version": "2.2.0",
+  "description": "Zero-dependency AI rulebook manager: install, scaffold and audit rules for Cursor, Claude Code, Windsurf, Copilot, OpenAI & Gemini",
   "bin": {
-    "devscratchpad": "bin/devscratchpad.js"
+    "devscratchpad": "bin/devscratchpad.mjs"
   },
   "type": "module",
-  "main": "./bin/devscratchpad.js",
+  "main": "./bin/devscratchpad.mjs",
   "files": [
     "bin",
     "README.md"
   ],
+  "scripts": {
+    "test": "node --test test/cli.test.mjs"
+  },
   "engines": {
-    "node": ">=18.0.0"
+    "node": ">=18.3.0"
   },
   "keywords": [
     "cursorrules",
     "cursor-rules",
     "claude-code",
     "claude-skills",
+    "claude-md",
+    "agents-md",
     "windsurf",
     "copilot",
-    "developer-tools",
+    "mcp",
+    "llms-txt",
     "ai-agent",
-    "offline-first",
+    "developer-tools",
     "privacy"
   ],
   "author": "DevScratchpad Team (https://www.devscratchpad.tech)",
@@ -31,7 +37,10 @@
   "homepage": "https://www.devscratchpad.tech/cli",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/saadashrafx/devscratchpad.tech.git",
+    "url": "git+https://github.com/Saad-web-spec/DevScratchPad.git",
     "directory": "cli"
+  },
+  "bugs": {
+    "url": "https://github.com/Saad-web-spec/DevScratchPad/issues"
   }
 }

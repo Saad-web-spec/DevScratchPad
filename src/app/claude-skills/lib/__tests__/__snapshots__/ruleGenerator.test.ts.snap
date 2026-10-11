@@ -27,7 +27,7 @@ Philosophy: Modern Balanced — Clean interfaces, pragmatic typing, sensible def
 ## Operational Guardrails
 - **Inspect Before Acting**: Always read and understand existing code and imports before suggesting changes.
 - **Minimal Surgical Diffs**: Touch only lines relevant to prompt. Preserve existing comments and formatting.
-- **Concise & Direct Tone**: Skip conversational pleasantries. Deliver clean code and targeted rationale.
+- **Concise & Direct Tone**: Skip conversational pleasantries. Deliver focused diffs and a short rationale.
 - **Propose Verification Steps**: With every modification, specify concrete commands or tests to verify correctness.
 - **Preserve Codebase Idioms**: Match existing naming conventions, indentation, and directory patterns.
 
@@ -113,7 +113,7 @@ All AI agents operating within this repository must adhere strictly to these arc
 ## 4. Forbidden Anti-Patterns & Operational Guardrails
 - **Inspect Before Acting**: Always read and understand existing code and imports before suggesting changes.
 - **Minimal Surgical Diffs**: Touch only lines relevant to prompt. Preserve existing comments and formatting.
-- **Concise & Direct Tone**: Skip conversational pleasantries. Deliver clean code and targeted rationale.
+- **Concise & Direct Tone**: Skip conversational pleasantries. Deliver focused diffs and a short rationale.
 - **Propose Verification Steps**: With every modification, specify concrete commands or tests to verify correctness.
 - **Preserve Codebase Idioms**: Match existing naming conventions, indentation, and directory patterns.
 
@@ -192,7 +192,7 @@ Modern .cursor/rules/*.mdc configuration for Cursor IDE. Enforces modular scopin
 <agent_guardrails>
 - **Inspect Before Acting**: Always read and understand existing code and imports before suggesting changes.
 - **Minimal Surgical Diffs**: Touch only lines relevant to prompt. Preserve existing comments and formatting.
-- **Concise & Direct Tone**: Skip conversational pleasantries. Deliver clean code and targeted rationale.
+- **Concise & Direct Tone**: Skip conversational pleasantries. Deliver focused diffs and a short rationale.
 - **Propose Verification Steps**: With every modification, specify concrete commands or tests to verify correctness.
 - **Preserve Codebase Idioms**: Match existing naming conventions, indentation, and directory patterns.
 </agent_guardrails>
@@ -369,7 +369,7 @@ When generating completions, chat responses, or pull request suggestions:
 ## Prohibited Patterns & Guardrails
 - **Inspect Before Acting**: Always read and understand existing code and imports before suggesting changes.
 - **Minimal Surgical Diffs**: Touch only lines relevant to prompt. Preserve existing comments and formatting.
-- **Concise & Direct Tone**: Skip conversational pleasantries. Deliver clean code and targeted rationale.
+- **Concise & Direct Tone**: Skip conversational pleasantries. Deliver focused diffs and a short rationale.
 - **Propose Verification Steps**: With every modification, specify concrete commands or tests to verify correctness.
 - **Preserve Codebase Idioms**: Match existing naming conventions, indentation, and directory patterns.
 
@@ -438,7 +438,7 @@ Engineering Philosophy: **Modern Balanced** (Clean interfaces, pragmatic typing,
 ## Agent Directives
 - **Inspect Before Acting**: Always read and understand existing code and imports before suggesting changes.
 - **Minimal Surgical Diffs**: Touch only lines relevant to prompt. Preserve existing comments and formatting.
-- **Concise & Direct Tone**: Skip conversational pleasantries. Deliver clean code and targeted rationale.
+- **Concise & Direct Tone**: Skip conversational pleasantries. Deliver focused diffs and a short rationale.
 - **Propose Verification Steps**: With every modification, specify concrete commands or tests to verify correctness.
 - **Preserve Codebase Idioms**: Match existing naming conventions, indentation, and directory patterns.
 
@@ -648,7 +648,7 @@ exports[`buildRuleContent > matches the committed snapshot for the first preset 
         "text": "Core Guidelines:\\n- - **Guard Clauses & Early Returns**: Exit early from functions to eliminate deeply nested if-else pyramids.\\n- - **Feature-Colocated Structure**: Group components, hooks, tests, and utils inside domain feature folders.\\n- - **Explicit Result / Tuple Returns**: Return [error, result] or Result<T, E> types for operations that can fail.\\n- - **Schema-Driven Boundaries**: Validate all external data (API, forms, env) with Zod or Pydantic schemas."
       },
       {
-        "text": "Negative Constraints & Guardrails:\\n- - **Inspect Before Acting**: Always read and understand existing code and imports before suggesting changes.\\n- - **Minimal Surgical Diffs**: Touch only lines relevant to prompt. Preserve existing comments and formatting.\\n- - **Concise & Direct Tone**: Skip conversational pleasantries. Deliver clean code and targeted rationale.\\n- - **Propose Verification Steps**: With every modification, specify concrete commands or tests to verify correctness.\\n- - **Preserve Codebase Idioms**: Match existing naming conventions, indentation, and directory patterns."
+        "text": "Negative Constraints & Guardrails:\\n- - **Inspect Before Acting**: Always read and understand existing code and imports before suggesting changes.\\n- - **Minimal Surgical Diffs**: Touch only lines relevant to prompt. Preserve existing comments and formatting.\\n- - **Concise & Direct Tone**: Skip conversational pleasantries. Deliver focused diffs and a short rationale.\\n- - **Propose Verification Steps**: With every modification, specify concrete commands or tests to verify correctness.\\n- - **Preserve Codebase Idioms**: Match existing naming conventions, indentation, and directory patterns."
       },
       {
         "text": "Mandatory Project Directives:\\n- Keep responses direct, dense, and code-first with minimal conversational filler.\\n- Never modify unrequested files or remove unrelated comments.\\n- Always implement explicit error handling for asynchronous code paths."
@@ -691,7 +691,7 @@ exports[`buildRuleContent > matches the committed snapshot for the first preset 
 ## Operational Guardrails & Prohibited Patterns
 - **Inspect Before Acting**: Always read and understand existing code and imports before suggesting changes.
 - **Minimal Surgical Diffs**: Touch only lines relevant to prompt. Preserve existing comments and formatting.
-- **Concise & Direct Tone**: Skip conversational pleasantries. Deliver clean code and targeted rationale.
+- **Concise & Direct Tone**: Skip conversational pleasantries. Deliver focused diffs and a short rationale.
 - **Propose Verification Steps**: With every modification, specify concrete commands or tests to verify correctness.
 - **Preserve Codebase Idioms**: Match existing naming conventions, indentation, and directory patterns.
 
@@ -832,7 +832,7 @@ Core Engineering Standards:
 Operational Guardrails & Prohibitions:
 - **Inspect Before Acting**: Always read and understand existing code and imports before suggesting changes.
 - **Minimal Surgical Diffs**: Touch only lines relevant to prompt. Preserve existing comments and formatting.
-- **Concise & Direct Tone**: Skip conversational pleasantries. Deliver clean code and targeted rationale.
+- **Concise & Direct Tone**: Skip conversational pleasantries. Deliver focused diffs and a short rationale.
 - **Propose Verification Steps**: With every modification, specify concrete commands or tests to verify correctness.
 - **Preserve Codebase Idioms**: Match existing naming conventions, indentation, and directory patterns.
 
@@ -964,7 +964,7 @@ Follow this structured step-by-step workflow when this skill is active:
 ## 4. Agent Behavioral Guardrails
 - **Inspect Before Acting**: Always read and understand existing code and imports before suggesting changes.
 - **Minimal Surgical Diffs**: Touch only lines relevant to prompt. Preserve existing comments and formatting.
-- **Concise & Direct Tone**: Skip conversational pleasantries. Deliver clean code and targeted rationale.
+- **Concise & Direct Tone**: Skip conversational pleasantries. Deliver focused diffs and a short rationale.
 - **Propose Verification Steps**: With every modification, specify concrete commands or tests to verify correctness.
 - **Preserve Codebase Idioms**: Match existing naming conventions, indentation, and directory patterns.
 
@@ -1094,7 +1094,7 @@ You are an expert **Cursor Systems Architect** operating inside Windsurf Cascade
 ## 4. Negative Constraints
 - **Inspect Before Acting**: Always read and understand existing code and imports before suggesting changes.
 - **Minimal Surgical Diffs**: Touch only lines relevant to prompt. Preserve existing comments and formatting.
-- **Concise & Direct Tone**: Skip conversational pleasantries. Deliver clean code and targeted rationale.
+- **Concise & Direct Tone**: Skip conversational pleasantries. Deliver focused diffs and a short rationale.
 - **Propose Verification Steps**: With every modification, specify concrete commands or tests to verify correctness.
 - **Preserve Codebase Idioms**: Match existing naming conventions, indentation, and directory patterns.
 

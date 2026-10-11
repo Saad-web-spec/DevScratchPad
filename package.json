@@ -14,7 +14,8 @@
     "start": "next start",
     "lint": "eslint",
     "validate-presets": "node ./scripts/validate-presets.mjs",
-    "test": "vitest run"
+    "test": "vitest run",
+    "test:cli": "node --test cli/test/cli.test.mjs"
   },
   "dependencies": {
     "@faker-js/faker": "^10.6.0",

@@ -243,6 +243,18 @@ node ./cli/bin/devscratchpad.mjs audit
 - [x] Tool polish round 2: no Sample buttons/links or CIDR example chips, no green status (zinc), one-row `ToolHeader` that wraps controls only when needed (secondary actions icon-only on phones), lighter disabled primary, HMAC random-key icon is Dices
 - [x] "Offline" claims removed from site copy (titles, descriptions, JSON-LD, llms.txt, OG images); honest "Partly" FAQs kept; the CLI keeps its genuine offline wording. Service workers stay unregistered in layout.tsx
 
+
+## 2026-10-11 — CLI v2.2.0
+
+- [x] Never overwrite existing files (`--force` keeps `<file>.bak`), `--dry-run`, `--offline`
+- [x] 10s network timeout; 404 = unknown preset error with suggestion (fixed hang + fake file); bundled fallback only on network failure
+- [x] `audit --min-score <n>` / `--json` for CI; correct exit codes (0 ok, 1 failure, 2 usage); NO_COLOR / non-TTY output
+- [x] Preset catalogue matches the server's `/api/raw` presets; templates for claude-md, agents-md, mcp-config (valid JSON)
+- [x] Generated files pass the CLI's own audit; site generator no longer emits "clean code"
+- [x] Single bin `cli/bin/devscratchpad.mjs`; repo URL fixed; README rewritten; 20 node:test cases + `cli-tests.yml` (Node 18/20/22)
+- [ ] Publish: `cd cli && npm publish` (needs the owner's npm login)
+- [ ] Decide CLI licence: MIT (current) vs BSL 1.1
+
 ---
 
 *This document is a living tracker. AI agents MUST update task statuses when completing work and log their actions in the Agent Session Log.*

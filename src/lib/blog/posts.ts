@@ -2238,8 +2238,8 @@ npx devscratchpad add fastapi -f claude-skills
 # Install Tailwind CSS v4 rules for Windsurf
 npx devscratchpad add tailwind-v4 -f windsurf
 
-# Install strict TypeScript rules for GitHub Copilot
-npx devscratchpad add typescript-strict -f copilot
+# Install Next.js rules for GitHub Copilot
+npx devscratchpad add nextjs-15 -f copilot
 \`\`\`
 
 ### Alternative Modern Runtimes
@@ -2250,7 +2250,7 @@ If your project uses \`pnpm\` or \`bun\`, \`devscratchpad\` works natively witho
 pnpm dlx devscratchpad add cursor-rules/react-19
 
 # Run with bunx
-bunx devscratchpad add docker-compose -f cursor-rules
+bunx devscratchpad add docker-devops -f cursor-rules
 \`\`\`
 
 ---

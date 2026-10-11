@@ -24,11 +24,11 @@ const POPULAR_PRESETS: PresetItem[] = [
   { slug: "nextjs-15", name: "Next.js 15 App Router", category: "Fullstack" },
   { slug: "react-19", name: "React 19 & Server Components", category: "Frontend" },
   { slug: "tailwind-v4", name: "Tailwind CSS v4", category: "Styling" },
-  { slug: "typescript-strict", name: "Strict TypeScript", category: "Language" },
   { slug: "fastapi", name: "FastAPI & Pydantic v2", category: "Backend" },
-  { slug: "go-standard", name: "Idiomatic Go", category: "Backend" },
-  { slug: "docker-compose", name: "Docker hardening", category: "DevOps" },
+  { slug: "go-fiber", name: "Go & Fiber", category: "Backend" },
+  { slug: "docker-devops", name: "Docker & DevOps", category: "DevOps" },
   { slug: "codebase-auditor", name: "Codebase auditor", category: "Quality" },
+  { slug: "security-guard", name: "Security guardrails", category: "Quality" },
 ];
 
 const ICON = "size-4 shrink-0";

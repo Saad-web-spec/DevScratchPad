@@ -2,41 +2,126 @@
 
 /**
  * DevScratchpad CLI (npx devscratchpad)
- * 100% Client-Side & Offline-First AI Rulebook Manager
- * 
+ * Zero-dependency AI rulebook manager: install, scaffold and audit rule files
+ * for Cursor, Claude Code, Windsurf, Copilot, OpenAI and Gemini.
+ *
  * Commands:
- *   add <format>/<preset>   Install a pre-configured AI rulebook into your repo
- *   list                    List all available presets and formats
- *   audit [file/dir]        Audit your repository's AI rule files for quality & hallucinations
- *   init                    Initialize recommended starter rules for your project
+ *   add <format>/<preset>   Install a rulebook into the current repository
+ *   init                    Scaffold the 5-layer AI agent suite (7 files)
+ *   audit [dir]             Score existing AI rule files (CI-friendly with --min-score / --json)
+ *   list                    List formats and presets
+ *
+ * Exit codes: 0 success, 1 failure (unknown preset, audit below --min-score, write error), 2 usage error.
+ * Existing files are never overwritten unless --force is passed (the old file is kept as <file>.bak).
  */
 
 import fs from "node:fs";
 import path from "node:path";
 import https from "node:https";
+import { parseArgs } from "node:util";
 
-const VERSION = "2.1.0";
+const VERSION = "2.2.0";
 const SITE_URL = "https://www.devscratchpad.tech";
+const NETWORK_TIMEOUT_MS = 10_000;
+
+// ---------------------------------------------------------------------------
+// Output helpers: colour only on a TTY, never when NO_COLOR is set or --no-color is passed.
+// ---------------------------------------------------------------------------
+
+let useColor =
+  !("NO_COLOR" in process.env) &&
+  (process.env.FORCE_COLOR ? process.env.FORCE_COLOR !== "0" : Boolean(process.stdout.isTTY));
+
+const paint = (code) => (text) => (useColor ? `\x1b[${code}m${text}\x1b[0m` : String(text));
+const c = {
+  bold: paint("1"),
+  dim: paint("2"),
+  red: paint("31"),
+  green: paint("32"),
+  yellow: paint("33"),
+  cyan: paint("36"),
+};
+
+const log = (...args) => console.log(...args);
+
+/** Error with an exit code: 1 = operation failed, 2 = bad usage. */
+class CliError extends Error {
+  constructor(message, exitCode = 1, hint) {
+    super(message);
+    this.exitCode = exitCode;
+    this.hint = hint;
+  }
+}
+
+/** Closest candidate by edit distance, for "did you mean" hints. */
+function suggest(input, candidates) {
+  const distance = (a, b) => {
+    const dp = Array.from({ length: a.length + 1 }, (_, i) => [i, ...Array(b.length).fill(0)]);
+    for (let j = 1; j <= b.length; j++) dp[0][j] = j;
+    for (let i = 1; i <= a.length; i++) {
+      for (let j = 1; j <= b.length; j++) {
+        dp[i][j] = Math.min(dp[i - 1][j] + 1, dp[i][j - 1] + 1, dp[i - 1][j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+      }
+    }
+    return dp[a.length][b.length];
+  };
+  let best = null;
+  let bestScore = Infinity;
+  for (const candidate of candidates) {
+    const score = candidate.includes(input) || input.includes(candidate) ? 1 : distance(input, candidate);
+    if (score < bestScore) {
+      best = candidate;
+      bestScore = score;
+    }
+  }
+  return best && bestScore <= Math.max(3, Math.floor(input.length / 2)) ? best : null;
+}
+
+// ---------------------------------------------------------------------------
+// Catalogue (mirrors the presets served by /api/raw on the website)
+// ---------------------------------------------------------------------------
 
 const KNOWN_PRESETS = [
   { slug: "nextjs-15", tech: "Next.js 15 App Router", category: "Fullstack", defaultGlobs: "src/app/**/*.{ts,tsx}" },
+  { slug: "fullstack-agent-team", tech: "Fullstack Agent Team", category: "Fullstack", defaultGlobs: "**/*" },
   { slug: "react-19", tech: "React 19 & Server Components", category: "Frontend", defaultGlobs: "src/**/*.{ts,tsx}" },
-  { slug: "tailwind-v4", tech: "Tailwind CSS v4 (CSS-First)", category: "Styling", defaultGlobs: "src/**/*.{css,tsx,jsx}" },
+  { slug: "vue-nuxt", tech: "Vue 3 & Nuxt", category: "Frontend", defaultGlobs: "**/*.{vue,ts}" },
+  { slug: "sveltekit", tech: "Svelte 5 & SvelteKit", category: "Frontend", defaultGlobs: "src/**/*.{svelte,ts,js}" },
+  { slug: "tailwind-v4", tech: "Tailwind CSS v4", category: "Styling", defaultGlobs: "src/**/*.{css,tsx,jsx}" },
   { slug: "fastapi", tech: "FastAPI & Pydantic v2", category: "Backend", defaultGlobs: "**/*.py" },
+  { slug: "python-django", tech: "Django & Django REST Framework", category: "Backend", defaultGlobs: "**/*.py" },
+  { slug: "go-fiber", tech: "Go & Fiber", category: "Backend", defaultGlobs: "**/*.go" },
+  { slug: "rust-axum", tech: "Rust & Axum", category: "Backend", defaultGlobs: "**/*.rs" },
+  { slug: "bun-elysia", tech: "Bun & Elysia", category: "Backend", defaultGlobs: "src/**/*.ts" },
+  { slug: "spring-boot-3", tech: "Spring Boot 3", category: "Backend", defaultGlobs: "**/*.java" },
+  { slug: "csharp-dotnet-8", tech: "C# & .NET 8", category: "Backend", defaultGlobs: "**/*.cs" },
+  { slug: "supabase", tech: "Supabase", category: "Database", defaultGlobs: "supabase/**/*,src/**/*.ts" },
+  { slug: "prisma", tech: "Prisma ORM", category: "Database", defaultGlobs: "prisma/**/*,src/**/*.ts" },
+  { slug: "drizzle", tech: "Drizzle ORM", category: "Database", defaultGlobs: "src/db/**/*.ts" },
+  { slug: "react-native-expo", tech: "React Native & Expo", category: "Mobile", defaultGlobs: "app/**/*.{ts,tsx}" },
+  { slug: "flutter-dart", tech: "Flutter & Dart", category: "Mobile", defaultGlobs: "lib/**/*.dart" },
+  { slug: "docker-devops", tech: "Docker & DevOps", category: "DevOps", defaultGlobs: "Dockerfile,docker-compose*.yml" },
+  { slug: "kubernetes-helm", tech: "Kubernetes & Helm", category: "DevOps", defaultGlobs: "**/*.{yaml,yml}" },
+  { slug: "terraform-iac", tech: "Terraform IaC", category: "DevOps", defaultGlobs: "**/*.tf" },
+  { slug: "tdd-specialist", tech: "Test-Driven Development", category: "Testing", defaultGlobs: "**/*.{test,spec}.{ts,tsx}" },
+  { slug: "playwright-e2e", tech: "Playwright E2E", category: "Testing", defaultGlobs: "tests/**/*.ts" },
   { slug: "codebase-auditor", tech: "Codebase Security & Lint Auditor", category: "Quality", defaultGlobs: "**/*" },
-  { slug: "typescript-strict", tech: "Strict TypeScript Invariants", category: "Language", defaultGlobs: "**/*.{ts,tsx}" },
-  { slug: "cursor-rules-pro", tech: "Universal Cursor Pro Rules", category: "IDE", defaultGlobs: "**/*" },
-  { slug: "postgres", tech: "PostgreSQL & Prisma/Drizzle", category: "Database", defaultGlobs: "src/db/**/*,prisma/**/*" },
-  { slug: "docker-compose", tech: "Docker & Container Hardening", category: "DevOps", defaultGlobs: "Dockerfile,docker-compose*.yml" },
-  { slug: "graphql", tech: "GraphQL Yoga & Apollo Federation", category: "API", defaultGlobs: "**/*.graphql,src/schema/**/*" },
-  { slug: "django", tech: "Django & Django REST Framework", category: "Backend", defaultGlobs: "**/*.py" },
-  { slug: "go-standard", tech: "Idiomatic Go (net/http & slog)", category: "Backend", defaultGlobs: "**/*.go" },
-  { slug: "rust-cli", tech: "Rust & Tokio Async", category: "Systems", defaultGlobs: "**/*.rs" },
-  { slug: "vitest-testing", tech: "Vitest & Playwright TDD", category: "Testing", defaultGlobs: "**/*.{test,spec}.{ts,tsx}" },
-  { slug: "hono-cloudflare", tech: "Hono on Cloudflare Workers", category: "Edge", defaultGlobs: "src/**/*.{ts,js}" },
-  { slug: "expo-react-native", tech: "Expo Router & React Native", category: "Mobile", defaultGlobs: "app/**/*.{ts,tsx}" },
-  { slug: "svelte-5", tech: "Svelte 5 Runes & SvelteKit", category: "Frontend", defaultGlobs: "src/**/*.{svelte,ts,js}" },
-  { slug: "security-guard", tech: "Zero-Trust Security Guardrails", category: "Security", defaultGlobs: "**/*" }
+  { slug: "security-guard", tech: "Zero-Trust Security Guardrails", category: "Quality", defaultGlobs: "**/*" },
+  { slug: "cursor-rules-pro", tech: "Universal Cursor Pro Rules", category: "General", defaultGlobs: "**/*" },
+  { slug: "vibe-coder", tech: "Vibe Coder (High Velocity)", category: "General", defaultGlobs: "**/*" },
+];
+
+/** MCP server presets (only valid with the mcp-config format). */
+const MCP_PRESETS = [
+  { slug: "github", tech: "GitHub", pkg: "@modelcontextprotocol/server-github", env: { GITHUB_PERSONAL_ACCESS_TOKEN: "<your-token>" } },
+  { slug: "postgres", tech: "PostgreSQL", pkg: "@modelcontextprotocol/server-postgres", args: ["postgresql://localhost:5432/mydb"] },
+  { slug: "brave-search", tech: "Brave Search", pkg: "@modelcontextprotocol/server-brave-search", env: { BRAVE_API_KEY: "<your-key>" } },
+  { slug: "fetch", tech: "Fetch", pkg: "@modelcontextprotocol/server-fetch" },
+  { slug: "puppeteer", tech: "Puppeteer", pkg: "@modelcontextprotocol/server-puppeteer" },
+  { slug: "docker", tech: "Docker", pkg: "mcp-server-docker" },
+  { slug: "filesystem", tech: "Filesystem", pkg: "@modelcontextprotocol/server-filesystem", args: ["."] },
+  { slug: "sqlite", tech: "SQLite", pkg: "mcp-server-sqlite", args: ["--db-path", "./app.db"] },
+  { slug: "memory", tech: "Memory", pkg: "@modelcontextprotocol/server-memory" },
 ];
 
 const FORMAT_CONFIGS = {
@@ -104,8 +189,10 @@ const FORMAT_CONFIGS = {
     name: "ARCHITECTURE.md System Blueprint",
     aliases: ["architecture", "arch", "architecturemd"],
     getTargetPath: () => "ARCHITECTURE.md",
-  }
+  },
 };
+
+const FORMAT_NAMES = Object.keys(FORMAT_CONFIGS);
 
 function canonicalizeFormat(formatInput) {
   const normalized = formatInput.toLowerCase().trim();
@@ -117,17 +204,71 @@ function canonicalizeFormat(formatInput) {
   return null;
 }
 
+function presetsFor(format) {
+  return format === "mcp-config" ? MCP_PRESETS : KNOWN_PRESETS;
+}
+
+// ---------------------------------------------------------------------------
+// Network: one GET with a hard timeout. Resolves { status, body } or rejects on network failure.
+// ---------------------------------------------------------------------------
+
 function fetchContent(url) {
   return new Promise((resolve, reject) => {
-    https.get(url, { headers: { "User-Agent": `devscratchpad-cli/${VERSION}` } }, (res) => {
+    const req = https.get(url, { headers: { "User-Agent": `devscratchpad-cli/${VERSION}` } }, (res) => {
       if (res.statusCode !== 200) {
-        return reject(new Error(`Server returned HTTP ${res.statusCode}`));
+        res.resume(); // drain so the socket closes and the process can exit
+        resolve({ status: res.statusCode ?? 0, body: "" });
+        return;
       }
+      res.setEncoding("utf8");
       let raw = "";
-      res.on("data", (chunk) => { raw += chunk; });
-      res.on("end", () => resolve(raw));
-    }).on("error", (err) => reject(err));
+      res.on("data", (chunk) => {
+        raw += chunk;
+      });
+      res.on("end", () => resolve({ status: 200, body: raw }));
+      res.on("error", reject);
+    });
+    req.setTimeout(NETWORK_TIMEOUT_MS, () => req.destroy(new Error(`timed out after ${NETWORK_TIMEOUT_MS / 1000}s`)));
+    req.on("error", reject);
   });
+}
+
+// ---------------------------------------------------------------------------
+// Bundled offline templates
+// ---------------------------------------------------------------------------
+
+function mcpTemplate(preset) {
+  const found = MCP_PRESETS.find((p) => p.slug === preset);
+  const server = {
+    command: "npx",
+    args: ["-y", found ? found.pkg : preset, ...((found && found.args) || [])],
+  };
+  if (found && found.env) server.env = found.env;
+  return `${JSON.stringify({ mcpServers: { [preset]: server } }, null, 2)}\n`;
+}
+
+function projectGuideTemplate(kind, found) {
+  const title = kind === "agents-md" ? "AGENTS.md" : "CLAUDE.md";
+  return `# ${title}: ${found.tech}
+
+Generated by DevScratchpad CLI (${SITE_URL}). Edit it to match your project.
+
+## Project context
+- Stack: ${found.tech}
+- Source of truth for conventions: this file, then the code itself.
+
+## Working rules
+1. Read the surrounding code before editing; follow its naming, structure and error handling.
+2. Keep diffs minimal and focused on the task.
+3. Run the project's type check, lint and tests before declaring a task done.
+4. Explain non-obvious decisions in the pull request, not in code comments.
+
+## Never
+- Never commit secrets, tokens or .env files.
+- Do not add dependencies without stating why.
+- Do not reformat or rename unrelated code.
+- Never disable a failing test to make a change pass.
+`;
 }
 
 function generateLocalFallback(format, preset) {
@@ -137,6 +278,9 @@ function generateLocalFallback(format, preset) {
     category: "General",
     defaultGlobs: "**/*"
   };
+
+  if (format === "mcp-config") return mcpTemplate(preset);
+  if (format === "claude-md" || format === "agents-md") return projectGuideTemplate(format, found);
 
   if (format === "cursor-rules") {
     return `---
@@ -167,6 +311,7 @@ Generated with DevScratchpad AI Skill Studio (${SITE_URL})
 2. Prefer modular composition over monolithic architecture.
 3. Handle error states deterministically with proper error boundaries.
 4. Preserve existing comments and docstrings.
+5. Never introduce deprecated APIs or unrequested dependencies.
 
 Generated by DevScratchpad (${SITE_URL})
 `;
@@ -177,7 +322,7 @@ Generated by DevScratchpad (${SITE_URL})
 
 ## Architecture
 - Tech Stack: ${found.tech}
-- Conventions: Strict type safety, clean code segregation, zero-dependency utility patterns.
+- Conventions: Strict type safety, explicit module boundaries, zero-dependency utility patterns.
 
 ## Instructions for Copilot
 - When generating code, follow established repository style.
@@ -366,209 +511,305 @@ This document serves as the high-level system architecture guide for human engin
 - No remote transmission of user data without explicit consent.
 - All boundary inputs must be validated with runtime schemas.
 - Minimal dependencies; prefer native platform capabilities.
+- Never import from a higher layer into a lower one (Integration must not depend on Entry).
+- Do not bypass the Domain layer to reach storage directly.
 
 Generated by DevScratchpad CLI (${SITE_URL})
 `;
   }
 
-  return `# ${found.tech} Guidelines
-Generated by DevScratchpad AI Skill Studio (${SITE_URL})
-
-1. Strict adherence to ${found.tech} standards.
-2. 100% offline privacy and secure memory management.
-`;
+  return projectGuideTemplate("claude-md", found);
 }
 
-async function handleAdd(rawArgs) {
-  const argsList = Array.isArray(rawArgs) ? rawArgs : [rawArgs].filter(Boolean);
-  const arg = argsList[0];
+// ---------------------------------------------------------------------------
+// add
+// ---------------------------------------------------------------------------
+
+const SLUG_RE = /^[a-zA-Z0-9_-]+$/;
+
+/** Parse "<format>/<preset>" or "<preset>" + --format into canonical slugs. Throws CliError on bad input. */
+function resolveTarget(arg, formatFlag) {
   if (!arg) {
-    console.error("\x1b[31mError: Missing preset identifier.\x1b[0m");
-    console.log("Usage: npx devscratchpad add <format>/<preset> or npx devscratchpad add <preset> --format <format>");
-    console.log("Example: npx devscratchpad add cursor-rules/nextjs-15");
-    process.exit(1);
+    throw new CliError("Missing preset.", 2, "Usage: devscratchpad add <format>/<preset>   e.g. add cursor-rules/nextjs-15");
   }
+  let formatInput = formatFlag;
+  let presetInput = arg.replace(/\\/g, "/");
 
-  let formatSlug = "cursor-rules";
-  let presetSlug = arg;
-
-  // Check for --format or -f flag
-  const formatFlagIdx = argsList.findIndex((a) => a === "--format" || a === "-f");
-  if (formatFlagIdx !== -1 && argsList[formatFlagIdx + 1]) {
-    const rawFmt = argsList[formatFlagIdx + 1];
-    const canonical = canonicalizeFormat(rawFmt);
-    if (!canonical) {
-      console.error(`\x1b[31mError: Unknown format "${rawFmt}".\x1b[0m`);
-      console.log("Available formats: cursor-rules, claude-skills, claude-md, agents-md, windsurf, copilot, mcp-config, openai, gemini, cursorignore, claudeignore, llms-txt, architecture-md");
-      process.exit(1);
+  if (!formatFlag && presetInput.includes("/")) {
+    const parts = presetInput.split("/");
+    if (parts.length !== 2) {
+      throw new CliError(`Invalid preset "${arg}".`, 2, "Use <format>/<preset>, e.g. cursor-rules/nextjs-15");
     }
-    formatSlug = canonical;
-    presetSlug = arg;
-  } else {
-    // Normalize Windows backslashes
-    const normalizedArg = arg.replace(/\\/g, "/");
-    if (normalizedArg.includes("/")) {
-      const parts = normalizedArg.split("/");
-      formatSlug = canonicalizeFormat(parts[0]);
-      presetSlug = parts[1];
-      if (!formatSlug) {
-        console.error(`\x1b[31mError: Unknown format "${parts[0]}".\x1b[0m`);
-        console.log("Available formats: cursor-rules, claude-skills, claude-md, agents-md, windsurf, copilot, mcp-config, openai, gemini, cursorignore, claudeignore, llms-txt, architecture-md");
-        process.exit(1);
-      }
-    } else {
-      const detectedFormat = canonicalizeFormat(arg);
-      if (detectedFormat) {
-        console.error(`\x1b[31mError: Specified format "${arg}" but missing preset name.\x1b[0m`);
-        console.log(`Example: npx devscratchpad add ${arg}/nextjs-15`);
-        process.exit(1);
-      }
-    }
+    [formatInput, presetInput] = parts;
+  } else if (!formatFlag && canonicalizeFormat(presetInput)) {
+    throw new CliError(`"${arg}" is a format; a preset name is missing.`, 2, `Example: devscratchpad add ${arg}/nextjs-15`);
   }
 
-  // Strict alphanumeric slug validation & path confinement
-  const cleanPreset = (presetSlug || "").replace(/[^a-zA-Z0-9_-]/g, "");
-  if (!cleanPreset) {
-    console.error(`\x1b[31mError: Invalid preset slug "${presetSlug}". Slugs must contain only alphanumeric characters, dashes, or underscores.\x1b[0m`);
-    process.exit(1);
+  const format = canonicalizeFormat(formatInput || "cursor-rules");
+  if (!format) {
+    const guess = suggest(formatInput.toLowerCase(), FORMAT_NAMES);
+    throw new CliError(`Unknown format "${formatInput}".`, 2, guess ? `Did you mean "${guess}"? Run "devscratchpad list" for all formats.` : 'Run "devscratchpad list" for all formats.');
   }
-
-  const formatConfig = FORMAT_CONFIGS[formatSlug];
-  const targetPath = formatConfig.getTargetPath(cleanPreset);
-  const resolvedTarget = path.resolve(process.cwd(), targetPath);
-  const cwdRoot = path.resolve(process.cwd()) + path.sep;
-
-  // Strict boundary assertion: resolved target must reside within current workspace
-  if (!resolvedTarget.startsWith(cwdRoot) && resolvedTarget !== path.resolve(process.cwd())) {
-    console.error(`\x1b[31mSecurity Error: Target path "${targetPath}" attempts directory traversal outside current workspace.\x1b[0m`);
-    process.exit(1);
+  if (!SLUG_RE.test(presetInput)) {
+    throw new CliError(`Invalid preset "${presetInput}".`, 2, "Preset names may only contain letters, digits, dashes and underscores.");
   }
-
-  console.log(`\x1b[36m⚡ Fetching ${formatConfig.name} for "${cleanPreset}"...\x1b[0m`);
-
-  let content = "";
-  try {
-    const rawUrl = `${SITE_URL}/api/raw/${formatSlug}/${cleanPreset}`;
-    content = await fetchContent(rawUrl);
-  } catch (err) {
-    console.log(`\x1b[33mℹ Using offline bundled template (remote: ${err.message})\x1b[0m`);
-    content = generateLocalFallback(formatSlug, cleanPreset);
-  }
-
-  // Ensure target folder exists
-  const parentDir = path.dirname(resolvedTarget);
-  if (!fs.existsSync(parentDir)) {
-    fs.mkdirSync(parentDir, { recursive: true });
-  }
-
-  fs.writeFileSync(resolvedTarget, content, "utf8");
-  console.log(`\x1b[32m✔ Successfully installed!\x1b[0m`);
-  console.log(`  Target: \x1b[1m${targetPath}\x1b[0m`);
-  console.log(`  Size:   ${content.length} bytes`);
-  console.log(`  Format: ${formatConfig.name}`);
-  console.log(`\n\x1b[36m👉 Customize interactively in AI Skill Studio:\x1b[0m`);
-  console.log(`   ${SITE_URL}/ai-skill-studio/${formatSlug}/${cleanPreset}`);
-  console.log(`\x1b[35m🔄 Convert existing rules across formats:\x1b[0m`);
-  console.log(`   ${SITE_URL}/ai-skill-studio/rules-converter\n`);
+  return { format, preset: presetInput.toLowerCase() };
 }
 
-function handleList() {
-  console.log("\x1b[1m\x1b[36m====================================================\x1b[0m");
-  console.log("\x1b[1m DevScratchpad AI Skill Studio — Available Presets\x1b[0m");
-  console.log("\x1b[1m\x1b[36m====================================================\x1b[0m\n");
+function unknownPresetError(format, preset) {
+  const guess = suggest(preset, presetsFor(format).map((p) => p.slug));
+  return new CliError(
+    `Unknown preset "${preset}" for ${format}.`,
+    1,
+    guess ? `Did you mean "${format}/${guess}"? Run "devscratchpad list" for all presets.` : 'Run "devscratchpad list" for all presets.'
+  );
+}
 
-  console.log("\x1b[1mAvailable Formats:\x1b[0m");
-  for (const [key, cfg] of Object.entries(FORMAT_CONFIGS)) {
-    console.log(`  • \x1b[33m${key.padEnd(16)}\x1b[0m (${cfg.name})`);
+/**
+ * Install one rulebook. Returns { status: "written" | "skipped" | "dry-run", targetPath, source, bytes, backup }.
+ * Never overwrites an existing file unless opts.force; with force the old file is copied to <file>.bak first.
+ */
+async function addRulebook(format, preset, opts = {}) {
+  const cwd = path.resolve(process.cwd());
+  const formatConfig = FORMAT_CONFIGS[format];
+  const targetPath = formatConfig.getTargetPath(preset);
+  const resolvedTarget = path.resolve(cwd, targetPath);
+
+  // Strict boundary assertion: the target must stay inside the current workspace.
+  if (!resolvedTarget.startsWith(cwd + path.sep)) {
+    throw new CliError(`Refusing to write outside the workspace: ${targetPath}`, 2);
   }
 
-  console.log("\n\x1b[1mAvailable Technology Presets:\x1b[0m");
-  const grouped = {};
-  for (const p of KNOWN_PRESETS) {
-    if (!grouped[p.category]) grouped[p.category] = [];
-    grouped[p.category].push(p);
+  const displayPath = targetPath.split(path.sep).join("/");
+  const exists = fs.existsSync(resolvedTarget);
+  if (exists && !opts.force) {
+    return { status: "skipped", targetPath: displayPath };
   }
 
-  for (const [cat, presets] of Object.entries(grouped)) {
-    console.log(`\n  \x1b[35m[${cat}]\x1b[0m`);
-    for (const p of presets) {
-      console.log(`    - \x1b[1m${p.slug.padEnd(22)}\x1b[0m ${p.tech}`);
+  const isKnown = presetsFor(format).some((p) => p.slug === preset);
+  let content = "";
+  let source = "remote";
+
+  if (opts.offline) {
+    if (!isKnown) throw unknownPresetError(format, preset);
+    content = generateLocalFallback(format, preset);
+    source = "bundled";
+  } else {
+    let response = null;
+    let networkError = null;
+    try {
+      response = await fetchContent(`${SITE_URL}/api/raw/${format}/${preset}`);
+    } catch (err) {
+      networkError = err;
+    }
+
+    if (response && response.status === 200 && response.body.trim()) {
+      content = response.body;
+    } else if (response && response.status === 404) {
+      throw unknownPresetError(format, preset);
+    } else if (isKnown) {
+      const reason = networkError ? networkError.message : `HTTP ${response ? response.status : "error"}`;
+      if (!opts.quiet) log(c.yellow(`  Offline (${reason}); using the bundled template.`));
+      content = generateLocalFallback(format, preset);
+      source = "bundled";
+    } else {
+      const reason = networkError ? networkError.message : `HTTP ${response ? response.status : "error"}`;
+      throw new CliError(`Could not download "${format}/${preset}" (${reason}) and it has no bundled template.`, 1);
     }
   }
 
-  console.log("\n\x1b[36mQuick Install Example:\x1b[0m");
-  console.log("  npx devscratchpad add cursor-rules/nextjs-15");
-  console.log("  npx devscratchpad add windsurf/tailwind-v4");
-  console.log("  npx devscratchpad add claude-skills/fastapi");
-  console.log("  npx devscratchpad add copilot/typescript-strict\n");
-  console.log("\x1b[1m\x1b[36mInteractive Web Studio:\x1b[0m");
-  console.log(`  Visual Rule Studio:     ${SITE_URL}/ai-skill-studio`);
-  console.log(`  Universal Converter:    ${SITE_URL}/ai-skill-studio/rules-converter`);
-  console.log(`  Offline Dev Utilities:  ${SITE_URL}/developer-tools\n`);
+  if (!content.endsWith("\n")) content += "\n";
+  const bytes = Buffer.byteLength(content, "utf8");
+
+  if (opts.dryRun) {
+    return { status: "dry-run", targetPath: displayPath, source, bytes, overwrite: exists };
+  }
+
+  let backup = null;
+  try {
+    fs.mkdirSync(path.dirname(resolvedTarget), { recursive: true });
+    if (exists) {
+      backup = `${displayPath}.bak`;
+      fs.copyFileSync(resolvedTarget, `${resolvedTarget}.bak`);
+    }
+    fs.writeFileSync(resolvedTarget, content, "utf8");
+  } catch (err) {
+    throw new CliError(`Could not write ${displayPath}: ${err.message}`, 1);
+  }
+  return { status: "written", targetPath: displayPath, source, bytes, backup };
+}
+
+function printAddResult(result, format, preset) {
+  if (result.status === "skipped") {
+    log(`${c.yellow("•")} ${result.targetPath} ${c.dim("exists, skipped (use --force to replace it)")}`);
+    return;
+  }
+  if (result.status === "dry-run") {
+    const verb = result.overwrite ? "would replace" : "would create";
+    log(`${c.cyan("•")} ${result.targetPath} ${c.dim(`${verb}, ${result.bytes} bytes, ${result.source === "remote" ? "latest preset" : "bundled template"}`)}`);
+    return;
+  }
+  log(`${c.green("✔")} ${result.targetPath} ${c.dim(`${result.bytes} bytes, ${result.source === "remote" ? "latest preset" : "bundled template"}`)}`);
+  if (result.backup) log(`  ${c.dim(`previous version saved as ${result.backup}`)}`);
+  if (format && preset) log(c.dim(`  Edit it visually: ${SITE_URL}/ai-skill-studio/${format}/${preset}`));
+}
+
+async function handleAdd(positionals, values) {
+  if (positionals.length > 1) {
+    throw new CliError("add takes one preset at a time.", 2, "Example: devscratchpad add cursor-rules/nextjs-15");
+  }
+  const { format, preset } = resolveTarget(positionals[0], values.format);
+  const result = await addRulebook(format, preset, {
+    force: values.force,
+    dryRun: values["dry-run"],
+    offline: values.offline,
+  });
+  printAddResult(result, format, preset);
+  return 0;
+}
+
+// ---------------------------------------------------------------------------
+// init
+// ---------------------------------------------------------------------------
+
+const INIT_SUITE = [
+  ["cursor-rules", "cursor-rules-pro"],
+  ["claude-md", "codebase-auditor"],
+  ["agents-md", "codebase-auditor"],
+  ["cursorignore", "cursor-rules-pro"],
+  ["claudeignore", "cursor-rules-pro"],
+  ["llms-txt", "cursor-rules-pro"],
+  ["architecture-md", "cursor-rules-pro"],
+];
+
+async function handleInit(positionals, values) {
+  if (positionals.length > 0) throw new CliError("init takes no arguments.", 2);
+  log(c.bold(values["dry-run"] ? "Dry run: 5-layer AI agent suite" : "Scaffolding the 5-layer AI agent suite"));
+  let failed = 0;
+  const counts = { written: 0, skipped: 0, "dry-run": 0 };
+  for (const [format, preset] of INIT_SUITE) {
+    try {
+      const result = await addRulebook(format, preset, {
+        force: values.force,
+        dryRun: values["dry-run"],
+        offline: values.offline,
+        quiet: true,
+      });
+      counts[result.status] += 1;
+      printAddResult(result);
+    } catch (err) {
+      failed += 1;
+      log(`${c.red("✖")} ${format}/${preset} ${c.dim(err.message)}`);
+    }
+  }
+  const parts = [];
+  if (counts.written) parts.push(`${counts.written} written`);
+  if (counts["dry-run"]) parts.push(`${counts["dry-run"]} planned`);
+  if (counts.skipped) parts.push(`${counts.skipped} skipped`);
+  if (failed) parts.push(`${failed} failed`);
+  log(`\n${parts.join(", ")}.`);
+  if (counts.skipped && !values.force) log(c.dim("Existing files were left untouched. Re-run with --force to replace them (backups are kept as .bak)."));
+  return failed ? 1 : 0;
+}
+
+// ---------------------------------------------------------------------------
+// audit
+// ---------------------------------------------------------------------------
+
+/** Vague phrases only count when used as instructions, not when quoted or banned ("avoid 'clean code'"). */
+const VAGUE_RE = /\b(clean code|write good code|follow best practices|best practices|be helpful|do your best)\b/i;
+const NEGATIVE_CONTEXT_RE = /\b(never|avoid|don't|do not|instead of|vague|banned|such as)\b|["'“‘`]/i;
+
+function findVagueDirectives(content) {
+  const hits = [];
+  for (const line of content.split("\n")) {
+    const match = line.match(VAGUE_RE);
+    if (match && !NEGATIVE_CONTEXT_RE.test(line)) hits.push(match[1].toLowerCase());
+  }
+  return [...new Set(hits)];
 }
 
 function auditFileContent(filename, content) {
   let score = 100;
   const issues = [];
+  const base = path.basename(filename);
 
-  // Context shield / ignore files check
-  if (filename.includes("ignore")) {
-    if (!/\b(node_modules|\.next|dist|build)\b/i.test(content)) {
+  // Ignore files: must exclude build output and secrets.
+  if (base === ".cursorignore" || base === ".claudeignore") {
+    if (!/(^|\/)(node_modules|\.next|dist|build)\/?\s*$/im.test(content)) {
       score -= 30;
-      issues.push("Missing build artifact exclusions (node_modules, dist, .next). Risk of context window saturation.");
+      issues.push("No build-output exclusions (node_modules/, dist/, .next/). Large folders flood the context window.");
     }
-    if (!/\b(\.env|\*\.pem|\*\.key|secrets)\b/i.test(content)) {
+    if (!/(^|\/)(\.env\S*|\*\.pem|\*\.key|secrets\/?)\s*$/im.test(content)) {
       score -= 40;
-      issues.push("Missing credential/secret exclusions (.env, *.pem, *.key). Critical privacy leak risk!");
+      issues.push("No secret exclusions (.env, *.pem, *.key). Credentials can leak into the assistant's context.");
     }
-    const lines = content.split("\n").filter((l) => l.trim().length > 0 && !l.trim().startsWith("#"));
-    if (lines.length < 3) {
+    const active = content.split("\n").filter((l) => l.trim() && !l.trim().startsWith("#"));
+    if (active.length < 3) {
       score -= 30;
-      issues.push("Ignore shield is too sparse. Add more directory and pattern exclusions.");
+      issues.push("Too few patterns. Exclude dependencies, build output and secrets.");
     }
     return { score: Math.max(0, score), issues };
   }
 
-  // 1. Check for negative constraints
-  const hasNegativeGuardrails = /\b(never|do not|avoid|prohibit|forbidden|must not)\b/i.test(content);
-  if (!hasNegativeGuardrails) {
-    score -= 20;
-    issues.push("Missing negative guardrails (e.g. 'Never do X', 'Avoid Y'). Without negative bounds, LLMs hallucinate.");
+  // JSON configs (MCP, Gemini): must parse.
+  if (base.endsWith(".json")) {
+    try {
+      JSON.parse(content);
+    } catch (err) {
+      return { score: 0, issues: [`Invalid JSON: ${err.message}`] };
+    }
+    if (base === "claude.json") return { score, issues };
   }
 
-  // 2. Check rule density
+  // llms.txt is a map of the codebase for LLMs, not a rule file, so it needs no guardrails.
+  if (base !== "llms.txt" && !/\b(never|do not|don't|avoid|prohibit|forbidden|must not)\b/i.test(content)) {
+    score -= 20;
+    issues.push('No negative guardrails ("Never do X", "Avoid Y"). Without limits, assistants improvise.');
+  }
+
   const lines = content.split("\n").filter((l) => l.trim().length > 0);
   if (lines.length < 5) {
     score -= 25;
-    issues.push("Rule file is too sparse (< 5 active lines). Add concrete tech stack boundaries.");
+    issues.push("Too short (fewer than 5 lines). Add concrete stack boundaries.");
   } else if (lines.length > 300) {
     score -= 15;
-    issues.push("Rule file exceeds 300 lines. Monolithic rules cause context window degradation.");
+    issues.push("Longer than 300 lines. Split it; very long rules degrade recall.");
   }
 
-  // 3. Check for specific globs or triggers
-  if (filename.endsWith(".mdc")) {
-    const hasGlobs = /^globs:\s*.+/m.test(content);
-    if (!hasGlobs) {
+  if (base.endsWith(".mdc")) {
+    const hasGlobs = /^globs:\s*\S+/m.test(content);
+    const alwaysApply = /^alwaysApply:\s*true\b/m.test(content);
+    if (!hasGlobs && !alwaysApply) {
       score -= 20;
-      issues.push("Missing 'globs:' frontmatter directive in .mdc rule. Rule will either never apply or apply everywhere.");
+      issues.push('No "globs:" (and alwaysApply is not true), so Cursor never attaches this rule automatically.');
     }
   }
 
-  // 4. Check for vague phrases
-  const vagueMatches = content.match(/\b(clean code|write good code|best practices|etc)\b/gi);
-  if (vagueMatches) {
+  const vague = findVagueDirectives(content);
+  if (vague.length) {
     score -= 10;
-    issues.push(`Contains vague directives (${vagueMatches.slice(0, 3).join(", ")}). Replace with concrete architectural invariants.`);
+    issues.push(`Vague directives (${vague.slice(0, 3).join(", ")}). Replace them with concrete, checkable rules.`);
   }
 
   return { score: Math.max(0, score), issues };
 }
 
-function handleAudit(targetDir = process.cwd()) {
-  console.log(`\x1b[36m🔍 Scanning repository for AI rulebooks in: ${targetDir}...\x1b[0m\n`);
+function collectRuleFiles(targetDir) {
+  const found = [];
+  const addIfFile = (rel) => {
+    const full = path.join(targetDir, rel);
+    if (fs.existsSync(full) && fs.statSync(full).isFile()) found.push(rel);
+  };
+  const addDir = (relDir, filter) => {
+    const full = path.join(targetDir, relDir);
+    if (!fs.existsSync(full) || !fs.statSync(full).isDirectory()) return;
+    for (const f of fs.readdirSync(full).sort()) {
+      if (filter(f)) addIfFile(path.join(relDir, f));
+    }
+  };
 
-  const ruleCandidates = [
+  [
     ".cursorrules",
     "CLAUDE.md",
     "AGENTS.md",
@@ -577,184 +818,212 @@ function handleAudit(targetDir = process.cwd()) {
     "llms.txt",
     "ARCHITECTURE.md",
     ".windsurfrules",
-    path.join(".github", "copilot-instructions.md")
-  ];
+    "claude.json",
+    path.join(".github", "copilot-instructions.md"),
+    path.join(".openai", "system-instructions.md"),
+  ].forEach(addIfFile);
+  addDir(path.join(".cursor", "rules"), (f) => f.endsWith(".mdc") || f.endsWith(".md"));
+  addDir(path.join(".windsurf", "rules"), (f) => f.endsWith(".md"));
+  addDir(".gemini", (f) => f.endsWith(".json"));
 
-  const foundFiles = [];
-
-  // Direct root candidates
-  for (const candidate of ruleCandidates) {
-    const full = path.join(targetDir, candidate);
-    if (fs.existsSync(full) && fs.statSync(full).isFile()) {
-      foundFiles.push(candidate);
-    }
+  const skillsDir = path.join(targetDir, ".claude", "skills");
+  if (fs.existsSync(skillsDir) && fs.statSync(skillsDir).isDirectory()) {
+    for (const d of fs.readdirSync(skillsDir).sort()) addIfFile(path.join(".claude", "skills", d, "SKILL.md"));
   }
-
-  // Check .cursor/rules/*.mdc
-  const cursorRulesDir = path.join(targetDir, ".cursor", "rules");
-  if (fs.existsSync(cursorRulesDir)) {
-    const files = fs.readdirSync(cursorRulesDir);
-    for (const f of files) {
-      if (f.endsWith(".mdc") || f.endsWith(".md")) {
-        foundFiles.push(path.join(".cursor", "rules", f));
-      }
-    }
-  }
-
-  // Check .claude/skills/*/SKILL.md
-  const claudeSkillsDir = path.join(targetDir, ".claude", "skills");
-  if (fs.existsSync(claudeSkillsDir)) {
-    const dirs = fs.readdirSync(claudeSkillsDir);
-    for (const d of dirs) {
-      const skillFile = path.join(".claude", "skills", d, "SKILL.md");
-      if (fs.existsSync(path.join(targetDir, skillFile))) {
-        foundFiles.push(skillFile);
-      }
-    }
-  }
-
-  // Check .windsurf/rules/*.md
-  const windsurfRulesDir = path.join(targetDir, ".windsurf", "rules");
-  if (fs.existsSync(windsurfRulesDir)) {
-    const files = fs.readdirSync(windsurfRulesDir);
-    for (const f of files) {
-      if (f.endsWith(".md")) {
-        foundFiles.push(path.join(".windsurf", "rules", f));
-      }
-    }
-  }
-
-  // Check .openai and .gemini
-  const openaiFile = path.join(targetDir, ".openai", "system-instructions.md");
-  if (fs.existsSync(openaiFile)) foundFiles.push(path.join(".openai", "system-instructions.md"));
-
-  const geminiDir = path.join(targetDir, ".gemini");
-  if (fs.existsSync(geminiDir)) {
-    const files = fs.readdirSync(geminiDir);
-    for (const f of files) {
-      if (f.endsWith(".json")) foundFiles.push(path.join(".gemini", f));
-    }
-  }
-
-  if (foundFiles.length === 0) {
-    console.log("\x1b[33mNo AI rule files found in this repository.\x1b[0m");
-    console.log("Run \x1b[36mnpx devscratchpad list\x1b[0m to browse rule presets, or \x1b[36mnpx devscratchpad init\x1b[0m to create one.");
-    console.log(`\n\x1b[36m🌐 Create visually in AI Skill Studio:\x1b[0m ${SITE_URL}/ai-skill-studio\n`);
-    return;
-  }
-
-  let totalScore = 0;
-
-  for (const relPath of foundFiles) {
-    const full = path.join(targetDir, relPath);
-    const content = fs.readFileSync(full, "utf8");
-    const { score, issues } = auditFileContent(relPath, content);
-    totalScore += score;
-
-    const color = score >= 80 ? "\x1b[32m" : score >= 60 ? "\x1b[33m" : "\x1b[31m";
-    console.log(`\x1b[1mFile:\x1b[0m ${relPath}`);
-    console.log(`\x1b[1mQuality Score:\x1b[0m ${color}${score} / 100\x1b[0m`);
-
-    if (issues.length > 0) {
-      console.log("\x1b[1mRemediations:\x1b[0m");
-      for (const iss of issues) {
-        console.log(`  ⚠ ${iss}`);
-      }
-    } else {
-      console.log("\x1b[32m  ✔ Passed all static heuristic quality checks!\x1b[0m");
-    }
-    console.log("");
-  }
-
-  const avgScore = Math.round(totalScore / foundFiles.length);
-  const avgColor = avgScore >= 80 ? "\x1b[32m" : avgScore >= 60 ? "\x1b[33m" : "\x1b[31m";
-  console.log(`\x1b[1mRepository AI Rule Health:\x1b[0m ${avgColor}${avgScore} / 100\x1b[0m (${foundFiles.length} file${foundFiles.length > 1 ? "s" : ""})`);
-  console.log(`\n\x1b[36m💡 Auto-fix and enhance your rules with zero data leakage in AI Skill Studio:\x1b[0m`);
-  console.log(`   ${SITE_URL}/ai-skill-studio`);
-  console.log(`\x1b[35m🔄 Convert existing rules across formats:\x1b[0m`);
-  console.log(`   ${SITE_URL}/ai-skill-studio/rules-converter\n`);
+  return found;
 }
 
-async function handleInit() {
-  console.log("\x1b[36m🚀 Initializing DevScratchpad Complete 5-Layer AI Agent Suite...\x1b[0m\n");
-  const suite = [
-    "cursor-rules/cursor-rules-pro",
-    "claude-md/codebase-auditor",
-    "agents-md/codebase-auditor",
-    "cursorignore/cursor-rules-pro",
-    "claudeignore/cursor-rules-pro",
-    "llms-txt/cursor-rules-pro",
-    "architecture-md/cursor-rules-pro"
-  ];
-  for (const item of suite) {
-    try {
-      await handleAdd(item);
-    } catch (e) {
-      console.warn(`  Warning: Failed to install ${item}: ${e.message}`);
+function handleAudit(positionals, values) {
+  if (positionals.length > 1) throw new CliError("audit takes at most one directory.", 2);
+  const targetDir = path.resolve(positionals[0] || process.cwd());
+  if (!fs.existsSync(targetDir) || !fs.statSync(targetDir).isDirectory()) {
+    throw new CliError(`Not a directory: ${targetDir}`, 2);
+  }
+
+  let minScore = null;
+  if (values["min-score"] !== undefined) {
+    minScore = Number(values["min-score"]);
+    if (!Number.isInteger(minScore) || minScore < 0 || minScore > 100) {
+      throw new CliError(`--min-score must be a whole number from 0 to 100 (got "${values["min-score"]}").`, 2);
     }
   }
-  console.log("\x1b[32m✨ 5-Layer AI Agent Suite initialized successfully!\x1b[0m\n");
+
+  const files = collectRuleFiles(targetDir).map((rel) => {
+    const { score, issues } = auditFileContent(rel, fs.readFileSync(path.join(targetDir, rel), "utf8"));
+    return { path: rel.split(path.sep).join("/"), score, issues };
+  });
+  const average = files.length ? Math.round(files.reduce((sum, f) => sum + f.score, 0) / files.length) : null;
+  const failing = minScore === null ? [] : files.filter((f) => f.score < minScore);
+  const passed = minScore === null ? true : files.length > 0 && failing.length === 0;
+
+  if (values.json) {
+    log(JSON.stringify({ version: VERSION, directory: targetDir, minScore, averageScore: average, passed, files }, null, 2));
+    return passed ? 0 : 1;
+  }
+
+  if (!files.length) {
+    log(c.yellow("No AI rule files found."));
+    log(c.dim('Create some with "devscratchpad init" or "devscratchpad add <format>/<preset>".'));
+    if (minScore !== null) log(c.red(`✖ --min-score ${minScore}: nothing to check.`));
+    return passed ? 0 : 1;
+  }
+
+  const tone = (score) => (score >= 80 ? c.green : score >= 60 ? c.yellow : c.red);
+  for (const f of files) {
+    log(`${tone(f.score)(String(f.score).padStart(3))}  ${f.path}`);
+    for (const issue of f.issues) log(`     ${c.dim("↳")} ${issue}`);
+  }
+  log(`\n${c.bold("Average")} ${tone(average)(`${average}/100`)} across ${files.length} file${files.length === 1 ? "" : "s"}.`);
+  if (minScore !== null) {
+    log(
+      passed
+        ? c.green(`✔ All files meet --min-score ${minScore}.`)
+        : c.red(`✖ ${failing.length} file${failing.length === 1 ? "" : "s"} below --min-score ${minScore}.`)
+    );
+  }
+  if (files.some((f) => f.issues.length)) log(c.dim(`Fix them visually: ${SITE_URL}/ai-skill-studio`));
+  return passed ? 0 : 1;
+}
+
+// ---------------------------------------------------------------------------
+// list, help
+// ---------------------------------------------------------------------------
+
+function handleList(positionals, values) {
+  if (values.json) {
+    log(
+      JSON.stringify(
+        {
+          formats: Object.entries(FORMAT_CONFIGS).map(([id, cfg]) => ({ id, name: cfg.name, aliases: cfg.aliases })),
+          presets: KNOWN_PRESETS.map(({ slug, tech, category }) => ({ slug, name: tech, category })),
+          mcpPresets: MCP_PRESETS.map(({ slug, tech }) => ({ slug, name: tech })),
+        },
+        null,
+        2
+      )
+    );
+    return 0;
+  }
+
+  log(c.bold(`Formats (${FORMAT_NAMES.length})`));
+  const fmtWidth = Math.max(...FORMAT_NAMES.map((f) => f.length));
+  for (const [id, cfg] of Object.entries(FORMAT_CONFIGS)) {
+    log(`  ${c.cyan(id.padEnd(fmtWidth))}  ${c.dim(cfg.name)}`);
+  }
+
+  log(`\n${c.bold(`Presets (${KNOWN_PRESETS.length})`)}`);
+  const grouped = new Map();
+  for (const p of KNOWN_PRESETS) grouped.set(p.category, [...(grouped.get(p.category) || []), p]);
+  const presetWidth = Math.max(...KNOWN_PRESETS.map((p) => p.slug.length));
+  for (const [category, presets] of grouped) {
+    log(`  ${c.dim(category)}`);
+    for (const p of presets) log(`    ${p.slug.padEnd(presetWidth)}  ${c.dim(p.tech)}`);
+  }
+
+  log(`\n${c.bold(`MCP servers (${MCP_PRESETS.length})`)} ${c.dim("for mcp-config")}`);
+  log(`  ${MCP_PRESETS.map((p) => p.slug).join(", ")}`);
+
+  log(`\n${c.dim("Example:")} devscratchpad add cursor-rules/nextjs-15`);
+  return 0;
 }
 
 function printHelp() {
-  console.log(`
-\x1b[1mDevScratchpad CLI v${VERSION}\x1b[0m
-100% Offline-First AI Agent & IDE Rulebook Manager
+  log(`${c.bold(`devscratchpad ${VERSION}`)} ${c.dim("· AI agent rulebooks from your terminal")}
 
-\x1b[1mUSAGE:\x1b[0m
-  npx devscratchpad <command> [arguments]
+${c.bold("Usage")}
+  npx devscratchpad <command> [options]
 
-\x1b[1mCOMMANDS:\x1b[0m
-  \x1b[36madd <format>/<preset>\x1b[0m    Install rulebook into repository (e.g. cursor-rules/nextjs-15)
-  \x1b[36mlist\x1b[0m                     Browse available technology presets and format hubs
-  \x1b[36maudit [dir]\x1b[0m              Audit current repository's AI rule files for quality & hallucinations
-  \x1b[36minit\x1b[0m                     Scaffold complete 5-layer AI agent suite (.cursor, CLAUDE.md, AGENTS.md, shields, llms.txt, ARCHITECTURE.md)
-  \x1b[36mhelp\x1b[0m                     Show this help message
+${c.bold("Commands")}
+  add <format>/<preset>   Install a rulebook (e.g. cursor-rules/nextjs-15)
+  init                    Scaffold the 5-layer suite: .cursor rules, CLAUDE.md, AGENTS.md,
+                          .cursorignore, .claudeignore, llms.txt, ARCHITECTURE.md
+  audit [dir]             Score AI rule files (0-100) with suggested fixes
+  list                    Show formats and presets
+  help, version
 
-\x1b[1mFORMATS:\x1b[0m
-  cursor-rules, claude-skills, claude-md, agents-md, windsurf, copilot, mcp-config, openai, gemini, cursorignore, claudeignore, llms-txt, architecture-md
+${c.bold("Options")}
+  -f, --format <format>   Format for "add <preset>" (alternative to <format>/<preset>)
+      --force             Replace existing files (previous version kept as <file>.bak)
+      --dry-run           Show what would be written, change nothing
+      --offline           Use bundled templates, no network
+      --min-score <n>     audit: exit 1 if any file scores below n (for CI)
+      --json              audit, list: machine-readable output
+      --no-color          Disable colours (also honours NO_COLOR)
 
-\x1b[1mWEBSITE & TOOLS:\x1b[0m
-  Web Terminal:      ${SITE_URL}/cli
-  Engineering Guide: ${SITE_URL}/blog/how-to-manage-ai-rules-with-cli-guide
-  Visual Studio:     ${SITE_URL}/ai-skill-studio
-  Rules Converter:   ${SITE_URL}/ai-skill-studio/rules-converter
-  Developer Tools:   ${SITE_URL}/developer-tools
-`);
+${c.bold("Examples")}
+  npx devscratchpad add claude-skills/fastapi
+  npx devscratchpad init --dry-run
+  npx devscratchpad audit --min-score 80
+
+${c.dim(`Docs: ${SITE_URL}/cli`)}`);
+  return 0;
 }
 
-async function main() {
-  const [,, cmd, ...args] = process.argv;
+// ---------------------------------------------------------------------------
+// main
+// ---------------------------------------------------------------------------
 
-  switch (cmd) {
-    case "add":
-      await handleAdd(args);
-      break;
-    case "list":
-    case "ls":
-      handleList();
-      break;
-    case "audit":
-      handleAudit(args[0]);
-      break;
-    case "init":
-      await handleInit();
-      break;
-    case "version":
-    case "-v":
-    case "--version":
-      console.log(`devscratchpad v${VERSION}`);
-      break;
-    case "help":
-    case "-h":
-    case "--help":
-    default:
-      printHelp();
-      break;
+const COMMANDS = {
+  add: handleAdd,
+  init: handleInit,
+  audit: handleAudit,
+  list: handleList,
+  ls: handleList,
+  help: printHelp,
+  version: () => {
+    log(VERSION);
+    return 0;
+  },
+};
+
+async function main(argv) {
+  let parsed;
+  try {
+    parsed = parseArgs({
+      args: argv,
+      allowPositionals: true,
+      strict: true,
+      options: {
+        format: { type: "string", short: "f" },
+        force: { type: "boolean" },
+        "dry-run": { type: "boolean" },
+        offline: { type: "boolean" },
+        "min-score": { type: "string" },
+        json: { type: "boolean" },
+        "no-color": { type: "boolean" },
+        help: { type: "boolean", short: "h" },
+        version: { type: "boolean", short: "v" },
+      },
+    });
+  } catch (err) {
+    throw new CliError(err.message.replace(/\. To specify a positional.*$/, "."), 2, 'Run "devscratchpad help" for usage.');
   }
+
+  const { values, positionals } = parsed;
+  if (values["no-color"]) useColor = false;
+  if (values.version) return COMMANDS.version();
+  const [command, ...rest] = positionals;
+  if (values.help || !command) return printHelp();
+
+  const handler = COMMANDS[command];
+  if (!handler) {
+    const guess = suggest(command, Object.keys(COMMANDS));
+    throw new CliError(`Unknown command "${command}".`, 2, guess ? `Did you mean "devscratchpad ${guess}"?` : 'Run "devscratchpad help" for usage.');
+  }
+  return handler(rest, values);
 }
 
-main().catch((err) => {
-  console.error(`\x1b[31mError: ${err.message}\x1b[0m`);
-  process.exit(1);
-});
+main(process.argv.slice(2))
+  .then((code) => {
+    process.exitCode = code ?? 0;
+  })
+  .catch((err) => {
+    if (err instanceof CliError) {
+      console.error(`${c.red("Error:")} ${err.message}`);
+      if (err.hint) console.error(c.dim(err.hint));
+      process.exitCode = err.exitCode;
+      return;
+    }
+    console.error(`${c.red("Error:")} ${err && err.message ? err.message : String(err)}`);
+    process.exitCode = 1;
+  });

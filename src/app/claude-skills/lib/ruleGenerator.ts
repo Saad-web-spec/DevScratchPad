@@ -1305,7 +1305,7 @@ export const BEHAVIOR_OPTIONS = [
   {
     id: "concise-direct",
     label: "Concise & Direct Tone",
-    desc: "Skip conversational pleasantries. Deliver clean code and targeted rationale.",
+    desc: "Skip conversational pleasantries. Deliver focused diffs and a short rationale.",
   },
   {
     id: "dependency-caution",
