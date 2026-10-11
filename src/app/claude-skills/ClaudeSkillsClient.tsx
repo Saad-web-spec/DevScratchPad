@@ -2454,11 +2454,11 @@ export function ClaudeSkillsClient({
           className={cn(
             "lg:col-span-6 flex flex-col space-y-2.5 w-full",
             mobileTab === "form" ? "hidden lg:flex" : "flex",
-            "lg:sticky lg:top-28 lg:max-h-[calc(100vh-8rem)] lg:overflow-y-auto lg:overscroll-contain lg:[scrollbar-width:none]"
+            "lg:sticky lg:top-28 lg:h-[calc(100vh-8rem)] lg:overflow-y-auto lg:overscroll-contain lg:[scrollbar-width:none]"
           )}
         >
           {/* Main Card containing Header + Monaco Editor */}
-          <div className="bg-zinc-900 rounded-xl border border-zinc-800 shadow-md flex flex-col overflow-hidden">
+          <div className="bg-zinc-900 rounded-xl border border-zinc-800 shadow-md flex flex-col overflow-hidden shrink-0 lg:shrink lg:flex-1 lg:min-h-[400px]">
             {/* File Tab Header with Unified Action Group */}
             <div className="px-2.5 sm:px-3 py-1.5 sm:py-2 flex items-center justify-between border-b border-zinc-800 bg-zinc-900/95 shrink-0 gap-1.5 sm:gap-2 overflow-hidden">
               <div className="flex items-center gap-1.5 sm:gap-2 min-w-0 flex-1 overflow-hidden">
@@ -2633,7 +2633,7 @@ export function ClaudeSkillsClient({
 
             {/* Editor Container — Always full height */}
             <div
-              className="h-[430px] sm:h-[520px] lg:h-[calc(100vh-23rem)] min-h-[300px] relative overflow-hidden bg-zinc-950 group"
+              className="h-[430px] sm:h-[520px] lg:h-auto lg:flex-1 min-h-[300px] relative overflow-hidden bg-zinc-950 group"
               onClick={() => {
                 if (!shouldLoadEditor) setShouldLoadEditor(true);
               }}
@@ -2810,10 +2810,12 @@ export function ClaudeSkillsClient({
           </div>
 
           {/* Instructional Target Location Card (Redesigned with warm orange palette & sleek typography) */}
-          <TargetLocationCard
-            format={format}
-            skillName={skillName}
-          />
+          <div className="shrink-0">
+            <TargetLocationCard
+              format={format}
+              skillName={skillName}
+            />
+          </div>
         </div>
       </main>
 
