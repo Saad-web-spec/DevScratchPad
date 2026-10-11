@@ -2,9 +2,9 @@
 
 import React, { useMemo } from "react";
 import Image from "next/image";
-import { Check, Copy, X } from "lucide-react";
+import { Check, Copy, Wand2, X } from "lucide-react";
 import { cn } from "@/lib/utils";
-import type { AuditDimension, RuleAuditReport } from "../lib/ruleAuditor";
+import type { AuditDimension, AuditIssue, RuleAuditReport } from "../lib/ruleAuditor";
 import type { OutputFormat } from "../lib/ruleGenerator";
 
 export type AuditTab = "findings" | "checklist";
@@ -28,7 +28,31 @@ export interface AuditPanelProps {
   handleInjectCodeBlock: () => void;
 }
 
-/** Rule Quality Audit panel floating over the editor: score header, 5-dimension filters, findings with one-click fixes, and the rule checklist. */
+const DIMENSIONS: { id: AuditDimension; label: string; name: string; hint: string }[] = [
+  { id: "triggers", label: "Triggers", name: "Trigger specificity", hint: "Trigger chips, activation phrases and glob scope." },
+  { id: "tokenDensity", label: "Density", name: "Rule density", hint: "Context footprint; lean rules keep recall high." },
+  { id: "guardrails", label: "Guards", name: "Negative guardrails", hint: "Explicit \"never / do not\" constraints." },
+  { id: "formatCompliance", label: "Format", name: "Format compliance", hint: "Syntax and header metadata for the target file." },
+  { id: "architecture", label: "Arch", name: "Architectural boundaries", hint: "Concrete parameters instead of vague directives." },
+];
+
+/** Score tone: zinc when healthy, amber when it needs review, rose when failing. */
+function tone(score: number) {
+  if (score >= 80) return { bar: "fill-zinc-900", text: "text-zinc-900" };
+  if (score >= 50) return { bar: "fill-amber-500", text: "text-amber-600" };
+  return { bar: "fill-rose-500", text: "text-rose-600" };
+}
+
+const SEVERITY_DOT: Record<AuditIssue["severity"], string> = {
+  error: "bg-rose-500",
+  warning: "bg-amber-400",
+  info: "bg-zinc-400",
+};
+
+const fixBtn =
+  "inline-flex h-6 shrink-0 items-center gap-1 rounded-md border border-zinc-200 bg-white px-2 font-mono text-[10px] font-medium text-zinc-700 transition-colors hover:border-zinc-300 hover:bg-zinc-50 hover:text-zinc-900 cursor-pointer";
+
+/** Rule Quality Audit panel floating over the editor: score header, 5-dimension meters (click to filter), findings with one-click fixes, and the rule checklist. */
 export function AuditPanel({
   auditReport,
   format,
@@ -53,349 +77,228 @@ export function AuditPanel({
     return auditReport.allIssues.filter((issue) => issue.dimension === selectedDimension);
   }, [auditReport.allIssues, selectedDimension]);
 
+  /** One-click remediations available for an issue (most specific first). */
+  const fixesFor = (issue: AuditIssue): { label: string; onClick: () => void }[] => {
+    const fixes: { label: string; onClick: () => void }[] = [];
+    if (issue.id === "guardrails-no-negative-constraints") fixes.push({ label: "Inject guardrails", onClick: handleInjectNegativeGuardrails });
+    if (issue.id.startsWith("vague-")) fixes.push({ label: "Make concrete", onClick: handleFixVaguePhrases });
+    if (issue.id === "trigger-cursor-global-unscoped") fixes.push({ label: "Scope globs", onClick: handleScopeGlobs });
+    if (issue.id.startsWith("format-")) fixes.push({ label: "Fix syntax", onClick: handleFixFormatCompliance });
+    if (issue.id.startsWith("trigger-")) fixes.push({ label: "Refine triggers", onClick: handleFixBroadTriggers });
+    if (issue.id === "clarity-no-code-blocks") fixes.push({ label: "Add code reference", onClick: handleInjectCodeBlock });
+    return fixes;
+  };
+
+  const densityOk = auditReport.tokenCount >= 70 && auditReport.tokenCount <= 1200;
+  const overall = tone(auditReport.overallScore);
+  const issueCount = auditReport.allIssues.length;
+  const activeDimension = DIMENSIONS.find((d) => d.id === selectedDimension);
+
   return (
-    <div className="absolute bottom-2 right-3 left-3 sm:left-auto sm:w-[460px] z-30 rounded-xl border border-zinc-800 bg-[#121316]/98 backdrop-blur-xl shadow-2xl shadow-black/90 overflow-hidden animate-in fade-in slide-in-from-bottom-2 duration-150 flex flex-col max-h-[380px]">
-      {/* Header Bar: Clean Dark Monochrome (Responsive on mobile with zero text overlap) */}
-      <div className="flex items-center justify-between gap-1.5 sm:gap-2 px-2.5 sm:px-3.5 py-2 sm:py-2.5 border-b border-zinc-800/80 bg-[#121316] shrink-0 min-w-0">
-        <div className="flex items-center gap-1.5 sm:gap-2 min-w-0 flex-1 overflow-hidden">
-          <span className="font-mono text-[11px] sm:text-xs font-bold text-zinc-200 tracking-wider flex items-center gap-1 sm:gap-1.5 shrink-0">
-            <Image src="/orange-star.png" width={16} height={16} className="w-3.5 h-3.5 sm:w-4 sm:h-4 object-contain shrink-0" alt="Star" />
-            <span><span className="hidden sm:inline">RULE </span>AUDIT</span>
-          </span>
-
-          {/* Clean Dark Badge (Responsive: score on mobile, full label on tablet/desktop) */}
-          <span className="bg-zinc-800 text-zinc-300 border border-zinc-700 font-mono text-[10px] font-semibold px-1.5 sm:px-2 py-0.5 rounded-full shrink-0 truncate max-w-[130px] sm:max-w-none">
-            {auditReport.overallScore}/100<span className="hidden sm:inline"> · {auditReport.gradeLabel.toUpperCase()}</span>
-          </span>
-        </div>
-
-        <div className="flex items-center gap-1 shrink-0">
-          {/* One-click Copy Audit Report (Icon-only on mobile, full text on tablet/desktop) */}
+    <div className="absolute bottom-2 left-3 right-3 z-30 flex max-h-[360px] flex-col overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-2xl shadow-black/50 ring-1 ring-black/5 animate-in fade-in slide-in-from-bottom-2 duration-150 sm:left-auto sm:w-[420px]">
+      {/* Header: score + grade, copy, close */}
+      <div className="flex h-11 shrink-0 items-center gap-2 border-b border-zinc-200 pl-3 pr-1.5">
+        <Image src="/orange-star.png" width={16} height={16} className="size-4 shrink-0 object-contain" alt="" />
+        <span className="font-mono text-[11px] font-bold uppercase tracking-wider text-zinc-900">Audit</span>
+        <span className="flex min-w-0 items-baseline gap-1.5">
+          <span className={cn("font-mono text-base font-bold tabular-nums leading-none", overall.text)}>{auditReport.overallScore}</span>
+          <span className="font-mono text-[10px] text-zinc-400">/100</span>
+          <span className="truncate font-mono text-[10px] uppercase tracking-wider text-zinc-500">· {auditReport.gradeLabel}</span>
+        </span>
+        <div className="ml-auto flex shrink-0 items-center">
           <button
             type="button"
             onClick={handleCopyAuditReport}
-            className="text-zinc-400 hover:text-zinc-200 text-[11px] font-mono flex items-center gap-1 px-1.5 sm:px-2 py-1 rounded hover:bg-zinc-800/80 transition-colors cursor-pointer shrink-0"
+            className="inline-flex h-8 items-center gap-1.5 rounded-md px-2 font-mono text-[11px] text-zinc-500 transition-colors hover:bg-zinc-100 hover:text-zinc-900 cursor-pointer"
             title="Copy audit report summary to clipboard"
             aria-label="Copy audit report"
           >
-            {auditCopied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
-            <span className="hidden sm:inline">{auditCopied ? "Copied" : "Copy Report"}</span>
+            {auditCopied ? <Check className="size-3.5 text-zinc-900" /> : <Copy className="size-3.5" />}
+            <span className="hidden sm:inline">{auditCopied ? "Copied" : "Copy"}</span>
           </button>
-
           <button
             type="button"
             onClick={() => setShowAuditPanel(false)}
-            className="text-zinc-400 hover:text-zinc-100 p-1 rounded-md hover:bg-zinc-800/80 transition-colors cursor-pointer shrink-0"
+            className="inline-flex size-8 items-center justify-center rounded-md text-zinc-500 transition-colors hover:bg-zinc-100 hover:text-zinc-900 cursor-pointer"
             title="Close audit panel"
             aria-label="Close audit panel"
           >
-            <X className="w-3.5 h-3.5" />
+            <X className="size-3.5" />
           </button>
         </div>
       </div>
 
-      {/* Standardized 5-Column Metric Grid (Interactive Troubleshooting Filters) */}
-      <div className="p-2 sm:p-2.5 bg-[#121316]/90 border-b border-zinc-800/80 shrink-0">
-        <div className="grid grid-cols-5 gap-1 sm:gap-1.5">
-          {/* Triggers */}
-          <button
-            type="button"
-            onClick={() => setSelectedDimension((prev: AuditDimension | "all") => (prev === "triggers" ? "all" : "triggers"))}
-            className={cn(
-              "flex flex-col items-start min-w-0 p-1 sm:p-1.5 rounded-lg text-left transition-colors cursor-pointer border",
-              selectedDimension === "triggers"
-                ? "bg-zinc-800/80 border-zinc-500"
-                : "bg-white/[0.02] border-white/[0.06] hover:bg-white/[0.05]"
-            )}
-            title="Click to filter Trigger Specificity diagnostics"
-          >
-            <span className="text-[10px] sm:text-[10px] font-mono uppercase tracking-wider text-zinc-500 truncate w-full">TRIGGERS</span>
-            <span className="text-[11px] sm:text-[12px] font-mono font-semibold text-zinc-100">{auditReport.dimensions.triggers.score}%</span>
-          </button>
-
-          {/* Density */}
-          <button
-            type="button"
-            onClick={() => setSelectedDimension((prev: AuditDimension | "all") => (prev === "tokenDensity" ? "all" : "tokenDensity"))}
-            className={cn(
-              "flex flex-col items-start min-w-0 p-1 sm:p-1.5 rounded-lg text-left transition-colors cursor-pointer border",
-              selectedDimension === "tokenDensity"
-                ? "bg-zinc-800/80 border-zinc-500"
-                : "bg-white/[0.02] border-white/[0.06] hover:bg-white/[0.05]"
-            )}
-            title="Click to filter Rule Density diagnostics"
-          >
-            <span className="text-[10px] sm:text-[10px] font-mono uppercase tracking-wider text-zinc-500 truncate w-full">DENSITY</span>
-            <span className="text-[11px] sm:text-[12px] font-mono font-semibold text-zinc-100">~{auditReport.tokenCount}t</span>
-          </button>
-
-          {/* Guardrails */}
-          <button
-            type="button"
-            onClick={() => setSelectedDimension((prev: AuditDimension | "all") => (prev === "guardrails" ? "all" : "guardrails"))}
-            className={cn(
-              "flex flex-col items-start min-w-0 p-1 sm:p-1.5 rounded-lg text-left transition-colors cursor-pointer border",
-              selectedDimension === "guardrails"
-                ? "bg-zinc-800/80 border-zinc-500"
-                : "bg-white/[0.02] border-white/[0.06] hover:bg-white/[0.05]"
-            )}
-            title="Click to filter Negative Guardrails diagnostics"
-          >
-            <span className="text-[10px] sm:text-[10px] font-mono uppercase tracking-wider text-zinc-500 truncate w-full">GUARDS</span>
-            <span className="text-[11px] sm:text-[12px] font-mono font-semibold text-zinc-100">{auditReport.dimensions.guardrails.score}%</span>
-          </button>
-
-          {/* Format Compliance */}
-          <button
-            type="button"
-            onClick={() => setSelectedDimension((prev: AuditDimension | "all") => (prev === "formatCompliance" ? "all" : "formatCompliance"))}
-            className={cn(
-              "flex flex-col items-start min-w-0 p-1 sm:p-1.5 rounded-lg text-left transition-colors cursor-pointer border",
-              selectedDimension === "formatCompliance"
-                ? "bg-zinc-800/80 border-zinc-500"
-                : "bg-white/[0.02] border-white/[0.06] hover:bg-white/[0.05]"
-            )}
-            title="Click to filter Format Compliance diagnostics"
-          >
-            <span className="text-[10px] sm:text-[10px] font-mono uppercase tracking-wider text-zinc-500 truncate w-full">FORMAT</span>
-            <span className="text-[11px] sm:text-[12px] font-mono font-semibold text-zinc-100">{auditReport.dimensions.formatCompliance.score}%</span>
-          </button>
-
-          {/* Architectural Boundaries */}
-          <button
-            type="button"
-            onClick={() => setSelectedDimension((prev: AuditDimension | "all") => (prev === "architecture" ? "all" : "architecture"))}
-            className={cn(
-              "flex flex-col items-start min-w-0 p-1 sm:p-1.5 rounded-lg text-left transition-colors cursor-pointer border",
-              selectedDimension === "architecture"
-                ? "bg-zinc-800/80 border-zinc-500"
-                : "bg-white/[0.02] border-white/[0.06] hover:bg-white/[0.05]"
-            )}
-            title="Click to filter Architectural Boundaries diagnostics"
-          >
-            <span className="text-[10px] sm:text-[10px] font-mono uppercase tracking-wider text-zinc-500 truncate w-full">ARCH</span>
-            <span className="text-[11px] sm:text-[12px] font-mono font-semibold text-zinc-100">{auditReport.dimensions.architecture.score}%</span>
-          </button>
-        </div>
+      {/* 5-dimension meters (click to filter findings) */}
+      <div className="grid shrink-0 grid-cols-5 border-b border-zinc-200 bg-zinc-50/60">
+        {DIMENSIONS.map((d, i) => {
+          const score = auditReport.dimensions[d.id].score;
+          const t = tone(score);
+          const active = selectedDimension === d.id;
+          return (
+            <button
+              key={d.id}
+              type="button"
+              onClick={() => {
+                setAuditTab("findings");
+                setSelectedDimension((prev) => (prev === d.id ? "all" : d.id));
+              }}
+              aria-pressed={active}
+              className={cn(
+                "flex min-w-0 flex-col gap-1 px-2.5 py-2 text-left transition-colors cursor-pointer",
+                i > 0 && "border-l border-zinc-200",
+                active ? "bg-white shadow-[inset_0_-2px_0_0_#18181b]" : "hover:bg-white"
+              )}
+              title={`${d.name}: ${d.hint} Click to filter.`}
+            >
+              <span className={cn("truncate font-mono text-[9px] uppercase tracking-wider", active ? "text-zinc-900" : "text-zinc-500")}>
+                {d.label}
+              </span>
+              <span className={cn("font-mono text-xs font-semibold tabular-nums leading-none", t.text)}>
+                {d.id === "tokenDensity" ? `~${auditReport.tokenCount}t` : `${score}%`}
+              </span>
+              <svg className="h-0.5 w-full overflow-hidden rounded-full" viewBox="0 0 100 1" preserveAspectRatio="none" aria-hidden="true">
+                <rect width="100" height="1" className="fill-zinc-200" />
+                <rect width={Math.max(4, Math.min(100, score))} height="1" className={t.bar} />
+              </svg>
+            </button>
+          );
+        })}
       </div>
 
-      {/* Sub-Tabs: Findings vs Checklist (Actionable & Powerful) */}
-      <div className="flex items-center justify-between px-2.5 sm:px-3 bg-[#121316] border-b border-zinc-800/60 text-xs font-mono shrink-0">
-        <div className="flex items-center gap-1">
+      {/* Tabs + Auto-fix */}
+      <div className="flex h-9 shrink-0 items-center gap-1 border-b border-zinc-200 px-1.5 font-mono">
+        {(
+          [
+            { id: "findings", label: "Findings", count: issueCount },
+            { id: "checklist", label: "Checklist", count: null },
+          ] as const
+        ).map((tab) => (
           <button
+            key={tab.id}
             type="button"
             onClick={() => {
-              setAuditTab("findings");
-              setSelectedDimension("all");
+              setAuditTab(tab.id);
+              if (tab.id === "findings") setSelectedDimension("all");
             }}
             className={cn(
-              "px-2 sm:px-2.5 py-1.5 border-b-2 text-[10px] sm:text-[11px] font-semibold transition-colors cursor-pointer",
-              auditTab === "findings"
-                ? "border-zinc-300 text-zinc-100 bg-zinc-800/40"
-                : "border-transparent text-zinc-500 hover:text-zinc-300"
+              "inline-flex h-7 items-center gap-1.5 rounded-md px-2 text-[11px] font-semibold transition-colors cursor-pointer",
+              auditTab === tab.id ? "bg-zinc-100 text-zinc-900" : "text-zinc-500 hover:text-zinc-900"
             )}
           >
-            Findings ({auditReport.allIssues.length})
-          </button>
-          <button
-            type="button"
-            onClick={() => setAuditTab("checklist")}
-            className={cn(
-              "px-2 sm:px-2.5 py-1.5 border-b-2 text-[10px] sm:text-[11px] font-semibold transition-colors cursor-pointer",
-              auditTab === "checklist"
-                ? "border-zinc-300 text-zinc-100 bg-zinc-800/40"
-                : "border-transparent text-zinc-500 hover:text-zinc-300"
+            {tab.label}
+            {tab.count !== null && (
+              <span className={cn("rounded px-1 text-[10px] tabular-nums", tab.count > 0 ? "bg-zinc-900 text-white" : "text-zinc-400")}>
+                {tab.count}
+              </span>
             )}
-          >
-            <span className="hidden sm:inline">Rule </span>Checklist
           </button>
-        </div>
+        ))}
 
-        {auditReport.allIssues.length > 0 && (
+        {issueCount > 0 && (
           <button
             type="button"
             onClick={handleAutoFixAll}
-            className="text-[10px] font-mono font-semibold text-zinc-900 bg-white hover:bg-zinc-200 px-1.5 sm:px-2 py-0.5 rounded transition-all cursor-pointer shadow-xs active:scale-95 shrink-0"
+            className="ml-auto inline-flex h-7 items-center gap-1 rounded-md bg-zinc-900 px-2 text-[11px] font-semibold text-white transition-colors hover:bg-zinc-800 active:scale-95 cursor-pointer"
             title="Automatically remediate all detected issues"
           >
-            ⚡ Auto-Fix<span className="hidden sm:inline"> All</span>
+            <Wand2 className="size-3.5" />
+            Auto-fix all
           </button>
         )}
       </div>
 
-      {/* Tab Body (Scrollable) */}
-      <div className="overflow-y-auto p-3 space-y-2.5 bg-[#121316]/50 scrollbar-thin text-xs">
+      {/* Body (scrollable) */}
+      <div className="min-h-0 overflow-y-auto scrollbar-thin">
         {auditTab === "findings" ? (
           <>
-            {/* Dimension Filter Indicator */}
-            {selectedDimension !== "all" && (
-              <div className="flex items-center justify-between p-1.5 rounded bg-zinc-900/80 border border-zinc-800 text-[10px] font-mono">
-                <span className="text-zinc-400">
-                  Filtered: <strong className="text-zinc-200 uppercase">{selectedDimension}</strong>
+            {activeDimension ? (
+              <div className="flex items-center justify-between gap-2 border-b border-zinc-100 bg-zinc-50 px-3 py-1.5 font-mono text-[10px]">
+                <span className="truncate text-zinc-500">
+                  Showing <span className="font-semibold text-zinc-900">{activeDimension.name}</span>
                 </span>
                 <button
                   type="button"
                   onClick={() => setSelectedDimension("all")}
-                  className="text-zinc-300 hover:text-white underline cursor-pointer"
+                  className="shrink-0 text-zinc-500 underline-offset-2 hover:text-zinc-900 hover:underline cursor-pointer"
                 >
-                  Reset Filter
+                  Show all
                 </button>
               </div>
+            ) : (
+              <p className="border-b border-zinc-100 px-3 py-2 text-[11px] leading-relaxed text-zinc-600">{auditReport.summary}</p>
             )}
 
-            <p className="text-[11px] text-zinc-400 leading-relaxed font-sans">{auditReport.summary}</p>
-
             {filteredIssues.length === 0 ? (
-              <div className="flex items-center gap-2.5 p-2.5 rounded-lg bg-zinc-900/90 border border-zinc-800 text-zinc-300 text-[11px] font-sans">
-                <Image src="/orange-star.png" width={14} height={14}  className="w-3.5 h-3.5 object-contain shrink-0" alt="Star" />
-                <div className="space-y-0.5">
-                  <div className="font-semibold text-zinc-200">Zero Deficiencies Detected</div>
-                  <div className="text-[10px] text-zinc-400">
-                    Token economy ~{auditReport.tokenCount} tok • Explicit negative guard clauses verified • High trigger accuracy.
-                  </div>
-                </div>
+              <div className="flex items-center gap-2 px-3 py-3 text-[11px]">
+                <Check className="size-3.5 shrink-0 text-zinc-900" />
+                <span className="font-medium text-zinc-900">No issues{activeDimension ? " in this dimension" : ""}.</span>
+                <span className="truncate text-zinc-400">~{auditReport.tokenCount} tokens · guardrails verified</span>
               </div>
             ) : (
-              <div className="space-y-1.5">
-                {filteredIssues.map((issue) => (
-                  <div
-                    key={issue.id}
-                    className={cn(
-                      "p-2.5 rounded-lg border text-[11px] space-y-1 font-sans",
-                      issue.severity === "error"
-                        ? "bg-rose-950/30 border-rose-900/60 text-rose-200"
-                        : issue.severity === "warning"
-                        ? "bg-amber-950/20 border-amber-900/50 text-amber-200"
-                        : "bg-zinc-900/60 border-zinc-800 text-zinc-200"
-                    )}
-                  >
-                    <div className="flex items-center justify-between font-semibold">
-                      <span>{issue.title}</span>
-                      <span className="text-[10px] uppercase font-mono px-1.5 py-0.5 rounded bg-black/50 text-zinc-300">
-                        {issue.severity}
-                      </span>
-                    </div>
-                    <p className="text-zinc-400 text-[10px] leading-relaxed">{issue.message}</p>
-                    <p className="text-[10px] text-zinc-400">
-                      <span className="font-bold text-zinc-300 font-mono">Tip: </span>
-                      {issue.suggestion}
-                    </p>
-
-                    {/* Direct Action Buttons for Immediate Fix */}
-                    <div className="pt-1 flex flex-wrap items-center gap-1.5">
-                      {issue.id === "guardrails-no-negative-constraints" && (
-                        <button
-                          type="button"
-                          onClick={handleInjectNegativeGuardrails}
-                          className="inline-flex items-center gap-1 text-[10px] font-mono font-medium px-2 py-0.5 rounded bg-zinc-800 hover:bg-zinc-700 text-zinc-200 border border-zinc-700 transition-colors cursor-pointer"
-                        >
-                          <span>+ Inject Standard Guardrails</span>
-                        </button>
+              <ul className="divide-y divide-zinc-100">
+                {filteredIssues.map((issue) => {
+                  const fixes = fixesFor(issue);
+                  return (
+                    <li key={issue.id} className="space-y-1 px-3 py-2.5">
+                      <div className="flex items-start gap-2">
+                        <span className={cn("mt-1.5 size-1.5 shrink-0 rounded-full", SEVERITY_DOT[issue.severity])} aria-hidden="true" />
+                        <span className="min-w-0 flex-1 text-[12px] font-medium leading-snug text-zinc-900">{issue.title}</span>
+                        <span className="shrink-0 font-mono text-[9px] uppercase tracking-wider text-zinc-400">{issue.severity}</span>
+                      </div>
+                      <p className="pl-3.5 text-[11px] leading-relaxed text-zinc-500">
+                        {issue.message} <span className="text-zinc-700">{issue.suggestion}</span>
+                      </p>
+                      {fixes.length > 0 && (
+                        <div className="flex flex-wrap gap-1.5 pl-3.5 pt-0.5">
+                          {fixes.map((fix) => (
+                            <button key={fix.label} type="button" onClick={fix.onClick} className={fixBtn}>
+                              <Wand2 className="size-3" />
+                              {fix.label}
+                            </button>
+                          ))}
+                        </div>
                       )}
-                      {issue.id.startsWith("vague-") && (
-                        <button
-                          type="button"
-                          onClick={handleFixVaguePhrases}
-                          className="inline-flex items-center gap-1 text-[10px] font-mono font-medium px-2 py-0.5 rounded bg-zinc-800 hover:bg-zinc-700 text-zinc-200 border border-zinc-700 transition-colors cursor-pointer"
-                        >
-                          <span>+ Replace with Concrete Rules</span>
-                        </button>
-                      )}
-                      {issue.id === "trigger-cursor-global-unscoped" && (
-                        <button
-                          type="button"
-                          onClick={handleScopeGlobs}
-                          className="inline-flex items-center gap-1 text-[10px] font-mono font-medium px-2 py-0.5 rounded bg-zinc-800 hover:bg-zinc-700 text-zinc-200 border border-zinc-700 transition-colors cursor-pointer"
-                        >
-                          <span>{"+ Scope Globs (src/**/*.{ts,tsx})"}</span>
-                        </button>
-                      )}
-                      {issue.id.startsWith("format-") && (
-                        <button
-                          type="button"
-                          onClick={handleFixFormatCompliance}
-                          className="inline-flex items-center gap-1 text-[10px] font-mono font-medium px-2 py-0.5 rounded bg-zinc-800 hover:bg-zinc-700 text-zinc-200 border border-zinc-700 transition-colors cursor-pointer"
-                        >
-                          <span>+ Fix Format Syntax</span>
-                        </button>
-                      )}
-                      {issue.id.startsWith("trigger-") && (
-                        <button
-                          type="button"
-                          onClick={handleFixBroadTriggers}
-                          className="inline-flex items-center gap-1 text-[10px] font-mono font-medium px-2 py-0.5 rounded bg-zinc-800 hover:bg-zinc-700 text-zinc-200 border border-zinc-700 transition-colors cursor-pointer"
-                        >
-                          <span>+ Refine Triggers & Chips</span>
-                        </button>
-                      )}
-                      {issue.id === "clarity-no-code-blocks" && (
-                        <button
-                          type="button"
-                          onClick={handleInjectCodeBlock}
-                          className="inline-flex items-center gap-1 text-[10px] font-mono font-medium px-2 py-0.5 rounded bg-zinc-800 hover:bg-zinc-700 text-zinc-200 border border-zinc-700 transition-colors cursor-pointer"
-                        >
-                          <span>+ Add Code Reference</span>
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
+                    </li>
+                  );
+                })}
+              </ul>
             )}
           </>
         ) : (
-          /* Checklist Tab: 5-Pillar Quality Audit Verification */
-          <div className="space-y-2 font-sans">
-            <div className="p-2 rounded-lg bg-zinc-900/80 border border-zinc-800 text-[11px] space-y-0.5">
-              <div className="flex items-center justify-between">
-                <span className="font-semibold text-zinc-200 font-mono">1. Trigger Specificity</span>
-                <span className={cn("text-[10px] font-mono font-bold uppercase px-1.5 py-0.5 rounded", auditReport.dimensions.triggers.score >= 80 ? "bg-zinc-800 text-zinc-200" : "bg-zinc-800 text-amber-300")}>
-                  {auditReport.dimensions.triggers.score >= 80 ? "Passed" : "Review Scope"}
-                </span>
-              </div>
-              <p className="text-zinc-400 text-[10px]">
-                Evaluates trigger chips, activation phrase precision, and glob scoping so rules only activate when relevant.
-              </p>
-            </div>
-
-            <div className="p-2 rounded-lg bg-zinc-900/80 border border-zinc-800 text-[11px] space-y-0.5">
-              <div className="flex items-center justify-between">
-                <span className="font-semibold text-zinc-200 font-mono">2. Rule Density</span>
-                <span className={cn("text-[10px] font-mono font-bold uppercase px-1.5 py-0.5 rounded", auditReport.tokenCount <= 1200 && auditReport.tokenCount >= 70 ? "bg-zinc-800 text-zinc-200" : "bg-zinc-800 text-amber-300")}>
-                  {auditReport.tokenCount <= 1200 && auditReport.tokenCount >= 70 ? "Optimal" : "Attention"}
-                </span>
-              </div>
-              <p className="text-zinc-400 text-[10px]">
-                ~{auditReport.tokenCount} tokens footprint. Keeps context lean without degrading instruction recall.
-              </p>
-            </div>
-
-            <div className="p-2 rounded-lg bg-zinc-900/80 border border-zinc-800 text-[11px] space-y-0.5">
-              <div className="flex items-center justify-between">
-                <span className="font-semibold text-zinc-200 font-mono">4. Format Compliance</span>
-                <span className={cn("text-[10px] font-mono font-bold uppercase px-1.5 py-0.5 rounded", auditReport.dimensions.formatCompliance.score >= 80 ? "bg-zinc-800 text-zinc-200" : "bg-zinc-800 text-amber-300")}>
-                  {auditReport.dimensions.formatCompliance.score >= 80 ? "Passed" : "Syntax Check"}
-                </span>
-              </div>
-              <p className="text-zinc-400 text-[10px]">
-                Validates syntax and header metadata formatting for target standard ({format}).
-              </p>
-            </div>
-
-            <div className="p-2 rounded-lg bg-zinc-900/80 border border-zinc-800 text-[11px] space-y-0.5">
-              <div className="flex items-center justify-between">
-                <span className="font-semibold text-zinc-200 font-mono">5. Architectural Boundaries</span>
-                <span className={cn("text-[10px] font-mono font-bold uppercase px-1.5 py-0.5 rounded", auditReport.dimensions.architecture.score >= 80 ? "bg-zinc-800 text-zinc-200" : "bg-zinc-800 text-amber-300")}>
-                  {auditReport.dimensions.architecture.score >= 80 ? "Passed" : "Review Rules"}
-                </span>
-              </div>
-              <p className="text-zinc-400 text-[10px]">
-                {auditReport.dimensions.architecture.score >= 80
-                  ? "Concrete technical parameters free of vague directives ('write clean code')."
-                  : "Found vague directives. Use '+ Replace with Concrete Rules'."}
-              </p>
-            </div>
-          </div>
+          /* Checklist: the five weighted pillars */
+          <ul className="divide-y divide-zinc-100">
+            {DIMENSIONS.map((d, i) => {
+              const score = auditReport.dimensions[d.id].score;
+              const passed = d.id === "tokenDensity" ? densityOk : score >= 80;
+              const t = tone(passed ? 100 : score);
+              const hint =
+                d.id === "tokenDensity"
+                  ? `~${auditReport.tokenCount} tokens. ${d.hint}`
+                  : d.id === "formatCompliance"
+                  ? `${d.hint} (${format})`
+                  : d.hint;
+              return (
+                <li key={d.id} className="flex items-center gap-3 px-3 py-2">
+                  <span className="w-3 shrink-0 font-mono text-[10px] text-zinc-400">{i + 1}</span>
+                  <div className="min-w-0 flex-1">
+                    <div className="text-[12px] font-medium text-zinc-900">{d.name}</div>
+                    <div className="truncate text-[10px] text-zinc-500" title={hint}>
+                      {hint}
+                    </div>
+                  </div>
+                  <span className={cn("shrink-0 font-mono text-[11px] font-semibold tabular-nums", t.text)}>{score}%</span>
+                  <span
+                    className={cn(
+                      "inline-flex h-5 w-14 shrink-0 items-center justify-center rounded font-mono text-[9px] font-bold uppercase tracking-wider",
+                      passed ? "bg-zinc-100 text-zinc-700" : "bg-amber-50 text-amber-700"
+                    )}
+                  >
+                    {passed ? "Pass" : "Review"}
+                  </span>
+                </li>
+              );
+            })}
+          </ul>
         )}
       </div>
     </div>

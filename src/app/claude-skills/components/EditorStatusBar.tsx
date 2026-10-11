@@ -2,6 +2,7 @@
 
 import React from "react";
 import Image from "next/image";
+import { ChevronUp } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { RuleAuditReport } from "../lib/ruleAuditor";
 import type { OutputFormat } from "../lib/ruleGenerator";
@@ -46,23 +47,32 @@ export function EditorStatusBar({
         <span className="hidden md:inline text-zinc-500 text-[10px]">Spaces: 2</span>
       </div>
 
-      {/* Right: Anchored Audit Launcher Button (Black/Zinc + Orange Star, NO flashy gold) */}
+      {/* Right: Audit launcher (white pill, matches the white audit panel; orange star) */}
       <button
         type="button"
         onClick={() => setShowAuditPanel((prev) => !prev)}
         className={cn(
-          "inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-mono font-medium border transition-colors cursor-pointer shrink-0",
+          "inline-flex h-6 items-center gap-1.5 rounded-full border pl-1.5 pr-2 text-xs font-mono font-medium shadow-sm transition-colors cursor-pointer shrink-0",
           showAuditPanel
-            ? "bg-zinc-800 text-white border-zinc-600"
-            : "bg-zinc-900 hover:bg-zinc-800 text-zinc-300 hover:text-white border-zinc-700/80"
+            ? "border-white bg-white text-zinc-900 ring-2 ring-white/30"
+            : "border-zinc-200 bg-white text-zinc-900 hover:bg-zinc-100"
         )}
         title="Toggle Rule Quality & Security Audit"
+        aria-expanded={showAuditPanel}
       >
-        <Image src="/orange-star.png" width={14} height={14}  className="w-3.5 h-3.5 object-contain shrink-0" alt="Star" />
-        <span className="font-semibold text-zinc-100">{auditReport.overallScore}/100</span>
-        <span className="text-zinc-600">·</span>
-        <span className="text-[10px] text-zinc-400 uppercase tracking-wider">{auditReport.gradeLabel}</span>
-        <span className="text-[10px] text-zinc-500 ml-0.5">{showAuditPanel ? "▼" : "▲"}</span>
+        <Image src="/orange-star.png" width={14} height={14} className="w-3.5 h-3.5 object-contain shrink-0" alt="" />
+        <span
+          className={cn(
+            "font-bold tabular-nums",
+            auditReport.overallScore >= 80 ? "text-zinc-900" : auditReport.overallScore >= 50 ? "text-amber-600" : "text-rose-600"
+          )}
+        >
+          {auditReport.overallScore}
+          <span className="font-normal text-zinc-400">/100</span>
+        </span>
+        <span className="hidden sm:inline text-zinc-300">·</span>
+        <span className="hidden sm:inline text-[10px] font-semibold text-zinc-500 uppercase tracking-wider">{auditReport.gradeLabel}</span>
+        <ChevronUp className={cn("size-3.5 text-zinc-500 transition-transform", showAuditPanel && "rotate-180")} aria-hidden="true" />
       </button>
     </div>
   );
