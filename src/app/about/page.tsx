@@ -7,14 +7,14 @@ import { SiteFooter } from "@/components/layout/SiteFooter";
 const SITE_URL = "https://www.devscratchpad.tech";
 
 export const metadata: Metadata = {
-  title: "About — Offline Developer Tools",
+  title: "About — Private Developer Tools",
   description:
     "Learn about DevScratchpad: a source-available, client-side developer utility platform. Zero server transmission, client-side cryptography, and AI Skill Studio.",
   alternates: {
     canonical: `${SITE_URL}/about`,
   },
   openGraph: {
-    title: "About — Offline Developer Tools | DevScratchpad",
+    title: "About — Private Developer Tools | DevScratchpad",
     description:
       "DevScratchpad is a source-available developer platform built for speed and security. Free online tools that execute 100% in-browser.",
     url: `${SITE_URL}/about`,
@@ -23,13 +23,13 @@ export const metadata: Metadata = {
         url: `${SITE_URL}/opengraph-image`,
         width: 1200,
         height: 630,
-        alt: "About DevScratchpad — Free Offline Developer Tools & AI Skill Studio",
+        alt: "About DevScratchpad — Free Private Developer Tools & AI Skill Studio",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "About — Offline Developer Tools | DevScratchpad",
+    title: "About — Private Developer Tools | DevScratchpad",
     description:
       "DevScratchpad is a source-available developer platform built for speed and security. Free online tools that execute 100% in-browser.",
     images: [
@@ -37,7 +37,7 @@ export const metadata: Metadata = {
         url: `${SITE_URL}/opengraph-image`,
         width: 1200,
         height: 630,
-        alt: "About DevScratchpad — Free Offline Developer Tools & AI Skill Studio",
+        alt: "About DevScratchpad — Free Private Developer Tools & AI Skill Studio",
       },
     ],
   },
@@ -52,7 +52,7 @@ const aboutJsonLd = {
       url: `${SITE_URL}/about`,
       name: "About DevScratchpad",
       description:
-        "DevScratchpad is a source-available, privacy-backed developer platform providing 28 offline client-side developer utilities and AI agent prompt generators.",
+        "DevScratchpad is a source-available, privacy-backed developer platform providing 28 browser-based client-side developer utilities and AI agent prompt generators.",
       publisher: {
         "@type": "Organization",
         "@id": `${SITE_URL}/#organization`,
@@ -65,7 +65,7 @@ const aboutJsonLd = {
         "@type": "SoftwareApplication",
         name: "DevScratchpad",
         applicationCategory: "DeveloperApplication",
-        operatingSystem: "All (Web Browser, Offline PWA)",
+        operatingSystem: "All (Web Browser, Installable PWA)",
         offers: {
           "@type": "Offer",
           price: "0",
@@ -95,7 +95,7 @@ export default function AboutPage() {
             About DevScratchpad
           </h1>
           <p className="mt-3 text-base text-zinc-600 leading-relaxed max-w-3xl">
-            DevScratchpad is an active, source-available developer productivity suite providing over 30 offline-first utilities and an AI agent prompt steering studio. Every feature runs 100% inside your browser memory with <strong>zero server data transmission</strong>.
+            DevScratchpad is an active, source-available developer productivity suite providing over 30 client-side utilities and an AI agent prompt steering studio. Every feature runs 100% inside your browser memory with <strong>zero server data transmission</strong>.
           </p>
         </div>
 
@@ -154,10 +154,10 @@ export default function AboutPage() {
               <div className="p-5 bg-white border border-zinc-200 rounded-xl space-y-2">
                 <div className="flex items-center gap-2 font-semibold text-zinc-900 text-sm">
                   <Cpu className="w-4 h-4 text-purple-600" />
-                  Offline Progressive Web App (PWA)
+                  Installable Web App (PWA)
                 </div>
                 <p className="text-xs text-zinc-600 leading-relaxed">
-                  Installable on desktop and mobile. Once cached, all tools execute without an active internet connection.
+                  Installable on desktop and mobile. Every tool runs in your browser, and a tool that is already open keeps working if your connection drops.
                 </p>
               </div>
             </div>

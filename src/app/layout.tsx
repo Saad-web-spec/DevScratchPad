@@ -11,10 +11,10 @@ const SITE_URL = "https://www.devscratchpad.tech";
 export const metadata: Metadata = {
   title: {
     template: "%s | DevScratchpad",
-    default: "DevScratchpad — Free Offline Developer Tools",
+    default: "DevScratchpad — Free Private Developer Tools",
   },
   description:
-    "28 free offline developer tools with 100% client-side privacy. Format JSON, convert code, decode JWTs, and generate keys locally with zero server transmission.",
+    "28 free browser-based developer tools with 100% client-side privacy. Format JSON, convert code, decode JWTs, and generate keys locally with zero server transmission.",
   keywords: [
     "developer tools",
     "developers",
@@ -55,7 +55,7 @@ export const metadata: Metadata = {
     siteName: "DevScratchpad",
     locale: "en_US",
     url: SITE_URL,
-    title: "DevScratchpad — Free Offline Developer Tools & AI Skill Studio",
+    title: "DevScratchpad — Free Private Developer Tools & AI Skill Studio",
     description:
       "28 free developer tools that run in your browser, plus AI Skill Studio for CLAUDE.md, AGENTS.md, Cursor rules and agent skills. Nothing you paste is uploaded.",
     images: [
@@ -69,7 +69,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "DevScratchpad — Free Offline Developer Tools & AI Skill Studio",
+    title: "DevScratchpad — Free Private Developer Tools & AI Skill Studio",
     description:
       "28 free developer tools that run in your browser, plus AI Skill Studio for CLAUDE.md, AGENTS.md, Cursor rules and agent skills. Nothing you paste is uploaded.",
     images: [
@@ -95,7 +95,7 @@ const siteJsonLd = {
       "url": SITE_URL,
       "name": "DevScratchpad",
       "description":
-        "Massive collection of free online developer tools that work 100% offline. Zero server transmission, 100% client-side privacy backed scratch pad for developers.",
+        "Massive collection of free online developer tools that work 100% client-side. Zero server transmission, 100% client-side privacy backed scratch pad for developers.",
       "publisher": {
         "@id": `${SITE_URL}/#organization`,
       },
@@ -142,7 +142,7 @@ const siteJsonLd = {
       "featureList": [
         "100% Client-Side In-Browser Processing",
         "Zero Server Transmission Privacy Guarantee",
-        "Progressive Web App (PWA) Offline Support",
+        "Installable Progressive Web App (PWA)",
         "Smart Clipboard Format Auto-Detection (Magic Paste)",
         "AI Skill Studio & Coding Agent Preset Generator",
       ],

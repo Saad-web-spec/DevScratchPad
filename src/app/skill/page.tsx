@@ -12,7 +12,7 @@ export const metadata: Metadata = {
   },
   openGraph: {
     title: "AI Skill Library & Hub — 136+ Production Rules | DevScratchpad",
-    description: "Browse, audit, copy, and download 136+ curated production-grade rules across Cursor, Claude, Gemini, Windsurf, Copilot, ChatGPT, and MCP. 100% offline privacy.",
+    description: "Browse, audit, copy, and download 136+ curated production-grade rules across Cursor, Claude, Gemini, Windsurf, Copilot, ChatGPT, and MCP. 100% client-side privacy.",
     url: "https://www.devscratchpad.tech/skill",
     siteName: "DevScratchpad",
     locale: "en_US",

@@ -64,7 +64,7 @@ export function HomeSeoContent() {
             "name": "What tools does DevScratchpad offer?",
             "acceptedAnswer": {
               "@type": "Answer",
-              "text": "DevScratchpad provides 28 offline developer tools including SVG to JSX, JSON/XML/SQL formatters, JWT decoders, Hash/HMAC generators, Base64/URL encoders, timestamp converters, CIDR calculators, diff checkers, and more."
+              "text": "DevScratchpad provides 28 browser-based developer tools including SVG to JSX, JSON/XML/SQL formatters, JWT decoders, Hash/HMAC generators, Base64/URL encoders, timestamp converters, CIDR calculators, diff checkers, and more."
             }
           },
  {
@@ -105,10 +105,10 @@ export function HomeSeoContent() {
  <div className={`${guide.column} pb-16`}>
   <section className="max-w-3xl space-y-3 pb-10 pt-10 sm:pb-12 sm:pt-14">
   <h1 className={guide.h1}>
-  100% Offline, Private Developer Tools
+  100% Client-Side, Private Developer Tools
   </h1>
   <p className={guide.lead}>
-  DevScratchpad is a suite of 28 offline, privacy-first developer utilities. Every tool runs entirely within your browser using client-side processing. <strong className="font-semibold text-zinc-900">Zero server transmission.</strong> Your data, payloads, and tokens never leave your machine.
+  DevScratchpad is a suite of 28 privacy-first developer utilities. Every tool runs entirely within your browser using client-side processing. <strong className="font-semibold text-zinc-900">Zero server transmission.</strong> Your data, payloads, and tokens never leave your machine.
   </p>
   </section>
 
@@ -177,7 +177,7 @@ export function HomeSeoContent() {
   What tools does DevScratchpad offer?
   </h3>
   <p className={faqAnswerClass}>
-  DevScratchpad provides 28 offline developer tools including SVG to JSX, JSON/XML/SQL formatters, JWT decoders, Hash/HMAC generators, Base64/URL encoders, timestamp converters, CIDR calculators, diff checkers, and more.
+  DevScratchpad provides 28 browser-based developer tools including SVG to JSX, JSON/XML/SQL formatters, JWT decoders, Hash/HMAC generators, Base64/URL encoders, timestamp converters, CIDR calculators, diff checkers, and more.
   </p>
   </div>
   <div className={faqItemClass}>

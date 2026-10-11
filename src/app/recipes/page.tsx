@@ -90,7 +90,7 @@ export default function RecipesIndexPage() {
             Troubleshooting Recipes &amp; Quick Fixes
           </h1>
           <p className={guide.lead}>
-            Curated solutions for common developer exceptions, terminal errors, and format conversions. Each recipe pairs an actionable explanation with a 100% offline browser utility.
+            Curated solutions for common developer exceptions, terminal errors, and format conversions. Each recipe pairs an actionable explanation with a 100% client-side browser utility.
           </p>
         </div>
         

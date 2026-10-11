@@ -8,34 +8,34 @@ import { SiteFooter } from "@/components/layout/SiteFooter";
 import { ArrowLink, ToolRow, guide } from "@/components/seo/guideUi";
 
 export const metadata: Metadata = {
-  title: "28 Offline Developer Tools Directory",
-  description: "Explore the complete directory of 28 free offline, privacy-first developer utilities across 5 categories with bidirectional technical guides. Zero server transmission.",
+  title: "28 Private Developer Tools Directory",
+  description: "Explore the complete directory of 28 free privacy-first developer utilities across 5 categories with bidirectional technical guides. Zero server transmission.",
   alternates: {
     canonical: "https://www.devscratchpad.tech/developer-tools",
   },
   openGraph: {
-    title: "28 Offline Developer Tools Directory | DevScratchpad",
-    description: "Explore the complete directory of 28 free offline, privacy-first developer utilities across 5 categories with bidirectional technical guides.",
+    title: "28 Private Developer Tools Directory | DevScratchpad",
+    description: "Explore the complete directory of 28 free privacy-first developer utilities across 5 categories with bidirectional technical guides.",
     url: "https://www.devscratchpad.tech/developer-tools",
     images: [
       {
         url: "https://www.devscratchpad.tech/opengraph-image",
         width: 1200,
         height: 630,
-        alt: "28 Offline Developer Tools Directory across 5 Categories — DevScratchpad",
+        alt: "28 Private Developer Tools Directory across 5 Categories — DevScratchpad",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "28 Offline Developer Tools Directory | DevScratchpad",
-    description: "Explore the complete directory of 28 free offline, privacy-first developer utilities across 5 categories with bidirectional technical guides.",
+    title: "28 Private Developer Tools Directory | DevScratchpad",
+    description: "Explore the complete directory of 28 free privacy-first developer utilities across 5 categories with bidirectional technical guides.",
     images: [
       {
         url: "https://www.devscratchpad.tech/opengraph-image",
         width: 1200,
         height: 630,
-        alt: "28 Offline Developer Tools Directory across 5 Categories — DevScratchpad",
+        alt: "28 Private Developer Tools Directory across 5 Categories — DevScratchpad",
       },
     ],
   },
@@ -61,8 +61,8 @@ export default function DeveloperToolsPage() {
         "@type": "CollectionPage",
         "@id": "https://www.devscratchpad.tech/developer-tools#webpage",
         "url": "https://www.devscratchpad.tech/developer-tools",
-        "name": "Developer Tools Directory (28 Offline Utilities)",
-        "description": "Explore the complete directory of 100% offline, privacy-first developer utilities.",
+        "name": "Developer Tools Directory (28 Browser-Based Utilities)",
+        "description": "Explore the complete directory of 100% client-side, privacy-first developer utilities.",
         "publisher": {
           "@type": "Organization",
           "@id": "https://www.devscratchpad.tech/#organization",

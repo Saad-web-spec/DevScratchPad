@@ -31,7 +31,7 @@ export async function GET() {
 ${benefits}
 - **Standard Workflows**:
 ${workflows}
-- **Included Offline Utilities**:
+- **Included Utilities**:
 ${toolList}
 `;
     })
@@ -145,8 +145,8 @@ DevScratchpad (${SITE_URL}) operates entirely on client-side code execution. No 
 ---
 
 ## Primary Platforms & Root Hubs
-- [Developer Tools Directory](${SITE_URL}/developer-tools): Complete directory of 28 offline, client-side developer utilities across 5 categories.
-- [AI Skill Studio](${SITE_URL}/ai-skill-studio): Cursor Rules (.mdc), Claude Skills (SKILL.md), CLAUDE.md, AGENTS.md, Windsurf Cascade, GitHub Copilot, OpenAI, Gemini Prompts & MCP Config Generator with 100% offline privacy.
+- [Developer Tools Directory](${SITE_URL}/developer-tools): Complete directory of 28 client-side developer utilities across 5 categories.
+- [AI Skill Studio](${SITE_URL}/ai-skill-studio): Cursor Rules (.mdc), Claude Skills (SKILL.md), CLAUDE.md, AGENTS.md, Windsurf Cascade, GitHub Copilot, OpenAI, Gemini Prompts & MCP Config Generator with 100% client-side privacy.
 - [AI Skill Library](${SITE_URL}/skill): Curated directory of production-tested AI skills and prompt templates for Claude Code CLI and agent workflows.
 - [Universal Rules Converter](${SITE_URL}/ai-skill-studio/rules-converter): Zero-telemetry client-side migration engine for legacy .cursorrules, .mdc, and prompt instructions to modern agent formats.
 - [Headless Terminal CLI](${SITE_URL}/cli): Zero-install command-line management tool (\`npx devscratchpad\`) for rulebook installation and repository auditing.
@@ -251,7 +251,7 @@ ${engineeringGuidesDetailed}
 ## Security & Verification Standards
 - **Zero-Trust Client Isolation**: Code execution uses Web Workers, Web Crypto API, and pure TypeScript parsers.
 - **No Third-Party Payload Logging**: Analytics capture only high-level page views (via Vercel Web Analytics); no query parameters, clipboard contents, or tool inputs are tracked.
-- **Offline Reliability**: 100% client-side memory execution without server network dependencies.
+- **Client-Side Reliability**: 100% client-side memory execution without server network dependencies.
 `;
 
   return new NextResponse(content, {

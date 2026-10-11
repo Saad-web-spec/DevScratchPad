@@ -9,13 +9,13 @@ const SITE_URL = "https://www.devscratchpad.tech";
 
 export const metadata: Metadata = {
   title: "Developer Learning Hub & Guides",
-  description: "Exhaustive technical guides, cheat sheets, and practical reference architectures for developers. Cron syntax, JWT RFC standards, cURL conversions, and offline cryptography.",
+  description: "Exhaustive technical guides, cheat sheets, and practical reference architectures for developers. Cron syntax, JWT RFC standards, cURL conversions, and client-side cryptography.",
   alternates: {
     canonical: `${SITE_URL}/blog`,
   },
   openGraph: {
     title: "Developer Learning Hub & Guides | DevScratchpad",
-    description: "Exhaustive technical guides, cheat sheets, and practical reference architectures for developers. Bidirectionally linked with 28 offline developer tools.",
+    description: "Exhaustive technical guides, cheat sheets, and practical reference architectures for developers. Bidirectionally linked with 28 browser-based developer tools.",
     url: `${SITE_URL}/blog`,
     type: "website",
     siteName: "DevScratchpad",
@@ -95,12 +95,12 @@ export default function BlogIndex() {
           cheats={QUICK_CHEATS}
         />
 
-        {/* Minimalist Offline Workspace Banner */}
+        {/* Minimalist Workspace Banner */}
         <div className="mt-12 border-t border-zinc-200 pt-10">
           <GuideCta
             eyebrow="100% Client-Side Engine // Zero Telemetry"
             title="Looking for client-side formatters, decoders, and converters?"
-            description="Explore 28 offline utilities including JSON Formatter, cURL converters, JWT decoder, UUID generator, and Bcrypt verifier."
+            description="Explore 28 browser-based utilities including JSON Formatter, cURL converters, JWT decoder, UUID generator, and Bcrypt verifier."
             href="/developer-tools"
             label="Browse All 28 Tools"
           />

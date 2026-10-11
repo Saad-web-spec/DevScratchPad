@@ -153,7 +153,7 @@ export default async function Image({ params }: { params: Promise<{ slug: string
               color: '#71717a',
             }}
           >
-            100% Client-Side Offline Solutions
+            100% client-side Solutions
           </div>
 
           <div

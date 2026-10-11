@@ -241,7 +241,7 @@ node ./cli/bin/devscratchpad.mjs audit
 - [x] Magic paste no longer hijacks pastes inside a tool's editor or same-family tools
 - [x] Tool panels: ToolChrome redesign, mobile overflow, bug fixes (see MEMORY.md session)
 - [x] Tool polish round 2: no Sample buttons/links or CIDR example chips, no green status (zinc), one-row `ToolHeader` that wraps controls only when needed (secondary actions icon-only on phones), lighter disabled primary, HMAC random-key icon is Dices
-- [ ] Decide: "offline" claims vs. layout.tsx unregistering service workers on every load
+- [x] "Offline" claims removed from site copy (titles, descriptions, JSON-LD, llms.txt, OG images); honest "Partly" FAQs kept; the CLI keeps its genuine offline wording. Service workers stay unregistered in layout.tsx
 
 ---
 

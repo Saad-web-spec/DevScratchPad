@@ -5,7 +5,7 @@ export const LEARNING_TRACKS: LearningTrack[] = [
     id: "security-cryptography",
     title: "Application Security & Cryptography Playbook",
     category: "Security & Cryptography",
-    description: "Deep dive into RFC standards, token security, one-way password hashing, public-key infrastructure, and offline crypto.",
+    description: "Deep dive into RFC standards, token security, one-way password hashing, public-key infrastructure, and client-side crypto.",
     badge: "Most Popular",
     iconName: "ShieldCheck",
     estimatedTime: "45 mins",

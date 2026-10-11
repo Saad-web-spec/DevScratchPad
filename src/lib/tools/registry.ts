@@ -39,7 +39,7 @@ export const TOOLS_REGISTRY: Record<string, ToolMeta> = {
     name: "JSON Schema Validator",
     shortName: "JSON Schema Validator",
     description: "Validate JSON data against draft-07 schemas with real-time error reporting.",
-    seoTitle: "JSON Schema Validator — AJV Offline",
+    seoTitle: "JSON Schema Validator — AJV In-Browser",
     seoDescription: "Validate JSON data against JSON Schema specs entirely in your browser using AJV. Free, private, and fast.",
     howToUse: [
       "Paste your JSON data in the left editor.",
@@ -309,7 +309,7 @@ export const TOOLS_REGISTRY: Record<string, ToolMeta> = {
     shortName: "YAML / JSON",
     description: "Bidirectional YAML and JSON conversion with syntax validation.",
     seoTitle: "YAML to JSON — 100% Client-Side Tool",
-    seoDescription: "Convert YAML to JSON and JSON to YAML securely with our 100% offline, zero server transmission developer tools and scratch pad.",
+    seoDescription: "Convert YAML to JSON and JSON to YAML securely with our 100% client-side, zero server transmission developer tools and scratch pad.",
     howToUse: [
       "Pick 'YAML to JSON' or 'JSON to YAML', then paste your input into the left pane.",
       "The result updates live on the right; use 'Swap' to reverse the direction."

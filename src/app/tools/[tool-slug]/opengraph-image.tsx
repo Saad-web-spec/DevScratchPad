@@ -71,12 +71,12 @@ export default async function Image({ params }: { params: Promise<{ "tool-slug":
                 DevScratchpad
               </div>
               <div style={{ display: 'flex', fontSize: 12, fontWeight: 700, color: '#ea580c', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
-                28 Offline Developer Tools
+                28 Private Developer Tools
               </div>
             </div>
           </div>
 
-          {/* Offline Privacy Pill */}
+          {/* Privacy Pill */}
           <div
             style={{
               display: 'flex',
@@ -247,7 +247,7 @@ export default async function Image({ params }: { params: Promise<{ "tool-slug":
               color: '#71717a',
             }}
           >
-            Part of DevScratchpad Free Offline Developer Workbench
+            Part of DevScratchpad Free Private Developer Workbench
           </div>
 
           <div

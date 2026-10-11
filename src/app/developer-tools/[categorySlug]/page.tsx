@@ -67,7 +67,7 @@ export async function generateMetadata({
           url: "https://www.devscratchpad.tech/opengraph-image",
           width: 1200,
           height: 630,
-          alt: `${category.name} — Free Offline Developer Tools | DevScratchpad`,
+          alt: `${category.name} — Free Private Developer Tools | DevScratchpad`,
         },
       ],
     },
@@ -80,7 +80,7 @@ export async function generateMetadata({
           url: "https://www.devscratchpad.tech/opengraph-image",
           width: 1200,
           height: 630,
-          alt: `${category.name} — Free Offline Developer Tools | DevScratchpad`,
+          alt: `${category.name} — Free Private Developer Tools | DevScratchpad`,
         },
       ],
     },
@@ -229,7 +229,7 @@ export default async function CategoryHubPage({
             </div>
             <div className={statPillClass}>
               <Layers className="w-3.5 h-3.5 text-zinc-400" />
-              <span>{tools.length} Offline Tools</span>
+              <span>{tools.length} Tools</span>
             </div>
             <div className={statPillClass}>
               <Cpu className="w-3.5 h-3.5 text-zinc-400" />
@@ -281,7 +281,7 @@ export default async function CategoryHubPage({
                 </div>
 
                 <div className="pt-2.5 border-t border-zinc-100 flex items-center justify-between text-xs text-zinc-400">
-                  <span>100% Offline</span>
+                  <span>100% Client-Side</span>
                   <span className="font-medium text-zinc-900">Open Tool →</span>
                 </div>
               </Link>
@@ -296,7 +296,7 @@ export default async function CategoryHubPage({
               Technical Architecture &amp; Execution
             </div>
             <h2 className={guide.h2}>
-              How {category.name} Operates Offline in Browser Memory
+              How {category.name} Runs in Browser Memory
             </h2>
             <p className={`${guide.body} max-w-3xl`}>
               {category.deepGuide.overview}
@@ -391,7 +391,7 @@ export default async function CategoryHubPage({
                 key={other.slug}
                 href={`/developer-tools/${other.slug}`}
                 title={other.shortTitle}
-                description={`${other.toolSlugs.length} tools offline`}
+                description={`${other.toolSlugs.length} tools`}
               />
             ))}
           </div>

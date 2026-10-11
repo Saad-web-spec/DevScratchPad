@@ -4,17 +4,17 @@ import { HomeSeoContent } from "@/components/seo/HomeSeoContent";
 
 export const metadata: Metadata = {
   title: {
-    absolute: "DevScratchpad — Free Offline Developer Tools & AI Skill Studio",
+    absolute: "DevScratchpad — Free Private Developer Tools & AI Skill Studio",
   },
   description:
-    "28 free offline developer tools with 100% client-side privacy. Format JSON, convert code, decode JWTs, and generate keys locally with zero server transmission.",
+    "28 free browser-based developer tools with 100% client-side privacy. Format JSON, convert code, decode JWTs, and generate keys locally with zero server transmission.",
   keywords: [
     "DevScratchpad",
     "Dev Scratchpad",
     "devscratchpad.tech",
     "developer scratchpad",
     "dev scratch pad",
-    "offline developer tools",
+    "browser-based developer tools",
     "privacy developer tools",
     "client-side developer tools",
     "free developer utilities",
@@ -29,7 +29,7 @@ export const metadata: Metadata = {
     canonical: "https://www.devscratchpad.tech",
   },
   openGraph: {
-    title: "DevScratchpad — Free Offline Developer Tools & AI Skill Studio",
+    title: "DevScratchpad — Free Private Developer Tools & AI Skill Studio",
     description:
       "28 free developer tools that run in your browser, plus AI Skill Studio for CLAUDE.md, AGENTS.md, Cursor rules and agent skills. Nothing you paste is uploaded.",
     url: "https://www.devscratchpad.tech",
@@ -46,7 +46,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "DevScratchpad — Free Offline Developer Tools & AI Skill Studio",
+    title: "DevScratchpad — Free Private Developer Tools & AI Skill Studio",
     description:
       "28 free developer tools that run in your browser, plus AI Skill Studio for CLAUDE.md, AGENTS.md, Cursor rules and agent skills. Nothing you paste is uploaded.",
     images: [

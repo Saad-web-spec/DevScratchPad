@@ -4,7 +4,7 @@ export default function manifest(): MetadataRoute.Manifest {
   return {
     name: 'DevScratchpad',
     short_name: 'DevScratchpad',
-    description: '100% offline, privacy-first developer utilities.',
+    description: '100% client-side, privacy-first developer utilities.',
     start_url: '/',
     display: 'standalone',
     background_color: '#ffffff',

@@ -23,7 +23,7 @@ export default function Image() {
             DevScratchpad
           </div>
           <div style={{ fontSize: 40, color: '#A1A1AA', marginBottom: 20 }}>
-            28+ Free Offline Developer Tools & AI Studio
+            28+ Free Private Developer Tools & AI Studio
           </div>
           <div style={{ fontSize: 32, color: '#3B82F6', display: 'flex' }}>
             100% Client-Side • Zero Server Transmission

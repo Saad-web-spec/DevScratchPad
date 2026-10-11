@@ -123,7 +123,7 @@ export default async function RecipePage({
     : [
         recipe.solution,
         ...(recipe.codeSnippet ? ["Apply the verified code pattern to eliminate the runtime error."] : []),
-        ...(targetTool ? [`Verify your fix offline using the ${targetTool.name} tool.`] : [])
+        ...(targetTool ? [`Verify your fix in your browser using the ${targetTool.name} tool.`] : [])
       ];
 
   const howToSchema = {
@@ -184,7 +184,7 @@ export default async function RecipePage({
         <header className="space-y-4 border-t border-zinc-200 pt-8 mt-2 pb-10 sm:pb-12">
           <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
             <span className={guide.eyebrow}>
-              Verified Developer Solution • 100% Offline
+              Verified Developer Solution • 100% Client-Side
             </span>
             {targetTool && (
               <Link

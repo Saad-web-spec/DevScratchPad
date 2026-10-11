@@ -73,7 +73,7 @@ export function SeoContent({ tool }: { tool: ToolMeta }) {
         featureList: [
           "100% Client-Side In-Browser Execution",
           "Zero Server Transmission Privacy Guarantee",
-          "Works Fully Offline",
+          "Runs Entirely In Your Browser",
           ...(tool.shortcuts || []),
         ],
         offers: {
@@ -183,7 +183,7 @@ export function SeoContent({ tool }: { tool: ToolMeta }) {
         </nav>
 
         <SeoArticle
-          title={`${tool.name} (Offline & Secure)`}
+          title={`${tool.name} (Private & Secure)`}
           explanation={explanation}
           howToUse={tool.howToUse}
           edgeCases={tool.edgeCases}
