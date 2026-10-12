@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
-import { Analytics } from "@vercel/analytics/next";
-import { SpeedInsights } from "@vercel/speed-insights/next";
+import { SiteAnalytics } from "@/components/layout/SiteAnalytics";
 import { ThemeProvider } from "@/lib/theme";
 import "./globals.css";
 // When offline or build sandbox lacks internet, fallback gracefully
@@ -223,8 +222,7 @@ export default function RootLayout({
         className={`antialiased min-h-screen flex flex-col bg-white text-zinc-900 ${inter.className}`}
       >
         <ThemeProvider>{children}</ThemeProvider>
-        <Analytics />
-        <SpeedInsights />
+        <SiteAnalytics />
       </body>
     </html>
   );

@@ -276,6 +276,9 @@ node ./cli/bin/devscratchpad.mjs audit
 
 - [x] Removed `noindex` from template-only preset spokes and restored them in the sitemap (163 → 450 URLs). GSC showed 4 of the top 5 click-earning pages (agents-md/go-fiber, agents-md/spring-boot-3, claude-md/kubernetes-helm, claude-skills/spring-boot-3) were template-only and had been noindexed on 2026-10-11
 - [x] `/skill`: fixed doubled "| DevScratchpad | DevScratchpad" title; added its own Twitter card (was falling back to the root card)
+- [x] GitHub repo: description, www homepage and 16 topics set
+- [x] Owner opt-out for analytics: `?exclude-me=1` on any page drops that browser's Analytics and Speed Insights events (`?exclude-me=0` re-enables)
+- [ ] Vercel Firewall: deny ASNs 55990 + 136907 (Huawei Cloud) and 45102 (Alibaba). They sent ~4.3k of 6.7k requests/day as headless Chrome
 - [ ] Resubmit sitemap in Search Console and request indexing for the 5 top spoke URLs
 - [ ] Publish `devscratchpad@2.3.0` and run the backlink plan (awesome lists, Stack Overflow, dev.to cross-posts)
 
