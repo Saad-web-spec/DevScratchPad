@@ -2,7 +2,7 @@ import { Metadata } from "next";
 import { SkillsLibraryClient } from "../ai-skill-studio/skills/SkillsLibraryClient";
 
 export const metadata: Metadata = {
-  title: "AI Skill Library & Hub (136+ Rules & Prompts) | DevScratchpad",
+  title: "AI Skill Library: 136+ Claude, Cursor & Copilot Rules",
   description: "Browse, audit, copy, and download 136+ curated production-grade rules and skills across Cursor (.mdc), Claude Code (SKILL.md), Gemini Prompts, Windsurf, Copilot, ChatGPT, and MCP Servers. 100% client-side privacy.",
   alternates: {
     canonical: "https://www.devscratchpad.tech/skill",
@@ -27,6 +27,12 @@ export const metadata: Metadata = {
         type: "image/png",
       },
     ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "AI Skill Library & Hub — 136+ Production Rules | DevScratchpad",
+    description: "Browse, audit, copy, and download 136+ curated production-grade rules across Cursor, Claude, Gemini, Windsurf, Copilot, ChatGPT, and MCP. 100% client-side privacy.",
+    images: ["https://www.devscratchpad.tech/og-ai-skill-studio.png"],
   },
 };
 

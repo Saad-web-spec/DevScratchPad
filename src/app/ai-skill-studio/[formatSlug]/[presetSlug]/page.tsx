@@ -6,7 +6,6 @@ import {
   getAllDynamicPresetRoutes,
   getPresetBySlug,
   getPresetRouteMetadata,
-  isCuratedPreset,
 } from "../../../claude-skills/lib/presetRegistry";
 import { getFormatHub, getAllFormatHubs } from "../../../claude-skills/lib/formatHubs";
 import { ClaudeSkillsClient } from "../../../claude-skills/ClaudeSkillsClient";
@@ -28,10 +27,6 @@ export async function generateMetadata({
   const metadata = getPresetRouteMetadata(formatSlug, presetSlug);
   if (!metadata) {
     return { title: "Preset Not Found" };
-  }
-  // Template-only combinations stay reachable and followable, but are hidden from search results
-  if (!isCuratedPreset(formatSlug, presetSlug)) {
-    return { ...metadata, robots: { index: false, follow: true } };
   }
   return metadata;
 }

@@ -589,3 +589,10 @@ All AI agents operating in this repository MUST follow this 5-step loop:
 - **Decision**: MCP env values default to `${VAR}` references (Claude Code expands them from the shell when loading `.mcp.json`). Literal secrets are a warning, never a requirement.
 - **Gotcha**: `dockerParser.ts` must fix the service indent from the first service; matching any `name:` within 4 spaces of `services:` turned `ports:` / `depends_on:` into fake services.
 - **Status**: ✅ Complete (836 tests, validate-presets, lint 0 errors, build)
+
+### Session: 2026-10-12 — SEO Audit: Re-index Spoke Pages
+- **Task**: Audit SEO after ~7 weeks live (Vercel: 506 visitors/30d, 83% bounce; GSC 3 months: 33 clicks, 1.46K impressions).
+- **Changes**: Removed the `isCuratedPreset` noindex from `[formatSlug]/[presetSlug]/page.tsx` and the matching sitemap filter (163 → 450 URLs). `/skill` title no longer doubles the site suffix; added its own Twitter card.
+- **Decision**: Template-only preset spokes stay indexed. They are ~2.4K words each with ~30% of lines differing between stacks, and GSC showed them earning most of the site's clicks. Improve their uniqueness instead of hiding them. `isCuratedPreset` is still exported but unused.
+- **Gotcha**: OpenGraph was never removed. Root, tools, recipes and AI Skill Studio OG images all return 200 image/png. The plain `</>` thumbnail in GSC is Google's favicon fallback, because the homepage has no large in-page `<img>`. Google picks result thumbnails from page images, not og:image.
+- **Status**: ✅ Complete (validate-presets, lint 0 errors, build)

@@ -227,7 +227,7 @@ node ./cli/bin/devscratchpad.mjs audit
 - [x] Correct MCP path (.mcp.json), .claudeignore and Copilot claims
 - [x] Small orange download toast; ZIP export reports real file name and contents
 - [x] Shared nav on site/workspace headers (AI Skill Studio and Skill Hub keep their own headers)
-- [ ] Decide on noindexing synthesized preset spoke pages (needs Search Console data)
+- [x] Decide on noindexing synthesized preset spoke pages (needs Search Console data) — decided 2026-10-12: keep them indexed (see below)
 
 ## 2026-10-11 — Main Site UI Pass (Tools, Guides, Fonts, Mobile)
 
@@ -271,6 +271,13 @@ node ./cli/bin/devscratchpad.mjs audit
 - [x] Secret-safe checks: `${VAR}` references are the expected value; literal tokens, placeholders and literal Postgres passwords get a warning instead of the old "Token required" push to paste a real token
 - [x] Shared `IntakeModal` shell for the GitHub, local folder, DDL and Docker modals: compact header, flat result panel (no card-in-card), segmented "Write to" switch, solid orange primary, Escape/backdrop close; removed fake "Load sample" / "Quick try" chips
 - [x] Docker compose parser no longer counts block-style `ports:` / `depends_on:` keys as services; flow-style lists (`ports: ["3000:3000"]`) are read (tests in `dockerParser.test.ts`)
+
+## 2026-10-12 — SEO Audit: Re-index Spoke Pages
+
+- [x] Removed `noindex` from template-only preset spokes and restored them in the sitemap (163 → 450 URLs). GSC showed 4 of the top 5 click-earning pages (agents-md/go-fiber, agents-md/spring-boot-3, claude-md/kubernetes-helm, claude-skills/spring-boot-3) were template-only and had been noindexed on 2026-10-11
+- [x] `/skill`: fixed doubled "| DevScratchpad | DevScratchpad" title; added its own Twitter card (was falling back to the root card)
+- [ ] Resubmit sitemap in Search Console and request indexing for the 5 top spoke URLs
+- [ ] Publish `devscratchpad@2.3.0` and run the backlink plan (awesome lists, Stack Overflow, dev.to cross-posts)
 
 ---
 

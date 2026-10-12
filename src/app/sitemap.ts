@@ -5,7 +5,7 @@ import { RECIPE_SLUGS } from "@/lib/recipes/registry";
 import { getAllCategories } from "@/lib/tools/categories";
 import { BLOG_POSTS } from "@/lib/blog/posts";
 import { ROUTES } from "@/lib/routes";
-import { PRESET_ROUTES, getAllDynamicPresetRoutes, isCuratedPreset } from "./claude-skills/lib/presetRegistry";
+import { PRESET_ROUTES, getAllDynamicPresetRoutes } from "./claude-skills/lib/presetRegistry";
 import { getAllFormatHubs } from "./claude-skills/lib/formatHubs";
 
 const SITE_URL = "https://www.devscratchpad.tech";
@@ -95,8 +95,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
   const presetRoutes: MetadataRoute.Sitemap = [];
 
   for (const route of dynamicSpokes) {
-    // Template-only pages are noindex, so they stay out of the sitemap
-    if (!isCuratedPreset(route.formatSlug, route.presetSlug)) continue;
     const url = `${SITE_URL}/ai-skill-studio/${route.formatSlug}/${route.presetSlug}`;
     if (!seenSpokeUrls.has(url)) {
       seenSpokeUrls.add(url);
