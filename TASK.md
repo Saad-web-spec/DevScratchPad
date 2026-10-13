@@ -118,9 +118,9 @@
 
 - [ ] In-memory Virtual File System (memfs) for multi-file skill packages
 - [ ] File tree editor UI with tabs
-- [ ] Support for scripts/, references/, assets/ directories in skills
+- [x] Support for scripts/ and references/ directories in skills (generated, not editable; `assets/` not yet)
 - [ ] Preview code files within studio tabs
-- [ ] Export as structured .zip or self-extracting shell script
+- [x] Export as structured .zip (SKILL.md download is the skill folder ZIP)
 - [ ] CLI `add` command support for multi-file bundles
 
 ## Phase 6: Rule Importer & Two-Way Auditor 📋
@@ -315,6 +315,26 @@ node ./cli/bin/devscratchpad.mjs audit
 - [x] Steps adapt to the selected format (governance, MCP and ignore formats get their own "details" step; hidden cards are skipped)
 - [x] On mobile the tour switches the Configure / Editor tab before each editor step
 - [x] Tests for step resolution (`studioGuide.test.ts`)
+
+## 2026-10-14 — Task Skills, Skill Folders & Companion Files
+
+- [x] 5 task presets (code review, debugging, commits & PRs, refactoring, upgrades), each with a bundled `references/*.md`; auditor, security guard and TDD marked as tasks too. Preset bar has a Stacks / Tasks switch
+- [x] SKILL.md exports as a skill folder (`references/`, `scripts/verify.sh`) and lists them under "9. Bundled Resources"; Download on SKILL.md saves the folder ZIP
+- [x] Companion files per format, shown in the Target File Location card with their own download: `.claude/settings.json` (claudeignore, CLAUDE.md), `.claude/agents/<slug>.md` (SKILL.md), `.gemini/settings.json` and `.aider.conf.yml` (AGENTS.md), `.github/instructions/<slug>.instructions.md` and `.kiro/steering/<slug>.md` (Cursor), `.github/workflows/ai-rules-audit.yml` (CLAUDE.md, AGENTS.md). Extras stay out of the ZIP unless included
+- [x] 5 new presets × 12 code formats of spoke pages (plus their `/api/raw` routes), CLI catalogue (category Workflow) and CLI audit discovery (`GEMINI.md`, `.claude/agents`, `.github/instructions`, `.kiro/steering`); CLI 2.4.0
+- [x] Tests: `companionFiles.test.ts` (21), task presets score ≥ 80
+- [ ] Publish `devscratchpad@2.4.0` to npm (the CI workflow template uses `devscratchpad@2`)
+- [ ] Editable bundled files (Phase 5 file tree)
+
+## 2026-10-14 — Read Your Code (Code Evidence)
+
+- [x] `lib/codeEvidence.ts`: picks up to 24 source files spread across folders (plus 4 tests), skipping dependencies, build output, generated code, example apps and docs; reads existing `CLAUDE.md`, `AGENTS.md`, `GEMINI.md`, Cursor / Windsurf / Copilot rules and skills
+- [x] Detects test layout + runner, file naming (components and modules), import alias, named vs default exports, error classes or result objects, validation library, shared logger, `any` usage, interface vs type, function style, quotes and semicolons, Server vs client components, Python type hints and logging, Go error wrapping. A rule needs a clear majority (usually 70–80%) and cites its support
+- [x] Preferred-pattern example quotes a real mid-sized function (never from a file that looks like it holds a credential); anti-pattern example is built from the detected rules
+- [x] GitHub import reads the files via raw.githubusercontent.com (or the contents API with a token, now with the raw `Accept` header, which was returning a JSON envelope before); local folder import walks the tree (depth 8, 5,000 files) instead of only the top level
+- [x] Import previews show a "From your code" row; Technology Stack card's Auto-Detect became "Read your code" (GitHub, with links to a local folder or a pasted manifest)
+- [x] Copy: modal subtitles, MCP card hints, studio guide, FAQ (new "Can it write rules from my existing code?"), page metadata, featureList, HowTo, README, PRD
+- [x] Tests: `codeEvidence.test.ts` (14)
 
 ---
 

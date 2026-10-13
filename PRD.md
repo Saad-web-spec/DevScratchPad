@@ -53,6 +53,7 @@ Each tool provides:
 ### FR-2: AI Skill Studio & Rule Architect
 - **13 Output Formats**: Cursor .mdc, Claude SKILL.md, CLAUDE.md, AGENTS.md, MCP JSON, Windsurf Cascade, Copilot Instructions, OpenAI Instructions, Gemini JSON, .cursorignore, .claudeignore, llms.txt, ARCHITECTURE.md.
 - **Manifest Auto-Detection**: Drop `package.json`, `Cargo.toml`, `pyproject.toml`, or `go.mod` to auto-detect tech stack and generate tailored rules.
+- **Read Your Code (Code Evidence)**: The GitHub and local-folder imports read up to 24 source files (spread across folders, plus a few tests) and any existing AI rule files, entirely client-side. Only conventions a clear majority of the sample follows become rules, each citing its support (e.g. "18 of 20 component files"); the preferred-pattern example quotes a real function, and the anti-pattern example is built from the detected rules. Files that look like they hold credentials are never quoted.
 - **Static Analysis Auditor (0-100 Score)**:
   - Trigger Specificity: 25%
   - Rule Density: 20%

@@ -8,7 +8,7 @@ export const metadata: Metadata = {
   // Absolute title stays under ~60 chars so Google does not truncate it in results
   title: { absolute: "AI Skill Studio: CLAUDE.md & Cursor Rules Generator" },
   description:
-    "Generate CLAUDE.md, AGENTS.md, Cursor rules, SKILL.md and Copilot instructions for your stack. Free, runs in your browser, nothing is uploaded.",
+    "Generate CLAUDE.md, AGENTS.md, Cursor rules, SKILL.md and Copilot instructions from your stack or your own code. Free, runs in your browser.",
   alternates: {
     canonical: "https://www.devscratchpad.tech/ai-skill-studio",
   },
@@ -44,7 +44,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "AI Skill Studio: CLAUDE.md & Cursor Rules Generator | DevScratchpad",
     description:
-      "Generate CLAUDE.md, AGENTS.md, Cursor rules, SKILL.md and Copilot instructions for your stack. Free, runs in your browser, nothing is uploaded.",
+      "Generate CLAUDE.md, AGENTS.md, Cursor rules, SKILL.md and Copilot instructions from your stack or your own code. Free, runs in your browser.",
     url: "https://www.devscratchpad.tech/ai-skill-studio",
     siteName: "DevScratchpad",
     locale: "en_US",
@@ -64,7 +64,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "AI Skill Studio: CLAUDE.md & Cursor Rules Generator | DevScratchpad",
     description:
-      "Generate CLAUDE.md, AGENTS.md, Cursor rules, SKILL.md and Copilot instructions for your stack. Free, runs in your browser, nothing is uploaded.",
+      "Generate CLAUDE.md, AGENTS.md, Cursor rules, SKILL.md and Copilot instructions from your stack or your own code. Free, runs in your browser.",
     images: [
       {
         url: "https://www.devscratchpad.tech/og-ai-skill-studio.png",
@@ -103,7 +103,9 @@ const jsonLdGraph = {
         ".cursorignore & .claudeignore context shields to mask secrets and eliminate token bloat",
         "llms.txt and ARCHITECTURE.md machine documentation blueprints",
         "Runs in your browser; nothing you type or import is uploaded",
-        "Package manifest ingestion for package.json, Cargo.toml, pyproject.toml, and go.mod",
+        "Reads a GitHub repository or local folder (manifest, source files, existing AI rules) and writes rules from the conventions the code follows",
+        "Task skills for code review, debugging, commits and PRs, refactoring and upgrades, exported as skill folders with reference files and a verify script",
+        "Companion files: .claude/settings.json, Claude Code subagents, Copilot and Kiro scoped rules, and a CI audit workflow",
         "ZIP export with every file in its folder, plus a terminal CLI",
       ],
       contactPoint: {
@@ -136,7 +138,7 @@ const jsonLdGraph = {
           "@type": "HowToStep",
           position: 1,
           name: "Pick a format and a preset",
-          text: "Choose the file you need under Target Standard & File Format, then pick one of the Presets for your stack. Or click Auto-Detect to read your package.json, pyproject.toml, Cargo.toml or go.mod.",
+          text: "Choose the file you need under Target Standard & File Format, then pick one of the Presets for your stack. Or click Read your code to pull your conventions from a GitHub repository or local folder.",
         },
         {
           "@type": "HowToStep",
@@ -184,7 +186,7 @@ export default function AISkillStudioPage() {
         heading={{
           title: "AI Skill Studio: CLAUDE.md, Cursor rules and agent skills generator",
           description:
-            "Pick the file your AI coding tool reads, choose your stack, and download it ready to drop into your repo. Runs in your browser; nothing is uploaded.",
+            "Pick the file your AI coding tool reads, start from a preset or your own code, and download it ready to drop into your repo. Runs in your browser; nothing is uploaded.",
         }}
       />
       <AiSkillStudioSeoContent />

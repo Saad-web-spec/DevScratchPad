@@ -5,6 +5,15 @@
  */
 
 import { ParsedManifestResult, parseProjectManifest } from "./manifestParser";
+import {
+  analyzeCodeEvidence,
+  evidenceDirectives,
+  findRuleFiles,
+  mapWithLimit,
+  selectEvidenceFiles,
+  type CodeEvidence,
+  type SourceSample,
+} from "./codeEvidence";
 
 export interface GitHubRepoRef {
   owner: string;
@@ -59,6 +68,10 @@ export interface IngestedRepoAnalysis {
   synthesizedRole: string;
   suggestedSkillName: string;
   suggestedTitle: string;
+  /** Conventions read from a sample of the repository's source files. */
+  codeEvidence?: CodeEvidence;
+  /** Why source files were not read, when they were not. */
+  codeEvidenceNote?: string;
 }
 
 /**
@@ -198,13 +211,16 @@ export async function fetchGitHubRawContent(
   filePath: string,
   token?: string
 ): Promise<string> {
+  const encodedPath = filePath.split("/").map(encodeURIComponent).join("/");
   // If private or token provided, use API raw endpoint
   if (token && token.trim().length > 0) {
     const res = await fetch(
-      `https://api.github.com/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/contents/${filePath}?ref=${encodeURIComponent(branch)}`,
+      `https://api.github.com/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/contents/${encodedPath}?ref=${encodeURIComponent(branch)}`,
       {
         headers: {
           Authorization: `Bearer ${token.trim()}`,
+          // Without this the contents API returns a JSON envelope with base64 content, not the file
+          Accept: "application/vnd.github.raw+json",
         },
       }
     );
@@ -213,7 +229,7 @@ export async function fetchGitHubRawContent(
   }
 
   // If public, raw.githubusercontent.com has no low API rate limit and sends Access-Control-Allow-Origin: *
-  const rawUrl = `https://raw.githubusercontent.com/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/${encodeURIComponent(branch)}/${filePath}`;
+  const rawUrl = `https://raw.githubusercontent.com/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/${encodeURIComponent(branch)}/${encodedPath}`;
   const res = await fetch(rawUrl);
   if (!res.ok) {
     throw new Error(`Could not load ${filePath} from raw (${res.status})`);
@@ -427,7 +443,29 @@ export async function analyzeGitHubRepository(
     suggestedGlobs.add(metadata.language === "Python" ? "**/*.py" : metadata.language === "Rust" ? "src/**/*.rs" : "src/**/*.{ts,tsx,js,jsx}");
   }
 
-  // 4. Fetch recent commits to analyze conventions
+  // 4. Read a sample of the source code and any existing AI rule files
+  let codeEvidence: CodeEvidence | undefined;
+  let codeEvidenceNote: string | undefined;
+  const blobs = tree.filter((t) => t.type === "blob");
+  if (blobs.length > 0) {
+    const sourcePaths = selectEvidenceFiles(blobs);
+    const rulePaths = findRuleFiles(blobs.map((b) => b.path));
+    onProgress?.(`Reading ${sourcePaths.length} source files${rulePaths.length > 0 ? ` and ${rulePaths.length} existing rule files` : ""}...`);
+    const read = (path: string) =>
+      fetchGitHubRawContent(parsedRef.owner, parsedRef.repo, branch, path, token).then((content): SourceSample => ({ path, content }));
+    const [samples, ruleFiles] = await Promise.all([mapWithLimit(sourcePaths, 6, read), mapWithLimit(rulePaths, 3, read)]);
+    const isSample = (s: SourceSample | null): s is SourceSample => s !== null;
+    codeEvidence = analyzeCodeEvidence({
+      paths: blobs.map((b) => b.path),
+      samples: samples.filter(isSample),
+      ruleFiles: ruleFiles.filter(isSample),
+    });
+    if (codeEvidence.filesRead === 0) codeEvidenceNote = "No source files could be read from this branch.";
+  } else {
+    codeEvidenceNote = "GitHub did not return the file list (usually the 60 requests/hour limit), so only the manifest was read. Add a token to read the code.";
+  }
+
+  // 5. Fetch recent commits to analyze conventions
   onProgress?.("Inspecting commit history & team conventions...");
   const recentCommits = await fetchGitHubRecentCommits(parsedRef.owner, parsedRef.repo, token);
 
@@ -439,7 +477,7 @@ export async function analyzeGitHubRepository(
     commitConvention = "conventional";
   }
 
-  // 5. Synthesize Procedures based on detected scripts & stack
+  // 6. Synthesize Procedures based on detected scripts & stack
   const synthesizedProcedures: string[] = [
     `1. Codebase Orientation: Inspect surrounding patterns before modifying files.`,
   ];
@@ -460,7 +498,7 @@ export async function analyzeGitHubRepository(
     synthesizedProcedures.push(`4. Static Analysis: Run linter verification with \`${packageManager} run lint\`.`);
   }
 
-  // 6. Synthesize Directives & Guardrails
+  // 7. Synthesize Directives & Guardrails
   const synthesizedDirectives: string[] = [
     `- Zero Server Leakage: Never expose secrets, API tokens, or .env files into commits or logs.`,
     `- Package Management: Use ${packageManager} exclusively (do not mix lockfiles).`,
@@ -471,7 +509,11 @@ export async function analyzeGitHubRepository(
     synthesizedDirectives.push(`- Commit Style: Adhere strictly to Conventional Commits (e.g. feat:, fix:, chore:).`);
   }
 
-  // 7. Synthesize Role & Title
+  if (codeEvidence) {
+    synthesizedDirectives.push(...evidenceDirectives(codeEvidence));
+  }
+
+  // 8. Synthesize Role & Title
   const tech = parsedManifest?.framework || metadata.language || "Full-Stack";
   const synthesizedRole = `Senior ${tech} Engineer & System Architect`;
   const safeName = metadata.repo.toLowerCase().replace(/[^a-z0-9_-]/g, "-");
@@ -501,5 +543,7 @@ export async function analyzeGitHubRepository(
     synthesizedRole,
     suggestedSkillName: safeName,
     suggestedTitle,
+    codeEvidence,
+    codeEvidenceNote,
   };
 }

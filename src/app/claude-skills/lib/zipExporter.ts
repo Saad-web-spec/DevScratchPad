@@ -1,5 +1,6 @@
 import type { OutputFormat } from "./ruleGenerator";
 import { EXPORT_FORMATS, getExportTarget, toFileSlug } from "./exportTargets";
+import type { CompanionFile } from "./companionFiles";
 
 export interface ZipExportOptions {
   skillName: string;
@@ -8,6 +9,8 @@ export interface ZipExportOptions {
   contents: Partial<Record<OutputFormat, string>>;
   framework: string;
   language: string;
+  /** Companion files (skill folder, Claude Code settings, extras); see companionFiles.ts. */
+  companions?: CompanionFile[];
 }
 
 export interface ZipExportResult {
@@ -35,6 +38,14 @@ export async function downloadAiKitZip(options: ZipExportOptions): Promise<ZipEx
     files.push(repoPath);
   }
 
+  const companions = options.companions ?? [];
+  for (const companion of companions) {
+    // Shell scripts must stay executable after unzipping
+    zip.file(companion.path, companion.content, companion.path.endsWith(".sh") ? { unixPermissions: "755" } : undefined);
+    files.push(companion.path);
+  }
+  const extras = companions.filter((c) => c.extra);
+
   // Instruction Manual README.md
   const readmeContent = `# ${options.skillTitle || "AI Configuration Suite"}
 
@@ -53,11 +64,13 @@ Unzip this archive into the root of your repository. Every file is already in th
 - Keeps secrets, build output and lockfiles out of Cursor's index and context.
 
 ### 3. Claude Code Agent Skills (.claude/skills/)
-- Project Scope: Copy \`.claude/skills/${slug}/SKILL.md\` into your repo's \`.claude/skills/${slug}/\`.
-- Global Scope: Copy into \`~/.claude/skills/${slug}/SKILL.md\` to make it available across all your terminal sessions.
+- Project Scope: Keep the whole \`.claude/skills/${slug}/\` folder (SKILL.md plus its \`scripts/\` and any \`references/\`).
+- Global Scope: Copy the folder to \`~/.claude/skills/${slug}/\` to make it available in every project.
+- Claude Code loads the skill when a request matches its description, or when you type \`/${slug}\`.
 
-### 4. Claude Code Privacy Shield (.claudeignore)
-- Place \`.claudeignore\` in your repository root to restrict Claude Code terminal inspection.
+### 4. Claude Code Permissions (.claude/settings.json) and .claudeignore
+- Claude Code does not read \`.claudeignore\`. \`.claude/settings.json\` enforces its secrets list as \`permissions.deny\` rules and asks before \`git push\`.
+- Keep \`.claudeignore\` as the human-readable list, or delete it.
 
 ### 5. Project Root Guidelines (CLAUDE.md)
 - Copy \`CLAUDE.md\` directly to the root of your project.
@@ -89,7 +102,14 @@ Unzip this archive into the root of your repository. Every file is already in th
 ### 13. Planning Documents (PRD.md, DESIGN.md, TASK.md, MEMORY.md)
 - Place these in your repository root and reference them from CLAUDE.md or AGENTS.md so agents read them before starting work.
 
----
+${
+  extras.length > 0
+    ? `### 14. Extras
+${extras.map((c) => `- \`${c.path}\`: ${c.note}`).join("\n")}
+
+`
+    : ""
+}---
 *Created with privacy-first client-side architecture on DevScratchpad (https://www.devscratchpad.tech/ai-skill-studio).*
 `;
 
@@ -97,16 +117,46 @@ Unzip this archive into the root of your repository. Every file is already in th
   files.push("README.md");
 
   // Generate blob and trigger download
-  const blob = await zip.generateAsync({ type: "blob" });
+  // UNIX platform so the 755 mode on scripts is stored in the archive
+  const blob = await zip.generateAsync({ type: "blob", platform: "UNIX" });
+  const fileName = `${slug}-ai-suite.zip`.replace(/[^a-zA-Z0-9._-]/g, "-");
+  triggerBlobDownload(blob, fileName);
+
+  return { fileName, files };
+}
+
+/**
+ * Downloads one skill as its folder (`<slug>/SKILL.md` plus bundled files), ready to unzip into
+ * `.claude/skills/` or `~/.claude/skills/`.
+ */
+export async function downloadSkillFolderZip(
+  skillName: string,
+  skillContent: string,
+  bundle: { path: string; content: string }[]
+): Promise<ZipExportResult> {
+  const { default: JSZip } = await import("jszip");
+  const zip = new JSZip();
+  const slug = toFileSlug(skillName);
+  const files = [`${slug}/SKILL.md`];
+  zip.file(files[0], skillContent);
+  for (const file of bundle) {
+    const path = `${slug}/${file.path}`;
+    zip.file(path, file.content, path.endsWith(".sh") ? { unixPermissions: "755" } : undefined);
+    files.push(path);
+  }
+  const blob = await zip.generateAsync({ type: "blob", platform: "UNIX" });
+  const fileName = `${slug}-skill.zip`;
+  triggerBlobDownload(blob, fileName);
+  return { fileName, files };
+}
+
+function triggerBlobDownload(blob: Blob, fileName: string): void {
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.href = url;
-  const fileName = `${slug}-ai-suite.zip`.replace(/[^a-zA-Z0-9._-]/g, "-");
   link.download = fileName;
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
   URL.revokeObjectURL(url);
-
-  return { fileName, files };
 }

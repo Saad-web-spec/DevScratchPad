@@ -4,6 +4,7 @@ import React, { useEffect } from "react";
 import { CircleAlert, Lock, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { OutputFormat } from "../lib/ruleGenerator";
+import type { CodeEvidence } from "../lib/codeEvidence";
 
 /**
  * Shared shell for the MCP context-intake modals (GitHub repo, local folder, DDL, Docker):
@@ -179,5 +180,44 @@ export function ScriptList({ scripts }: { scripts: Partial<Record<"build" | "tes
         </div>
       ))}
     </div>
+  );
+}
+
+/** What the importer learned from the code itself: one line per rule with the evidence behind it, plus existing rule files. */
+export function CodeEvidenceRow({ evidence, note }: { evidence?: CodeEvidence; note?: string }) {
+  if (!evidence) {
+    return note ? (
+      <IntakeRow label="From your code">
+        <p className="text-xs text-zinc-500 leading-relaxed">{note}</p>
+      </IntakeRow>
+    ) : null;
+  }
+  const { findings, existingRules, filesRead, exampleGood } = evidence;
+  return (
+    <IntakeRow label={`From your code · ${filesRead} files read`}>
+      {findings.length > 0 ? (
+        <ul className="space-y-0.5 max-h-40 overflow-y-auto">
+          {findings.map((f) => (
+            <li key={`${f.topic}-${f.rule}`} className="text-xs leading-relaxed text-zinc-700">
+              <span className="font-semibold text-zinc-900">{f.topic}:</span> {f.rule.replace(/`/g, "")}{" "}
+              <span className="text-[11px] text-zinc-400">({f.support})</span>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p className="text-xs text-zinc-500">No convention was consistent enough to state as a rule.</p>
+      )}
+      {(existingRules.length > 0 || exampleGood) && (
+        <div className="flex flex-wrap items-center gap-1 pt-0.5 text-[11px] text-zinc-500">
+          {existingRules.length > 0 && <span>Builds on</span>}
+          {existingRules.map((file) => (
+            <span key={file.path} className={`${intakePillClass} font-mono`}>
+              {file.path}
+            </span>
+          ))}
+          {exampleGood && <span>{existingRules.length > 0 ? "· " : ""}Examples quote your code</span>}
+        </div>
+      )}
+    </IntakeRow>
   );
 }

@@ -5,6 +5,19 @@
  * to analyze local repositories offline without uploading any code.
  */
 
+import {
+  MAX_SOURCE_BYTES,
+  RULE_DIRS,
+  SKIPPED_DIRS,
+  analyzeCodeEvidence,
+  evidenceDirectives,
+  findRuleFiles,
+  mapWithLimit,
+  selectEvidenceFiles,
+  type CodeEvidence,
+  type SourceSample,
+} from "./codeEvidence";
+
 export interface LocalProjectAnalysis {
   directoryName: string;
   suggestedMcpArg: string;
@@ -27,6 +40,8 @@ export interface LocalProjectAnalysis {
   manifestFileName?: string;
   hasDocker: boolean;
   hasGit: boolean;
+  /** Conventions read from a sample of the folder's source files. */
+  codeEvidence?: CodeEvidence;
 }
 
 export interface DirectoryPickResult {
@@ -34,6 +49,61 @@ export interface DirectoryPickResult {
   suggestedArg: string;
   supported: boolean;
   analysis?: LocalProjectAnalysis;
+}
+
+/** The File System Access API surface the walker uses; TypeScript's DOM lib does not type `entries()` everywhere. */
+interface LocalFileHandle {
+  kind: "file";
+  name: string;
+  getFile(): Promise<File>;
+}
+interface LocalDirectoryHandle {
+  kind: "directory";
+  name: string;
+  entries(): AsyncIterable<[string, LocalFileHandle | LocalDirectoryHandle]>;
+}
+
+const MAX_WALK_FILES = 5000;
+const MAX_WALK_DEPTH = 8;
+
+/** Lists the folder's files breadth-first, skipping dependencies, build output and VCS data. */
+async function walkDirectory(root: LocalDirectoryHandle): Promise<Map<string, LocalFileHandle>> {
+  const files = new Map<string, LocalFileHandle>();
+  const queue: { handle: LocalDirectoryHandle; prefix: string; depth: number }[] = [{ handle: root, prefix: "", depth: 0 }];
+  while (queue.length > 0 && files.size < MAX_WALK_FILES) {
+    const { handle, prefix, depth } = queue.shift()!;
+    try {
+      for await (const [name, entry] of handle.entries()) {
+        if (entry.kind === "file") {
+          files.set(prefix + name, entry);
+          if (files.size >= MAX_WALK_FILES) break;
+        } else if (depth < MAX_WALK_DEPTH && !SKIPPED_DIRS.has(name) && (!name.startsWith(".") || RULE_DIRS.has(name))) {
+          queue.push({ handle: entry, prefix: `${prefix}${name}/`, depth: depth + 1 });
+        }
+      }
+    } catch {
+      // Unreadable folder: skip it
+    }
+  }
+  return files;
+}
+
+/** Reads a sample of source files and any AI rule files, entirely in the browser. */
+async function readLocalCodeEvidence(root: LocalDirectoryHandle): Promise<CodeEvidence | undefined> {
+  const files = await walkDirectory(root);
+  if (files.size === 0) return undefined;
+  const paths = [...files.keys()];
+  const read = async (path: string): Promise<SourceSample | null> => {
+    const file = await files.get(path)!.getFile();
+    if (file.size > MAX_SOURCE_BYTES * 2) return null;
+    return { path, content: await file.text() };
+  };
+  const isSample = (s: SourceSample | null): s is SourceSample => s !== null;
+  const [samples, ruleFiles] = await Promise.all([
+    mapWithLimit(selectEvidenceFiles(paths.map((path) => ({ path }))), 8, read),
+    mapWithLimit(findRuleFiles(paths), 3, read),
+  ]);
+  return analyzeCodeEvidence({ paths, samples: samples.filter(isSample), ruleFiles: ruleFiles.filter(isSample) });
 }
 
 export function isFileSystemAccessSupported(): boolean {
@@ -53,9 +123,8 @@ export async function pickAndInspectLocalDirectory(): Promise<DirectoryPickResul
   }
 
   try {
-    const dirHandle = await (window as any).showDirectoryPicker({
-      mode: "read",
-    });
+    const pickerWindow = window as unknown as { showDirectoryPicker: (options: { mode: "read" }) => Promise<LocalDirectoryHandle> };
+    const dirHandle = await pickerWindow.showDirectoryPicker({ mode: "read" });
 
     const dirName = dirHandle.name || "project";
     const topLevelDirs: string[] = [];
@@ -65,7 +134,7 @@ export async function pickAndInspectLocalDirectory(): Promise<DirectoryPickResul
     let hasDocker = false;
 
     // Iterate through top-level directory entries
-    for await (const [name, handle] of (dirHandle as any).entries()) {
+    for await (const [name, handle] of dirHandle.entries()) {
       if (handle.kind === "directory") {
         if (name === ".git") hasGit = true;
         topLevelDirs.push(name);
@@ -103,6 +172,11 @@ export async function pickAndInspectLocalDirectory(): Promise<DirectoryPickResul
     }
 
     const analysis = analyzeLocalFiles(dirName, files, topLevelDirs, hasGit, hasDocker);
+    const codeEvidence = await readLocalCodeEvidence(dirHandle);
+    if (codeEvidence) {
+      analysis.codeEvidence = codeEvidence;
+      analysis.synthesizedDirectives.push(...evidenceDirectives(codeEvidence));
+    }
 
     return {
       name: dirName,
@@ -110,11 +184,11 @@ export async function pickAndInspectLocalDirectory(): Promise<DirectoryPickResul
       supported: true,
       analysis,
     };
-  } catch (err: any) {
-    if (err.name === "AbortError") {
+  } catch (err: unknown) {
+    if (err instanceof Error && err.name === "AbortError") {
       throw new Error("Selection cancelled.");
     }
-    throw new Error(err.message || "Failed to access local directory.");
+    throw new Error((err instanceof Error && err.message) || "Failed to access local directory.");
   }
 }
 

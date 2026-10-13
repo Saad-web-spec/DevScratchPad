@@ -20,7 +20,7 @@ import path from "node:path";
 import https from "node:https";
 import { parseArgs } from "node:util";
 
-const VERSION = "2.3.0";
+const VERSION = "2.4.0";
 const SITE_URL = "https://www.devscratchpad.tech";
 const NETWORK_TIMEOUT_MS = 10_000;
 
@@ -109,6 +109,11 @@ const KNOWN_PRESETS = [
   { slug: "security-guard", tech: "Zero-Trust Security Guardrails", category: "Quality", defaultGlobs: "**/*" },
   { slug: "cursor-rules-pro", tech: "Universal Cursor Pro Rules", category: "General", defaultGlobs: "**/*" },
   { slug: "vibe-coder", tech: "Vibe Coder (High Velocity)", category: "General", defaultGlobs: "**/*" },
+  { slug: "code-reviewer", tech: "Pull Request & Diff Review", category: "Workflow", defaultGlobs: "**/*" },
+  { slug: "systematic-debugging", tech: "Root-Cause Debugging", category: "Workflow", defaultGlobs: "**/*" },
+  { slug: "commit-pr-writer", tech: "Commit Messages & Pull Requests", category: "Workflow", defaultGlobs: "**/*" },
+  { slug: "safe-refactor", tech: "Behavior-Preserving Refactoring", category: "Workflow", defaultGlobs: "**/*" },
+  { slug: "dependency-upgrade", tech: "Dependency Upgrades & Migrations", category: "Workflow", defaultGlobs: "**/*" },
 ];
 
 /** MCP server presets (only valid with the mcp-config format). */
@@ -853,6 +858,7 @@ function collectRuleFiles(targetDir) {
     ".cursorrules",
     "CLAUDE.md",
     "AGENTS.md",
+    "GEMINI.md",
     ".cursorignore",
     ".claudeignore",
     "llms.txt",
@@ -864,7 +870,10 @@ function collectRuleFiles(targetDir) {
   ].forEach(addIfFile);
   addDir(path.join(".cursor", "rules"), (f) => f.endsWith(".mdc") || f.endsWith(".md"));
   addDir(path.join(".windsurf", "rules"), (f) => f.endsWith(".md"));
-  addDir(".gemini", (f) => f.endsWith(".json"));
+  addDir(".gemini", (f) => f.endsWith(".json") && f !== "settings.json");
+  addDir(path.join(".claude", "agents"), (f) => f.endsWith(".md"));
+  addDir(path.join(".github", "instructions"), (f) => f.endsWith(".instructions.md"));
+  addDir(path.join(".kiro", "steering"), (f) => f.endsWith(".md"));
 
   const skillsDir = path.join(targetDir, ".claude", "skills");
   if (fs.existsSync(skillsDir) && fs.statSync(skillsDir).isDirectory()) {

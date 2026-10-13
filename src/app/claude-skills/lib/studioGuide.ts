@@ -98,7 +98,7 @@ export const GUIDE_STEPS: readonly GuideStepSpec[] = [
         selector: '[data-section="techStack"]',
         title: "Tell it your stack",
         description:
-          "Set your framework, language and database. Have a project already? Auto-Detect reads your package.json, pyproject.toml, Cargo.toml or go.mod right in the browser.",
+          "Set your framework, language and database. Have a project already? Read your code pulls the stack, naming, test layout, error handling and real examples from a GitHub repo or local folder, in the browser.",
       },
     ],
   },

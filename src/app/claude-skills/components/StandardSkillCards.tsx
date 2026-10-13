@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { BookOpen, Check, FileText, Layers, Lock, Settings2, ShieldCheck, Sliders, UploadCloud } from "lucide-react";
+import { BookOpen, Check, Code2, FileText, Layers, Lock, Settings2, ShieldCheck, Sliders } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { InfoTooltip } from "./InfoTooltip";
 import { BEHAVIOR_OPTIONS, CONVENTION_OPTIONS, PHILOSOPHIES, SECURITY_BASELINE, type SkillPreset } from "../lib/ruleGenerator";
@@ -29,10 +29,11 @@ export interface TechStackCardProps extends FieldMarkerProps {
   setStyling: (value: string) => void;
   setDatabase: (value: string) => void;
   setIsConverterModalOpen: (open: boolean) => void;
-  setIsManifestModalOpen: (open: boolean) => void;
+  /** Opens the read-your-code import (GitHub repo, local folder or pasted manifest). */
+  onReadCode: () => void;
 }
 
-/** Technology Stack Context card: framework, language, styling and database inputs, with legacy-rule conversion and manifest auto-detect entry points. */
+/** Technology Stack Context card: framework, language, styling and database inputs, with legacy-rule conversion and read-your-code entry points. */
 export function TechStackCard({
   framework,
   language,
@@ -43,7 +44,7 @@ export function TechStackCard({
   setStyling,
   setDatabase,
   setIsConverterModalOpen,
-  setIsManifestModalOpen,
+  onReadCode,
   setActiveFieldKey,
   setIsManuallyEdited,
 }: TechStackCardProps) {
@@ -72,12 +73,12 @@ export function TechStackCard({
           </button>
           <button
             type="button"
-            onClick={() => setIsManifestModalOpen(true)}
+            onClick={onReadCode}
             className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 text-[11px] font-semibold text-zinc-700 hover:text-orange-700 bg-zinc-100 hover:bg-orange-50 border border-zinc-200 hover:border-orange-200 px-2.5 py-1.5 rounded-md transition-all active:scale-95 shadow-xs cursor-pointer min-h-[32px]"
-            title="Auto-detect stack from package.json, pyproject.toml, Cargo.toml, or go.mod"
+            title="Read a GitHub repository or local folder: its manifest, a sample of source files and any existing AI rules"
           >
-            <UploadCloud className="w-3.5 h-3.5 text-orange-600 shrink-0" />
-            <span>Auto-Detect</span>
+            <Code2 className="w-3.5 h-3.5 text-orange-600 shrink-0" />
+            <span>Read your code</span>
           </button>
         </div>
       </div>

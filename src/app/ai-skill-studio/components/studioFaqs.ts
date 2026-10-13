@@ -46,9 +46,14 @@ export const STUDIO_FAQS: StudioFaq[] = [
       "No. Agents load their own rules file (`CLAUDE.md`, `AGENTS.md` or Cursor rules) and nothing else on their own. Name the other docs in that file, for example \"Read PRD.md and TASK.md before you start\", and the agent opens them when it needs them. In `CLAUDE.md` you can also write `@PRD.md`, but that loads the file into every session.",
   },
   {
+    question: "Can it write rules from my existing code?",
+    answer:
+      "Yes. Click Read your code and point it at a GitHub repository or a local folder. Besides the manifest, it reads a sample of your source files and any existing `CLAUDE.md`, `AGENTS.md` or Cursor rules, then writes only the conventions most of the code follows, such as test layout, file naming, import alias, error classes and logger, each with how many files back it. The examples in the file quote a real function from your code.",
+  },
+  {
     question: "Does AI Skill Studio upload my code?",
     answer:
-      "No. Presets, manifest parsing, editing and ZIP export all run in your browser, and nothing you type or import is sent to DevScratchpad. The optional GitHub import is the only network call, and your browser sends it straight to GitHub's API.",
+      "No. Presets, code reading, editing and ZIP export all run in your browser, and nothing you type or import is sent to DevScratchpad. Reading a local folder happens entirely in your browser. Reading a GitHub repository is the only network call, and your browser sends it straight to GitHub.",
   },
 ];
 

@@ -43,6 +43,8 @@ export interface DownloadHudPayload {
   repoPath?: string;
   /** ZIP export: repository-relative paths written into the archive. */
   files?: string[];
+  /** ZIP of one skill folder (SKILL.md download), not the whole AI kit. */
+  skillFolder?: boolean;
 }
 
 interface DownloadAuditHudProps {
@@ -98,9 +100,16 @@ export function DownloadAuditHud({
 
   const formatLabel = FORMAT_LABELS[payload.format] || payload.format;
   const fileCount = payload.files?.length ?? 0;
-  const detail = payload.isZipExport
-    ? `${fileCount} files · unzip in project root`
-    : payload.repoPath ?? payload.fileName;
+  const detail = payload.skillFolder
+    ? `${fileCount} files · unzip into .claude/skills/`
+    : payload.isZipExport
+      ? `${fileCount} files · unzip in project root`
+      : payload.repoPath ?? payload.fileName;
+  const title = payload.skillFolder
+    ? "Skill folder downloaded"
+    : payload.isZipExport
+      ? "AI kit downloaded"
+      : `${formatLabel} downloaded`;
 
   const hudElement = (
     <div
@@ -121,7 +130,7 @@ export function DownloadAuditHud({
 
           <div className="min-w-0 flex-1">
             <p className="truncate text-[13px] font-semibold text-zinc-900">
-              {payload.isZipExport ? "AI kit downloaded" : `${formatLabel} downloaded`}
+              {title}
             </p>
             <p className="truncate font-mono text-[11px] text-zinc-500" title={payload.isZipExport ? payload.fileName : detail}>
               {detail}

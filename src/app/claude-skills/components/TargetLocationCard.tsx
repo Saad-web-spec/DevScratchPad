@@ -2,23 +2,48 @@
 
 import React from "react";
 import Image from "next/image";
-import { CheckCircle2, ChevronDown, Cpu, FileText, FolderGit2, Layers, Server, ShieldCheck } from "lucide-react";
+import { CheckCircle2, ChevronDown, Cpu, Download, FileText, FolderGit2, Layers, Server, ShieldCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { WindsurfIcon, OpenAIIcon, GeminiIcon, CopilotIcon } from "@/components/icons/AssistantBrandIcons";
 import type { OutputFormat } from "../lib/ruleGenerator";
 import { EXPORT_FORMATS, getExportTarget } from "../lib/exportTargets";
+import { AGENTS_MD_NATIVE_READERS, type CompanionFile } from "../lib/companionFiles";
 
 export interface TargetLocationCardProps {
   format: OutputFormat;
   skillName: string;
+  /** Companion files of the open format (see companionFiles.ts). */
+  companions: CompanionFile[];
+  /** Companion paths the ZIP export adds, given the extras toggle. */
+  kitCompanionPaths: string[];
+  includeKitExtras: boolean;
+  onIncludeKitExtrasChange: (include: boolean) => void;
+}
+
+/** Saves one companion file under its own name (scripts keep their extension). */
+function downloadCompanion(file: CompanionFile) {
+  const blob = new Blob([file.content], { type: "text/plain;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = file.path.split("/").pop() || "file.txt";
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
 }
 
 /** Target File Location card: where the generated file lives in the repository for the selected format, with usage notes. */
 export function TargetLocationCard({
   format,
   skillName,
+  companions,
+  kitCompanionPaths,
+  includeKitExtras,
+  onIncludeKitExtrasChange,
 }: TargetLocationCardProps) {
-  const kitPaths = [...EXPORT_FORMATS.map((f) => getExportTarget(f, skillName).repoPath), "README.md"].sort();
+  const kitPaths = [...EXPORT_FORMATS.map((f) => getExportTarget(f, skillName).repoPath), ...kitCompanionPaths, "README.md"].sort();
+  const hasExtras = companions.some((c) => c.extra);
   const activePath = getExportTarget(format, skillName).repoPath;
 
   return (
@@ -69,7 +94,7 @@ export function TargetLocationCard({
       </div>
       {format === "skill_md" && (
         <p className="text-xs text-zinc-600 leading-relaxed font-sans">
-          Save as <code className="px-1.5 py-0.5 rounded-md bg-white border border-orange-200 text-orange-950 font-mono text-[11px] font-semibold shadow-2xs break-all sm:break-normal">.claude/skills/{(skillName || "skill").replace(/[^a-zA-Z0-9._-]/g, "-")}/SKILL.md</code> in project root, or in <code className="px-1.5 py-0.5 rounded-md bg-white border border-orange-200 text-orange-950 font-mono text-[11px] font-semibold shadow-2xs break-all sm:break-normal">~/.claude/skills/{(skillName || "skill").replace(/[^a-zA-Z0-9._-]/g, "-")}/SKILL.md</code> for global Claude Code availability.
+          Save the skill folder as <code className="px-1.5 py-0.5 rounded-md bg-white border border-orange-200 text-orange-950 font-mono text-[11px] font-semibold shadow-2xs break-all sm:break-normal">.claude/skills/{(skillName || "skill").replace(/[^a-zA-Z0-9._-]/g, "-")}/</code> in project root, or in <code className="px-1.5 py-0.5 rounded-md bg-white border border-orange-200 text-orange-950 font-mono text-[11px] font-semibold shadow-2xs break-all sm:break-normal">~/.claude/skills/</code> for every project. Download saves the whole folder; Claude Code also runs it as <code className="px-1.5 py-0.5 rounded-md bg-white border border-orange-200 text-orange-950 font-mono text-[11px] font-semibold shadow-2xs break-all sm:break-normal">/{(skillName || "skill").replace(/[^a-zA-Z0-9._-]/g, "-").toLowerCase()}</code>.
         </p>
       )}
       {format === "claude_md" && (
@@ -84,7 +109,7 @@ export function TargetLocationCard({
       )}
       {format === "agents_md" && (
         <p className="text-xs text-zinc-600 leading-relaxed font-sans">
-          Save as <code className="px-1.5 py-0.5 rounded-md bg-white border border-orange-200 text-orange-950 font-mono text-[11px] font-semibold shadow-2xs break-all sm:break-normal">AGENTS.md</code> in your root directory. Multi-agent workflows load this spec to coordinate tasks.
+          Save as <code className="px-1.5 py-0.5 rounded-md bg-white border border-orange-200 text-orange-950 font-mono text-[11px] font-semibold shadow-2xs break-all sm:break-normal">AGENTS.md</code> in your root directory. {AGENTS_MD_NATIVE_READERS.join(", ")} read it directly, so they need no file of their own.
         </p>
       )}
       {format === "mcp_json" && (
@@ -119,7 +144,7 @@ export function TargetLocationCard({
       )}
       {format === "claudeignore" && (
         <p className="text-xs text-zinc-600 leading-relaxed font-sans">
-          Save as <code className="px-1.5 py-0.5 rounded-md bg-white border border-orange-200 text-orange-950 font-mono text-[11px] font-semibold shadow-2xs break-all sm:break-normal">.claudeignore</code> in project root. Prevents Claude Code CLI from reading or modifying restricted directories.
+          Save as <code className="px-1.5 py-0.5 rounded-md bg-white border border-orange-200 text-orange-950 font-mono text-[11px] font-semibold shadow-2xs break-all sm:break-normal">.claudeignore</code> in project root as the readable list. Claude Code does not read this file; the <code className="px-1.5 py-0.5 rounded-md bg-white border border-orange-200 text-orange-950 font-mono text-[11px] font-semibold shadow-2xs break-all sm:break-normal">.claude/settings.json</code> below enforces the secrets list.
         </p>
       )}
       {format === "llms_txt" && (
@@ -153,6 +178,42 @@ export function TargetLocationCard({
         </p>
       )}
 
+      {/* Companion files: generated alongside the open format, each downloadable on its own */}
+      {companions.length > 0 && (
+        <div className="border-t border-orange-100 pt-2 space-y-1.5">
+          <p className="text-[11px] font-semibold text-zinc-700">Generated with this file</p>
+          <ul className="space-y-1">
+            {companions.map((file) => (
+              <li key={file.path} className="flex items-start gap-2">
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-1.5 min-w-0">
+                    <code className="truncate font-mono text-[11px] font-semibold text-zinc-800" title={file.path}>
+                      {file.path}
+                    </code>
+                    {file.extra && (
+                      <span className="shrink-0 text-[10px] text-zinc-400">extra</span>
+                    )}
+                  </div>
+                  <p className="text-[11px] leading-snug text-zinc-500">{file.note}</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => downloadCompanion(file)}
+                  className="shrink-0 rounded-md p-1 text-zinc-500 hover:bg-orange-100/70 hover:text-orange-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500"
+                  aria-label={`Download ${file.path}`}
+                  title={`Download ${file.path}`}
+                >
+                  <Download className="h-3.5 w-3.5" aria-hidden="true" />
+                </button>
+              </li>
+            ))}
+          </ul>
+          {hasExtras && !includeKitExtras && (
+            <p className="text-[11px] text-zinc-500">Extras are left out of the ZIP unless you include them below.</p>
+          )}
+        </div>
+      )}
+
       {/* AI kit preview: the exact paths the ZIP export writes, so users know what lands in their repo */}
       <details className="group border-t border-orange-100 pt-2">
         <summary className="flex cursor-pointer list-none items-center justify-between gap-2 rounded text-xs font-medium text-zinc-700 hover:text-zinc-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 [&::-webkit-details-marker]:hidden">
@@ -160,6 +221,15 @@ export function TargetLocationCard({
           <ChevronDown className="h-3.5 w-3.5 text-zinc-400 transition-transform group-open:rotate-180" aria-hidden="true" />
         </summary>
         <p className="mt-1.5 text-[11px] text-zinc-500">Unzip into your project root. Every file is already in the folder its tool reads from.</p>
+        <label className="mt-1.5 flex cursor-pointer items-start gap-2 text-[11px] text-zinc-600">
+          <input
+            type="checkbox"
+            checked={includeKitExtras}
+            onChange={(e) => onIncludeKitExtrasChange(e.target.checked)}
+            className="mt-0.5 h-3.5 w-3.5 shrink-0 accent-orange-600"
+          />
+          <span>Include extras: Claude Code subagent, Gemini CLI, Aider, Copilot and Kiro scoped rules, CI audit workflow</span>
+        </label>
         <ul className="mt-1.5 space-y-0.5 font-mono text-[11px] text-zinc-600">
           {kitPaths.map((path) => (
             <li

@@ -9,6 +9,7 @@ import {
 } from "../lib/fsPicker";
 import { OutputFormat } from "../lib/ruleGenerator";
 import {
+  CodeEvidenceRow,
   IntakeError,
   IntakeFormatSwitch,
   IntakeModal,
@@ -65,8 +66,8 @@ function LocalFolderModalBody({ onClose, onApply, initialFormat }: LocalFolderMo
   return (
     <IntakeModal
       icon={<FolderSearch className="size-4" />}
-      title="Inspect a local folder"
-      subtitle="Read package.json, Cargo.toml or pyproject.toml to set the path and draft rules."
+      title="Read a local folder"
+      subtitle="Reads the manifest, a sample of source files and existing AI rules, then drafts rules from how the code is actually written."
       privacyNote="Read in your browser. No files are uploaded."
       onClose={onClose}
       onConfirm={handleConfirm}
@@ -87,7 +88,7 @@ function LocalFolderModalBody({ onClose, onApply, initialFormat }: LocalFolderMo
           )}
           <span className="min-w-0">
             <span className="block text-xs font-semibold text-zinc-900 truncate">
-              {isLoading ? "Reading folder..." : analysis ? analysis.directoryName : "Choose project folder"}
+              {isLoading ? "Reading code..." : analysis ? analysis.directoryName : "Choose project folder"}
             </span>
             <span className="block text-[11px] text-zinc-500">
               {analysis ? "Click to pick a different folder" : "Uses your browser's folder picker (read-only)"}
@@ -132,11 +133,13 @@ function LocalFolderModalBody({ onClose, onApply, initialFormat }: LocalFolderMo
             </IntakeRow>
           )}
 
+          <CodeEvidenceRow evidence={analysis.codeEvidence} />
+
           <IntakeRow label="Draft rules">
             <p className="text-xs text-zinc-700 leading-relaxed">
               <span className="font-semibold text-zinc-900">Role:</span> {analysis.synthesizedRole}
             </p>
-            <p className="text-xs text-zinc-600 leading-relaxed line-clamp-2">{analysis.synthesizedDirectives.join(" · ")}</p>
+            <p className="text-xs text-zinc-600 leading-relaxed line-clamp-2">{analysis.synthesizedDirectives.map((d) => d.replace(/^\s*- /, "")).join(" · ")}</p>
           </IntakeRow>
 
           <IntakeFormatSwitch value={selectedFormat} onChange={setSelectedFormat} />

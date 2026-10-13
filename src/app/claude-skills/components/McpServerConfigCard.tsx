@@ -179,13 +179,13 @@ export function McpServerConfigCard({
 
   // One optional import per preset family, shown in a single consistent row
   const contextTool = check.isGitHub
-    ? { icon: GitHubIcon, title: "Draft rules from a repository", hint: "Reads manifests, scripts and commit style.", action: "Import repo", open: () => setIsGitHubModalOpen(true) }
+    ? { icon: GitHubIcon, title: "Draft rules from a repository", hint: "Reads its manifest, source code and commit style.", action: "Import repo", open: () => setIsGitHubModalOpen(true) }
     : check.isPostgres || mcpPresetId === "sqlite"
     ? { icon: Database, title: "Draft data rules from your schema", hint: "Paste SQL DDL or a Prisma schema.", action: "Paste schema", open: () => setIsDdlModalOpen(true) }
     : mcpPresetId === "docker"
     ? { icon: Container, title: "Draft rules from your Docker setup", hint: "Paste docker-compose.yml or a Dockerfile.", action: "Paste compose", open: () => setIsDockerModalOpen(true) }
     : check.isFilesystem
-    ? { icon: FolderSearch, title: "Set the path from a local folder", hint: "Also drafts rules from its manifest.", action: "Pick folder", open: () => setIsFolderModalOpen(true) }
+    ? { icon: FolderSearch, title: "Set the path from a local folder", hint: "Also drafts rules from its manifest and code.", action: "Pick folder", open: () => setIsFolderModalOpen(true) }
     : null;
 
   const field = (key: string, setter: (v: string) => void) => ({

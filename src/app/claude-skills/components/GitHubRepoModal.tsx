@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { ArrowUpRight, KeyRound, Loader2, Search } from "lucide-react";
+import { ArrowUpRight, FileText, FolderOpen, KeyRound, Loader2, Search } from "lucide-react";
 import { GitHubIcon } from "@/components/icons/AssistantBrandIcons";
 import { OutputFormat } from "../lib/presetRegistry";
 import {
@@ -9,7 +9,9 @@ import {
   IngestedRepoAnalysis,
   parseGitHubRepoInput,
 } from "../lib/githubIngest";
+import { isFileSystemAccessSupported } from "../lib/fsPicker";
 import {
+  CodeEvidenceRow,
   IntakeError,
   IntakeFormatSwitch,
   IntakeModal,
@@ -29,6 +31,10 @@ interface GitHubRepoModalProps {
   onApply: (analysis: IngestedRepoAnalysis, token?: string, targetFormat?: OutputFormat) => void;
   initialInput?: string;
   initialFormat?: OutputFormat;
+  /** Switches to the local-folder import, for code that is not on GitHub. */
+  onPickFolder?: () => void;
+  /** Switches to pasting a manifest, which detects the stack without reading code. */
+  onPasteManifest?: () => void;
 }
 
 const TOKEN_STORAGE_KEY = "devscratchpad_github_pat";
@@ -40,7 +46,7 @@ export function GitHubRepoModal(props: GitHubRepoModalProps) {
   return <GitHubRepoModalBody {...props} />;
 }
 
-function GitHubRepoModalBody({ onClose, onApply, initialInput = "", initialFormat }: GitHubRepoModalProps) {
+function GitHubRepoModalBody({ onClose, onApply, onPickFolder, onPasteManifest, initialInput = "", initialFormat }: GitHubRepoModalProps) {
   const [repoInput, setRepoInput] = useState(initialInput);
   const [selectedFormat, setSelectedFormat] = useState<IntakeFormat>(() => initialIntakeFormat(initialFormat));
   const [patToken, setPatToken] = useState(() => {
@@ -103,9 +109,9 @@ function GitHubRepoModalBody({ onClose, onApply, initialInput = "", initialForma
   return (
     <IntakeModal
       icon={<GitHubIcon className="size-4" />}
-      title="Import from GitHub"
-      subtitle="Read a repository's manifests, scripts and commit style to draft rules."
-      privacyNote="Talks only to api.github.com."
+      title="Read your code"
+      subtitle="Reads the manifest, a sample of source files, existing AI rules and commit style, then drafts rules from how the code is actually written."
+      privacyNote="Your browser talks only to GitHub."
       onClose={onClose}
       onConfirm={handleApply}
       confirmLabel={`Generate ${intakeFormatLabel(selectedFormat)}`}
@@ -138,6 +144,24 @@ function GitHubRepoModalBody({ onClose, onApply, initialInput = "", initialForma
           {isLoading ? "Reading" : "Inspect"}
         </button>
       </div>
+
+      {!analysis && (onPickFolder || onPasteManifest) && (
+        <div className="-mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-zinc-500">
+          <span>Not on GitHub?</span>
+          {onPickFolder && isFileSystemAccessSupported() && (
+            <button type="button" onClick={onPickFolder} className="inline-flex items-center gap-1 font-medium hover:text-orange-700 cursor-pointer">
+              <FolderOpen className="size-3.5" />
+              Read a local folder
+            </button>
+          )}
+          {onPasteManifest && (
+            <button type="button" onClick={onPasteManifest} className="inline-flex items-center gap-1 font-medium hover:text-orange-700 cursor-pointer">
+              <FileText className="size-3.5" />
+              Paste a manifest
+            </button>
+          )}
+        </div>
+      )}
 
       {/* Optional token: one line until opened */}
       <div className="rounded-lg border border-zinc-200 text-xs">
@@ -226,11 +250,13 @@ function GitHubRepoModalBody({ onClose, onApply, initialInput = "", initialForma
             </IntakeRow>
           )}
 
+          <CodeEvidenceRow evidence={analysis.codeEvidence} note={analysis.codeEvidenceNote} />
+
           <IntakeRow label="Draft rules">
             <p className="text-xs text-zinc-700 leading-relaxed">
               <span className="font-semibold text-zinc-900">Role:</span> {analysis.synthesizedRole}
             </p>
-            <p className="text-xs text-zinc-600 leading-relaxed line-clamp-2">{analysis.synthesizedDirectives.join(" · ")}</p>
+            <p className="text-xs text-zinc-600 leading-relaxed line-clamp-2">{analysis.synthesizedDirectives.map((d) => d.replace(/^\s*- /, "")).join(" · ")}</p>
           </IntakeRow>
 
           <IntakeFormatSwitch value={selectedFormat} onChange={setSelectedFormat} />

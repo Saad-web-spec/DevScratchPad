@@ -1320,6 +1320,172 @@ namespace App.Controllers
       { formatSlug: "claude-skills", presetSlug: "codebase-auditor", label: "Codebase Auditor Claude Skill" }
     ]
   },
+  // Task skills: workflows (review, debug, commit, refactor, upgrade) rather than stacks
+  {
+    formatSlug: "claude-skills",
+    presetSlug: "code-reviewer",
+    format: "skill_md",
+    presetId: "code-reviewer",
+    title: "Code Review Claude Skill (PR & Diff Reviewer)",
+    description: "Generate a Claude Code skill that reviews pull requests and diffs, grading findings as BLOCKER, SHOULD-FIX, or NIT with file:line evidence.",
+    category: "Specialist Persona",
+    techName: "Pull Request & Diff Review",
+    targetFile: ".claude/skills/code-reviewer/SKILL.md",
+    whyNeeded: "Unguided AI reviews either approve everything or bury real bugs under style nitpicks. This skill fixes the order of checks (correctness, security, data safety, tests, readability), requires a concrete failure and fix for every finding, and keeps the reviewer read-only. A bundled review checklist is loaded only when the change touches auth, data, APIs, or concurrency.",
+    keyRules: [
+      "Diff against the base branch and read the PR intent before judging the change.",
+      "Read changed files around each hunk and the callers of changed signatures.",
+      "Grade every finding BLOCKER, SHOULD-FIX, or NIT, with at most three NITs.",
+      "Every finding names file:line, the concrete failure, and the smallest fix.",
+      "Read-only: never push, approve, or merge; suggested patches are text for the author."
+    ],
+    faqs: [
+      {
+        question: "How do I run the review in Claude Code?",
+        answer: "Save the folder to `.claude/skills/code-reviewer/`, then type `/code-reviewer` or ask Claude to review your branch or staged changes. Claude Code also loads it automatically when a request matches its description."
+      },
+      {
+        question: "Can it run as a subagent instead?",
+        answer: "Yes. The studio also generates `.claude/agents/code-reviewer.md` with read-only tools (Read, Grep, Glob, Bash), so the review runs in its own context window and returns only the findings."
+      }
+    ],
+    relatedSpokes: [
+      { formatSlug: "claude-skills", presetSlug: "systematic-debugging", label: "Debugging Claude Skill" },
+      { formatSlug: "claude-skills", presetSlug: "security-guard", label: "Security Guard Claude Skill" }
+    ]
+  },
+  {
+    formatSlug: "claude-skills",
+    presetSlug: "systematic-debugging",
+    format: "skill_md",
+    presetId: "debugger",
+    title: "Debugging Claude Skill (Root-Cause Fixes)",
+    description: "Generate a Claude Code skill that reproduces bugs first, tests one hypothesis at a time, and proves every fix with a regression test.",
+    category: "Specialist Persona",
+    techName: "Root-Cause Debugging",
+    targetFile: ".claude/skills/systematic-debugging/SKILL.md",
+    whyNeeded: "Agents tend to patch symptoms: a retry here, a swallowed exception there, a special case for the failing input. This skill makes reproduction the first step, records each hypothesis as confirmed or ruled out, stops after three misses, and bundles a playbook for flaky tests, CI-only failures, races, leaks, and slowdowns.",
+    keyRules: [
+      "Reproduce first with the smallest failing test or command.",
+      "Find the breaking commit with git bisect when it used to work.",
+      "Test one hypothesis at a time and revert experiments that fail.",
+      "Never delete, skip, or weaken a failing test to make the build pass.",
+      "Keep the regression test and remove temporary logging."
+    ],
+    faqs: [
+      {
+        question: "What happens if the bug cannot be reproduced?",
+        answer: "The skill tells Claude to say so and list what it needs (inputs, environment, logs) instead of guessing a fix."
+      },
+      {
+        question: "What is in the bundled playbook?",
+        answer: "`references/debugging-playbook.md` has step-by-step techniques per symptom: constant failures, flaky tests, works-locally-fails-in-CI, race conditions, memory leaks, and performance regressions. Claude opens it only when the cause is not obvious."
+      }
+    ],
+    relatedSpokes: [
+      { formatSlug: "claude-skills", presetSlug: "code-reviewer", label: "Code Review Claude Skill" },
+      { formatSlug: "claude-skills", presetSlug: "tdd-specialist", label: "TDD Specialist Claude Skill" }
+    ]
+  },
+  {
+    formatSlug: "claude-skills",
+    presetSlug: "commit-pr-writer",
+    format: "skill_md",
+    presetId: "commit-pr-writer",
+    title: "Commit Message & PR Description Claude Skill",
+    description: "Generate a Claude Code skill that writes Conventional Commits messages and pull request descriptions from the real staged diff.",
+    category: "Specialist Persona",
+    techName: "Commit Messages & Pull Requests",
+    targetFile: ".claude/skills/commit-pr-writer/SKILL.md",
+    whyNeeded: "Generated commit messages often describe what the agent intended rather than what the diff contains, and claim tests ran when they did not. This skill reads the staged diff and the repository's own log style first, proposes splitting mixed changes, and waits for approval before committing.",
+    keyRules: [
+      "Read git status, the staged diff, and recent log style before writing.",
+      "Subject as type(scope): summary, imperative, at most 72 characters.",
+      "Propose separate commits when changes mix unrelated concerns.",
+      "Describe only what the diff contains; never claim unverified tests.",
+      "No commit, amend, or push without approval; never --no-verify or force-push."
+    ],
+    faqs: [
+      {
+        question: "Does it follow my team's commit convention?",
+        answer: "Yes. It checks `git log`, CONTRIBUTING.md, and commitlint config first and follows them when they differ from Conventional Commits."
+      },
+      {
+        question: "What does the PR description include?",
+        answer: "Summary, Changes, How to test (exact commands), and Risk and rollback, from the template in the bundled `references/commit-and-pr-guide.md`."
+      }
+    ],
+    relatedSpokes: [
+      { formatSlug: "claude-skills", presetSlug: "code-reviewer", label: "Code Review Claude Skill" },
+      { formatSlug: "claude-skills", presetSlug: "safe-refactor", label: "Refactoring Claude Skill" }
+    ]
+  },
+  {
+    formatSlug: "claude-skills",
+    presetSlug: "safe-refactor",
+    format: "skill_md",
+    presetId: "safe-refactor",
+    title: "Refactoring Claude Skill (Behavior-Preserving)",
+    description: "Generate a Claude Code skill that refactors in small verified steps, pinning behaviour with characterization tests before changing code.",
+    category: "Specialist Persona",
+    techName: "Behavior-Preserving Refactoring",
+    targetFile: ".claude/skills/safe-refactor/SKILL.md",
+    whyNeeded: "Asked to clean up code, agents rewrite whole files, rename public APIs, and fix unrelated bugs in the same diff, which makes the change impossible to review. This skill pins current behaviour first, applies one small refactoring at a time with tests after each, and keeps public interfaces stable.",
+    keyRules: [
+      "Add characterization tests before touching uncovered code.",
+      "One refactoring step at a time, tests after each; revert a step that breaks.",
+      "Keep exported names, signatures, import paths, and formats stable.",
+      "Never mix behaviour changes or formatting into a refactor diff.",
+      "Add an abstraction only when three real call sites need it."
+    ],
+    faqs: [
+      {
+        question: "How does it choose which refactoring to apply?",
+        answer: "The bundled `references/refactoring-catalog.md` maps common smells (long functions, deep nesting, duplication, boolean flags) to small, safe refactorings and what to watch out for."
+      },
+      {
+        question: "What if it finds a bug while refactoring?",
+        answer: "It notes the bug and fixes it in a separate change, so the refactor diff stays behaviour-neutral."
+      }
+    ],
+    relatedSpokes: [
+      { formatSlug: "claude-skills", presetSlug: "tdd-specialist", label: "TDD Specialist Claude Skill" },
+      { formatSlug: "claude-skills", presetSlug: "code-reviewer", label: "Code Review Claude Skill" }
+    ]
+  },
+  {
+    formatSlug: "claude-skills",
+    presetSlug: "dependency-upgrade",
+    format: "skill_md",
+    presetId: "dependency-upgrade",
+    title: "Dependency Upgrade & Migration Claude Skill",
+    description: "Generate a Claude Code skill that upgrades frameworks across major versions with migration guides, official codemods, and one commit per package group.",
+    category: "Specialist Persona",
+    techName: "Dependency Upgrades & Migrations",
+    targetFile: ".claude/skills/dependency-upgrade/SKILL.md",
+    whyNeeded: "Major upgrades fail when everything is bumped at once and new errors are silenced with casts and ignores. This skill starts from a green baseline, upgrades one coupled package group at a time, runs official codemods, and bundles a checklist with a rollback plan.",
+    keyRules: [
+      "Read the changelog and migration guide for every major version in between.",
+      "Record a green baseline and pre-existing failures before upgrading.",
+      "Upgrade one coupled package group per commit and regenerate the lockfile.",
+      "Run official codemods and review their diff.",
+      "Never silence new type errors or deprecations with casts or ignores."
+    ],
+    faqs: [
+      {
+        question: "Does it work for Python, Go, and Java projects too?",
+        answer: "Yes. The steps are package-manager neutral, and the bundled `scripts/verify.sh` detects npm, pnpm, yarn, bun, pip/pytest, Cargo, Go, Gradle, Maven, and .NET checks."
+      },
+      {
+        question: "How do I undo a bad upgrade?",
+        answer: "Each package group is its own commit, so you can revert one group without losing the others. The checklist also covers down migrations and feature flags."
+      }
+    ],
+    relatedSpokes: [
+      { formatSlug: "claude-skills", presetSlug: "safe-refactor", label: "Refactoring Claude Skill" },
+      { formatSlug: "claude-skills", presetSlug: "systematic-debugging", label: "Debugging Claude Skill" }
+    ]
+  },
   {
     formatSlug: "claude-skills",
     presetSlug: "fastapi",
@@ -1858,6 +2024,16 @@ export const SLUG_ALIASES: Record<string, string> = {
   "dotnet": "csharp-dotnet-8",
   "dotnet-8": "csharp-dotnet-8",
   "csharp": "csharp-dotnet-8",
+  "code-review": "code-reviewer",
+  "pr-review": "code-reviewer",
+  "debugger": "systematic-debugging",
+  "debugging": "systematic-debugging",
+  "commit-message": "commit-pr-writer",
+  "pr-description": "commit-pr-writer",
+  "refactor": "safe-refactor",
+  "refactoring": "safe-refactor",
+  "upgrade": "dependency-upgrade",
+  "migration": "dependency-upgrade",
 };
 
 // Base presets list for universal multi-format synthesis
@@ -1890,6 +2066,12 @@ const BASE_CODE_SLUGS = [
   "playwright-e2e",
   "spring-boot-3",
   "csharp-dotnet-8",
+  // Task skills (workflows rather than stacks)
+  "code-reviewer",
+  "systematic-debugging",
+  "commit-pr-writer",
+  "safe-refactor",
+  "dependency-upgrade",
 ];
 
 export const CODE_FORMAT_SLUGS = [

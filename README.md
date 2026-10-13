@@ -35,7 +35,8 @@
 | **`claude.json`** | MCP Runtime | `~/.claude.json` | Executable commands and environment bindings for Model Context Protocol servers. |
 
 ### Key Studio Capabilities
-- 📦 **Manifest Auto-Detection:** Drop your `package.json`, `Cargo.toml`, `pyproject.toml`, or `go.mod` to auto-detect your stack and generate tailored rules in seconds.
+- 📦 **Read Your Code:** Point it at a GitHub repo or a local folder. Besides the manifest, it reads a sample of your source files and any existing `CLAUDE.md` / `AGENTS.md` / Cursor rules, and writes only the conventions most of the code follows (test layout, file naming, import alias, exports, error classes, logger, validation), each with how many files back it. Examples quote a real function from your code. All in the browser; a pasted manifest still works too.
+- 🧰 **Task Skills & Skill Folders:** Code review, debugging, commits & PRs, refactoring and upgrade skills, exported as `.claude/skills/<name>/` folders with reference files and a `scripts/verify.sh`, plus companion files (`.claude/settings.json`, subagents, Copilot / Kiro scoped rules, CI audit workflow).
 - 🩺 **Static Analysis Audit Panel:** Real-time scoring across 5 critical dimensions (Trigger Specificity, Rule Density, Negative Guardrails, Format Compliance, Architectural Boundaries) with one-click ⚡ Auto-Fix.
 - 🏷️ **Trigger Tagging & Heuristic Validation:** Real-time activation trigger chips with heuristic warning feedback for broad catch-all words to prevent context token bloat.
 - 💻 **Terminal One-Liner Stream:** Native `curl`, `PowerShell`, `wget`, and CLI installation endpoints (`/api/raw/[formatSlug]/[presetSlug]`) to install rule files directly from terminal into local project roots.

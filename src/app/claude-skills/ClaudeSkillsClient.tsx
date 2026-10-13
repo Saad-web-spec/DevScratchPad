@@ -19,8 +19,15 @@ import {
   FileText,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { downloadAiKitZip } from "./lib/zipExporter";
+import { downloadAiKitZip, downloadSkillFolderZip } from "./lib/zipExporter";
 import { EXPORT_FORMATS, getExportTarget } from "./lib/exportTargets";
+import {
+  getCompanionFiles,
+  getKitCompanions,
+  getSkillBundle,
+  type CompanionContext,
+} from "./lib/companionFiles";
+import { useKitExtras } from "./lib/kitExtras";
 import { ParsedManifestResult } from "./lib/manifestParser";
 import { ConvertedRulesIR } from "./lib/rulesConverter";
 import { DownloadAuditHud, DownloadHudPayload } from "./components/DownloadAuditHud";
@@ -1057,6 +1064,9 @@ export function ClaudeSkillsClient({
     const globs = analysis.suggestedGlobs.length > 0 ? analysis.suggestedGlobs.join(", ") : globPattern;
     const procs = analysis.synthesizedProcedures.length > 0 ? analysis.synthesizedProcedures.join("\n") : procedures;
     const dirs = analysis.synthesizedDirectives.length > 0 ? analysis.synthesizedDirectives.join("\n") : customDirectives;
+    // Examples read from the repository's own code replace the generic preset examples
+    const exGood = analysis.codeEvidence?.exampleGood ?? exampleGood;
+    const exBad = analysis.codeEvidence?.exampleBad ?? exampleBad;
 
     setFramework(fw);
     setLanguage(lang);
@@ -1070,6 +1080,8 @@ export function ClaudeSkillsClient({
     setGlobPattern(globs);
     setProcedures(procs);
     setCustomDirectives(dirs);
+    setExampleGood(exGood);
+    setExampleBad(exBad);
 
     // If format is mcp_json, configure MCP as well
     if (targetFormat === "mcp_json" || format === "mcp_json") {
@@ -1102,8 +1114,8 @@ export function ClaudeSkillsClient({
       behaviors,
       procedures: procs,
       customDirectives: dirs,
-      exampleGood,
-      exampleBad,
+      exampleGood: exGood,
+      exampleBad: exBad,
       globPattern: globs,
       alwaysApply,
       mcpServerName: "github",
@@ -1331,18 +1343,26 @@ export function ClaudeSkillsClient({
 
   const handleApplyLocalFolder = (analysis: LocalProjectAnalysis, targetFormat: OutputFormat = "claude_md") => {
     const r = analysis.synthesizedRole;
-    const dirs = analysis.synthesizedDirectives;
+    // Manifest directives are plain sentences; code-evidence lines arrive already formatted as (nested) bullets
+    const dirs = analysis.synthesizedDirectives.map((d) => (/^\s*- /.test(d) ? d : `- ${d}`));
     const sName = analysis.directoryName.toLowerCase().replace(/[^a-z0-9]+/g, "-");
     const sTitle = `${analysis.directoryName} Production Architecture`;
+    const desc = `Production architectural guidelines and pair programming constraints for ${analysis.directoryName}`;
+    // Examples read from the folder's own code replace the generic preset examples
+    const exGood = analysis.codeEvidence?.exampleGood ?? exampleGood;
+    const exBad = analysis.codeEvidence?.exampleBad ?? exampleBad;
 
     setRole(r);
     setSkillName(sName);
     setSkillTitle(sTitle);
+    setDescription(desc);
     setFramework(analysis.framework);
     setLanguage(analysis.language);
     setStyling(analysis.styling);
     setDatabase(analysis.database);
     setCustomDirectives(dirs.join("\n"));
+    setExampleGood(exGood);
+    setExampleBad(exBad);
 
     const procs = [
       analysis.scripts.dev ? `1. Run local development server: \`${analysis.packageManager !== "unknown" ? analysis.packageManager : "npm"} run dev\` (or \`${analysis.scripts.dev}\`)` : "",
@@ -1371,14 +1391,14 @@ export function ClaudeSkillsClient({
       role: r,
       skillName: sName,
       skillTitle: sTitle,
-      description: `Production architectural guidelines and pair programming constraints for ${analysis.directoryName}`,
+      description: desc,
       philosophy,
       conventions,
       behaviors,
       procedures: procs || procedures,
       customDirectives: dirs.join("\n"),
-      exampleGood,
-      exampleBad,
+      exampleGood: exGood,
+      exampleBad: exBad,
       globPattern,
       alwaysApply,
       mcpServerName: "filesystem",
@@ -1489,6 +1509,30 @@ export function ClaudeSkillsClient({
     setIsManuallyEdited(false);
   };
 
+  // Companion files (skill folder, Claude Code settings, other tools) — see lib/companionFiles.ts
+  const selectedPreset = useMemo(() => PRESETS.find((p) => p.id === selectedPresetId), [selectedPresetId]);
+  const companionContext = useMemo<CompanionContext>(
+    () => ({
+      skillName,
+      description,
+      procedures,
+      globPattern,
+      alwaysApply,
+      ignoreCategories,
+      customIgnoreRules,
+      preset: selectedPreset,
+    }),
+    [skillName, description, procedures, globPattern, alwaysApply, ignoreCategories, customIgnoreRules, selectedPreset]
+  );
+  const skillBundle = useMemo(() => getSkillBundle(companionContext), [companionContext]);
+  // SKILL.md lists its bundled files. Every input here is already a buildContent dependency, so this adds no rebuilds
+  const bundledFiles = useMemo(() => skillBundle.map(({ path, when }) => ({ path, when })), [skillBundle]);
+  const [includeKitExtras, setIncludeKitExtras] = useKitExtras();
+
+  // Preset bar shows stack presets or task presets; it follows the active preset until the user picks a group
+  const [presetGroupChoice, setPresetGroupChoice] = useState<"stack" | "task" | null>(null);
+  const presetGroup = presetGroupChoice ?? (selectedPreset?.kind === "task" ? "task" : "stack");
+
   // Generated Content Builder for any target runtime format
   const buildContent = useCallback(
     (targetFormat: OutputFormat) => {
@@ -1541,6 +1585,7 @@ export function ClaudeSkillsClient({
         memorySessionHistory,
         ignoreCategories,
         customIgnoreRules,
+        bundledFiles,
       });
     },
     [
@@ -1591,6 +1636,7 @@ export function ClaudeSkillsClient({
       memorySessionHistory,
       ignoreCategories,
       customIgnoreRules,
+      bundledFiles,
     ]
   );
 
@@ -1608,6 +1654,16 @@ export function ClaudeSkillsClient({
 
   // Active content being viewed/copied/downloaded
   const activeContent = isManuallyEdited ? editorContent : generatedContent;
+
+  // Companions of the open format (built from what the editor shows) and the paths the ZIP adds
+  const activeCompanions = useMemo(
+    () => getCompanionFiles(format, companionContext, activeContent),
+    [format, companionContext, activeContent]
+  );
+  const kitCompanionPaths = useMemo(
+    () => getKitCompanions(companionContext, () => "", includeKitExtras).map((c) => c.path),
+    [companionContext, includeKitExtras]
+  );
 
 
   // White Marker — compute marked section range synchronously whenever activeFieldKey or content changes
@@ -1856,7 +1912,7 @@ export function ClaudeSkillsClient({
   // Trigger Download Audit HUD — builds payload from current state and shows notification
   const triggerDownloadHud = useCallback((
     fileName: string,
-    placement: { repoPath: string } | { files: string[] },
+    placement: { repoPath: string } | { files: string[]; skillFolder?: boolean },
   ) => {
     downloadHudIdRef.current += 1;
     const payload: DownloadHudPayload = {
@@ -1954,6 +2010,7 @@ export function ClaudeSkillsClient({
     for (const f of EXPORT_FORMATS) {
       contents[f] = f === format ? activeContent : (stashedEdits[f] ?? buildContent(f));
     }
+    const companions = getKitCompanions(companionContext, (f) => contents[f] ?? "", includeKitExtras);
     setIsExportingZip(true);
     try {
       const { fileName, files } = await downloadAiKitZip({
@@ -1962,6 +2019,7 @@ export function ClaudeSkillsClient({
         contents,
         framework,
         language,
+        companions,
       });
 
       // Trigger the bottom verification HUD on successful export
@@ -2186,8 +2244,17 @@ export function ClaudeSkillsClient({
     }
   };
 
-  // Download handler
-  const handleDownload = () => {
+  // Download handler (a skill downloads as its folder: SKILL.md plus scripts/ and references/)
+  const handleDownload = async () => {
+    if (format === "skill_md") {
+      try {
+        const { fileName, files } = await downloadSkillFolderZip(skillName, activeContent, skillBundle);
+        triggerDownloadHud(fileName, { files, skillFolder: true });
+      } catch (err) {
+        console.error("Failed to export skill folder", err);
+      }
+      return;
+    }
     const { downloadName, repoPath, mimeType } = getExportTarget(format, skillName);
     const blob = new Blob([activeContent], { type: mimeType });
     const url = URL.createObjectURL(blob);
@@ -2254,8 +2321,24 @@ export function ClaudeSkillsClient({
             <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider shrink-0 flex items-center gap-1">
               <Sliders className="w-3 h-3 text-zinc-800" /> Presets:
             </span>
+            <div role="group" aria-label="Preset type" className="flex items-center rounded-md border border-zinc-200 bg-white p-0.5 shrink-0">
+              {(["stack", "task"] as const).map((group) => (
+                <button
+                  key={group}
+                  type="button"
+                  aria-pressed={presetGroup === group}
+                  onClick={() => setPresetGroupChoice(group)}
+                  className={cn(
+                    "px-2 py-0.5 text-[11px] font-semibold rounded transition-colors",
+                    presetGroup === group ? "bg-zinc-900 text-white" : "text-zinc-500 hover:text-zinc-900"
+                  )}
+                >
+                  {group === "stack" ? "Stacks" : "Tasks"}
+                </button>
+              ))}
+            </div>
             <div className="flex items-center gap-1.5 py-0.5">
-              {PRESETS.map((preset) => {
+              {PRESETS.filter((preset) => (preset.kind === "task") === (presetGroup === "task")).map((preset) => {
                 const isActive = selectedPresetId === preset.id;
                 const isCursorPreset = preset.id === "cursor-mdc-pro";
                 return (
@@ -2439,7 +2522,7 @@ export function ClaudeSkillsClient({
                 setStyling={setStyling}
                 setDatabase={setDatabase}
                 setIsConverterModalOpen={setIsConverterModalOpen}
-                setIsManifestModalOpen={setIsManifestModalOpen}
+                onReadCode={() => setIsGitHubModalOpen(true)}
                 setActiveFieldKey={setActiveFieldKey}
                 setIsManuallyEdited={setIsManuallyEdited}
               />
@@ -2852,6 +2935,10 @@ export function ClaudeSkillsClient({
             <TargetLocationCard
               format={format}
               skillName={skillName}
+              companions={activeCompanions}
+              kitCompanionPaths={kitCompanionPaths}
+              includeKitExtras={includeKitExtras}
+              onIncludeKitExtrasChange={setIncludeKitExtras}
             />
           </div>
         </div>
@@ -2886,6 +2973,14 @@ export function ClaudeSkillsClient({
         isOpen={isGitHubModalOpen}
         onClose={() => setIsGitHubModalOpen(false)}
         onApply={handleApplyGitHubRepo}
+        onPickFolder={() => {
+          setIsGitHubModalOpen(false);
+          setIsFolderModalOpen(true);
+        }}
+        onPasteManifest={() => {
+          setIsGitHubModalOpen(false);
+          setIsManifestModalOpen(true);
+        }}
         initialFormat={format}
       />
 
