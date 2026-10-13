@@ -373,3 +373,123 @@ body {
 
 
 
+
+/* AI Skill Studio first-run guide (driver.js popover, see StudioGuide.tsx): compact white card, dark buttons, mascot face */
+.driver-popover.studio-guide-popover {
+  --driver-popover-font-family: 'Google Sans Variable', 'Google Sans', 'Plus Jakarta Sans Variable', system-ui, sans-serif;
+  max-width: min(18rem, calc(100vw - 1.5rem));
+  padding: 0.75rem 0.875rem;
+  border: 1px solid #e4e4e7;
+  border-radius: 0.75rem;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.14), 0 2px 8px rgba(0, 0, 0, 0.06);
+  color: #18181b;
+}
+.driver-popover.studio-guide-popover .driver-popover-title {
+  font-size: 13px;
+  font-weight: 650;
+  line-height: 1.4;
+  padding-right: 1.25rem;
+}
+.driver-popover.studio-guide-popover .driver-popover-description {
+  font-size: 12px;
+  line-height: 1.55;
+  color: #52525b;
+}
+.driver-popover.studio-guide-popover .driver-popover-close-btn {
+  width: 28px;
+  height: 26px;
+  font-size: 16px;
+  color: #a1a1aa;
+}
+.driver-popover.studio-guide-popover .driver-popover-close-btn:hover {
+  color: #18181b;
+}
+.driver-popover.studio-guide-popover .driver-popover-footer {
+  margin-top: 0.75rem;
+}
+.driver-popover.studio-guide-popover .driver-popover-progress-text {
+  font-size: 11px;
+  color: #a1a1aa;
+}
+.driver-popover.studio-guide-popover .driver-popover-footer-btn {
+  padding: 4px 10px;
+  font-size: 12px;
+  font-weight: 500;
+  text-shadow: none;
+  border: 1px solid #e4e4e7;
+  border-radius: 6px;
+  color: #3f3f46;
+  background-color: #fff;
+}
+.driver-popover.studio-guide-popover .driver-popover-footer-btn:hover {
+  background-color: #f4f4f5;
+}
+.driver-popover.studio-guide-popover .driver-popover-next-btn,
+.driver-popover.studio-guide-popover .driver-popover-done-btn {
+  border-color: #18181b;
+  color: #fff;
+  font-weight: 600;
+  background-color: #18181b;
+}
+.driver-popover.studio-guide-popover .driver-popover-next-btn:hover,
+.driver-popover.studio-guide-popover .driver-popover-done-btn:hover {
+  background-color: #3f3f46;
+}
+/* Below lg the popover docks to the bottom of the screen (overrides driver.js inline position) */
+.driver-popover.studio-guide-popover.studio-guide-sheet {
+  position: fixed !important;
+  top: auto !important;
+  right: 0.75rem !important;
+  bottom: 0.75rem !important;
+  left: 0.75rem !important;
+  width: auto;
+  max-width: none;
+  padding: 0.875rem 1rem;
+}
+.driver-popover.studio-guide-popover.studio-guide-sheet .driver-popover-arrow {
+  display: none;
+}
+.driver-popover.studio-guide-popover.studio-guide-sheet .driver-popover-footer-btn {
+  padding: 7px 14px;
+}
+
+/* While the tour runs: the sticky studio header scrolls with the page so it can't cover a highlighted
+   card, and floating widgets (mascot, mobile action bar) step aside */
+body.studio-guide-running [data-guide-unstick] {
+  position: relative;
+}
+body.studio-guide-running [data-guide-hide] {
+  visibility: hidden;
+}
+
+/* Mascot face beside each popover title (inserted by onPopoverRender) */
+.studio-guide-avatar {
+  display: inline-grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  margin-right: 7px;
+  vertical-align: -6px;
+  border-radius: 9999px;
+  background-color: #18181b;
+}
+.studio-guide-avatar svg {
+  width: 17px;
+  height: 17px;
+}
+
+/* Guide mascot blink: brief squash every few seconds; off for reduced motion */
+@keyframes guide-mascot-blink {
+  0%, 93%, 100% { transform: scaleY(1); }
+  96% { transform: scaleY(0.1); }
+}
+.guide-mascot-eye {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: guide-mascot-blink 4.8s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .guide-mascot-eye {
+    animation: none;
+  }
+}

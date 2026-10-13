@@ -70,7 +70,7 @@ export function MobileActionBar({
   handleCopy,
 }: MobileActionBarProps) {
   return (
-    <div className="lg:hidden fixed bottom-3 left-3 right-3 z-40">
+    <div data-guide-hide className="lg:hidden fixed bottom-3 left-3 right-3 z-40">
       {mobileTab === "form" ? (
         <button
           type="button"

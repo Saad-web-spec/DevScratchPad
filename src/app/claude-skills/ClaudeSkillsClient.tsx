@@ -24,6 +24,7 @@ import { EXPORT_FORMATS, getExportTarget } from "./lib/exportTargets";
 import { ParsedManifestResult } from "./lib/manifestParser";
 import { ConvertedRulesIR } from "./lib/rulesConverter";
 import { DownloadAuditHud, DownloadHudPayload } from "./components/DownloadAuditHud";
+import { StudioGuide } from "./components/StudioGuide";
 
 const ManifestImportModal = dynamic(
   () => import("./components/ManifestImportModal").then((m) => m.ManifestImportModal),
@@ -2211,7 +2212,7 @@ export function ClaudeSkillsClient({
   return (
     <div suppressHydrationWarning className="min-h-screen bg-zinc-50 flex flex-col font-sans selection:bg-orange-500 selection:text-white">
       {/* Top Navigation Bar */}
-      <header className="sticky top-0 z-40 w-full bg-white border-b border-zinc-200 shadow-xs">
+      <header data-guide-unstick className="sticky top-0 z-40 w-full bg-white border-b border-zinc-200 shadow-xs">
         <div className="max-w-7xl mx-auto px-3 sm:px-6 h-14 flex items-center justify-between gap-2">
           {/* Left: AI Skill Studio Title */}
           <div className="flex items-center gap-2 sm:gap-3 min-w-0">
@@ -2248,7 +2249,7 @@ export function ClaudeSkillsClient({
         </div>
 
         {/* Quick Presets Sub-Bar */}
-        <div className="border-t border-zinc-100 bg-zinc-50/90 px-3 sm:px-6 py-1.5 overflow-x-auto scrollbar-none">
+        <div data-tour="presets" className="border-t border-zinc-100 bg-zinc-50/90 px-3 sm:px-6 py-1.5 overflow-x-auto scrollbar-none">
           <div className="max-w-7xl mx-auto flex items-center gap-2 min-w-max">
             <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider shrink-0 flex items-center gap-1">
               <Sliders className="w-3 h-3 text-zinc-800" /> Presets:
@@ -2489,7 +2490,7 @@ export function ClaudeSkillsClient({
           )}
         >
           {/* Main Card containing Header + Monaco Editor */}
-          <div className="bg-zinc-900 rounded-xl border border-zinc-800 shadow-md flex flex-col overflow-hidden shrink-0 lg:shrink lg:flex-1 lg:min-h-[400px]">
+          <div data-tour="editor" className="bg-zinc-900 rounded-xl border border-zinc-800 shadow-md flex flex-col overflow-hidden shrink-0 lg:shrink lg:flex-1 lg:min-h-[400px]">
             {/* File Tab Header with Unified Action Group */}
             <div className="px-2.5 sm:px-3 py-1.5 sm:py-2 flex items-center justify-between border-b border-zinc-800 bg-zinc-900/95 shrink-0 gap-1.5 sm:gap-2 overflow-hidden">
               <div className="flex items-center gap-1.5 sm:gap-2 min-w-0 flex-1 overflow-hidden">
@@ -2559,7 +2560,7 @@ export function ClaudeSkillsClient({
               </div>
 
               {/* Action Button Group: Copy + Download + Export Kit */}
-              <div className="flex items-center bg-zinc-800/90 rounded-lg p-0.5 border border-zinc-700/60 shadow-xs shrink-0 ml-auto">
+              <div data-tour="export" className="flex items-center bg-zinc-800/90 rounded-lg p-0.5 border border-zinc-700/60 shadow-xs shrink-0 ml-auto">
                 <button
                   onClick={handleCopy}
                   className="flex items-center gap-1 px-1.5 sm:px-2 2xl:px-2.5 py-1 text-xs text-zinc-300 hover:text-white hover:bg-zinc-700/60 rounded-md transition-colors font-medium cursor-pointer"
@@ -2911,6 +2912,9 @@ export function ClaudeSkillsClient({
         onApply={handleApplyDockerCompose}
         initialFormat={format}
       />
+
+      {/* First-run guide: floating helper that walks new visitors through the studio (see StudioGuide.tsx) */}
+      <StudioGuide onRequestTab={setMobileTab} />
 
       {/* Download Audit HUD — bottom notification on download/export */}
       {downloadHudPayload && (

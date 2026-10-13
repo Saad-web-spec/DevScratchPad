@@ -198,7 +198,7 @@ export function McpServerConfigCard({
   });
 
   return (
-    <div className="bg-white rounded-xl border border-zinc-200 p-4 sm:p-5 shadow-xs space-y-4">
+    <div data-tour="mcp" className="bg-white rounded-xl border border-zinc-200 p-4 sm:p-5 shadow-xs space-y-4">
       <div className="flex items-center justify-between gap-2 border-b border-zinc-100 pb-3">
         <div className="flex items-center gap-2 min-w-0">
           <Server className="w-4 h-4 text-orange-600 shrink-0" />

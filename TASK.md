@@ -308,6 +308,14 @@ node ./cli/bin/devscratchpad.mjs audit
 - [x] Budget tab: token meter against `TOKEN_BUDGET`, sections ranked by token weight with jump-to-line
 - [x] Tests for finding line numbers and `getSectionBreakdown`
 
+## 2026-10-14 — First-Run Studio Guide
+
+- [x] Floating helper (custom SVG folder mascot with a face on a dark button, bottom-left; it blinks and appears beside each popover title) offers an 8-step walkthrough on a visitor's first visit; "Not now" or starting the tour hides the offer for good (`ai_skill_studio_guide_v1` via the storage envelope)
+- [x] Tour runs on driver.js (MIT, local, no API key); it highlights existing cards via `data-tour` / `data-section` attributes, so no studio layout changed
+- [x] Steps adapt to the selected format (governance, MCP and ignore formats get their own "details" step; hidden cards are skipped)
+- [x] On mobile the tour switches the Configure / Editor tab before each editor step
+- [x] Tests for step resolution (`studioGuide.test.ts`)
+
 ---
 
 *This document is a living tracker. AI agents MUST update task statuses when completing work and log their actions in the Agent Session Log.*

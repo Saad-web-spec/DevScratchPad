@@ -386,7 +386,7 @@ const SANS_TEXTAREA = "w-full p-2.5 border border-zinc-200 rounded-lg text-xs le
 export function GovernanceSections({ format, values, preset, onChange, onFocusField }: GovernanceSectionsProps) {
   const group = GOVERNANCE_SECTIONS[format];
   return (
-    <div className="space-y-4">
+    <div data-tour="governance" className="space-y-4">
       {group.sections.map((section) => {
         const Icon = section.icon;
         return (

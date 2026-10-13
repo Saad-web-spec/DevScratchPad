@@ -50,6 +50,7 @@ export function EditorStatusBar({
       {/* Right: Audit launcher (white pill, matches the white audit panel; orange star) */}
       <button
         type="button"
+        data-tour="audit"
         onClick={() => setShowAuditPanel((prev) => !prev)}
         className={cn(
           "inline-flex h-6 items-center gap-1.5 rounded-full border pl-1.5 pr-2 text-xs font-mono font-medium shadow-sm transition-colors cursor-pointer shrink-0",
