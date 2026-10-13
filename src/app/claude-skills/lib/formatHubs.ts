@@ -18,6 +18,12 @@ export interface FormatHubMeta {
   faqs: { question: string; answer: string }[];
 }
 
+/*
+ * Hub copy is shown on /ai-skill-studio/<slug> (FormatHubGuide + FAQ) and in
+ * llms-full.txt. Backticks mark inline code; the page renders them as <code>
+ * and strips them for JSON-LD. Keep claims to what each tool documents, and
+ * say "convention" for files no tool loads by itself.
+ */
 export const FORMAT_HUBS: Record<string, FormatHubMeta> = {
   "cursor-rules": {
     slug: "cursor-rules",
@@ -26,68 +32,75 @@ export const FORMAT_HUBS: Record<string, FormatHubMeta> = {
     badge: "Cursor Rules",
     targetFile: "<rule-name>.mdc",
     targetDir: ".cursor/rules/",
-    seoTitle: "Cursor Rules (.mdc) Generator",
-    seoDescription: "Explore and generate modular Cursor Project Rules (.cursor/rules/*.mdc). Enforce strict tech stack conventions, glob-scoped rules, and surgical code diffs.",
-    heroHeading: "Cursor Rules (.mdc) Directory & Generator",
-    heroSubheading: "Modular, glob-targeted rules for Cursor AI. Keep token overhead near zero while steering the LLM with production architectural guardrails.",
-    overview: "Cursor Project Rules (.cursor/rules/*.mdc) represent the modern standard for AI-assisted development in Cursor IDE. Unlike legacy monolithic .cursorrules files which flood the context window on every prompt, .mdc rules attach conditionally using file glob patterns (e.g. `src/components/**/*.tsx`) and frontmatter directives (`alwaysApply: false`). This guarantees that your model only loads rules relevant to the exact files being edited.",
+    seoTitle: "Cursor Rules Generator (.mdc) & Examples",
+    seoDescription:
+      "Generate Cursor project rules (.cursor/rules/*.mdc) for your stack, with globs, alwaysApply and examples. Free, runs in your browser, nothing is uploaded.",
+    heroHeading: "Cursor rules generator: .cursor/rules/*.mdc for your stack",
+    heroSubheading:
+      "Pick a preset for your stack, scope it with globs, and download the .mdc file. Runs in your browser; nothing is uploaded.",
+    overview:
+      "Cursor project rules live in `.cursor/rules/` as `.mdc` files: Markdown with a short frontmatter block. The frontmatter decides when a rule reaches the model. `alwaysApply: true` adds it to every request, `globs` attach it when matching files are in play, and a `description` lets the agent pull it in when the task fits. A rule with none of these is used only when you @-mention it. The single `.cursorrules` file in the repo root still works but is deprecated, so new projects should use `.cursor/rules/`.",
     filePlacementGuide: [
       {
         path: ".cursor/rules/nextjs.mdc",
-        scope: "src/app/**/*",
-        description: "Enforces React Server Components, Server Actions, and Next.js 15 conventions on App Router routes."
-      },
-      {
-        path: ".cursor/rules/database.mdc",
-        scope: "src/db/**/*, prisma/schema.prisma",
-        description: "Enforces database indexing, migrations, parameterized SQL, and ORM type safety."
+        scope: "globs: app/**/*.tsx",
+        description: "Framework conventions that load only when route or component files are in play.",
       },
       {
         path: ".cursor/rules/testing.mdc",
-        scope: "**/*.test.ts, **/*.spec.tsx",
-        description: "Enforces Vitest or Playwright testing conventions, mocking standards, and coverage requirements."
-      }
+        scope: "globs: **/*.test.ts",
+        description: "Test runner commands and mocking rules, attached when a test file is in the request.",
+      },
+      {
+        path: "packages/api/.cursor/rules/api.mdc",
+        scope: "Nested folder",
+        description: "In a monorepo, a `.cursor/rules` folder inside a package applies to files in that package.",
+      },
     ],
     syntaxHighlights: [
       {
-        title: "YAML Frontmatter Scoping",
-        explanation: "Every .mdc file begins with YAML frontmatter specifying its description and target file globs.",
+        title: "Frontmatter",
+        explanation:
+          "Three fields decide when the rule loads. Keep `alwaysApply` false and use `globs` for anything that only matters to part of the codebase.",
         codeSample: `---
-description: Next.js 15 App Router and Server Actions standard
-globs: src/app/**/*.{ts,tsx}
+description: Next.js App Router conventions for routes and server code
+globs: app/**/*.ts,app/**/*.tsx
 alwaysApply: false
----`
+---`,
       },
       {
-        title: "Behavioral Guardrails",
-        explanation: "Direct instructions constraining how Cursor proposes modifications.",
-        codeSample: `## Behaviors
-- Deliver surgical diffs; never rewrite entire 200-line files.
-- Inspect surrounding imports and tsconfig paths before adding packages.
-- Always use typed Zod schemas for input validation.`
-      }
+        title: "Rule body",
+        explanation: "Short instructions the model can check: name the files, commands and patterns, and say what never to do.",
+        codeSample: `- Server Components by default; add "use client" only for state, effects or browser APIs.
+- Validate Server Action input with Zod safeParse and return typed errors.
+- Never import from next/router; use next/navigation.
+- Run \`pnpm lint && pnpm test\` before finishing.`,
+      },
     ],
     bestPractices: [
-      "Keep rules modular: create distinct .mdc files per subsystem (API, UI, Database, Testing) rather than one gigantic file.",
-      "Set `alwaysApply: false` and rely on precise `globs` to save context window tokens.",
-      "Provide concrete 'Good' and 'Discouraged' code snippets so the model can visually anchor on the desired syntax.",
-      "Specify banned patterns explicitly (e.g. 'Never import pages/ router APIs into app/').",
-      "Include verification commands (e.g. `npm test`, `npm run lint`) at the end of each rule."
+      "Write one rule per concern (framework, data layer, tests) instead of one long file, so each loads only where it applies.",
+      "Keep `alwaysApply: true` for the few lines every request needs, such as the package manager and test command.",
+      "Write the `description` as when-to-use text; the agent reads it to decide whether to pull the rule in.",
+      "Reference real files (`@components/ui/button.tsx`) instead of pasting long examples into the rule.",
+      "Commit `.cursor/rules/` so the whole team gets the same rules.",
     ],
     faqs: [
       {
-        question: "What is the difference between .cursor/rules/*.mdc and legacy .cursorrules?",
-        answer: "The legacy .cursorrules file is a single monolithic document loaded on every single user interaction, quickly consuming context window limits and causing rule confusion. Modern .mdc rules support YAML frontmatter with file globs and 'alwaysApply: false', activating only when relevant files are being edited."
+        question: ".cursorrules vs .cursor/rules: which should I use?",
+        answer:
+          "Use `.cursor/rules/*.mdc`. The single `.cursorrules` file is still read but deprecated, and it applies to every request. Project rules can be scoped with globs, loaded on demand and split by concern.",
       },
       {
-        question: "Where should I save .mdc files in my project?",
-        answer: "Save your rules in the `.cursor/rules/` directory at the root of your repository (for example: `.cursor/rules/react-19.mdc`). Cursor automatically detects and indexes this directory."
+        question: "Does Cursor read AGENTS.md too?",
+        answer:
+          "Yes. Cursor reads `AGENTS.md` in the project root as a plain Markdown alternative to project rules, without frontmatter or scoping. Use it for instructions you share with other agents, and `.mdc` rules for scoped ones.",
       },
       {
-        question: "Can I use wildcards in glob patterns?",
-        answer: "Yes. You can use standard globbing syntax such as `src/components/**/*.{ts,tsx}`, `api/**/*.py`, or comma-separated lists to bind rules to specific directory trees."
-      }
-    ]
+        question: "Why is my Cursor rule not being applied?",
+        answer:
+          "Check the frontmatter first: a rule with `alwaysApply: false`, no `globs` and no `description` loads only when you @-mention it. Then check that the glob matches the files in your request and that the file sits in `.cursor/rules/` with the `.mdc` extension.",
+      },
+    ],
   },
   "claude-skills": {
     slug: "claude-skills",
@@ -96,57 +109,73 @@ alwaysApply: false
     badge: "Claude Skill",
     targetFile: "SKILL.md",
     targetDir: ".claude/skills/<skill-name>/",
-    seoTitle: "Claude Skills (SKILL.md) Generator",
-    seoDescription: "Discover and generate modular Claude Code CLI skills (SKILL.md). Equip Claude with specialized terminal capabilities, workflow procedures, and auditing routines.",
-    heroHeading: "Claude Code Skills (SKILL.md) Directory",
-    heroSubheading: "Modular, on-demand capabilities for Anthropic's Claude Code agent CLI. Loaded dynamically based on natural language task descriptions.",
-    overview: "Claude Code Skills are modular capabilities packaged into a SKILL.md file with YAML frontmatter. Claude Code reads the `description` field and intelligently decides when to load the full skill instructions into its context window, or allows manual execution via slash commands (e.g. `/audit` or `/migrate`). Skills allow you to teach Claude custom refactoring workflows, complex auditing protocols, and deployment procedures.",
+    seoTitle: "Claude Code Skill Generator (SKILL.md)",
+    seoDescription:
+      "Create Claude Code skills: a SKILL.md with a name, a description and step-by-step instructions, saved in .claude/skills/. Free, runs in your browser.",
+    heroHeading: "Claude Code skill generator: SKILL.md files for your workflows",
+    heroSubheading:
+      "Write the description Claude uses to pick the skill, add the steps and the limits, and download it into .claude/skills/. Runs in your browser; nothing is uploaded.",
+    overview:
+      "A Claude Code skill is a folder with a `SKILL.md` file: YAML frontmatter with a `name` and a `description`, then Markdown instructions. At startup Claude reads only each skill's name and description. When a request matches the description, it loads the full file, plus any scripts or reference files the skill points to. You can also run a skill directly with `/skill-name`. Project skills live in `.claude/skills/`, personal ones in `~/.claude/skills/`.",
     filePlacementGuide: [
       {
         path: ".claude/skills/codebase-auditor/SKILL.md",
-        scope: "Project Level",
-        description: "Audits codebase for dead code, unhandled async errors, and security vulnerabilities."
+        scope: "Project",
+        description: "Committed with the repo, so everyone working on the project gets the skill.",
       },
       {
-        path: "~/.claude/skills/personal-style/SKILL.md",
-        scope: "Global User Level",
-        description: "Applies your personal coding conventions and git commit style across all repositories on your machine."
-      }
+        path: "~/.claude/skills/commit-style/SKILL.md",
+        scope: "Personal",
+        description: "Available in every project on your machine and not shared with the team.",
+      },
+      {
+        path: ".claude/skills/release/scripts/changelog.sh",
+        scope: "Bundled file",
+        description: "Scripts, templates and references sit next to SKILL.md. Claude reads or runs them only when the instructions say so.",
+      },
     ],
     syntaxHighlights: [
       {
-        title: "YAML Frontmatter Description",
-        explanation: "Claude Code uses the description to semantically match user prompts with available skills.",
+        title: "Frontmatter",
+        explanation: "Claude matches your request against the description, so say what the skill does and when to use it.",
         codeSample: `---
-name: codebase-auditor
-description: Audit codebases for security vulnerabilities, dead code, and architectural anti-patterns. Trigger when asked to review or evaluate code.
----`
+name: db-migration
+description: Writes and reviews Prisma migrations. Use when schema.prisma changes or the user asks for a migration.
+---`,
       },
       {
-        title: "Sequential Execution Procedures",
-        explanation: "Step-by-step procedures tell Claude the exact sequence of commands and inspection steps.",
-        codeSample: `## Step-by-Step Procedure
-1. Inspect package manifest (package.json, Cargo.toml) to map dependencies.
-2. Search for sensitive tokens or unparameterized queries.
-3. Categorize findings into CRITICAL, HIGH, and MEDIUM.`
-      }
+        title: "Instructions",
+        explanation: "Numbered steps, the commands to run, and what needs your approval.",
+        codeSample: `## Steps
+1. Read prisma/schema.prisma and the latest migration.
+2. Run \`pnpm prisma migrate dev --create-only --name <change>\`.
+3. Show the generated SQL and wait for approval before applying it.`,
+      },
     ],
     bestPractices: [
-      "Write clear, trigger-rich descriptions in the frontmatter so Claude knows exactly when to auto-activate the skill.",
-      "Structure skills into discrete phases (Discovery, Analysis, Remediation, Verification).",
-      "Include negative constraints (e.g., 'Never execute destructive migrations without user approval').",
-      "Add slash command alias support for frequent manual invocations."
+      "Keep `name` lowercase with hyphens; it is also the `/name` you type to run the skill.",
+      "Put trigger words in the description (file names, tasks, phrases people use), because it is all Claude sees before loading the skill.",
+      "Keep SKILL.md focused and move long references into separate files the skill links to, so they load only when needed.",
+      "Say what needs confirmation (deploys, migrations, deleting files) and what the skill must never do.",
+      "Test it by asking for the task in plain words and checking that Claude picks the skill.",
     ],
     faqs: [
       {
-        question: "How does Claude Code discover SKILL.md files?",
-        answer: "Claude Code scans the `.claude/skills/<name>/SKILL.md` directory in your current workspace, as well as the global `~/.claude/skills/` directory in your user home folder."
+        question: "Where do Claude Code skills go?",
+        answer:
+          "In `.claude/skills/<skill-name>/SKILL.md` for a project, or `~/.claude/skills/<skill-name>/SKILL.md` for every project on your machine. Plugins can ship skills too.",
       },
       {
-        question: "Does Claude load all skills into context at once?",
-        answer: "No. Claude only keeps skill metadata (name and description) in its index. The full instruction body is loaded on demand when the task warrants it, keeping context windows lightweight."
-      }
-    ]
+        question: "Does Claude load every skill into context?",
+        answer:
+          "No. Only each skill's name and description load at startup. The rest of SKILL.md and any bundled files load when a task matches or you run `/skill-name`.",
+      },
+      {
+        question: "Skill or CLAUDE.md: which should I use?",
+        answer:
+          "Use `CLAUDE.md` for what Claude needs in every session, such as commands and conventions. Use a skill for a procedure you need only sometimes, such as a release checklist or a migration review, so it does not take up context the rest of the time.",
+      },
+    ],
   },
   "claude-md": {
     slug: "claude-md",
@@ -155,53 +184,74 @@ description: Audit codebases for security vulnerabilities, dead code, and archit
     badge: "CLAUDE.md",
     targetFile: "CLAUDE.md",
     targetDir: "./ (Repository Root)",
-    seoTitle: "CLAUDE.md Guide & Generator",
-    seoDescription: "Generate standard CLAUDE.md repository guides. Provide Claude Code with essential build commands, architectural invariants, code styles, and testing workflows.",
-    heroHeading: "CLAUDE.md Repository Guidelines Directory",
-    heroSubheading: "The root onboarding manual for Anthropic's Claude Code CLI. Gives Claude instant mastery over your build systems, test suites, and project architecture.",
-    overview: "A CLAUDE.md file placed at the root of a Git repository acts as Claude's persistent onboarding manual. Whenever Claude Code launches in a project directory, it parses CLAUDE.md before running any commands. It provides essential facts about package managers, build commands, test runners, directory architecture, and non-negotiable coding conventions.",
+    seoTitle: "CLAUDE.md Generator, Template & Examples",
+    seoDescription:
+      "Generate a CLAUDE.md for Claude Code with your build and test commands, conventions and rules. Templates for popular stacks; runs in your browser.",
+    heroHeading: "CLAUDE.md generator: project instructions for Claude Code",
+    heroSubheading:
+      "Pick your stack, fill in the commands and rules Claude should follow, and download CLAUDE.md for your repo root. Runs in your browser; nothing is uploaded.",
+    overview:
+      "`CLAUDE.md` is the file Claude Code reads at the start of every session. It loads in full, so it should hold what Claude needs every time: how to build, test and lint, how the code is organised, and the rules it must follow. Claude Code reads it from the repo root (or `.claude/CLAUDE.md`), from `~/.claude/CLAUDE.md` for personal defaults, and from subfolders when it works on files there. You can pull in other files with `@path/to/file`, and `/init` drafts a first version from your codebase.",
     filePlacementGuide: [
       {
         path: "./CLAUDE.md",
-        scope: "Repository Root",
-        description: "Primary instructions file read immediately upon Claude Code session startup."
-      }
+        scope: "Project",
+        description: "Shared with the team through git. The main place for commands and conventions.",
+      },
+      {
+        path: "~/.claude/CLAUDE.md",
+        scope: "Personal, all projects",
+        description: "Your own preferences, such as language or commit style, applied everywhere.",
+      },
+      {
+        path: "packages/api/CLAUDE.md",
+        scope: "Subfolder",
+        description: "Loaded when Claude reads or edits files in that folder. Useful for monorepo packages.",
+      },
     ],
     syntaxHighlights: [
       {
-        title: "Commands Section",
-        explanation: "Provide exact build, test, and lint commands so Claude never has to guess.",
-        codeSample: `## Common Commands
-- Build: \`npm run build\`
-- Test: \`npm test -- --watch=false\`
-- Typecheck: \`npx tsc --noEmit\`
-- Lint: \`npm run lint\``
+        title: "Commands",
+        explanation: "Exact commands Claude can run as written, including how to run a single test.",
+        codeSample: `## Commands
+- Dev: \`pnpm dev\`
+- Test one file: \`pnpm vitest run src/lib/date.test.ts\`
+- Typecheck: \`pnpm tsc --noEmit\`
+- Lint: \`pnpm lint\``,
       },
       {
-        title: "Architecture & Rules",
-        explanation: "Define immutable project invariants and module responsibilities.",
-        codeSample: `## Code Style & Architecture
-- Next.js 15 App Router: Server Components by default.
-- Data Mutations: Server Actions with Zod safeParse.
-- Styling: Tailwind CSS v4 utility classes only.`
-      }
+        title: "Rules and imports",
+        explanation: "Short rules with reasons, and `@` imports for longer documents.",
+        codeSample: `## Rules
+- Server Components by default; "use client" only for interactivity.
+- Never edit files in src/generated/; run \`pnpm codegen\` instead.
+- Read @docs/architecture.md before changing the data layer.`,
+      },
     ],
     bestPractices: [
-      "Keep CLAUDE.md concise and high-density (under 200 lines).",
-      "Always document the single command to run tests and typecheck.",
-      "State forbidden patterns explicitly (e.g. 'Do not use npm install; use pnpm only').",
-      "Keep commands updated whenever dependencies or build tooling changes."
+      "Keep it short. Everything in CLAUDE.md loads every session, so cut anything Claude can learn from the code.",
+      "Write commands exactly as they should be run, including the one for a single test file.",
+      "Give each 'never' rule a reason, so Claude can handle cases the rule does not name.",
+      "Move procedures you need only sometimes into skills or imported docs.",
+      "Update it when commands or conventions change; stale instructions are worse than none.",
     ],
     faqs: [
       {
-        question: "Where should CLAUDE.md be placed?",
-        answer: "CLAUDE.md should be located in the root directory of your repository. Claude Code automatically looks for and loads this file when you run claude in terminal."
+        question: "Where should CLAUDE.md go?",
+        answer:
+          "In the root of your repo, committed to git. Claude Code also reads `~/.claude/CLAUDE.md` for personal defaults and `CLAUDE.md` files in subfolders when it works there.",
       },
       {
-        question: "Can I use CLAUDE.md alongside Cursor .mdc rules?",
-        answer: "Yes! They complement each other. CLAUDE.md provides overall project build/test commands and repository orientation, while .cursor/rules/*.mdc provides granular, file-glob scoped editing rules."
-      }
-    ]
+        question: "How long should CLAUDE.md be?",
+        answer:
+          "As short as it can be while still listing your commands and rules. It loads in full every session, so a long file costs context and buries the important lines. Move detail into imported docs or skills.",
+      },
+      {
+        question: "Can I use CLAUDE.md with AGENTS.md or Cursor rules?",
+        answer:
+          "Yes. Claude Code reads `CLAUDE.md`; Codex, Cursor and other tools read `AGENTS.md` or `.cursor/rules/`. To keep one source, put shared rules in `AGENTS.md` and add `@AGENTS.md` to `CLAUDE.md`.",
+      },
+    ],
   },
   "agents-md": {
     slug: "agents-md",
@@ -210,102 +260,161 @@ description: Audit codebases for security vulnerabilities, dead code, and archit
     badge: "AGENTS.md",
     targetFile: "AGENTS.md",
     targetDir: "./ (Repository Root)",
-    seoTitle: "AGENTS.md Multi-Agent Rules",
-    seoDescription: "Create production-ready AGENTS.md files for autonomous coding agents (Antigravity, Codex, Devin, Claude). Define agent roles, permissions, and validation gates.",
-    heroHeading: "AGENTS.md Multi-Agent System Protocol Directory",
-    heroSubheading: "Unified steering specifications for autonomous AI coding agents. Establish agent boundaries, verification gates, and delegation contracts.",
-    overview: "AGENTS.md is an emerging universal open standard for steering autonomous coding agents across different AI tooling ecosystems. Placed at repository root, AGENTS.md instructs autonomous agents on environment setup, allowed operations, branching strategies, automated testing gates, and documentation integrity rules.",
+    seoTitle: "AGENTS.md Generator, Template & Examples",
+    seoDescription:
+      "Generate an AGENTS.md for Codex, Cursor, GitHub Copilot and other coding agents: setup, commands, code style and checks. Free, runs in your browser.",
+    heroHeading: "AGENTS.md generator: one instructions file for every coding agent",
+    heroSubheading:
+      "Pick your stack, fill in the setup and test commands, and download AGENTS.md for your repo root. Runs in your browser; nothing is uploaded.",
+    overview:
+      "`AGENTS.md` is an open, tool-neutral format for instructions to coding agents: a plain Markdown file in the repo root with no required fields. OpenAI Codex, Cursor, GitHub Copilot's coding agent, Google Jules and a growing list of other tools read it. Think of it as a README for agents: how to set up the project, which commands to run, the code style, and what to check before a change is done. In a monorepo, an `AGENTS.md` in a subfolder applies there and the nearest file wins. Claude Code reads `CLAUDE.md` instead, so add `@AGENTS.md` to it to share one file.",
     filePlacementGuide: [
       {
         path: "./AGENTS.md",
-        scope: "Repository Root",
-        description: "Universal specification read by multi-agent frameworks, IDE coding assistants, and CI agents."
-      }
+        scope: "Repo root",
+        description: "Setup, commands and conventions for the whole project.",
+      },
+      {
+        path: "packages/web/AGENTS.md",
+        scope: "Subfolder",
+        description: "Rules for one package. Agents use the AGENTS.md nearest to the files they edit.",
+      },
+      {
+        path: "./CLAUDE.md",
+        scope: "Claude Code",
+        description: "A one-line `@AGENTS.md` import so Claude Code follows the same instructions.",
+      },
     ],
     syntaxHighlights: [
       {
-        title: "Agent Verification Gates",
-        explanation: "Non-negotiable verification steps the agent must execute before declaring a task complete.",
-        codeSample: `## Verification Requirements
-Every agent task must be verified with:
-1. \`npm run build\` (must exit 0)
-2. \`npm test\` (all tests green)
-3. No newly introduced TypeScript errors`
-      }
+        title: "Setup and checks",
+        explanation: "The commands agents need most, and what must pass before a change counts as done.",
+        codeSample: `## Setup
+- Install: \`pnpm install\`
+- Dev server: \`pnpm dev\`
+
+## Before a change is done
+- \`pnpm lint\` and \`pnpm test\` pass
+- No new TypeScript errors (\`pnpm tsc --noEmit\`)`,
+      },
+      {
+        title: "Boundaries",
+        explanation: "What agents may do on their own and what needs a person.",
+        codeSample: `## Boundaries
+- Do not edit .env* files or commit secrets.
+- Ask before adding a dependency or changing the database schema.
+- One change per pull request; title it feat:, fix: or chore:.`,
+      },
     ],
     bestPractices: [
-      "Define clean permission boundaries (e.g. 'Read-only access to .env files; never write credentials').",
-      "Specify required git branching rules (e.g. 'Create feature branches with prefix feat/').",
-      "Enforce documentation integrity: do not delete existing comments or docstrings."
+      "Start with the commands: install, dev, test, lint. Agents use them more than any prose.",
+      "List the checks a change must pass, so the agent runs them before it says it is done.",
+      "Write boundaries as concrete actions: files not to touch, steps that need approval.",
+      "Keep tool-specific details in that tool's file (`.cursor/rules/`, `CLAUDE.md`) and shared rules in AGENTS.md.",
+      "Add nested AGENTS.md files for monorepo packages with their own commands.",
     ],
     faqs: [
       {
-        question: "What is AGENTS.md used for?",
-        answer: "AGENTS.md provides standardized instructions for autonomous AI agents that operate in codebases without human intervention at every step. It defines constraints, testing requirements, and architecture rules."
-      }
-    ]
+        question: "Which tools read AGENTS.md?",
+        answer:
+          "OpenAI Codex, Cursor, GitHub Copilot's coding agent, Google Jules and a growing list of other agents. Claude Code reads `CLAUDE.md`, which can import it with `@AGENTS.md`.",
+      },
+      {
+        question: "AGENTS.md vs CLAUDE.md: which do I need?",
+        answer:
+          "If you only use Claude Code, `CLAUDE.md` is enough. If your team uses several agents, keep shared instructions in `AGENTS.md` and import it from `CLAUDE.md`, so there is one source of truth.",
+      },
+      {
+        question: "Does AGENTS.md need a special format?",
+        answer:
+          "No. It is plain Markdown with no required sections or frontmatter. Headings for setup, commands, code style and checks help agents find what they need.",
+      },
+    ],
   },
   "mcp-config": {
     slug: "mcp-config",
     format: "mcp_json",
     name: "Model Context Protocol (MCP)",
     badge: "MCP Config",
-    targetFile: "claude_desktop_config.json",
-    targetDir: "~/Library/Application Support/Claude/ or %APPDATA%/Claude/",
-    seoTitle: "MCP Server Config Generator",
-    seoDescription: "Pre-configured Model Context Protocol (MCP) server configurations for Claude Desktop, Cursor, and Windsurf. Connect GitHub, PostgreSQL, SQLite, and Brave Search.",
-    heroHeading: "Model Context Protocol (MCP) Configuration Directory",
-    heroSubheading: "Pre-tested, production MCP server configs. Connect your AI coding agents directly to databases, GitHub repos, search engines, and local filesystems.",
-    overview: "The Model Context Protocol (MCP) is an open specification pioneered by Anthropic that standardizes how AI applications connect to external tools, databases, and APIs. With an MCP server configured in your client (such as Claude Desktop or Cursor), your AI assistant can directly inspect database schemas, run SQL queries, search GitHub issues, and fetch web documentation safely.",
+    targetFile: ".mcp.json",
+    targetDir: "./ (Repository Root)",
+    seoTitle: "MCP Config Generator (.mcp.json)",
+    seoDescription:
+      "Generate MCP server configs for Claude Code (.mcp.json), Claude Desktop and Cursor: GitHub, Postgres, filesystem and more, with secrets kept in env vars.",
+    heroHeading: "MCP config generator: .mcp.json for Claude Code, Claude Desktop and Cursor",
+    heroSubheading:
+      "Pick the servers, keep tokens in environment variables, and download the config for your client. Runs in your browser; nothing is uploaded.",
+    overview:
+      "The Model Context Protocol (MCP) is an open standard that lets AI tools call external servers for data and actions, such as GitHub issues, a Postgres database or files on disk. Each client lists its servers in a JSON file under an `mcpServers` key: a command that starts a local server (with `args` and `env`), or a URL for a remote one. Claude Code reads a project's `.mcp.json` from the repo root and asks before using its servers. Claude Desktop uses `claude_desktop_config.json`, and Cursor uses `.cursor/mcp.json`.",
     filePlacementGuide: [
       {
-        path: "%APPDATA%/Claude/claude_desktop_config.json",
-        scope: "Claude Desktop (Windows)",
-        description: "MCP client configuration registering all stdio and SSE server instances."
+        path: "./.mcp.json",
+        scope: "Claude Code, project",
+        description: "Committed with the repo so the team shares the same servers. Claude Code asks for approval before using them.",
       },
       {
         path: "~/Library/Application Support/Claude/claude_desktop_config.json",
-        scope: "Claude Desktop (macOS)",
-        description: "MCP client configuration on macOS."
+        scope: "Claude Desktop",
+        description: "On Windows: `%APPDATA%\\Claude\\claude_desktop_config.json`. Restart Claude Desktop after editing.",
       },
       {
         path: ".cursor/mcp.json",
-        scope: "Cursor Workspace",
-        description: "Project-level MCP server declarations for Cursor IDE."
-      }
+        scope: "Cursor, project",
+        description: "Use `~/.cursor/mcp.json` for servers available in every project.",
+      },
     ],
     syntaxHighlights: [
       {
-        title: "Standard JSON Configuration",
-        explanation: "Declare server executables and environment variables under the mcpServers key.",
+        title: "Local server",
+        explanation: "A command the client starts on your machine. Give a filesystem server only the folders it needs.",
+        codeSample: `{
+  "mcpServers": {
+    "filesystem": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-filesystem", "./src", "./docs"]
+    }
+  }
+}`,
+      },
+      {
+        title: "Remote server with a token",
+        explanation:
+          "Claude Code expands `${VAR}` from your environment when it loads `.mcp.json`, so the token never lands in git.",
         codeSample: `{
   "mcpServers": {
     "github": {
-      "command": "npx",
-      "args": ["-y", "@modelcontextprotocol/server-github"],
-      "env": {
-        "GITHUB_PERSONAL_ACCESS_TOKEN": "ghp_your_token_here"
-      }
+      "type": "http",
+      "url": "https://api.githubcopilot.com/mcp/",
+      "headers": { "Authorization": "Bearer \${GITHUB_PERSONAL_ACCESS_TOKEN}" }
     }
   }
-}`
-      }
+}`,
+      },
     ],
     bestPractices: [
-      "Never commit plaintext API tokens to public Git repositories; use environment variables where supported.",
-      "Scope filesystem servers strictly to the working project folder instead of root `/` or `C:\\`.",
-      "Prefer read-only database credentials for development AI sessions."
+      "Never commit tokens. Use `${VAR}` references in `.mcp.json` and set the values in your shell.",
+      "Give filesystem servers only the folders they need, never your home directory or a drive root.",
+      "Use read-only database users and fine-grained, read-only GitHub tokens unless the agent has to write.",
+      "Only add servers you trust: a server sees what you send it and acts with the credentials you give it.",
+      "Restart the client after editing the config; most read it only at startup.",
     ],
     faqs: [
       {
-        question: "How do I install an MCP server in Claude Desktop?",
-        answer: "Open Claude Desktop Settings > Developer > Edit Config. This opens `claude_desktop_config.json`. Paste the generated JSON block into the `mcpServers` object, save the file, and restart Claude Desktop."
+        question: "Where does the MCP config file go?",
+        answer:
+          "For Claude Code, `.mcp.json` in the repo root, or `claude mcp add` for personal servers. Claude Desktop uses `claude_desktop_config.json` (Settings > Developer > Edit Config). Cursor uses `.cursor/mcp.json` in the project or `~/.cursor/mcp.json` for all projects.",
       },
       {
-        question: "Can I use MCP servers in Cursor or Windsurf?",
-        answer: "Yes! Modern versions of Cursor and Windsurf support the Model Context Protocol. You can add the same stdio server configs in their respective MCP settings panels."
-      }
-    ]
+        question: "Can I use the same config in VS Code?",
+        answer:
+          "Mostly. VS Code reads `.vscode/mcp.json`, where the top-level key is `servers` instead of `mcpServers`. The server entries have the same shape.",
+      },
+      {
+        question: "How do I keep API tokens out of the file?",
+        answer:
+          "Write `${GITHUB_PERSONAL_ACCESS_TOKEN}` instead of the token. Claude Code expands environment variables in `.mcp.json`, so the real value stays in your shell or secret manager.",
+      },
+    ],
   },
   "windsurf-rules": {
     slug: "windsurf-rules",
@@ -314,48 +423,71 @@ Every agent task must be verified with:
     badge: "Windsurf",
     targetFile: "<rule-name>.md",
     targetDir: ".windsurf/rules/",
-    seoTitle: "Windsurf Cascade Rules Generator",
-    seoDescription: "Generate production-grade Windsurf Cascade AI rules (.windsurf/rules/*.md). Enforce multi-step execution flows, tech stack guardrails, and zero-token waste.",
-    heroHeading: "Windsurf Cascade Rules Directory & Generator",
-    heroSubheading: "Targeted workflow rules for Windsurf Cascade. Guide AI code agents through context inspection, architectural alignment, and surgical diffs.",
-    overview: "Windsurf Cascade rules (.windsurf/rules/*.md) provide structured, phase-driven instructions for Codeium's Windsurf editor. They define agent personas, execution checklists, and negative constraints to keep Cascade focused and prevent hallucinated patterns.",
+    seoTitle: "Windsurf Rules Generator (.windsurf/rules)",
+    seoDescription:
+      "Generate Windsurf Cascade rules for your stack in .windsurf/rules/, with always-on, glob and model-decision triggers. Free, runs in your browser.",
+    heroHeading: "Windsurf rules generator: Cascade rules for your stack",
+    heroSubheading:
+      "Pick a preset, set when the rule should apply, and download the Markdown file for .windsurf/rules/. Runs in your browser; nothing is uploaded.",
+    overview:
+      "Windsurf's Cascade agent reads workspace rules from Markdown files in `.windsurf/rules/`. Each rule has an activation mode set by `trigger` in its frontmatter: always on, on a glob match, when the model decides the rule's description is relevant, or only when you @-mention it. Global rules that apply to every workspace are kept in Windsurf's settings. Windsurf limits the length of each rule file, so short, specific rules work better than one long file.",
     filePlacementGuide: [
       {
         path: ".windsurf/rules/nextjs.md",
-        scope: "Global repository / Cascade active flows",
-        description: "Enforces React Server Components, Server Actions, and Next.js conventions in Windsurf."
+        scope: "trigger: glob",
+        description: "Framework conventions attached when route or component files are in play.",
       },
       {
-        path: ".windsurf/rules/backend.md",
-        scope: "Backend services, APIs, and database migrations",
-        description: "Enforces schema validation, parameterized queries, and defensive error propagation."
-      }
+        path: ".windsurf/rules/testing.md",
+        scope: "trigger: model_decision",
+        description: "Loaded when Cascade judges the description relevant, such as when you ask for tests.",
+      },
+      {
+        path: "Global rules (Windsurf settings)",
+        scope: "All workspaces",
+        description: "Personal preferences that should apply in every project.",
+      },
     ],
     syntaxHighlights: [
       {
-        title: "Execution Workflow Directives",
-        explanation: "Windsurf Cascade thrives on explicit step-by-step checklists to guide agent reasoning across files.",
-        codeSample: `## Cascade Execution Workflow
-1. Inspect surrounding files and project manifests.
-2. Formulate surgical edits adhering to repository conventions.
-3. Run test suites and typecheck verification.`
-      }
+        title: "Activation",
+        explanation: "The frontmatter sets when Cascade applies the rule.",
+        codeSample: `---
+trigger: glob
+globs: src/**/*.test.ts
+---`,
+      },
+      {
+        title: "Rule body",
+        explanation: "Concrete instructions Cascade can follow and check.",
+        codeSample: `- Use Vitest; never add Jest.
+- One describe block per module, named after the file.
+- Run \`pnpm vitest run <file>\` after editing a test.`,
+      },
     ],
     bestPractices: [
-      "Keep individual rule files focused on single concerns (e.g. styling, security, data access).",
-      "Include negative constraints (e.g. 'Never use any') to eliminate common model shortcuts.",
-      "Specify testing commands so Cascade automatically runs verification before completing flows."
+      "Use `always_on` only for rules every request needs.",
+      "Give model-decision rules a clear description; Cascade decides from it.",
+      "Split rules by concern (styling, data access, tests) to stay within the length limit.",
+      "Commit `.windsurf/rules/` so the whole team gets the same rules.",
     ],
     faqs: [
       {
         question: "Where are Windsurf rules stored?",
-        answer: "Save rule markdown files directly in `.windsurf/rules/` in your project root directory."
+        answer:
+          "Workspace rules are Markdown files in `.windsurf/rules/` in your project. Global rules apply to every workspace and are edited in Windsurf's settings.",
       },
       {
-        question: "Does Windsurf Cascade auto-load rules?",
-        answer: "Yes, Windsurf Cascade reads rules inside `.windsurf/rules/` automatically whenever interacting with matching codebase contexts."
-      }
-    ]
+        question: "Does Windsurf load every rule automatically?",
+        answer:
+          "Only rules with `trigger: always_on`. Others load on a glob match, when Cascade decides the description fits the task, or when you @-mention them.",
+      },
+      {
+        question: "Can I reuse my Cursor rules in Windsurf?",
+        answer:
+          "The rule text carries over; the frontmatter does not. Cursor uses `globs` and `alwaysApply`, Windsurf uses `trigger` and `globs`. The rules converter in AI Skill Studio rewrites one into the other.",
+      },
+    ],
   },
   "copilot-instructions": {
     slug: "copilot-instructions",
@@ -364,44 +496,72 @@ Every agent task must be verified with:
     badge: "Copilot",
     targetFile: "copilot-instructions.md",
     targetDir: ".github/",
-    seoTitle: "GitHub Copilot Instructions Generator",
-    seoDescription: "Create repository-level instructions for GitHub Copilot (.github/copilot-instructions.md). Enforce coding standards, testing rules, and architectural guidelines across pull requests.",
-    heroHeading: "GitHub Copilot Instructions Generator",
-    heroSubheading: "Give GitHub Copilot Chat, code review and the coding agent the same project instructions for everyone on your team.",
-    overview: "GitHub Copilot reads instructions from `.github/copilot-instructions.md` automatically during chat sessions and code reviews. Defining explicit tech stack conventions, banned libraries, and test requirements eliminates repetitive prompts and keeps team contributions aligned.",
+    seoTitle: "copilot-instructions.md Generator",
+    seoDescription:
+      "Generate .github/copilot-instructions.md for GitHub Copilot Chat, code review and the coding agent, with your stack's conventions. Free, in your browser.",
+    heroHeading: "GitHub Copilot instructions generator: .github/copilot-instructions.md",
+    heroSubheading:
+      "Give GitHub Copilot Chat, code review and the coding agent the same project instructions for everyone on your team.",
+    overview:
+      "`.github/copilot-instructions.md` holds repository-wide instructions for GitHub Copilot. Copilot adds it to Copilot Chat requests, code review and the Copilot coding agent in that repository; it is not used for code completions as you type. For rules that apply to some files only, add `.github/instructions/<name>.instructions.md` files with an `applyTo` glob in the frontmatter. The coding agent also reads `AGENTS.md`.",
     filePlacementGuide: [
       {
         path: ".github/copilot-instructions.md",
-        scope: "Entire repository (Copilot Chat & Inline Completions)",
-        description: "Master instruction file parsed by GitHub Copilot across VS Code, JetBrains, and GitHub PR reviews."
-      }
+        scope: "Whole repository",
+        description: "Conventions every Copilot request in the repository should follow.",
+      },
+      {
+        path: ".github/instructions/tests.instructions.md",
+        scope: "Files matching applyTo",
+        description: "Path-specific rules, for example for test files only.",
+      },
+      {
+        path: "./AGENTS.md",
+        scope: "Copilot coding agent",
+        description: "Read by the coding agent alongside the instructions file, and shared with other agents.",
+      },
     ],
     syntaxHighlights: [
       {
-        title: "Team Engineering Guidelines",
-        explanation: "Use clear markdown headings to separate architectural rules, banned APIs, and testing workflows.",
-        codeSample: `# GitHub Copilot Repository Instructions
-## Tech Stack: Next.js 15, TypeScript 5.x, Tailwind CSS
-## Core Rules:
-- Always enforce strict type safety without loose 'any'.
-- Use Server Actions with Zod safeParse validation.`
-      }
+        title: "Repository instructions",
+        explanation: "Short statements about the stack, the commands and the patterns to avoid.",
+        codeSample: `# Project instructions
+- Stack: Next.js 15, TypeScript strict, Tailwind CSS v4, pnpm.
+- Run \`pnpm test\` and \`pnpm lint\` before proposing a change.
+- Use next/navigation, never next/router.
+- Data access goes through src/server/db.ts; no queries in components.`,
+      },
+      {
+        title: "Path-specific instructions",
+        explanation: "A separate file whose `applyTo` glob limits where it applies.",
+        codeSample: `---
+applyTo: "**/*.test.ts"
+---
+- Use Vitest and Testing Library; no snapshot tests for components.`,
+      },
     ],
     bestPractices: [
-      "Commit `.github/copilot-instructions.md` to your default branch so all team members inherit the same AI rules.",
-      "Keep instructions concise and action-oriented; prioritize what NOT to do to prevent anti-patterns.",
-      "Update the file whenever dependencies or major architecture conventions change."
+      "Write short, self-contained statements; Copilot follows specific instructions better than broad ones.",
+      "Describe the stack, the commands and the patterns to avoid, and skip advice like 'write clean code'.",
+      "Use `.instructions.md` files with `applyTo` for rules that matter only to some files.",
+      "Commit the file to the default branch so everyone, including code review, uses it.",
     ],
     faqs: [
       {
-        question: "Does GitHub Copilot support custom instructions?",
-        answer: "Yes! GitHub Copilot natively recognizes `.github/copilot-instructions.md` in repository roots to guide Copilot Chat and inline suggestions."
+        question: "Does copilot-instructions.md affect code completions?",
+        answer:
+          "No. It is used by Copilot Chat, Copilot code review and the Copilot coding agent, not by the completions that appear as you type.",
       },
       {
-        question: "Does this work in pull request reviews?",
-        answer: "Yes, Copilot for Pull Requests consults your repository instructions when analyzing diffs and suggesting automated reviews."
-      }
-    ]
+        question: "Where does the Copilot instructions file go?",
+        answer:
+          "At `.github/copilot-instructions.md` in your repository. Path-specific files go in `.github/instructions/` and end in `.instructions.md`.",
+      },
+      {
+        question: "Does Copilot use it in pull request reviews?",
+        answer: "Yes. Copilot code review reads the repository's custom instructions when it reviews a pull request.",
+      },
+    ],
   },
   "openai-instructions": {
     slug: "openai-instructions",
@@ -410,42 +570,73 @@ Every agent task must be verified with:
     badge: "OpenAI",
     targetFile: "openai-custom-instructions.md",
     targetDir: "prompts/",
-    seoTitle: "OpenAI Custom Instructions Generator",
-    seoDescription: "Generate tailored system prompts and custom instructions for OpenAI models, ChatGPT Custom GPTs, and OpenAI Playground.",
-    heroHeading: "OpenAI Custom Instructions & System Prompts",
-    heroSubheading: "Targeted system instructions for ChatGPT, GPT-4o, and o-series reasoning models.",
-    overview: "OpenAI system instructions set the foundation for model behavior, response formatting, and technical boundaries. Crafting concise, role-anchored instructions with negative constraints produces higher-fidelity code and prevents verbose boilerplate.",
+    seoTitle: "ChatGPT Custom Instructions Generator",
+    seoDescription:
+      "Generate coding instructions for ChatGPT custom instructions, Projects and custom GPTs, or the system message in the OpenAI API. Free, in your browser.",
+    heroHeading: "ChatGPT and OpenAI custom instructions generator for coding",
+    heroSubheading:
+      "Turn your stack and coding rules into instructions you can paste into ChatGPT or send to the API. Runs in your browser; nothing is uploaded.",
+    overview:
+      "OpenAI tools take instructions in a few places. In ChatGPT, custom instructions (Settings > Personalization) apply to all your chats, a Project's instructions apply to chats in that project, and a custom GPT has its own. In the API, the same text goes in the `instructions` parameter of the Responses API, or in a system or developer message. This file is a versioned copy you paste into one of those; nothing reads it from your repo automatically. Codex, OpenAI's coding agent, reads `AGENTS.md` instead.",
     filePlacementGuide: [
       {
         path: "prompts/openai-custom-instructions.md",
-        scope: "ChatGPT Custom Instructions / Custom GPTs / Playground",
-        description: "System instruction blueprint for personal ChatGPT profiles or team Custom GPT knowledge bases."
-      }
+        scope: "Your repo",
+        description: "A versioned copy, so changes to the instructions are reviewed like code.",
+      },
+      {
+        path: "ChatGPT > Settings > Personalization",
+        scope: "All chats",
+        description: "Custom instructions applied to every conversation.",
+      },
+      {
+        path: "ChatGPT Project or custom GPT",
+        scope: "One project or GPT",
+        description: "Instructions limited to that project's chats or that GPT.",
+      },
     ],
     syntaxHighlights: [
       {
-        title: "System Persona & Guardrails",
-        explanation: "Set the engineer role, technical boundaries, and brevity requirements to avoid chatty responses.",
-        codeSample: `You are a Senior TypeScript Architect.
-Philosophy: Strict type-safety, zero-any policy.
-Provide concise code diffs without boilerplate fluff.`
-      }
+        title: "Role and rules",
+        explanation: "The stack and the rules that matter most go first.",
+        codeSample: `You are helping on a Next.js 15 + TypeScript project.
+- Answer with code first, then a short explanation.
+- Use Server Components by default and Zod for input validation.
+- Never use \`any\`; ask if a type is unclear.`,
+      },
+      {
+        title: "Using it in the API",
+        explanation: "Send the file as `instructions` in the Responses API.",
+        codeSample: `const response = await client.responses.create({
+  model: process.env.OPENAI_MODEL,
+  instructions: fs.readFileSync("prompts/openai-custom-instructions.md", "utf8"),
+  input: "Add a delete action to the posts table.",
+});`,
+      },
     ],
     bestPractices: [
-      "Place negative constraints ('Never do X') near the top of the system prompt for maximum compliance.",
-      "Explicitly instruct the model to provide minimal diffs preserving existing comments.",
-      "Save instructions in version control under `prompts/` to keep team prompts aligned."
+      "Put the stack and the non-negotiable rules first; they matter more than tone.",
+      "Ask for the output you want: a diff, a full file, or code followed by a short explanation.",
+      "Keep personal preferences in ChatGPT custom instructions and project rules in a Project or custom GPT.",
+      "Keep the canonical copy in git and paste from it, so the team uses the same version.",
     ],
     faqs: [
       {
-        question: "How do I use this in ChatGPT?",
-        answer: "Open ChatGPT Settings > Personalization > Custom Instructions, and paste the generated text into 'How would you like ChatGPT to respond?'."
+        question: "Where do I paste this in ChatGPT?",
+        answer:
+          "In Settings > Personalization > Custom instructions for all chats, in a Project's instructions for that project's chats, or in the Configure tab of a custom GPT.",
       },
       {
-        question: "Can I use this in the OpenAI API?",
-        answer: "Yes, pass the generated content as the `developer` or `system` message in Chat Completion requests."
-      }
-    ]
+        question: "Can I use it with the OpenAI API?",
+        answer:
+          "Yes. Pass it as `instructions` in the Responses API, or as the system or developer message in Chat Completions.",
+      },
+      {
+        question: "Does Codex read this file?",
+        answer:
+          "No. Codex reads `AGENTS.md` from your repository. Use the AGENTS.md generator for instructions shared by Codex and other agents.",
+      },
+    ],
   },
   "gemini-prompts": {
     slug: "gemini-prompts",
@@ -455,39 +646,72 @@ Provide concise code diffs without boilerplate fluff.`
     targetFile: "gemini-system-instructions.json",
     targetDir: "prompts/",
     seoTitle: "Gemini System Instructions Generator",
-    seoDescription: "Generate structured system instructions JSON for Google AI Studio, Gemini 1.5 Pro/Flash, and Gemini 2.0 SDK integrations.",
-    heroHeading: "Gemini API System Instructions Generator",
-    heroSubheading: "JSON-formatted system instruction blocks ready for Google AI Studio and Gemini Python/TypeScript SDKs.",
-    overview: "Google Gemini API supports structured systemInstruction payloads defining developer personas and verification protocols. This generator outputs valid JSON schemas configured with safety settings and temperature parameters.",
+    seoDescription:
+      "Generate Gemini system instructions as JSON for the Gemini API and Google AI Studio, with your stack's role, rules and checks. Free, in your browser.",
+    heroHeading: "Gemini system instructions generator for the Gemini API",
+    heroSubheading:
+      "Build a system instruction for the Gemini API or Google AI Studio from your stack and rules. Runs in your browser; nothing is uploaded.",
+    overview:
+      "The Gemini API takes a system instruction separately from the conversation: `system_instruction` in the REST API, or `systemInstruction` in the request config of the Google Gen AI SDKs. Google AI Studio has a System instructions field for the same text. This generator writes the instruction as JSON with one part per section (role, guidelines, constraints, procedures, checks), so you can version it and load it in code. For the Gemini CLI, use a `GEMINI.md` file in your project instead.",
     filePlacementGuide: [
       {
         path: "prompts/gemini-system-instructions.json",
-        scope: "Google AI Studio / Gemini SDK API Calls",
-        description: "Config schema with system_instruction parts, temperature, top_p, and safety parameters."
-      }
+        scope: "Your repo",
+        description: "Versioned with your code and loaded by your app when it calls the Gemini API.",
+      },
+      {
+        path: "Google AI Studio > System instructions",
+        scope: "AI Studio",
+        description: "Paste the text parts to try the instruction before you use it in code.",
+      },
     ],
     syntaxHighlights: [
       {
-        title: "Standardized Gemini JSON Schema",
-        explanation: "Configure model behavior and system_instruction parts directly.",
+        title: "REST request",
+        explanation: "The system instruction sits next to `contents`, as a list of text parts.",
         codeSample: `{
   "system_instruction": {
-    "parts": [{ "text": "You are a Senior Systems Engineer..." }]
-  }
-}`
-      }
+    "parts": [
+      { "text": "You are a senior Go engineer on a Fiber API." },
+      { "text": "Return errors from handlers; never panic." }
+    ]
+  },
+  "contents": [{ "role": "user", "parts": [{ "text": "Add a health check route." }] }]
+}`,
+      },
+      {
+        title: "Google Gen AI SDK",
+        explanation: "Join the parts and pass them as `config.systemInstruction`.",
+        codeSample: `import { GoogleGenAI } from "@google/genai";
+
+const ai = new GoogleGenAI({});
+const res = await ai.models.generateContent({
+  model: process.env.GEMINI_MODEL,
+  contents: "Add a health check route.",
+  config: {
+    systemInstruction: file.system_instruction.parts.map((p) => p.text).join("\\n"),
+  },
+});`,
+      },
     ],
     bestPractices: [
-      "Keep system_instruction parts declarative and concise.",
-      "Specify deterministic guidelines to reduce sampling variance.",
-      "Store schemas in `prompts/` alongside your application source code."
+      "Keep each part to one topic, so you can change or test parts on their own.",
+      "State the role and the hard constraints first; put examples last.",
+      "Load the JSON from your repo instead of pasting the prompt into code, so changes get reviewed.",
+      "Try changes in Google AI Studio before you ship them.",
     ],
     faqs: [
       {
-        question: "How do I use this with Gemini SDK?",
-        answer: "Import the generated JSON and pass it directly to `systemInstruction` when calling `googleAI.getGenerativeModel()`."
-      }
-    ]
+        question: "How do I use the JSON with the Gemini SDK?",
+        answer:
+          "Load the file, join the text of `system_instruction.parts`, and pass it as `config.systemInstruction` to `ai.models.generateContent()` in the Google Gen AI SDK. In the REST API, send the object as `system_instruction`.",
+      },
+      {
+        question: "Does the Gemini CLI use this file?",
+        answer:
+          "No. The Gemini CLI reads `GEMINI.md` context files from your project. Use this JSON for API calls, and a Markdown context file such as GEMINI.md or AGENTS.md for coding agents.",
+      },
+    ],
   },
   "cursorignore": {
     slug: "cursorignore",
@@ -496,55 +720,74 @@ Provide concise code diffs without boilerplate fluff.`
     badge: ".cursorignore",
     targetFile: ".cursorignore",
     targetDir: "./ (Repository Root)",
-    seoTitle: ".cursorignore Generator & Shield",
-    seoDescription: "Generate production-grade .cursorignore files. Prevent Cursor from indexing secrets, build caches, and bulky lockfiles to optimize AI context window tokens.",
-    heroHeading: ".cursorignore Context Shield Generator",
-    heroSubheading: "Mask credentials, filter build artifacts, and save 50,000+ context tokens per prompt in Cursor IDE.",
-    overview: ".cursorignore functions like a .gitignore exclusively for Cursor's AI indexing engine. By excluding build outputs (.next, dist, target), lockfiles (package-lock.json), test fixtures, and secret files (.env, *.pem), you prevent sensitive credentials from leaking into prompts while dramatically reducing context window bloat and improving model reasoning speed.",
+    seoTitle: ".cursorignore Generator & Examples",
+    seoDescription:
+      "Generate a .cursorignore that keeps secrets, build output and generated code out of Cursor's indexing and AI features. Free, runs in your browser.",
+    heroHeading: ".cursorignore generator: keep secrets and build output away from Cursor",
+    heroSubheading:
+      "Choose what to exclude, add your own patterns, and download .cursorignore for your repo root. Runs in your browser; nothing is uploaded.",
+    overview:
+      "`.cursorignore` uses `.gitignore` syntax to list files Cursor should leave out of codebase indexing and AI features such as chat, Agent, inline edit and @-mentions. Cursor already skips files in `.gitignore` when indexing, so `.cursorignore` is for files you track or keep locally but do not want sent to a model: `.env` files, keys, large fixtures and generated code. Exclusion is best effort: commands the agent runs in the terminal, and MCP tools, can still read ignored files. To keep files out of the index but still usable on request, use `.cursorindexingignore`.",
     filePlacementGuide: [
       {
         path: "./.cursorignore",
-        scope: "Repository Root",
-        description: "Excludes paths from codebase indexing, codebase chat search, and background agent context scanning."
-      }
+        scope: "Repo root",
+        description: "Excludes matching files from indexing and AI features.",
+      },
+      {
+        path: "./.cursorindexingignore",
+        scope: "Repo root",
+        description: "Excludes files from the index only; you can still add them to a request.",
+      },
     ],
     syntaxHighlights: [
       {
-        title: "Credential & Secret Masking",
-        explanation: "Keep private keys and API tokens out of LLM prompts.",
-        codeSample: `# Secrets & Credentials
+        title: "Secrets",
+        explanation: "Keep keys and environment files out of prompts. `!` re-includes a file a wider pattern excluded.",
+        codeSample: `# Secrets and credentials
 .env*
 !.env.example
 *.pem
 *.key
-service-account*.json`
+service-account*.json`,
       },
       {
-        title: "Lockfile & Build Cache Suppression",
-        explanation: "Lockfiles alone can consume 40,000+ context tokens, degrading reasoning.",
-        codeSample: `# Dependency Bloat
-node_modules/
-package-lock.json
-pnpm-lock.yaml
-yarn.lock`
-      }
+        title: "Generated and bulky files",
+        explanation: "Tracked files a model rarely needs, which only crowd out your source code.",
+        codeSample: `# Build output and generated code
+.next/
+dist/
+coverage/
+src/generated/
+*.min.js
+
+# Large fixtures
+fixtures/**/*.json`,
+      },
     ],
     bestPractices: [
-      "Always place .cursorignore in your repository root next to .gitignore.",
-      "Mask all .env files and service account JSON credentials to eliminate data leakage.",
-      "Exclude massive lockfiles (package-lock.json, Cargo.lock) to keep context tokens reserved for code.",
-      "Ignore coverage reports, build artifacts, and source maps."
+      "Start with secrets: `.env*` (except `.env.example`), keys, certificates and service-account files.",
+      "Add generated code and build output that is tracked in git; `.gitignore` already covers the rest for indexing.",
+      "Do not treat it as a security boundary. Keep real secrets out of the repo and out of the agent's shell.",
+      "Use `!pattern` to re-include a file that a wider pattern excluded, such as `!.env.example`.",
     ],
     faqs: [
       {
         question: "Does .cursorignore replace .gitignore?",
-        answer: "No. .gitignore controls what git tracks in version control, while .cursorignore specifically controls what Cursor's AI indexes and reads for context."
+        answer:
+          "No. `.gitignore` decides what git tracks; `.cursorignore` decides what Cursor's indexing and AI features can use. Cursor already respects `.gitignore` for indexing, so list only the extra files.",
       },
       {
-        question: "Why should I ignore lockfiles in .cursorignore?",
-        answer: "Lockfiles often contain tens of thousands of lines of package hashes. If indexed by the AI, they exhaust context window limits and cause the model to hallucinate or miss relevant application code."
-      }
-    ]
+        question: "Is a file in .cursorignore hidden from the agent completely?",
+        answer:
+          "No. Cursor treats it as best effort: ignored files stay out of indexing, chat context and edits, but terminal commands and MCP tools the agent runs can still read them.",
+      },
+      {
+        question: ".cursorignore vs .cursorindexingignore?",
+        answer:
+          "`.cursorignore` excludes files from indexing and AI features. `.cursorindexingignore` only keeps files out of the index, so codebase search skips them but you can still add them to a request.",
+      },
+    ],
   },
   "claudeignore": {
     slug: "claudeignore",
@@ -553,40 +796,63 @@ yarn.lock`
     badge: ".claudeignore",
     targetFile: ".claudeignore",
     targetDir: "./ (Repository Root)",
-    seoTitle: ".claudeignore Generator & Shield",
-    seoDescription: "Generate tailored .claudeignore files for Claude Code CLI. Prevent terminal AI agents from reading private credentials, build artifacts, and vendor files.",
-    heroHeading: ".claudeignore Privacy & Boundary Generator",
-    heroSubheading: "Establish strict inspection and modification boundaries for Anthropic's Claude Code terminal agent.",
-    overview: "A .claudeignore file keeps one reviewable list of the paths Claude Code should stay out of: local secrets, build output and vendor folders. Claude Code's documented way to enforce that list is permission deny rules, so mirror sensitive paths as Read(...) entries under permissions.deny in .claude/settings.json.",
+    seoTitle: ".claudeignore Generator for Claude Code",
+    seoDescription:
+      "Generate a .claudeignore pattern list for Claude Code, plus the permissions.deny rules that actually block reads of secrets and build output.",
+    heroHeading: ".claudeignore generator: keep Claude Code out of secrets and build output",
+    heroSubheading:
+      "Choose the paths Claude Code should stay out of, then mirror the sensitive ones as deny rules it enforces. Runs in your browser; nothing is uploaded.",
+    overview:
+      "A `.claudeignore` file keeps one reviewable list of the paths Claude Code should stay out of: local secrets, build output and vendor folders. Claude Code's documented way to enforce that list is permission rules, so mirror sensitive paths as `Read(...)` entries under `permissions.deny` in `.claude/settings.json`. Claude Code then refuses to read those files, even when asked.",
     filePlacementGuide: [
       {
         path: "./.claudeignore",
-        scope: "Repository Root",
-        description: "Lists the directory and file patterns Claude Code should not read, search, or edit. Enforce secret paths with permissions.deny in .claude/settings.json."
-      }
+        scope: "Repo root",
+        description: "Your list of directory and file patterns Claude Code should not read, search or edit.",
+      },
+      {
+        path: ".claude/settings.json",
+        scope: "Enforcement",
+        description: "Deny rules for the sensitive paths, which Claude Code enforces. Commit it so the team shares them.",
+      },
     ],
     syntaxHighlights: [
       {
-        title: "Terminal Agent Boundary Control",
-        explanation: "Restricts Claude Code from touching sensitive configuration or temporary data.",
-        codeSample: `# Claude Code CLI Boundaries
+        title: "Pattern list",
+        explanation: "Paths Claude Code should stay out of, in `.gitignore` style.",
+        codeSample: `# Claude Code boundaries
 .env*
 secrets/
 coverage/
-*.log`
-      }
+*.log`,
+      },
+      {
+        title: "Enforced deny rules",
+        explanation: "The same sensitive paths as permission rules in `.claude/settings.json`.",
+        codeSample: `{
+  "permissions": {
+    "deny": ["Read(./.env)", "Read(./.env.*)", "Read(./secrets/**)"]
+  }
+}`,
+      },
     ],
     bestPractices: [
-      "Mirror secret paths such as .env* as Read(...) rules under permissions.deny in .claude/settings.json, which Claude Code enforces.",
-      "Ignore large generated databases (sqlite.db) and test fixtures to keep agent searches fast.",
-      "Combine with CLAUDE.md for comprehensive guidance and boundary enforcement."
+      "Mirror secret paths such as `.env*` as `Read(...)` rules under `permissions.deny` in `.claude/settings.json`, which Claude Code enforces.",
+      "Exclude large generated databases (`*.sqlite`) and fixtures to keep searches fast.",
+      "Use it with `CLAUDE.md`: the rules file says how to work, the deny rules say what is off limits.",
     ],
     faqs: [
       {
         question: "Does Claude Code enforce .claudeignore?",
-        answer: "Claude Code documents permission rules, not .claudeignore, as the way to block file access. Keep .claudeignore as your list of excluded paths and copy the sensitive ones into permissions.deny in .claude/settings.json, for example Read(./.env) and Read(./secrets/**)."
-      }
-    ]
+        answer:
+          "Claude Code documents permission rules, not .claudeignore, as the way to block file access. Keep .claudeignore as your list of excluded paths and copy the sensitive ones into permissions.deny in .claude/settings.json, for example Read(./.env) and Read(./secrets/**).",
+      },
+      {
+        question: "How do I stop Claude Code reading my .env file?",
+        answer:
+          "Add deny rules to `.claude/settings.json`, such as `Read(./.env)` and `Read(./.env.*)` under `permissions.deny`. Claude Code then refuses to read those files.",
+      },
+    ],
   },
   "llms-txt": {
     slug: "llms-txt",
@@ -595,46 +861,65 @@ coverage/
     badge: "llms.txt",
     targetFile: "llms.txt",
     targetDir: "./ (Repository Root / Domain Root)",
-    seoTitle: "llms.txt Codebase Roadmap Generator",
-    seoDescription: "Generate standardized llms.txt and llms-full.txt files. Provide clean, concise markdown roadmaps optimized for LLM ingestion and autonomous agents.",
-    heroHeading: "llms.txt Codebase Roadmap Generator",
-    heroSubheading: "Provide AI coding assistants with a clean, concise, machine-readable index of your architecture, rules, and APIs.",
-    overview: "The llms.txt specification is an open standard designed to make websites and repositories easily ingestible by Large Language Models. Placing an llms.txt file in your repository or web root provides a curated index of documentation, architectural patterns, and core constraints formatted in concise Markdown without unnecessary HTML or UI fluff.",
+    seoTitle: "llms.txt Generator & Examples",
+    seoDescription:
+      "Generate an llms.txt file: a Markdown index of your project's docs for language models, following the llms.txt proposal. Free, runs in your browser.",
+    heroHeading: "llms.txt generator: a Markdown map of your project for LLMs",
+    heroSubheading:
+      "List your key docs with one-line notes and download llms.txt for your repo or site root. Runs in your browser; nothing is uploaded.",
+    overview:
+      "llms.txt is a proposal, published by Jeremy Howard in 2024, for a Markdown file at `/llms.txt` that gives language models a short guide to a site or project: an H1 with the name, a blockquote summary, then sections of links with one-line notes. An `## Optional` section marks links a tool can skip when context is short. Some sites also publish `llms-full.txt` with the full text of their docs. Tools and agents read it only when they fetch it; no major search engine has said it uses llms.txt for ranking.",
     filePlacementGuide: [
       {
+        path: "https://example.com/llms.txt",
+        scope: "Site root",
+        description: "For documentation sites, next to robots.txt and sitemap.xml.",
+      },
+      {
         path: "./llms.txt",
-        scope: "Repository Root or Domain Root (https://example.com/llms.txt)",
-        description: "Primary orientation index read by agents, search engines, and web-crawling LLMs."
-      }
+        scope: "Repo root",
+        description: "A map of the codebase and its docs for agents working in the repo.",
+      },
     ],
     syntaxHighlights: [
       {
-        title: "Standardized llms.txt Markdown Format",
-        explanation: "H1 Title, blockquote summary, and structured sections with bullet points.",
-        codeSample: `# Project Name
+        title: "File structure",
+        explanation: "H1 name, blockquote summary, then H2 sections of links with notes.",
+        codeSample: `# Acme API
 
-> Brief machine-readable orientation for LLMs.
+> TypeScript SDK and REST API for Acme payments.
 
-## Core Invariants
-- Enforce strict typing with zero runtime any.
-- All mutations flow through Server Actions.`
-      }
+## Docs
+- [Quickstart](https://acme.dev/docs/quickstart.md): install and first request
+- [Errors](https://acme.dev/docs/errors.md): error codes and retries
+
+## Optional
+- [Changelog](https://acme.dev/changelog.md)`,
+      },
     ],
     bestPractices: [
-      "Keep llms.txt brief and high-density (under 200 lines) so it consumes minimal prompt tokens.",
-      "Link to deeper specification files like ARCHITECTURE.md or AGENTS.md for complex submodules.",
-      "Update llms.txt whenever major framework versions or API contracts change."
+      "Link to Markdown versions of pages where you have them; they are cheaper for models to read.",
+      "Write a one-line note for each link so a model can choose what to fetch.",
+      "Put nice-to-have links under `## Optional`.",
+      "Regenerate it when docs move, so the links do not break.",
     ],
     faqs: [
       {
         question: "What is llms.txt?",
-        answer: "llms.txt is a standardized proposal created to provide LLMs with concise, markdown-formatted information about a project or website, eliminating HTML scraping overhead."
+        answer:
+          "A proposed standard for a Markdown file at `/llms.txt` that tells language models what a site or project is and where its most useful docs are, as a short list of links with notes.",
       },
       {
-        question: "Can I serve llms.txt on my website?",
-        answer: "Yes! Serving https://yourdomain.com/llms.txt allows AI assistants (like Perplexity, Cursor, or ChatGPT) to quickly understand your developer documentation."
-      }
-    ]
+        question: "Does llms.txt help SEO?",
+        answer:
+          "Not directly. Google has not said it uses llms.txt, and search ranking does not depend on it. It helps tools and agents that fetch it, such as coding assistants reading your docs.",
+      },
+      {
+        question: "What is llms-full.txt?",
+        answer:
+          "A common companion file with the full text of your docs in one Markdown file, for tools that want everything at once instead of following links.",
+      },
+    ],
   },
   "architecture-md": {
     slug: "architecture-md",
@@ -643,39 +928,57 @@ coverage/
     badge: "ARCHITECTURE.md",
     targetFile: "ARCHITECTURE.md",
     targetDir: "./ (Repository Root)",
-    seoTitle: "ARCHITECTURE.md Generator for Agents",
-    seoDescription: "Generate production-grade ARCHITECTURE.md documents. Define data flows, state invariants, and negative architectural guardrails for AI coding assistants.",
-    heroHeading: "ARCHITECTURE.md System Spec Generator",
-    heroSubheading: "Teach AI agents your system architecture, unidirectional data flows, and non-negotiable boundaries.",
-    overview: "AI coding agents frequently propose solutions that work in isolation but violate broader architectural patterns. ARCHITECTURE.md establishes high-level invariants: state management boundaries, data mutation rules, service contracts, and forbidden anti-patterns that every AI agent must obey before proposing code changes.",
+    seoTitle: "ARCHITECTURE.md Generator & Template",
+    seoDescription:
+      "Generate an ARCHITECTURE.md: a short map of your codebase, its data flow and the invariants people and AI agents must not break. Free, in your browser.",
+    heroHeading: "ARCHITECTURE.md generator: a codemap and invariants for your repo",
+    heroSubheading:
+      "Describe the modules, how data flows and the rules that must hold, and download ARCHITECTURE.md. Runs in your browser; nothing is uploaded.",
+    overview:
+      "ARCHITECTURE.md is a convention, popularised by Aleksey Kladov's 2021 post, for a short document that explains a codebase from above: the main modules, where to find things, how data moves between them, and the invariants that must always hold. It changes less often than code, so it stays accurate. For AI agents it answers the question they most often get wrong: where a change belongs. Agents read it when your `CLAUDE.md` or `AGENTS.md` points to it, or when they explore the repo.",
     filePlacementGuide: [
       {
         path: "./ARCHITECTURE.md",
-        scope: "Repository Root",
-        description: "Authoritative architectural blueprint read by AI pair programmers and human engineers alike."
-      }
+        scope: "Repo root",
+        description: "Next to README.md. Link it from CLAUDE.md or AGENTS.md so agents read it before structural changes.",
+      },
     ],
     syntaxHighlights: [
       {
-        title: "State Flow & Boundary Directives",
-        explanation: "Defines unidirectional data flows and schema validation gates.",
-        codeSample: `## Data Flow & State Management
-1. Unidirectional flow: state flows top-down.
-2. Boundary validation: all inputs validated with Zod.
-3. Surgical edits: preserve surrounding code.`
-      }
+        title: "Codemap",
+        explanation: "Where things live, and what does not belong there.",
+        codeSample: `## Codemap
+- src/app/: routes and pages; no data access here.
+- src/server/: database queries and Server Actions.
+- src/lib/: pure helpers, no I/O.`,
+      },
+      {
+        title: "Invariants",
+        explanation: "Rules that must always hold, written so a reviewer can check them.",
+        codeSample: `## Invariants
+- Only src/server/ imports the database client.
+- Every Server Action validates input with Zod before writing.
+- src/lib/ has no side effects and no network calls.`,
+      },
     ],
     bestPractices: [
-      "Document architectural invariants rather than fleeting implementation details.",
-      "Explicitly list anti-patterns that AI models commonly attempt to introduce.",
-      "Keep the document updated during major architectural refactors."
+      "Describe what changes rarely: module boundaries and rules, not function names.",
+      "Write invariants as checkable statements, such as 'only X imports Y'.",
+      "Keep it short enough to read in a few minutes.",
+      "Reference it from CLAUDE.md or AGENTS.md so agents load it.",
     ],
     faqs: [
       {
-        question: "How is ARCHITECTURE.md different from CLAUDE.md or .cursorrules?",
-        answer: "CLAUDE.md and .cursorrules contain editor-specific triggers and commands. ARCHITECTURE.md provides deep architectural principles, data flows, and invariant contracts that apply across all tools."
-      }
-    ]
+        question: "How is ARCHITECTURE.md different from CLAUDE.md or AGENTS.md?",
+        answer:
+          "CLAUDE.md and AGENTS.md tell an agent how to work: commands, conventions and checks. ARCHITECTURE.md explains how the code is organised and which rules must hold, for people and agents alike. Link it from your rules file.",
+      },
+      {
+        question: "Do AI tools read ARCHITECTURE.md automatically?",
+        answer:
+          "Not by default. Point to it from `CLAUDE.md` (for example with `@ARCHITECTURE.md`) or from `AGENTS.md`, so agents read it before structural changes.",
+      },
+    ],
   },
   "prd-md": {
     slug: "prd-md",
@@ -684,39 +987,58 @@ coverage/
     badge: "Product Requirements",
     targetFile: "PRD.md",
     targetDir: "./",
-    seoTitle: "PRD.md Product Requirements Document Generator",
-    seoDescription: "Generate structured Product Requirements Documents (PRD.md) for autonomous AI coding agents with user personas, functional specs, and milestones.",
-    heroHeading: "PRD.md Generator for AI Agents",
-    heroSubheading: "Turn messy user stories into precise, machine-readable specifications that align Claude Code, Cursor, and Codex on core features.",
-    overview: "PRD.md provides an unambiguous product specification at the root of your project. Autonomous agents read this document to understand feature scope, user personas, functional requirements, and milestone boundaries without hallucinating unwanted features.",
+    seoTitle: "PRD.md Generator for AI Coding Agents",
+    seoDescription:
+      "Generate a PRD.md product requirements doc that AI coding agents can follow: goals, users, numbered requirements, scope and milestones. Free, in your browser.",
+    heroHeading: "PRD.md generator: product requirements for AI coding agents",
+    heroSubheading:
+      "Write goals, users, numbered requirements and milestones an agent can check its work against. Runs in your browser; nothing is uploaded.",
+    overview:
+      "PRD.md is a product requirements document kept in the repo as Markdown. It is a convention, not a file any tool loads by itself: your `CLAUDE.md` or `AGENTS.md` tells the agent to read it before building a feature. Because requirements are numbered (FR-1, FR-2) and scope is explicit, the agent can build what was asked, cite the requirement it is working on, and leave out what is marked out of scope.",
     filePlacementGuide: [
       {
         path: "./PRD.md",
-        scope: "Repository Root",
-        description: "Authoritative product requirements and roadmap read by AI pair programmers."
-      }
+        scope: "Repo root",
+        description: "Read before feature work, when your rules file says so.",
+      },
     ],
     syntaxHighlights: [
       {
-        title: "Personas & Functional Specifications",
-        explanation: "Structured tables defining user personas and numbered functional requirements.",
-        codeSample: `## 4. User Personas
-| Persona | Role | Primary Need |
+        title: "Requirements and scope",
+        explanation: "Numbered requirements and an explicit out-of-scope list.",
+        codeSample: `## Functional requirements
+- FR-1: Users can export a project as a ZIP from the editor toolbar.
+- FR-2: The export includes every file at its repo path.
+
+## Out of scope
+- Cloud sync and accounts.`,
+      },
+      {
+        title: "Personas",
+        explanation: "Who the product is for and what they need, in a table agents can scan.",
+        codeSample: `## Users
+| Persona | Role | Primary need |
 | :--- | :--- | :--- |
-| **Alex** | Full-Stack Dev | Private client-side execution |`
-      }
+| Alex | Full-stack developer | Private, in-browser tools |`,
+      },
     ],
     bestPractices: [
-      "Define numbered functional requirements (FR-1, FR-2) for easy referencing.",
-      "List strict non-functional constraints including privacy and performance.",
-      "Include clear milestone phasing so agents focus on the active sprint."
+      "Number requirements so agents and reviewers can refer to them.",
+      "List what is out of scope; it stops agents adding features nobody asked for.",
+      "Include measurable non-functional requirements: performance, privacy, accessibility.",
+      "Tell the agent in CLAUDE.md or AGENTS.md when to read it.",
     ],
     faqs: [
       {
-        question: "Why should a repository have a PRD.md?",
-        answer: "Without a PRD, AI coding agents often build features based on guesswork. PRD.md acts as the product north star for both agents and engineers."
-      }
-    ]
+        question: "Why keep a PRD.md in the repo?",
+        answer:
+          "So the agent works from the same requirements as the team. Without one it fills gaps with guesses; with one it can check its work against numbered requirements and an explicit out-of-scope list.",
+      },
+      {
+        question: "Do AI agents read PRD.md automatically?",
+        answer: "No. Add a line such as 'Read PRD.md before starting a feature' to your CLAUDE.md or AGENTS.md.",
+      },
+    ],
   },
   "design-md": {
     slug: "design-md",
@@ -725,39 +1047,57 @@ coverage/
     badge: "Design System & Architecture",
     targetFile: "DESIGN.md",
     targetDir: "./",
-    seoTitle: "DESIGN.md Design System & Architecture Generator",
-    seoDescription: "Generate StitchMCP-compatible DESIGN.md files with semantic design tokens, component patterns, and negative guardrails for AI agents.",
-    heroHeading: "DESIGN.md System & UI/UX Generator",
-    heroSubheading: "Semantic color tokens, component layout hierarchies, and strict negative design guardrails compatible with StitchMCP and modern LLMs.",
-    overview: "DESIGN.md serves as the single source of truth for your user interface design system and technical layout architecture. It ensures AI coding agents maintain consistent spacing, colors, typography, and strictly avoid forbidden UI anti-patterns.",
+    seoTitle: "DESIGN.md Generator for AI Agents",
+    seoDescription:
+      "Generate a DESIGN.md with design tokens, component patterns and UI rules so AI coding agents build interfaces that match your design system.",
+    heroHeading: "DESIGN.md generator: design tokens and UI rules for AI agents",
+    heroSubheading:
+      "Record colours, type, spacing, component patterns and what never to do, so generated UI matches your design system. Runs in your browser; nothing is uploaded.",
+    overview:
+      "DESIGN.md describes your design system in Markdown: colour and spacing tokens, the type scale, component patterns, and the UI mistakes to avoid. Agents that generate UI tend to invent new colours, spacing and components; a DESIGN.md gives them the existing ones to reuse. Like the other planning docs it is a convention, so tell the agent in `CLAUDE.md` or `AGENTS.md` to read it before UI work.",
     filePlacementGuide: [
       {
         path: "./DESIGN.md",
-        scope: "Repository Root",
-        description: "UI/UX design system tokens and component layout rules."
-      }
+        scope: "Repo root",
+        description: "Read before UI work, when your rules file says so.",
+      },
     ],
     syntaxHighlights: [
       {
-        title: "Semantic Color Tokens & Guardrails",
-        explanation: "Machine-readable color tokens and negative layout constraints.",
-        codeSample: `## Design Tokens
-- Canvas: #09090B
-- Card Surface: #18181B
-- Negative Guardrail: Never nest card containers inside another card container.`
-      }
+        title: "Design tokens",
+        explanation: "Tokens named by role, with the values your CSS or theme uses.",
+        codeSample: `## Tokens
+- canvas: #09090B
+- surface: #18181B
+- border: #27272A
+- accent: #EA580C`,
+      },
+      {
+        title: "Component rules",
+        explanation: "Which components to reuse, and the mistakes not to repeat.",
+        codeSample: `## Components
+- Buttons: <Button variant="primary|secondary|ghost"> from @/components/ui.
+- Never nest a card inside another card.
+- Icons: lucide-react, 16px in buttons, 20px in headings.`,
+      },
     ],
     bestPractices: [
-      "Keep design tokens semantic (canvas, surface, border, accent).",
-      "List negative guardrails to prevent AI from introducing messy nested cards.",
-      "Ensure valid markdown compatible with StitchMCP and design tools."
+      "Name tokens by role (canvas, surface, border, accent), not by colour.",
+      "Point to existing components to reuse instead of describing new ones.",
+      "Write negative rules for mistakes you have seen agents make.",
+      "Keep it in sync with your actual CSS or theme file.",
     ],
     faqs: [
       {
-        question: "Is DESIGN.md compatible with StitchMCP?",
-        answer: "Yes, our generated DESIGN.md follows the standard StitchMCP specification with semantic tokens, typography scales, and negative guardrails."
-      }
-    ]
+        question: "What goes in a DESIGN.md?",
+        answer:
+          "Design tokens (colours, spacing, radii, type), the components to reuse and how, layout rules, and a short list of things never to do, such as nesting cards or adding new colours.",
+      },
+      {
+        question: "Do AI agents read DESIGN.md automatically?",
+        answer: "No. Add 'Read DESIGN.md before UI work' to your CLAUDE.md or AGENTS.md.",
+      },
+    ],
   },
   "task-md": {
     slug: "task-md",
@@ -766,40 +1106,59 @@ coverage/
     badge: "Active Sprint Tracker",
     targetFile: "TASK.md",
     targetDir: "./",
-    seoTitle: "TASK.md Active Sprint & Task Tracker Generator",
-    seoDescription: "Generate machine-readable TASK.md sprint trackers with phase checklists, verification gates, and agent session logs.",
-    heroHeading: "TASK.md Sprint Tracker Generator",
-    heroSubheading: "Living sprint tracker for multi-agent workflows. Tracks task progress, verification gates, and keeps an audit log of every AI session.",
-    overview: "TASK.md is a living checklist that autonomous agents update during each coding session. It defines current milestone status, actionable task checklists, required quality gates (lint, build, test), and maintains an agent session log.",
+    seoTitle: "TASK.md Generator: Task Tracker for Agents",
+    seoDescription:
+      "Generate a TASK.md that AI coding agents read and update: the current milestone, a task checklist, verification commands and a session log.",
+    heroHeading: "TASK.md generator: a task list your agents keep up to date",
+    heroSubheading:
+      "Track the current milestone, the checks a task must pass and a log of each agent session. Runs in your browser; nothing is uploaded.",
+    overview:
+      "TASK.md is a Markdown checklist for the current milestone that agents read at the start of a session and update at the end. It records what is done, in progress and next, the commands that must pass before a task counts as done, and a short log of each session. It is a convention: your `CLAUDE.md` or `AGENTS.md` should tell the agent to read and update it.",
     filePlacementGuide: [
       {
         path: "./TASK.md",
-        scope: "Repository Root",
-        description: "Active sprint tracker updated dynamically by AI agents."
-      }
+        scope: "Repo root",
+        description: "Read at session start and updated at the end, when your rules file says so.",
+      },
     ],
     syntaxHighlights: [
       {
-        title: "Quality Gates & Task Checklists",
-        explanation: "Checklist states [x], [/], [ ] with mandatory verification gates.",
-        codeSample: `## Verification Commands
-npm run lint && npm run build
+        title: "Checklist and checks",
+        explanation: "Task states and the commands that decide when a task is done.",
+        codeSample: `## Milestone 2: Export
+- [x] ZIP export from the toolbar
+- [/] Include hidden files in the export
+- [ ] Export progress indicator
 
-## Agent Session Log
-| Date | Agent | Action | Result |`
-      }
+## Verification
+npm run lint && npm test && npm run build`,
+      },
+      {
+        title: "Session log",
+        explanation: "One row per agent session, so the next session knows what happened.",
+        codeSample: `## Session log
+| Date | Agent | Change | Result |
+| :--- | :--- | :--- | :--- |
+| 2026-10-12 | Claude Code | Hidden files in ZIP | Checks passed |`,
+      },
     ],
     bestPractices: [
-      "Mark tasks as [x] completed, [/] in progress, [ ] pending.",
-      "Specify exact shell commands for quality verification gates.",
-      "Require agents to append a session log row upon completing work."
+      "Mark tasks `[x]` done, `[/]` in progress and `[ ]` pending.",
+      "List the exact commands a task must pass before it is marked done.",
+      "Ask agents to add a session log row when they finish.",
+      "Keep only the current milestone in detail; archive finished ones.",
     ],
     faqs: [
       {
         question: "How do agents use TASK.md?",
-        answer: "Agents read TASK.md at session start to pick up active tasks, run verification commands after coding, and log their completed actions before ending."
-      }
-    ]
+        answer:
+          "They read it at session start to pick up the active task, run the verification commands after making changes, and log what they did before finishing.",
+      },
+      {
+        question: "Do agents update TASK.md automatically?",
+        answer: "Only if your rules tell them to. Add 'Read TASK.md first and update it when you finish' to your CLAUDE.md or AGENTS.md.",
+      },
+    ],
   },
   "memory-md": {
     slug: "memory-md",
@@ -808,39 +1167,56 @@ npm run lint && npm run build
     badge: "Persistent Agent Brain",
     targetFile: "MEMORY.md",
     targetDir: "./",
-    seoTitle: "MEMORY.md Persistent Agent Brain & ADRs Generator",
-    seoDescription: "Generate MEMORY.md files containing Architectural Decision Records (ADRs), operational gotchas, and 5-step agent execution protocols.",
-    heroHeading: "MEMORY.md Persistent Agent Brain",
-    heroSubheading: "Persistent memory for AI coding agents. Retains ADRs, known pitfalls, and execution protocols across model context resets.",
-    overview: "MEMORY.md solves agent context amnesia. It persists architectural decisions, operational gotchas, and key codebase paths across separate agent sessions, ensuring new sessions do not repeat past mistakes.",
+    seoTitle: "MEMORY.md Generator for AI Coding Agents",
+    seoDescription:
+      "Generate a MEMORY.md that keeps decisions (ADRs), gotchas and key paths across AI agent sessions, so new sessions do not repeat old mistakes.",
+    heroHeading: "MEMORY.md generator: decisions and lessons that outlast a session",
+    heroSubheading:
+      "Record architecture decisions, known gotchas and key paths so every new agent session starts from them. Runs in your browser; nothing is uploaded.",
+    overview:
+      "Agents start each session without memory of the last one. MEMORY.md is a Markdown file where decisions (as numbered architecture decision records), known gotchas and important paths are written down, so the next session starts from them instead of rediscovering them. It is a convention: tell the agent in `CLAUDE.md` or `AGENTS.md` to read it at the start and add lessons at the end.",
     filePlacementGuide: [
       {
         path: "./MEMORY.md",
-        scope: "Repository Root",
-        description: "Persistent memory bank and Architectural Decision Records (ADRs)."
-      }
+        scope: "Repo root",
+        description: "Read at session start; agents append lessons and decisions, when your rules file says so.",
+      },
     ],
     syntaxHighlights: [
       {
-        title: "Architectural Decision Records (ADR)",
-        explanation: "Immutable record of technical decisions and trade-offs.",
-        codeSample: `### ADR-001: Client-Side Sandbox
-- **Decision**: Execute all tools in browser runtime.
-- **Rationale**: 100% privacy, zero server latency.`
-      }
+        title: "Architecture decision record",
+        explanation: "A numbered decision with its reason, so it is not reopened by the next session.",
+        codeSample: `### ADR-001: Process files in the browser
+- Decision: All parsing runs client-side; no upload endpoints.
+- Reason: Users paste secrets and private code.
+- Consequence: Large files are limited by browser memory.`,
+      },
+      {
+        title: "Gotchas",
+        explanation: "Traps an agent would otherwise hit again.",
+        codeSample: `## Gotchas
+- Monaco must be imported with next/dynamic and ssr: false.
+- \`npm run build\` uses webpack, not Turbopack; do not change it.`,
+      },
     ],
     bestPractices: [
-      "Document architectural decisions as immutable ADRs with numbers.",
-      "List operational gotchas that models repeatedly struggle with.",
-      "Define the agent execution loop protocol explicitly."
+      "Number decisions (ADR-001, ADR-002) and never rewrite old ones; add a new one that supersedes it.",
+      "Write down gotchas the moment an agent hits them.",
+      "Keep entries short and factual so the file stays cheap to load.",
+      "Remove entries that are no longer true.",
     ],
     faqs: [
       {
-        question: "How does MEMORY.md prevent agent hallucinations?",
-        answer: "By documenting past architectural decisions and known gotchas, incoming agents immediately know what patterns are forbidden and why."
-      }
-    ]
-  }
+        question: "How does MEMORY.md help AI agents?",
+        answer:
+          "It gives each new session the decisions and lessons from earlier ones: what was decided and why, and which traps to avoid. Without it, agents repeat past mistakes or reopen settled questions.",
+      },
+      {
+        question: "Do agents read MEMORY.md automatically?",
+        answer: "No. Add 'Read MEMORY.md at the start of each session and record new lessons in it' to your CLAUDE.md or AGENTS.md.",
+      },
+    ],
+  },
 };
 
 export const FORMAT_SLUG_ALIASES: Record<string, string> = {

@@ -40,7 +40,6 @@ export const metadata: Metadata = {
     "claude code skill template",
     "claude code agent skills",
     "cursor project rules",
-    "offline cursor rules generator",
   ],
   openGraph: {
     title: "AI Skill Studio: CLAUDE.md & Cursor Rules Generator | DevScratchpad",

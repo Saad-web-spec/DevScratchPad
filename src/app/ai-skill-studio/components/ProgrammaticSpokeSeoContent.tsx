@@ -21,6 +21,9 @@ import { getFormatHub } from "../../claude-skills/lib/formatHubs";
 import { getInstallCommands, copyToClipboard } from "../../claude-skills/lib/ruleGenerator";
 import { TOOLS_REGISTRY } from "@/lib/tools/registry";
 import { GitHubIcon } from "@/components/icons/AssistantBrandIcons";
+import { getSpokeFormatMeta } from "./spokeFormatMeta";
+
+const TOOL_COUNT = Object.keys(TOOLS_REGISTRY).length;
 
 const TOOL_MAPPINGS: { keywords: string[]; slugs: string[] }[] = [
   {
@@ -84,53 +87,6 @@ function CopyButton({ text, label }: { text: string; label?: string }) {
       )}
     </button>
   );
-}
-
-function getFormatMeta(formatSlug: string) {
-  switch (formatSlug) {
-    case "cursor-rules":
-      return {
-        pill: "CURSOR RULES",
-        scope: "Glob Pattern Auto-Match",
-        formatType: "Frontmatter MDC (.mdc)",
-        aiSupport: "Cursor IDE & Composer",
-      };
-    case "claude-skills":
-      return {
-        pill: "CLAUDE SKILL",
-        scope: "Trigger Phrase / CLI Tool",
-        formatType: "Folder Skill (SKILL.md)",
-        aiSupport: "Claude Code CLI & Desktop",
-      };
-    case "claude-md":
-      return {
-        pill: "CLAUDE.MD",
-        scope: "Root Workspace Context",
-        formatType: "Project Memory (.md)",
-        aiSupport: "Claude Code & Agent Workflows",
-      };
-    case "agents-md":
-      return {
-        pill: "AGENTS.MD",
-        scope: "Multi-Agent Root Invariants",
-        formatType: "Agent Standard (.md)",
-        aiSupport: "Antigravity, Codex & Windsurf",
-      };
-    case "mcp-config":
-      return {
-        pill: "MCP CONFIG",
-        scope: "Local stdio / JSON-RPC Process",
-        formatType: "JSON Schema (.mcp.json)",
-        aiSupport: "Claude Desktop & MCP Hosts",
-      };
-    default:
-      return {
-        pill: "AI RULEBOOK",
-        scope: "Project Context",
-        formatType: "Markdown / Config",
-        aiSupport: "Universal AI Assistants",
-      };
-  }
 }
 
 function TerminalInstallWidget({ route }: { route: ProgrammaticPresetRoute }) {
@@ -291,7 +247,7 @@ function TerminalInstallWidget({ route }: { route: ProgrammaticPresetRoute }) {
 
 export function ProgrammaticSpokeSeoContent({ route }: { route: ProgrammaticPresetRoute }) {
   const hub = getFormatHub(route.formatSlug);
-  const meta = getFormatMeta(route.formatSlug);
+  const meta = getSpokeFormatMeta(route.formatSlug);
 
   const sameFormatPresets = getPresetsByFormat(route.formatSlug).filter(
     (p) => p.presetSlug !== route.presetSlug
@@ -331,8 +287,7 @@ export function ProgrammaticSpokeSeoContent({ route }: { route: ProgrammaticPres
             </h1>
             <p className="text-sm sm:text-base leading-relaxed text-zinc-600 max-w-4xl">
               {route.description ? `${route.description} ` : ""}
-              {route.whyNeeded ? `${route.whyNeeded} ` : ""}
-              Engineered to eliminate LLM hallucinations, enforce strict deterministic conventions, and prevent architectural drift across Cursor IDE, Claude Code CLI{route.format === "mcp_json" ? ", Claude Desktop," : ""} and autonomous multi-agent pipelines.
+              {route.whyNeeded ?? ""}
             </p>
           </div>
 
@@ -387,53 +342,37 @@ export function ProgrammaticSpokeSeoContent({ route }: { route: ProgrammaticPres
         <section className="space-y-4">
           <div className="flex items-center gap-2 mb-2">
             <span className="text-xs font-mono text-orange-700 tracking-wider font-semibold uppercase">
-              02 / DRIFT ANALYSIS &amp; VALUE PROPOSITION
+              02 / WHY IT HELPS
             </span>
             <div className="h-px flex-1 bg-zinc-200" />
           </div>
 
           <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-zinc-900 flex items-center gap-2">
             <ShieldAlert className="w-5 h-5 text-orange-600" />
-            Failure Patterns Prevented for {route.techName}
+            What this file changes for {route.techName}
           </h2>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 pt-2">
-            {/* Column 1: Without This Rule */}
+            {/* Column 1: Without the file */}
             <div className="rounded-xl border border-rose-200 bg-rose-50/40 p-6 space-y-4">
-              <div className="flex items-center justify-between border-b border-rose-200 pb-3">
+              <div className="flex items-center border-b border-rose-200 pb-3">
                 <span className="flex items-center gap-2 text-rose-800 font-semibold text-xs font-mono uppercase tracking-wider">
                   <XCircle className="w-4 h-4 text-rose-600" />
-                  Without This Rule (Default LLM Behavior)
-                </span>
-                <span className="text-[10px] font-mono text-rose-700 bg-rose-100 px-2 py-0.5 rounded border border-rose-300 uppercase font-semibold">
-                  Vulnerable
+                  Without it
                 </span>
               </div>
 
               <div className="space-y-3 text-sm text-zinc-700 leading-relaxed">
                 <p>{route.whyNeeded}</p>
-                <div className="rounded-lg bg-white border border-rose-200 p-3.5 space-y-1.5 shadow-2xs">
-                  <div className="text-[11px] font-mono text-rose-800 uppercase tracking-wider font-semibold">
-                    Hallucination Symptoms
-                  </div>
-                  <ul className="text-xs text-zinc-600 space-y-1 list-disc list-inside">
-                    <li>Invokes deprecated or removed APIs from older model training weights</li>
-                    <li>Generates conflicting configuration files and invalid imports</li>
-                    <li>Silently drops type-safety, boundaries, or transaction isolation</li>
-                  </ul>
-                </div>
               </div>
             </div>
 
-            {/* Column 2: With This Rule */}
+            {/* Column 2: What the file tells the agent */}
             <div className="rounded-xl border border-[#fed7aa] bg-[#fff7ed]/50 p-6 space-y-4">
-              <div className="flex items-center justify-between border-b border-[#fed7aa] pb-3">
+              <div className="flex items-center border-b border-[#fed7aa] pb-3">
                 <span className="flex items-center gap-2 text-[#9a3412] font-semibold text-xs font-mono uppercase tracking-wider">
                   <CheckCircle2 className="w-4 h-4 text-[#ea580c]" />
-                  With This Rule (Guaranteed Invariants)
-                </span>
-                <span className="text-[10px] font-mono text-[#9a3412] bg-[#ffedd5] px-2 py-0.5 rounded border border-[#fed7aa] uppercase font-semibold">
-                  Deterministic
+                  What the file tells the agent
                 </span>
               </div>
 
@@ -454,14 +393,14 @@ export function ProgrammaticSpokeSeoContent({ route }: { route: ProgrammaticPres
           <section className="space-y-4">
             <div className="flex items-center gap-2 mb-2">
               <span className="text-xs font-mono text-orange-700 tracking-wider font-semibold uppercase">
-                03 / VERIFIED CODE PATTERNS
+                03 / CODE PATTERNS
               </span>
               <div className="h-px flex-1 bg-zinc-200" />
             </div>
 
             <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-zinc-900 flex items-center gap-2">
               <Code2 className="w-5 h-5 text-orange-600" />
-              Code Standards: Anti-Pattern vs Verified Implementation
+              {route.techName}: code to avoid and code to write instead
             </h2>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 pt-2">
@@ -473,7 +412,7 @@ export function ProgrammaticSpokeSeoContent({ route }: { route: ProgrammaticPres
                     <div className="flex items-center gap-2">
                       <XCircle className="w-3.5 h-3.5 text-rose-600" />
                       <span className="text-xs font-mono text-rose-800 font-semibold">
-                        Discouraged Anti-Pattern
+                        Avoid
                       </span>
                     </div>
                     <CopyButton text={route.exampleBad} />
@@ -493,7 +432,7 @@ export function ProgrammaticSpokeSeoContent({ route }: { route: ProgrammaticPres
                     <div className="flex items-center gap-2">
                       <CheckCircle2 className="w-3.5 h-3.5 text-[#ea580c]" />
                       <span className="text-xs font-mono text-[#9a3412] font-semibold">
-                        Verified Production Standard
+                        Write instead
                       </span>
                     </div>
                     <CopyButton text={route.exampleGood} />
@@ -571,11 +510,11 @@ export function ProgrammaticSpokeSeoContent({ route }: { route: ProgrammaticPres
                 </span>
                 <h3 className="text-base sm:text-lg font-bold text-zinc-900 flex items-center gap-2">
                   <CheckCircle2 className="w-4 h-4 text-[#ea580c] shrink-0" />
-                  <span>Step 3: Verify and Activate with AI Agent</span>
+                  <span>Step 3: Check that {meta.aiSupport} uses it</span>
                 </h3>
               </div>
               <p className="text-xs sm:text-sm text-zinc-600 leading-relaxed pl-0 sm:pl-8">
-                Launch your AI coding assistant ({meta.aiSupport}). The assistant will automatically discover <code>{route.targetFile}</code> in your repository and apply the architectural guardrails, type constraints, and verification protocols during code generation.
+                {meta.activation}
               </p>
             </div>
           </div>
@@ -686,15 +625,12 @@ export function ProgrammaticSpokeSeoContent({ route }: { route: ProgrammaticPres
                   <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-orange-800">
                     Format Pillar Hub
                   </span>
-                  <span className="rounded-full bg-orange-100 border border-orange-200 px-2 py-0.2 text-[10px] font-mono text-orange-800 font-medium">
-                    Comprehensive Manual
-                  </span>
                 </div>
                 <h4 className="text-sm font-bold text-zinc-900">
                   {hub.heroHeading}
                 </h4>
                 <p className="text-xs text-zinc-600 max-w-2xl">
-                  Inspect the complete specification manual, glob patterns, directory rules, and all available presets in our central directory.
+                  {hub.name}: how it works, where the file goes, and every {hub.badge} preset.
                 </p>
               </div>
               <Link
@@ -708,11 +644,11 @@ export function ProgrammaticSpokeSeoContent({ route }: { route: ProgrammaticPres
           )}
         </section>
 
-        {/* 6. Recommended Offline Developer Tools (Reciprocal Cross-Linking) */}
+        {/* 6. Related developer tools (reciprocal cross-linking) */}
         <section className="space-y-4 pt-4 border-t border-zinc-200">
           <div className="flex items-center gap-2 mb-2">
             <span className="text-xs font-mono text-orange-700 tracking-wider font-semibold uppercase">
-              06 / RECOMMENDED OFFLINE DEVELOPER TOOLS
+              06 / RELATED DEVELOPER TOOLS
             </span>
             <div className="h-px flex-1 bg-zinc-200" />
           </div>
@@ -721,17 +657,17 @@ export function ProgrammaticSpokeSeoContent({ route }: { route: ProgrammaticPres
             <div>
               <h3 className="text-lg font-bold text-zinc-900 flex items-center gap-2">
                 <Wrench className="w-4 h-4 text-orange-600" />
-                <span>Pair With {route.techName} Client-Side Utilities</span>
+                <span>Tools for {route.techName} work</span>
               </h3>
               <p className="text-xs text-zinc-600">
-                100% private, browser-based utilities to test, format, and inspect code generated by your AI rules.
+                Browser-based utilities to test, format and inspect the code your AI tool writes. Nothing you paste is uploaded.
               </p>
             </div>
             <Link
               href="/developer-tools"
               className="text-xs font-mono font-semibold text-orange-600 hover:text-orange-700 inline-flex items-center gap-1 shrink-0"
             >
-              <span>View All 28 Tools</span>
+              <span>View all {TOOL_COUNT} tools</span>
               <ArrowRight className="w-3.5 h-3.5" />
             </Link>
           </div>
@@ -799,7 +735,7 @@ export function ProgrammaticSpokeSeoContent({ route }: { route: ProgrammaticPres
                     Migrating from Legacy .cursorrules or CLAUDE.md?
                   </h4>
                   <p className="text-[11px] text-zinc-600 mt-0.5 leading-relaxed">
-                    Use our free, offline converter to transform monolithic rulebooks into modular Cursor .mdc, Claude SKILL.md, and Windsurf Cascade rules.
+                    Use the free, in-browser converter to turn one long rules file into Cursor .mdc, Claude SKILL.md or Windsurf rules.
                   </p>
                 </div>
               </div>

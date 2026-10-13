@@ -3,7 +3,12 @@ import Link from "next/link";
 import { ArrowRight, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getAllFormatHubs, getFormatHub, type FormatHubMeta } from "../claude-skills/lib/formatHubs";
-import { getPresetBySlug, type OutputFormat, type ProgrammaticPresetRoute } from "../claude-skills/lib/presetRegistry";
+import {
+  getPresetBySlug,
+  getPresetsByFormat,
+  type OutputFormat,
+  type ProgrammaticPresetRoute,
+} from "../claude-skills/lib/presetRegistry";
 import { generateContentFromRoute } from "../claude-skills/lib/ruleGenerator";
 import { CopyTextButton } from "./components/CopyTextButton";
 import { StudioSupportSection } from "./components/StudioSupportSection";
@@ -257,6 +262,113 @@ function InlineCode({ text }: { text: string }) {
 
 const h2Class = "text-xl font-semibold tracking-tight text-zinc-900 sm:text-2xl";
 const introClass = "max-w-3xl text-[15px] leading-7 text-zinc-600";
+const h3Class = "text-base font-semibold text-zinc-900";
+
+/* ---------------------------------------------------------------------------
+ * Format hub guide: shown first on /ai-skill-studio/<format>. Gives each hub
+ * its own copy (the shared sections below are the same on every hub) and
+ * links every preset page of the format.
+ * ------------------------------------------------------------------------- */
+
+function FormatGuide({ hub }: { hub: FormatHubMeta }) {
+  const presets = getPresetsByFormat(hub.slug);
+
+  return (
+    <>
+      <section id="about-format" aria-labelledby="about-format-heading" className="scroll-mt-24 space-y-10">
+        <div className="space-y-3">
+          <h2 id="about-format-heading" className={h2Class}>
+            {hub.name}: how it works
+          </h2>
+          <p className={introClass}>
+            <InlineCode text={hub.overview} />
+          </p>
+        </div>
+
+        {hub.filePlacementGuide.length > 0 && (
+          <div className="space-y-4">
+            <h3 className={h3Class}>Where the file goes</h3>
+            <ul className="border-b border-zinc-200">
+              {hub.filePlacementGuide.map((item) => (
+                <li
+                  key={item.path}
+                  className="grid gap-1 border-t border-zinc-200 py-3 text-sm leading-6 md:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_minmax(0,3fr)] md:gap-6"
+                >
+                  <code className="break-all font-mono text-[13px] font-medium text-zinc-900">{item.path}</code>
+                  <span className="text-zinc-500">{item.scope}</span>
+                  <span className="text-zinc-600">
+                    <InlineCode text={item.description} />
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        {hub.syntaxHighlights.length > 0 && (
+          <div className="space-y-4">
+            <h3 className={h3Class}>What goes in it</h3>
+            <div className="grid gap-6 md:grid-cols-2">
+              {hub.syntaxHighlights.map((sample) => (
+                <figure key={sample.title} className="space-y-2">
+                  <figcaption className="space-y-1">
+                    <span className="block text-sm font-medium text-zinc-900">{sample.title}</span>
+                    <span className="block text-sm leading-6 text-zinc-600">
+                      <InlineCode text={sample.explanation} />
+                    </span>
+                  </figcaption>
+                  <pre className="overflow-x-auto whitespace-pre-wrap break-words rounded-r-md border-l-2 border-orange-600 bg-zinc-50 px-4 py-3 font-mono text-[13px] leading-6 text-zinc-800">
+                    {sample.codeSample}
+                  </pre>
+                </figure>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {hub.bestPractices.length > 0 && (
+          <div className="space-y-4">
+            <h3 className={h3Class}>Tips</h3>
+            <ul className="max-w-3xl list-disc space-y-2 pl-5 text-[15px] leading-7 text-zinc-600 marker:text-zinc-400">
+              {hub.bestPractices.map((tip) => (
+                <li key={tip}>
+                  <InlineCode text={tip} />
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+      </section>
+
+      {presets.length > 0 && (
+        <section id="format-presets" aria-labelledby="format-presets-heading" className="scroll-mt-24 space-y-6">
+          <div className="space-y-2">
+            <h2 id="format-presets-heading" className={h2Class}>
+              {hub.badge} presets ({presets.length})
+            </h2>
+            <p className={introClass}>
+              Each one opens the generator with that file filled in for the stack. Change what you need, then copy or
+              download it.
+            </p>
+          </div>
+          <ul className="grid border-b border-zinc-200 sm:grid-cols-2 sm:gap-x-8 lg:grid-cols-3">
+            {presets.map((preset) => (
+              <li key={preset.presetSlug} className="border-t border-zinc-200 py-3">
+                <Link
+                  href={`/ai-skill-studio/${hub.slug}/${preset.presetSlug}`}
+                  className="text-[15px] font-medium text-zinc-900 transition-colors hover:text-orange-700"
+                >
+                  {preset.techName}
+                </Link>
+                <p className="text-[13px] text-zinc-500">{preset.category}</p>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+    </>
+  );
+}
 
 interface AiSkillStudioSeoContentProps {
   /** Hub slug of the format page being viewed; highlights its row in the file table. */
@@ -272,6 +384,7 @@ export function AiSkillStudioSeoContent({ activeFormatSlug, formatFaqs = [] }: A
     hubs: hubs.filter((hub) => rowInfoFor(hub).group === group.id),
   })).filter((group) => group.hubs.length > 0);
   const starters = buildStarters();
+  const activeHub = activeFormatSlug ? getFormatHub(activeFormatSlug) : null;
 
   return (
     <article
@@ -279,6 +392,9 @@ export function AiSkillStudioSeoContent({ activeFormatSlug, formatFaqs = [] }: A
       className="mt-8 w-full border-t border-zinc-200 bg-white px-4 py-16 text-zinc-700 sm:px-6 lg:px-8"
     >
       <div className="mx-auto max-w-7xl space-y-20">
+        {/* 0. Format hubs only: how this format works and all its presets */}
+        {activeHub && <FormatGuide hub={activeHub} />}
+
         {/* 1. Which file do I need? */}
         <section id="which-file" aria-labelledby="which-file-heading" className="scroll-mt-24 space-y-6">
           <div className="space-y-2">

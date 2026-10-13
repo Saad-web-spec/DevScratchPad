@@ -2,7 +2,9 @@ import { Metadata } from "next";
 import { notFound, permanentRedirect } from "next/navigation";
 import { getFormatHub, getAllFormatHubs } from "../../claude-skills/lib/formatHubs";
 import { ClaudeSkillsClient } from "../../claude-skills/ClaudeSkillsClient";
+import { getPresetsByFormat } from "../../claude-skills/lib/presetRegistry";
 import { AiSkillStudioSeoContent } from "../AiSkillStudioSeoContent";
+import { toPlainText } from "../components/studioFaqs";
 
 export function generateStaticParams() {
   return getAllFormatHubs().map((hub) => ({
@@ -79,6 +81,8 @@ export default async function FormatHubPage({
     permanentRedirect(`/ai-skill-studio/${hub.slug}`);
   }
 
+  const presets = getPresetsByFormat(hub.slug);
+
   const jsonLdGraph = {
     "@context": "https://schema.org",
     "@graph": [
@@ -113,17 +117,34 @@ export default async function FormatHubPage({
           },
         ],
       },
+      ...(presets.length > 0
+        ? [
+            {
+              "@type": "ItemList",
+              "@id": `https://www.devscratchpad.tech/ai-skill-studio/${hub.slug}#presets`,
+              name: `${hub.badge} presets`,
+              numberOfItems: presets.length,
+              itemListElement: presets.map((preset, index) => ({
+                "@type": "ListItem",
+                position: index + 1,
+                name: preset.techName,
+                url: `https://www.devscratchpad.tech/ai-skill-studio/${hub.slug}/${preset.presetSlug}`,
+              })),
+            },
+          ]
+        : []),
       ...(hub.faqs && hub.faqs.length > 0
         ? [
             {
               "@type": "FAQPage",
               "@id": `https://www.devscratchpad.tech/ai-skill-studio/${hub.slug}#faq`,
+              // Plain text of the visible FAQ, which renders backticks as <code>
               mainEntity: hub.faqs.map((faq) => ({
                 "@type": "Question",
-                name: faq.question,
+                name: toPlainText(faq.question),
                 acceptedAnswer: {
                   "@type": "Answer",
-                  text: faq.answer,
+                  text: toPlainText(faq.answer),
                 },
               })),
             },

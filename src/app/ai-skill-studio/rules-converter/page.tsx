@@ -4,9 +4,9 @@ import { ArrowLeft, Sparkles, HelpCircle, RefreshCw, Terminal, Layers } from "lu
 import { ConverterClient } from "./ConverterClient";
 
 export const metadata: Metadata = {
-  title: "Universal AI Rules Converter",
+  title: "Convert .cursorrules to CLAUDE.md & SKILL.md",
   description:
-    "Free, 100% offline AI rules converter. Deconstruct legacy .cursorrules and CLAUDE.md into modular Cursor .mdc, Claude SKILL.md, Windsurf Cascade, and GitHub Copilot instructions.",
+    "Free AI rules converter that runs in your browser. Split a .cursorrules or CLAUDE.md file into Cursor .mdc rules, Claude SKILL.md, Windsurf rules or Copilot instructions.",
   keywords: [
     "convert cursorrules to claude",
     "cursor rules to claude converter",
@@ -23,9 +23,9 @@ export const metadata: Metadata = {
     canonical: "https://www.devscratchpad.tech/ai-skill-studio/rules-converter",
   },
   openGraph: {
-    title: "Universal AI Rules Converter | DevScratchpad",
+    title: "Convert .cursorrules to CLAUDE.md & SKILL.md | DevScratchpad",
     description:
-      "Deconstruct monolithic .cursorrules or CLAUDE.md into modular Cursor .mdc, Claude SKILL.md, Windsurf Cascade, and GitHub Copilot instructions 100% offline.",
+      "Split a .cursorrules or CLAUDE.md file into Cursor .mdc rules, Claude SKILL.md, Windsurf rules or Copilot instructions. Runs in your browser; nothing is uploaded.",
     url: "https://www.devscratchpad.tech/ai-skill-studio/rules-converter",
     siteName: "DevScratchpad",
     type: "website",
@@ -40,9 +40,9 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Universal AI Rules Converter | DevScratchpad",
+    title: "Convert .cursorrules to CLAUDE.md & SKILL.md | DevScratchpad",
     description:
-      "Free offline converter: .cursorrules to Claude SKILL.md, Windsurf Cascade, and GitHub Copilot instructions.",
+      "Free in-browser converter: .cursorrules to Claude SKILL.md, CLAUDE.md, Windsurf rules and GitHub Copilot instructions.",
     images: [
       {
         url: "https://www.devscratchpad.tech/ai-skill-studio/opengraph-image",
@@ -185,7 +185,7 @@ export default function RulesConverterPage() {
           </h1>
 
           <p className="text-sm sm:text-base text-zinc-600 dark:text-zinc-400 max-w-3xl leading-relaxed">
-            Deconstruct legacy monolithic <code className="font-mono text-xs">.cursorrules</code>, <code className="font-mono text-xs">CLAUDE.md</code>, or custom system prompts into modular <strong>Cursor .mdc</strong>, <strong>Claude SKILL.md</strong>, <strong>Windsurf Cascade</strong>, and <strong>GitHub Copilot instructions</strong>. 100% offline with zero server transmission.
+            Deconstruct legacy monolithic <code className="font-mono text-xs">.cursorrules</code>, <code className="font-mono text-xs">CLAUDE.md</code>, or custom system prompts into modular <strong>Cursor .mdc</strong>, <strong>Claude SKILL.md</strong>, <strong>Windsurf Cascade</strong>, and <strong>GitHub Copilot instructions</strong>. Runs in your browser; nothing is uploaded.
           </p>
         </div>
 

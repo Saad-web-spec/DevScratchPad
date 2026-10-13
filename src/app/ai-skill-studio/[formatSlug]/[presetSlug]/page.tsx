@@ -10,6 +10,7 @@ import {
 import { getFormatHub, getAllFormatHubs } from "../../../claude-skills/lib/formatHubs";
 import { ClaudeSkillsClient } from "../../../claude-skills/ClaudeSkillsClient";
 import { ProgrammaticSpokeSeoContent } from "../../components/ProgrammaticSpokeSeoContent";
+import { getSpokeFormatMeta } from "../../components/spokeFormatMeta";
 
 export function generateStaticParams() {
   return getAllDynamicPresetRoutes().map((route) => ({
@@ -57,6 +58,7 @@ export default async function ProgrammaticPresetPage({
   }
 
   const hub = getFormatHub(formatSlug);
+  const formatMeta = getSpokeFormatMeta(route.formatSlug);
 
   const jsonLdGraph = {
     "@context": "https://schema.org",
@@ -102,8 +104,8 @@ export default async function ProgrammaticPresetPage({
           {
             "@type": "HowToStep",
             position: 3,
-            name: "Verify and Activate with AI Agent",
-            text: `Launch your AI coding assistant (Cursor IDE, Claude Code CLI, Windsurf, or Codex). The assistant will automatically discover ${route.targetFile} and apply the architectural guardrails.`,
+            name: `Check that ${formatMeta.aiSupport} uses it`,
+            text: formatMeta.activation,
             url: `https://www.devscratchpad.tech/ai-skill-studio/${formatSlug}/${route.presetSlug}#step-3`,
           },
         ],
@@ -117,10 +119,8 @@ export default async function ProgrammaticPresetPage({
         keywords: [
           route.techName,
           hub?.name || "AI Rules",
-          "Cursor rules",
-          "Claude Code skills",
-          "pSEO",
-          "Developer Tools",
+          route.targetFile.split("/").pop() || route.targetFile,
+          "AI coding agent rules",
         ],
         author: {
           "@type": "Organization",

@@ -215,6 +215,7 @@ node ./cli/bin/devscratchpad.mjs audit
 | 2026-10-11 | Claude Code (Opus) | Self-hosted fonts (Fontsource, replacing the CSP-blocked Google Fonts import) and Monaco (`public/monaco/vs` via `scripts/copy-monaco.mjs`; jsdelivr removed from the CSP; editor mount 17.3s → 1.5s); split `ClaudeSkillsClient.tsx` 6,334 → 4,363 lines into `GovernanceSections` (data-driven), `IgnoreShieldSuite`, `McpServerConfigCard`, `FormatSelector`, `TargetLocationCard`; fixed Ignore Shield cards toggling twice per click (plus the same pattern in convention/behavior tiles); untracked stray local files; added the `studio-tests.yml` CI workflow; 26/26 Playwright checks on localhost:3000 | ✅ All gates passed (validate-presets, lint 0 errors, 562 tests, build 869 routes exit 0) |
 | 2026-10-11 | Claude Code (Opus) | Behavior-preserving split of `ClaudeSkillsClient.tsx` 4,371 → 2,887 lines: pure helpers to `lib/` (`auditQuickFixes`, `cliInstall`, `contextSynthesis`, `shareState`, `editorFileName`, 113 new unit tests) and presentational JSX to `components/` (`AuditPanel`, `CliInstallPopover`, `EditorStatusBar`, `MobileStudioControls`, `CursorRuleScopeCard`, `IdentityActivationCard`, `StandardSkillCards`); Monaco, White Marker, manual-edit state, header and H1 left in place; SSR markup identical on 760 renders (17 formats × 38 UI states) and handler logic identical on generated inputs | Verified: tsc exit 0, eslint 0 errors (no warnings in new files), 688 tests, validate-presets pass; build not run (per request) |
 | 2026-10-11 | Claude Code (Opus) | Main site UI pass: monochrome workspace chrome and all 24 tool panels on shared `ToolChrome`, one `ShareMenu` (link / embed / image), Geist + Geist Mono, minimal Monaco theme, short tool guides without studio promos, tool bug fixes (XML indent, CSS/SVG/HTML minify, cert SAN/EKU, SSH MD5, curl-to-go imports, cron next runs, SVG preview xmlns); 24 tools checked at 1440 and 390 px with no console errors or horizontal overflow | ✅ tsc 0, lint 0 errors, 829 tests, validate-presets pass, build exit 0 |
+| 2026-10-13 | Claude Code (Opus) | Vercel Firewall (Bot Protection challenge, Huawei/Alibaba ASN deny, bypass for CLI/llms/sitemap/robots); AI Skill Studio SEO: unique hub guides linking every preset, accurate rewrite of all 17 hub texts, spoke titles/descriptions, removed overclaim boilerplate and "offline" copy, fixed synthesized format FAQs | ✅ tsc 0, lint 0 errors, 836 tests, validate-presets pass, build (see session) |
 
 ---
 
@@ -278,9 +279,24 @@ node ./cli/bin/devscratchpad.mjs audit
 - [x] `/skill`: fixed doubled "| DevScratchpad | DevScratchpad" title; added its own Twitter card (was falling back to the root card)
 - [x] GitHub repo: description, www homepage and 16 topics set
 - [x] Owner opt-out for analytics: `?exclude-me=1` on any page drops that browser's Analytics and Speed Insights events (`?exclude-me=0` re-enables)
-- [ ] Vercel Firewall: deny ASNs 55990 + 136907 (Huawei Cloud) and 45102 (Alibaba). They sent ~4.3k of 6.7k requests/day as headless Chrome
+- [x] Vercel Firewall: deny ASNs 55990 + 136907 (Huawei Cloud) and 45102 (Alibaba). They sent ~4.3k of 6.7k requests/day as headless Chrome (rule added 2026-10-13)
 - [ ] Resubmit sitemap in Search Console and request indexing for the 5 top spoke URLs
 - [ ] Publish `devscratchpad@2.3.0` and run the backlink plan (awesome lists, Stack Overflow, dev.to cross-posts)
+
+## 2026-10-13 — Bot Filtering & AI Skill Studio SEO
+
+- [x] Vercel Firewall: Bot Protection managed rule on (challenge), ASN deny rule, bypass rule for `/api/raw/*`, `/llms.txt`, `/llms-full.txt`, `/sitemap.xml`, `/robots.txt` (CLI and curl installs got 429 without it)
+- [x] Format hubs: hub-specific "How it works / Where the file goes / What goes in it / Tips" section and a linked list of every preset (hubs linked only 8 of their spokes; hubs were 79% identical)
+- [x] Rewrote all 17 hub texts in `formatHubs.ts` for accuracy (Copilot not used for completions, Gemini Gen AI SDK, `.mcp.json`, no literal tokens, no StitchMCP claim) and search intent (generator / template / examples titles)
+- [x] Hub JSON-LD: `ItemList` of presets; FAQ text via `toPlainText` to match the visible FAQ
+- [x] Spoke metadata: titles add "Template & Example" where they fit (44-char cap kept), cleaner tech names (no "MCP MCP", "Autonomous Agents", "Go (Golang)"); descriptions now 132–160 chars (282 of 333 were under 110)
+- [x] Spoke copy: removed identical overclaim boilerplate ("Guaranteed Invariants", "Hallucination Symptoms", "Engineered to eliminate hallucinations"), "offline" wording and the "pSEO" JSON-LD keyword; Step 3 says how each format is really loaded (`spokeFormatMeta.ts`)
+- [x] Synthesized format copy fixed: Cursor Agent (not Composer), Windsurf triggers (not Supercomplete), Copilot not inline completions, current Gemini models, `.claudeignore` needs `permissions.deny`, AGENTS.md readers
+- [x] Rules converter: search-intent title, "runs in your browser" instead of "100% offline"
+- [x] Removed dead `FormatHubSeoContent.tsx`
+- [ ] Search Console: resubmit sitemap, request indexing for the 17 hubs and top spokes after deploy
+- [ ] Watch GSC CTR on spokes for 4 weeks after the title change; revert the "Template & Example" suffix if CTR drops
+- [ ] Per-spoke OpenGraph images (all spokes share `og-ai-skill-studio.png`)
 
 ---
 

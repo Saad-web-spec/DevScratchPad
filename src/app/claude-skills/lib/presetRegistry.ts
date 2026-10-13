@@ -92,7 +92,7 @@ export const PRESET_ROUTES: ProgrammaticPresetRoute[] = [
     presetSlug: "nextjs-15",
     format: "cursor_mdc",
     presetId: "nextjs-pro",
-    title: "Next.js 15 Cursor Rules Generator (.mdc) | Free & Offline",
+    title: "Next.js 15 Cursor Rules Generator (.mdc)",
     description: "Generate strict Next.js 15 App Router Cursor rules with React Server Components, Server Actions, and Zod validation.",
     category: "Frontend",
     techName: "Next.js 15 App Router",
@@ -148,7 +148,7 @@ export function SaveItem() {
     presetSlug: "react-19",
     format: "cursor_mdc",
     presetId: "react-spa",
-    title: "React 19 Cursor Rules Generator (.mdc) | Free & Offline",
+    title: "React 19 Cursor Rules Generator (.mdc)",
     description: "Generate modern React 19 SPA Cursor rules enforcing custom hooks, TanStack query caching, and avoiding redundant useEffects.",
     category: "Frontend",
     techName: "React 19 & Vite",
@@ -193,7 +193,7 @@ export function BadItems({ items, query }: any) {
     presetSlug: "tailwind-v4",
     format: "cursor_mdc",
     presetId: "tailwind-v4",
-    title: "Tailwind CSS v4 Cursor Rules (.mdc) | Free & Offline",
+    title: "Tailwind CSS v4 Cursor Rules (.mdc)",
     description: "Generate Tailwind CSS v4 Cursor rules enforcing CSS-first theme configuration, @theme directives, and zero tailwind.config.js.",
     category: "Frontend",
     techName: "Tailwind CSS v4",
@@ -233,7 +233,7 @@ module.exports = {
     presetSlug: "fastapi",
     format: "cursor_mdc",
     presetId: "fastapi-ai",
-    title: "Python FastAPI Cursor Rules (.mdc) | Free & Offline",
+    title: "Python FastAPI Cursor Rules (.mdc)",
     description: "Generate strict Python FastAPI Cursor rules with Pydantic v2 schemas, async endpoints, and AI agent integrations.",
     category: "Backend",
     techName: "Python FastAPI & Pydantic v2",
@@ -277,7 +277,7 @@ def make_user(data: dict):
     presetSlug: "supabase",
     format: "cursor_mdc",
     presetId: "supabase-fullstack",
-    title: "Supabase & Postgres Cursor Rules (.mdc) | Free & Offline",
+    title: "Supabase & Postgres Cursor Rules (.mdc)",
     description: "Generate Supabase Cursor rules enforcing Row-Level Security (RLS), typed client queries, and Server Component auth guards.",
     category: "Fullstack & DB",
     techName: "Supabase & PostgreSQL",
@@ -305,7 +305,7 @@ def make_user(data: dict):
     presetSlug: "prisma",
     format: "cursor_mdc",
     presetId: "prisma-orm",
-    title: "Prisma ORM Cursor Rules (.mdc) | Free & Offline",
+    title: "Prisma ORM Cursor Rules (.mdc)",
     description: "Generate Prisma ORM Cursor rules enforcing transaction safety, indexed queries, and minimal payload selections.",
     category: "Fullstack & DB",
     techName: "Prisma ORM",
@@ -333,7 +333,7 @@ def make_user(data: dict):
     presetSlug: "drizzle",
     format: "cursor_mdc",
     presetId: "drizzle-orm",
-    title: "Drizzle ORM Cursor Rules (.mdc) | Free & Offline",
+    title: "Drizzle ORM Cursor Rules (.mdc)",
     description: "Generate Drizzle ORM Cursor rules with relational queries, type-safe SQL migrations, and prepared statements.",
     category: "Fullstack & DB",
     techName: "Drizzle ORM",
@@ -360,7 +360,7 @@ def make_user(data: dict):
     presetSlug: "go-fiber",
     format: "cursor_mdc",
     presetId: "go-fiber",
-    title: "Go Fiber Cursor Rules (.mdc) | Free & Offline",
+    title: "Go Fiber Cursor Rules (.mdc)",
     description: "Generate Go Fiber Cursor rules enforcing idiomatic error handling, context propagation, and zero-allocation routing.",
     category: "Backend",
     techName: "Go (Golang) & Fiber",
@@ -388,7 +388,7 @@ def make_user(data: dict):
     presetSlug: "rust-axum",
     format: "cursor_mdc",
     presetId: "rust-axum",
-    title: "Rust Axum Cursor Rules (.mdc) | Free & Offline",
+    title: "Rust Axum Cursor Rules (.mdc)",
     description: "Generate Rust Axum Cursor rules enforcing type-safe extractors, Result error handling, and Tokio async runtimes.",
     category: "Backend",
     techName: "Rust & Axum",
@@ -416,7 +416,7 @@ def make_user(data: dict):
     presetSlug: "vue-nuxt",
     format: "cursor_mdc",
     presetId: "vue-nuxt",
-    title: "Vue 3 & Nuxt 3 Cursor Rules (.mdc) | Free & Offline",
+    title: "Vue 3 & Nuxt 3 Cursor Rules (.mdc)",
     description: "Generate Vue 3 & Nuxt 3 Cursor rules with Composition API, script setup, and Nitro server routes.",
     category: "Frontend",
     techName: "Vue 3 & Nuxt 3",
@@ -444,7 +444,7 @@ def make_user(data: dict):
     presetSlug: "sveltekit",
     format: "cursor_mdc",
     presetId: "sveltekit",
-    title: "SvelteKit 5 Cursor Rules (.mdc) | Free & Offline",
+    title: "SvelteKit 5 Cursor Rules (.mdc)",
     description: "Generate SvelteKit 5 Cursor rules enforcing Svelte 5 Runes ($state, $derived), form actions, and load functions.",
     category: "Frontend",
     techName: "SvelteKit 5 & Svelte 5",
@@ -472,7 +472,7 @@ def make_user(data: dict):
     presetSlug: "cursor-rules-pro",
     format: "cursor_mdc",
     presetId: "cursor-mdc-pro",
-    title: "Cursor Rules Pro (.mdc) Generator | Free & Offline",
+    title: "Cursor Rules Pro (.mdc) Generator",
     description: "Generate modular, strict Cursor rules enforcing minimal diffs, zero-any typing, and pragmatic architecture.",
     category: "Specialist Persona",
     techName: "Universal Cursor Pro",
@@ -500,7 +500,7 @@ def make_user(data: dict):
     presetSlug: "vibe-coder",
     format: "cursor_mdc",
     presetId: "vibe-coder",
-    title: "Vibe Coder Cursor Rules (.mdc) | Free & Offline",
+    title: "Vibe Coder Cursor Rules (.mdc)",
     description: "Generate high-velocity, pragmatic vibe coding Cursor rules prioritizing fast feedback loops and flat structures.",
     category: "Specialist Persona",
     techName: "Pragmatic Rapid Prototyping",
@@ -528,7 +528,7 @@ def make_user(data: dict):
     presetSlug: "security-guard",
     format: "cursor_mdc",
     presetId: "security-guard",
-    title: "Security Guard Cursor Rules (.mdc) | Free & Offline",
+    title: "Security Guard Cursor Rules (.mdc)",
     description: "Generate strict security Cursor rules focused on mitigating SQL injection, XSS, and insecure endpoints.",
     category: "Specialist Persona",
     techName: "Zero-Trust Security",
@@ -556,7 +556,7 @@ def make_user(data: dict):
     presetSlug: "docker-devops",
     format: "cursor_mdc",
     presetId: "docker-devops",
-    title: "Docker & DevOps Cursor Rules (.mdc) | Free & Offline",
+    title: "Docker & DevOps Cursor Rules (.mdc)",
     description: "Generate Docker & DevOps Cursor rules enforcing multi-stage builds, non-root users, and minimal Alpine/Debian base images.",
     category: "DevOps & Tooling",
     techName: "Docker & CI/CD",
@@ -584,7 +584,7 @@ def make_user(data: dict):
     presetSlug: "tdd-specialist",
     format: "cursor_mdc",
     presetId: "tdd-specialist",
-    title: "TDD & Testing Cursor Rules (.mdc) | Free & Offline",
+    title: "TDD & Testing Cursor Rules (.mdc)",
     description: "Generate Test-Driven Development Cursor rules enforcing Vitest/Jest unit tests, edge-case coverage, and mocking discipline.",
     category: "Specialist Persona",
     techName: "Vitest & Playwright TDD",
@@ -1241,7 +1241,7 @@ namespace App.Controllers
     presetSlug: "codebase-auditor",
     format: "skill_md",
     presetId: "claude-auditor",
-    title: "Codebase Auditor Claude Skill (.md) | Free & Offline",
+    title: "Codebase Auditor Claude Skill (.md)",
     description: "Generate a Claude Code codebase auditing skill to identify structural health, security flaws, and performance anti-patterns.",
     category: "Specialist Persona",
     techName: "Automated Code Reviewer",
@@ -1270,7 +1270,7 @@ namespace App.Controllers
     presetSlug: "nextjs-15",
     format: "skill_md",
     presetId: "nextjs-pro",
-    title: "Next.js 15 Claude Skill (.md) | Free & Offline",
+    title: "Next.js 15 Claude Skill (.md)",
     description: "Generate a Next.js 15 Claude Code skill to enforce RSCs, Server Actions, and Tailwind CSS v4.",
     category: "Frontend",
     techName: "Next.js 15 App Router",
@@ -1298,7 +1298,7 @@ namespace App.Controllers
     presetSlug: "security-guard",
     format: "skill_md",
     presetId: "security-guard",
-    title: "Security Guard Claude Skill (.md) | Free & Offline",
+    title: "Security Guard Claude Skill (.md)",
     description: "Generate a security auditing Claude Code skill focused on identifying vulnerabilities and API key leaks.",
     category: "Specialist Persona",
     techName: "Security Vulnerability Auditor",
@@ -1325,7 +1325,7 @@ namespace App.Controllers
     presetSlug: "fastapi",
     format: "skill_md",
     presetId: "fastapi-ai",
-    title: "Python FastAPI Claude Skill (.md) | Free & Offline",
+    title: "Python FastAPI Claude Skill (.md)",
     description: "Generate a strict Python FastAPI Claude Code skill prioritizing asynchronous routing and Pydantic validation.",
     category: "Backend",
     techName: "Python FastAPI & AI",
@@ -1356,7 +1356,7 @@ namespace App.Controllers
     presetSlug: "nextjs-15",
     format: "claude_md",
     presetId: "nextjs-pro",
-    title: "Next.js 15 CLAUDE.md Generator | Free & Offline",
+    title: "Next.js 15 CLAUDE.md Generator",
     description: "Generate a Next.js 15 CLAUDE.md repository instruction file with App Router conventions.",
     category: "Frontend",
     techName: "Next.js 15 App Router",
@@ -1383,7 +1383,7 @@ namespace App.Controllers
     presetSlug: "fastapi",
     format: "claude_md",
     presetId: "fastapi-ai",
-    title: "FastAPI CLAUDE.md Generator | Free & Offline",
+    title: "FastAPI CLAUDE.md Generator",
     description: "Generate a Python FastAPI CLAUDE.md repository instruction file with async backend conventions.",
     category: "Backend",
     techName: "Python FastAPI",
@@ -1410,7 +1410,7 @@ namespace App.Controllers
     presetSlug: "react-19",
     format: "claude_md",
     presetId: "react-spa",
-    title: "React 19 CLAUDE.md Generator | Free & Offline",
+    title: "React 19 CLAUDE.md Generator",
     description: "Generate a React 19 CLAUDE.md repository guide with Vite, TypeScript, and custom hook guidelines.",
     category: "Frontend",
     techName: "React 19 & Vite",
@@ -1437,7 +1437,7 @@ namespace App.Controllers
     presetSlug: "go-fiber",
     format: "claude_md",
     presetId: "go-fiber",
-    title: "Go Fiber CLAUDE.md Generator | Free & Offline",
+    title: "Go Fiber CLAUDE.md Generator",
     description: "Generate a Go Fiber CLAUDE.md repository file with Go build commands and testing standards.",
     category: "Backend",
     techName: "Go & Fiber",
@@ -1464,7 +1464,7 @@ namespace App.Controllers
     presetSlug: "rust-axum",
     format: "claude_md",
     presetId: "rust-axum",
-    title: "Rust Axum CLAUDE.md Generator | Free & Offline",
+    title: "Rust Axum CLAUDE.md Generator",
     description: "Generate a Rust Axum CLAUDE.md repository guide with cargo test, clippy, and error handling rules.",
     category: "Backend",
     techName: "Rust & Axum",
@@ -1495,12 +1495,12 @@ namespace App.Controllers
     presetSlug: "nextjs-15",
     format: "agents_md",
     presetId: "nextjs-pro",
-    title: "Next.js 15 AGENTS.md Generator | Free & Offline",
+    title: "Next.js 15 AGENTS.md Generator",
     description: "Generate a Next.js 15 AGENTS.md specification file for autonomous AI coding agents.",
     category: "Frontend",
     techName: "Next.js 15 Autonomous Agents",
     targetFile: "AGENTS.md",
-    whyNeeded: "Autonomous coding agents (such as Antigravity, Devin, Codex) require clear validation gates and scope constraints before making multi-file modifications.",
+    whyNeeded: "Autonomous coding agents (such as Codex, Cursor and GitHub Copilot's coding agent) require clear validation gates and scope constraints before making multi-file modifications.",
     keyRules: [
       "Require build verification (`npm run build`) before submitting code.",
       "Enforce React Server Components and Server Actions.",
@@ -1522,7 +1522,7 @@ namespace App.Controllers
     presetSlug: "fastapi",
     format: "agents_md",
     presetId: "fastapi-ai",
-    title: "FastAPI AGENTS.md Generator | Free & Offline",
+    title: "FastAPI AGENTS.md Generator",
     description: "Generate a Python FastAPI AGENTS.md specification file for autonomous AI coding agents.",
     category: "Backend",
     techName: "Python FastAPI Autonomous Agents",
@@ -1549,7 +1549,7 @@ namespace App.Controllers
     presetSlug: "fullstack-agent-team",
     format: "agents_md",
     presetId: "fullstack-agent-team",
-    title: "Fullstack Multi-Agent Team AGENTS.md Generator | Free & Offline",
+    title: "Fullstack Multi-Agent Team AGENTS.md Generator",
     description: "Create a universal multi-agent team AGENTS.md coordinating frontend, backend, and security subagents.",
     category: "Specialist Persona",
     techName: "Multi-Agent System Orchestration",
@@ -1580,7 +1580,7 @@ namespace App.Controllers
     presetSlug: "github",
     format: "mcp_json",
     presetId: "github",
-    title: "GitHub MCP Server Config Generator | Free & Offline",
+    title: "GitHub MCP Server Config Generator",
     description: "Generate a GitHub Model Context Protocol (MCP) server configuration block.",
     category: "MCP Server",
     techName: "GitHub Operations MCP",
@@ -1607,7 +1607,7 @@ namespace App.Controllers
     presetSlug: "postgres",
     format: "mcp_json",
     presetId: "postgres",
-    title: "PostgreSQL MCP Server Config Generator | Free & Offline",
+    title: "PostgreSQL MCP Server Config Generator",
     description: "Generate a PostgreSQL Model Context Protocol (MCP) server configuration block.",
     category: "MCP Server",
     techName: "PostgreSQL Database MCP",
@@ -1634,7 +1634,7 @@ namespace App.Controllers
     presetSlug: "filesystem",
     format: "mcp_json",
     presetId: "filesystem",
-    title: "Filesystem MCP Server Config Generator | Free & Offline",
+    title: "Filesystem MCP Server Config Generator",
     description: "Generate a local Filesystem Model Context Protocol (MCP) server configuration block.",
     category: "MCP Server",
     techName: "Local Filesystem MCP",
@@ -1661,7 +1661,7 @@ namespace App.Controllers
     presetSlug: "sqlite",
     format: "mcp_json",
     presetId: "sqlite",
-    title: "SQLite MCP Server Config Generator | Free & Offline",
+    title: "SQLite MCP Server Config Generator",
     description: "Generate a local SQLite Model Context Protocol (MCP) server config for Claude and Cursor.",
     category: "MCP Server",
     techName: "SQLite Database MCP",
@@ -1688,7 +1688,7 @@ namespace App.Controllers
     presetSlug: "brave-search",
     format: "mcp_json",
     presetId: "brave-search",
-    title: "Brave Search MCP Server Config Generator | Free & Offline",
+    title: "Brave Search MCP Server Config Generator",
     description: "Generate a Brave Search Model Context Protocol (MCP) server config for live web access.",
     category: "MCP Server",
     techName: "Brave Web Search MCP",
@@ -1715,7 +1715,7 @@ namespace App.Controllers
     presetSlug: "fetch",
     format: "mcp_json",
     presetId: "fetch",
-    title: "Web Fetch & Markdown MCP Server Config | Free & Offline",
+    title: "Web Fetch & Markdown MCP Server Config",
     description: "Generate a Web Fetch MCP server configuration block to parse web pages into markdown.",
     category: "MCP Server",
     techName: "Web Fetch & Markdown MCP",
@@ -1769,7 +1769,7 @@ namespace App.Controllers
     presetSlug: "docker",
     format: "mcp_json",
     presetId: "docker",
-    title: "Docker MCP Server Config Generator | Free & Offline",
+    title: "Docker MCP Server Config Generator",
     description: "Generate a Docker Model Context Protocol (MCP) server config for container inspection.",
     category: "MCP Server",
     techName: "Docker Engine MCP",
@@ -1796,7 +1796,7 @@ namespace App.Controllers
     presetSlug: "memory",
     format: "mcp_json",
     presetId: "memory",
-    title: "Knowledge Graph Memory MCP Server Config | Free & Offline",
+    title: "Knowledge Graph Memory MCP Server Config",
     description: "Generate a Knowledge Graph Memory MCP server configuration block for persistent agent recall.",
     category: "MCP Server",
     techName: "Knowledge Graph Memory MCP",
@@ -1966,15 +1966,15 @@ function synthesizeRouteForFormat(
   let targetFile = `.cursor/rules/${normalizedPreset}.mdc`;
   let title = `${baseRoute.techName} Cursor Rules (.mdc)`;
   let desc = `Generate production-grade Cursor rules (.mdc) for ${baseRoute.techName} with glob scoping and strict guardrails.`;
-  let whyNeeded = `${baseRoute.techName} applications require strict, glob-scoped Cursor rules (.cursor/rules/*.mdc) with alwaysApply: false frontmatter. Without explicit project rules, Cursor Composer frequently hallucinates legacy conventions and produces oversized diffs. This rulebook anchors the model to modern ${baseRoute.techName} idiomatic standards.`;
+  let whyNeeded = `${baseRoute.techName} projects benefit from glob-scoped Cursor project rules (.cursor/rules/*.mdc) with alwaysApply: false, so the rules load only when matching files are in play. Without them, Cursor's agent falls back on conventions from its training data, which are often a version or two behind, and tends to change more than it needs to. This rule gives it the current ${baseRoute.techName} conventions instead.`;
   let faqs = [
     {
       question: `Where should this ${baseRoute.techName} rule be placed?`,
-      answer: `Save to .cursor/rules/${normalizedPreset}.mdc in your project root. Cursor IDE automatically discovers and scopes it based on file globs.`,
+      answer: `Save it as .cursor/rules/${normalizedPreset}.mdc in your project. Cursor finds it automatically and attaches it when files matching its globs are in play.`,
     },
     {
-      question: `Does this rule support Cursor Composer?`,
-      answer: `Yes. Composer parses .cursor/rules/*.mdc to generate surgical multi-file diffs adhering strictly to ${baseRoute.techName} conventions.`,
+      question: `Does this rule work in Cursor's Agent and inline edit?`,
+      answer: `Yes. Project rules in .cursor/rules/ are used by Cursor's Agent, chat and inline edit (Ctrl+K) when the rule's globs match the files involved, or when you @-mention the rule.`,
     },
   ];
 
@@ -1991,7 +1991,7 @@ function synthesizeRouteForFormat(
       },
       {
         question: `Can I invoke this skill manually?`,
-        answer: `Yes. You can trigger the skill via slash commands or natural language requests like "Apply ${baseRoute.techName} standards".`,
+        answer: `Yes. Type / followed by the skill's name in Claude Code, or ask for the task in plain words, for example "review this change against our ${baseRoute.techName} conventions".`,
       },
     ];
   } else if (canonicalFormat === "claude-md") {
@@ -2019,27 +2019,27 @@ function synthesizeRouteForFormat(
     faqs = [
       {
         question: `What agents read AGENTS.md?`,
-        answer: `Antigravity, Codex, Devin, Claude, and custom multi-agent orchestration frameworks read AGENTS.md at repository root.`,
+        answer: `OpenAI Codex, Cursor, GitHub Copilot's coding agent, Google Jules and many other agents read AGENTS.md from the repository root. Claude Code reads CLAUDE.md, which can import it with @AGENTS.md.`,
       },
       {
         question: `How are verification gates enforced?`,
-        answer: `AGENTS.md defines required command exit codes (e.g. build and lint must exit 0) that autonomous agents must prove before completing tasks.`,
+        answer: `AGENTS.md lists the commands that must pass, for example build and lint exiting 0. Agents that read it run them before they finish, but nothing enforces them outside your CI, so run the same checks there.`,
       },
     ];
   } else if (canonicalFormat === "windsurf-rules" || canonicalFormat === "windsurf") {
     format = "windsurf_cascade";
     targetFile = `.windsurf/rules/${normalizedPreset}.md`;
     title = `${baseRoute.techName} Windsurf Cascade Rules`;
-    desc = `Generate production Windsurf Cascade rules for ${baseRoute.techName} with Supercomplete steering.`;
-    whyNeeded = `Windsurf Cascade leverages targeted rules in .windsurf/rules/ to steer Supercomplete and terminal workflows. This rulebook constrains ${baseRoute.techName} code suggestions to production patterns, avoiding deprecated syntax and unstable package imports.`;
+    desc = `Generate Windsurf Cascade rules for ${baseRoute.techName} in .windsurf/rules/, with the stack's conventions and checks.`;
+    whyNeeded = `Windsurf's Cascade agent reads rules from .windsurf/rules/. This rule gives Cascade the ${baseRoute.techName} conventions, commands and patterns to avoid, so its edits follow the stack instead of generic or outdated defaults.`;
     faqs = [
       {
         question: `Where do I save this Windsurf rule?`,
-        answer: `Place this file in .windsurf/rules/${normalizedPreset}.md at your repository root. Windsurf Cascade automatically applies it during pair programming.`,
+        answer: `Save it as .windsurf/rules/${normalizedPreset}.md in your project. Cascade picks up rules in that folder automatically.`,
       },
       {
-        question: `Does this rule work with Windsurf Supercomplete?`,
-        answer: `Yes, Windsurf uses these architectural directives to improve both Cascade chat generation and inline code autocompletions.`,
+        question: `When does Windsurf apply this rule?`,
+        answer: `According to the trigger in its frontmatter: always on, on a glob match, when Cascade decides the description fits the task, or when you @-mention it.`,
       },
     ];
   } else if (canonicalFormat === "copilot-instructions" || canonicalFormat === "copilot") {
@@ -2047,15 +2047,15 @@ function synthesizeRouteForFormat(
     targetFile = ".github/copilot-instructions.md";
     title = `${baseRoute.techName} GitHub Copilot Instructions`;
     desc = `Generate .github/copilot-instructions.md repository rules for ${baseRoute.techName}.`;
-    whyNeeded = `GitHub Copilot in VS Code and JetBrains references .github/copilot-instructions.md to shape chat responses and inline completions. Defining ${baseRoute.techName} architectural boundaries guarantees that suggested snippets adhere to your repository's conventions.`;
+    whyNeeded = `GitHub Copilot adds .github/copilot-instructions.md to Copilot Chat, code review and coding agent requests in the repository. Writing down the ${baseRoute.techName} conventions there means Copilot's answers and reviews follow your project's patterns instead of generic ones.`;
     faqs = [
       {
         question: `Where should this Copilot instruction file be stored?`,
-        answer: `Save this file to .github/copilot-instructions.md in your repository. GitHub Copilot uses it to ground all chat responses and completions.`,
+        answer: `Save it as .github/copilot-instructions.md in your repository. Copilot Chat, Copilot code review and the Copilot coding agent use it; completions as you type do not.`,
       },
       {
         question: `Does this apply to all team members?`,
-        answer: `Yes, once committed to Git, anyone opening the repository with GitHub Copilot will have these guidelines applied automatically.`,
+        answer: `Yes. Once the file is on the default branch, Copilot uses it for everyone working in the repository.`,
       },
     ];
   } else if (canonicalFormat === "openai-instructions" || canonicalFormat === "openai") {
@@ -2067,11 +2067,11 @@ function synthesizeRouteForFormat(
     faqs = [
       {
         question: `Where do I apply these OpenAI instructions?`,
-        answer: `Paste this content into ChatGPT Custom Instructions or into the system parameter of the OpenAI API and Playground.`,
+        answer: `Paste it into ChatGPT custom instructions (Settings > Personalization), a Project's instructions or a custom GPT, or send it as instructions in the OpenAI API.`,
       },
       {
-        question: `Can I use this with GPT-4o and o1 reasoning models?`,
-        answer: `Yes, these directives are optimized for OpenAI reasoning models and enforce structured, hallucination-free code diffs.`,
+        question: `Which OpenAI models can use these instructions?`,
+        answer: `Any current model in ChatGPT or the API. The instructions are plain text, so they work the same way whichever model you pick.`,
       },
     ];
   } else if (canonicalFormat === "gemini-prompts" || canonicalFormat === "gemini") {
@@ -2083,11 +2083,11 @@ function synthesizeRouteForFormat(
     faqs = [
       {
         question: `How do I use this prompt in Google AI Studio?`,
-        answer: `Import this JSON into Google AI Studio as System Instructions, or load it via the system_instruction parameter in the Gemini SDK.`,
+        answer: `Paste the text parts into the System instructions field in Google AI Studio, or load the JSON in code and pass it as the system instruction (system_instruction in REST, config.systemInstruction in the Google Gen AI SDK).`,
       },
       {
         question: `Which Gemini models support these instructions?`,
-        answer: `Gemini 1.5 Pro, Gemini 1.5 Flash, and Gemini 2.0 all support system instructions and structured JSON output.`,
+        answer: `Current Gemini models in the Gemini API and Google AI Studio accept a system instruction. Check Google's model list for the one you use.`,
       },
     ];
   } else if (canonicalFormat === "cursorignore") {
@@ -2095,15 +2095,15 @@ function synthesizeRouteForFormat(
     targetFile = ".cursorignore";
     title = `${baseRoute.techName} .cursorignore Shield`;
     desc = `Generate an optimized .cursorignore for ${baseRoute.techName} to mask secrets and stop token bloat.`;
-    whyNeeded = `Preventing oversized data files, build artifacts, and environment secrets from polluting Cursor IDE context is critical. This .cursorignore shield keeps context windows lean, reduces token consumption, and protects credentials.`;
+    whyNeeded = `This .cursorignore keeps ${baseRoute.techName} build output, large data files and environment secrets out of Cursor's index and AI features, so context goes to your source code. It is best effort: commands the agent runs in the terminal can still read ignored files, so keep real secrets out of the repo too.`;
     faqs = [
       {
         question: `How is .cursorignore different from .gitignore?`,
-        answer: `.gitignore hides files from git commits, while .cursorignore stops Cursor from indexing them into its AI vector database and prompt context.`,
+        answer: `.gitignore decides what git tracks. .cursorignore keeps files out of Cursor's codebase index and AI features; Cursor already skips files in .gitignore when it indexes.`,
       },
       {
-        question: `Does .cursorignore prevent token waste?`,
-        answer: `Yes, masking large build artifacts, locks, and logs prevents accidental context window overflow and speeds up AI generation.`,
+        question: `Does .cursorignore reduce wasted context?`,
+        answer: `Yes. Ignored files are not indexed or pulled into requests, so build output and large data files do not crowd out your source code.`,
       },
     ];
   } else if (canonicalFormat === "claudeignore") {
@@ -2111,11 +2111,11 @@ function synthesizeRouteForFormat(
     targetFile = ".claudeignore";
     title = `${baseRoute.techName} .claudeignore Shield`;
     desc = `Generate a .claudeignore boundary configuration for ${baseRoute.techName} in Claude Code CLI.`;
-    whyNeeded = `Claude Code CLI inspects local files during reasoning. A dedicated .claudeignore excludes large binaries, temporary directories, and sensitive logs from entering the model context, maximizing speed and privacy.`;
+    whyNeeded = `Claude Code reads files while it works. This .claudeignore keeps the list of ${baseRoute.techName} paths it should stay out of (build output, large binaries, logs and secrets). Copy the sensitive ones into permissions.deny in .claude/settings.json, which Claude Code enforces.`;
     faqs = [
       {
-        question: `Where should .claudeignore be located?`,
-        answer: `Place .claudeignore in your repository root. Claude Code CLI honors it when searching files and constructing reasoning context.`,
+        question: `Does Claude Code honor .claudeignore?`,
+        answer: `Not by itself. Claude Code enforces permission rules, so copy the sensitive paths into permissions.deny in .claude/settings.json, for example Read(./.env). Keep .claudeignore in the repository root as the reviewable list.`,
       },
       {
         question: `What should I put in .claudeignore?`,
@@ -2127,15 +2127,15 @@ function synthesizeRouteForFormat(
     targetFile = "llms.txt";
     title = `${baseRoute.techName} llms.txt Roadmap`;
     desc = `Generate a standardized machine-readable llms.txt codebase index for ${baseRoute.techName}.`;
-    whyNeeded = `The /llms.txt standard provides a machine-readable directory map of your ${baseRoute.techName} codebase for AI crawlers, developer tooling, and automated indexers, ensuring accurate architectural discovery.`;
+    whyNeeded = `An llms.txt gives language models and agents a short Markdown map of your ${baseRoute.techName} project: what it is and where the key docs and code live, so a tool that fetches it can go straight to the right files.`;
     faqs = [
       {
         question: `What is llms.txt?`,
-        answer: `llms.txt is an open proposal for organizing codebase and documentation links into a concise markdown format for AI tools and web crawlers.`,
+        answer: `llms.txt is an open proposal for a short Markdown file that lists a project's key docs and links, so AI tools can find them without crawling every page.`,
       },
       {
         question: `Where should llms.txt be deployed?`,
-        answer: `Host it at /llms.txt at the root of your web documentation or repository to allow AI scrapers to ingest your architecture rapidly.`,
+        answer: `At /llms.txt on your documentation site, or in your repository root. Tools read it when they fetch it; nothing loads it automatically.`,
       },
     ];
   } else if (canonicalFormat === "architecture-md") {
@@ -2150,8 +2150,8 @@ function synthesizeRouteForFormat(
         answer: `High-level component relationships, state flow, dependency graphs, and technical invariants that AI agents must never violate.`,
       },
       {
-        question: `How does ARCHITECTURE.md prevent technical debt?`,
-        answer: `By defining subsystem boundaries, it prevents AI models from introducing circular dependencies or violating layer isolation.`,
+        question: `How does ARCHITECTURE.md help AI agents?`,
+        answer: `It tells them where code belongs and which boundaries to keep, so they are less likely to add circular dependencies or skip layers. Point to it from CLAUDE.md or AGENTS.md so they read it.`,
       },
     ];
   }
@@ -2199,6 +2199,43 @@ export function getAllDynamicPresetRoutes(): { formatSlug: string; presetSlug: s
   return results;
 }
 
+/** Format noun used in spoke page titles, keyed by canonical format slug. */
+const SPOKE_TITLE_NOUNS: Record<string, string> = {
+  "cursor-rules": "Cursor Rules",
+  "claude-skills": "Claude Code Skill",
+  "claude-md": "CLAUDE.md",
+  "agents-md": "AGENTS.md",
+  "mcp-config": "MCP Server Config",
+  "windsurf-rules": "Windsurf Rules",
+  "copilot-instructions": "Copilot Instructions",
+  "openai-instructions": "OpenAI Instructions",
+  "gemini-prompts": "Gemini System Prompt",
+  cursorignore: ".cursorignore",
+  claudeignore: ".claudeignore",
+  "llms-txt": "llms.txt",
+  "architecture-md": "ARCHITECTURE.md",
+};
+
+const SPOKE_DESCRIPTION_MAX = 160;
+
+/**
+ * Meta description for a spoke: the curated route description, then the
+ * longest closing line that keeps it within ~160 characters, so short
+ * descriptions still say what the visitor can do on the page.
+ */
+function buildSpokeDescription(route: ProgrammaticPresetRoute): string {
+  const lead = /[.!?]$/.test(route.description.trim()) ? route.description.trim() : `${route.description.trim()}.`;
+  const fileName = route.targetFile.split("/").pop() || route.targetFile;
+  const tails = [
+    ` Free template: edit it in your browser, then copy or download ${fileName}.`,
+    ` Edit it in your browser, then copy or download ${fileName}.`,
+    ` Edit it in your browser, then copy or download it.`,
+    " Free, runs in your browser.",
+  ];
+  const tail = tails.find((t) => lead.length + t.length <= SPOKE_DESCRIPTION_MAX) ?? "";
+  return `${lead}${tail}`;
+}
+
 export function getPresetRouteMetadata(formatSlug: string, presetSlug: string): Metadata | null {
   const route = getPresetBySlug(formatSlug, presetSlug);
   if (!route) return null;
@@ -2206,24 +2243,8 @@ export function getPresetRouteMetadata(formatSlug: string, presetSlug: string): 
   const canonicalFormatSlug = route.formatSlug || FORMAT_SLUG_ALIASES[formatSlug.toLowerCase()] || formatSlug;
   const canonicalPresetSlug = route.presetSlug || SLUG_ALIASES[presetSlug.toLowerCase()] || presetSlug;
 
-  // Derive format label
-  let formatSuffix = "Cursor Rules";
-  if (formatSlug === "claude-skills") formatSuffix = "Claude Skill";
-  else if (formatSlug === "claude-md") formatSuffix = "CLAUDE.md Guide";
-  else if (formatSlug === "agents-md") formatSuffix = "AGENTS.md Rules";
-  else if (formatSlug === "mcp-config") formatSuffix = "MCP Config";
-  else if (formatSlug === "windsurf-rules" || formatSlug === "windsurf") formatSuffix = "Windsurf Rules";
-  else if (formatSlug === "copilot-instructions" || formatSlug === "copilot") formatSuffix = "Copilot Instructions";
-  else if (formatSlug === "openai-instructions" || formatSlug === "openai") formatSuffix = "OpenAI Instructions";
-  else if (formatSlug === "gemini-prompts" || formatSlug === "gemini") formatSuffix = "Gemini Prompt";
-  else if (formatSlug === "cursorignore") formatSuffix = ".cursorignore Shield";
-  else if (formatSlug === "claudeignore") formatSuffix = ".claudeignore Shield";
-  else if (formatSlug === "llms-txt") formatSuffix = "llms.txt Map";
-  else if (formatSlug === "architecture-md") formatSuffix = "ARCHITECTURE.md Spec";
-  else if (formatSlug === "prd-md") formatSuffix = "PRD.md Spec";
-  else if (formatSlug === "design-md") formatSuffix = "DESIGN.md Spec";
-  else if (formatSlug === "task-md") formatSuffix = "TASK.md Tracker";
-  else if (formatSlug === "memory-md") formatSuffix = "MEMORY.md Brain";
+  // Format noun as people search for it ("nextjs CLAUDE.md", "go cursor rules")
+  const formatSuffix = SPOKE_TITLE_NOUNS[canonicalFormatSlug] ?? "Cursor Rules";
 
   // Clean and simplify tech name for crisp, predictable SERP title
   const cleanTech = route.techName
@@ -2247,21 +2268,40 @@ export function getPresetRouteMetadata(formatSlug: string, presetSlug: string): 
     .replace(/\s*&\s*OpenTofu IaC/gi, "")
     .replace(/\s*&\s*Cypress E2E/gi, "")
     .replace(/\s*MCP Server/gi, "")
+    .replace(/\s+MCP$/i, "")
+    .replace(/\s*Autonomous Agents/gi, "")
+    .replace(/Go \(Golang\)/gi, "Go")
+    .replace(/Multi-Agent System Orchestration/gi, "Multi-Agent Team")
+    .replace(/Automated Code Reviewer/gi, "Code Reviewer")
+    .replace(/Security Vulnerability Auditor/gi, "Security Auditor")
+    .replace(/Playwright End-to-End Testing/gi, "Playwright E2E")
+    .replace(/^GitHub Operations$/i, "GitHub")
+    .replace(/^(PostgreSQL|SQLite) Database$/i, "$1")
+    .replace(/^Local Filesystem$/i, "Filesystem")
+    .replace(/^Brave Web Search$/i, "Brave Search")
+    .replace(/^Web Fetch & Markdown$/i, "Web Fetch")
+    .replace(/^Puppeteer Browser$/i, "Puppeteer")
+    .replace(/^Docker Engine$/i, "Docker")
+    .replace(/^Knowledge Graph Memory$/i, "Memory")
     .trim();
 
-  let cleanTitle = `${cleanTech} ${formatSuffix}`;
+  // Longest variant that fits; 44 chars + " | DevScratchpad" stays inside Google's ~60-char title width
+  const base = `${cleanTech} ${formatSuffix}`;
+  let cleanTitle = [`${base} Template & Example`, `${base} Template`, base].find((t) => t.length <= 44) ?? base;
   if (cleanTitle.length > 44) {
     const sub = cleanTitle.slice(0, 44);
     const lastSpace = sub.lastIndexOf(" ");
     cleanTitle = lastSpace > 28 ? sub.slice(0, lastSpace) : sub;
   }
 
+  const description = buildSpokeDescription(route);
+
   return {
     title: cleanTitle,
-    description: route.description,
+    description,
     openGraph: {
       title: `${cleanTitle} | DevScratchpad`,
-      description: route.description,
+      description,
       type: "website",
       siteName: "DevScratchpad",
       locale: "en_US",
@@ -2272,7 +2312,7 @@ export function getPresetRouteMetadata(formatSlug: string, presetSlug: string): 
           secureUrl: "https://www.devscratchpad.tech/og-ai-skill-studio.png",
           width: 1200,
           height: 630,
-          alt: `${cleanTitle} — 13 Formats & 5-Layer AI Agent Suite — DevScratchpad`,
+          alt: `${cleanTitle} | DevScratchpad AI Skill Studio`,
           type: "image/png",
         },
       ],
@@ -2280,13 +2320,13 @@ export function getPresetRouteMetadata(formatSlug: string, presetSlug: string): 
     twitter: {
       card: "summary_large_image",
       title: `${cleanTitle} | DevScratchpad`,
-      description: route.description,
+      description,
       images: [
         {
           url: "https://www.devscratchpad.tech/og-ai-skill-studio.png",
           width: 1200,
           height: 630,
-          alt: `${cleanTitle} — 13 Formats & 5-Layer AI Agent Suite — DevScratchpad`,
+          alt: `${cleanTitle} | DevScratchpad AI Skill Studio`,
         },
       ],
     },
