@@ -143,6 +143,24 @@ interface ClaudeSkillsClientProps {
   heading?: { title: string; description?: string };
 }
 
+/** The slice of Monaco's editor API used to jump to an audit finding. */
+interface LineSelectableEditor {
+  getModel(): { getLineCount(): number; getLineMaxColumn(line: number): number } | null;
+  revealLineInCenter(line: number, scrollType?: number): void;
+  setSelection(range: { startLineNumber: number; startColumn: number; endLineNumber: number; endColumn: number }): void;
+  focus(): void;
+}
+
+/** Scrolls a 1-based line into the editor's center and selects it. */
+function selectEditorLine(editor: LineSelectableEditor, line: number) {
+  const model = editor.getModel();
+  if (!model) return;
+  const target = Math.max(1, Math.min(line, model.getLineCount()));
+  editor.revealLineInCenter(target, 0); // 0 = Smooth scroll
+  editor.setSelection({ startLineNumber: target, startColumn: 1, endLineNumber: target, endColumn: model.getLineMaxColumn(target) });
+  editor.focus();
+}
+
 export function ClaudeSkillsClient({
   initialFormat,
   initialPresetId,
@@ -1821,6 +1839,19 @@ export function ClaudeSkillsClient({
     setTimeout(() => setAuditCopied(false), 2000);
   };
 
+  // Audit "Line N" / section jumps: close the panel so the line isn't hidden behind it, then select the line
+  // (deferred until Monaco mounts when the static preview is still showing)
+  const pendingRevealLineRef = React.useRef<number | null>(null);
+  const handleRevealAuditLine = (line: number) => {
+    setShowAuditPanel(false);
+    if (editorRef.current) {
+      selectEditorLine(editorRef.current, line);
+    } else {
+      pendingRevealLineRef.current = line;
+      setShouldLoadEditor(true);
+    }
+  };
+
   // Trigger Download Audit HUD — builds payload from current state and shows notification
   const triggerDownloadHud = useCallback((
     fileName: string,
@@ -2605,7 +2636,7 @@ export function ClaudeSkillsClient({
             {discardedEdit && discardedEdit.format === format && !isManuallyEdited && (
               <div
                 role="status"
-                className="px-3 py-1.5 flex items-center justify-between gap-2 border-b border-amber-900/60 bg-amber-950/40 text-[11px] text-amber-300 font-mono"
+                className="px-3 py-1.5 flex shrink-0 items-center justify-between gap-2 border-b border-amber-900/60 bg-amber-950/40 text-[11px] text-amber-300 font-mono"
               >
                 <span className="min-w-0 truncate">Generated output replaced your manual editor edits.</span>
                 <div className="flex items-center gap-1 shrink-0">
@@ -2633,7 +2664,7 @@ export function ClaudeSkillsClient({
 
             {/* Editor Container — Always full height */}
             <div
-              className="h-[430px] sm:h-[520px] lg:h-auto lg:flex-1 min-h-[300px] relative overflow-hidden bg-zinc-950 group"
+              className="h-[430px] sm:h-[520px] lg:h-auto lg:flex-1 min-h-[300px] lg:min-h-[220px] relative overflow-hidden bg-zinc-950 group"
               onClick={() => {
                 if (!shouldLoadEditor) setShouldLoadEditor(true);
               }}
@@ -2704,7 +2735,11 @@ export function ClaudeSkillsClient({
                       decorationsCollectionRef.current = null;
                       setEditorReady(true);
                       const currentRange = markedRangeRef.current;
-                      if (currentRange) {
+                      const pendingLine = pendingRevealLineRef.current;
+                      if (pendingLine !== null) {
+                        pendingRevealLineRef.current = null;
+                        setTimeout(() => selectEditorLine(editor, pendingLine), 50);
+                      } else if (currentRange) {
                         setTimeout(() => {
                           try {
                             editor.revealLineInCenter(currentRange.startLine, 0); // 0 = Smooth scroll
@@ -2780,6 +2815,7 @@ export function ClaudeSkillsClient({
               {showAuditPanel && (
                 <AuditPanel
                   auditReport={auditReport}
+                  content={activeContent}
                   format={format}
                   auditTab={auditTab}
                   setAuditTab={setAuditTab}
@@ -2787,6 +2823,7 @@ export function ClaudeSkillsClient({
                   setSelectedDimension={setSelectedDimension}
                   auditCopied={auditCopied}
                   setShowAuditPanel={setShowAuditPanel}
+                  onRevealLine={handleRevealAuditLine}
                   handleCopyAuditReport={handleCopyAuditReport}
                   handleAutoFixAll={handleAutoFixAll}
                   handleInjectNegativeGuardrails={handleInjectNegativeGuardrails}

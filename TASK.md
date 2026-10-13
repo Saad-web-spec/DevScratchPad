@@ -298,6 +298,16 @@ node ./cli/bin/devscratchpad.mjs audit
 - [ ] Watch GSC CTR on spokes for 4 weeks after the title change; revert the "Template & Example" suffix if CTR drops
 - [ ] Per-spoke OpenGraph images (all spokes share `og-ai-skill-studio.png`)
 
+
+## 2026-10-14 — Audit Panel Redesign & Editor Clipping Fix
+
+- [x] Status bar no longer clipped when the "Restore edits" notice shows on short viewports (editor `lg:min-h-[220px]`, notice `shrink-0`)
+- [x] Audit panel height capped to the editor container so its header can't be clipped
+- [x] Redesigned audit panel: score ring header with severity counts, severity-sorted findings, Auto-fix only when fixable findings exist
+- [x] Findings carry editor line numbers ("Line N" jumps the editor to the line and selects it)
+- [x] Budget tab: token meter against `TOKEN_BUDGET`, sections ranked by token weight with jump-to-line
+- [x] Tests for finding line numbers and `getSectionBreakdown`
+
 ---
 
 *This document is a living tracker. AI agents MUST update task statuses when completing work and log their actions in the Agent Session Log.*

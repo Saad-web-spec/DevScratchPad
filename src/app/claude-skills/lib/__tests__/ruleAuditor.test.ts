@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { auditRuleQuality } from "../ruleAuditor";
+import { auditRuleQuality, getSectionBreakdown } from "../ruleAuditor";
 import { ALL_FORMATS, PRESETS, buildFromPreset } from "./fixtures";
 
 const hasIssue = (content: string, idPart: string, format = "claude_md") =>
@@ -60,5 +60,27 @@ describe("auditRuleQuality", () => {
     const report = auditRuleQuality({ content, format: "claude_md" });
     const securityErrors = report.allIssues.filter((i) => i.id.startsWith("security-") && i.severity === "error");
     expect(securityErrors.map((i) => i.title)).toEqual([]);
+  });
+
+  it("attaches the editor line to findings that map to one", () => {
+    const content = ["# Rules", "", "- Keep modules small.", "- Always follow best practices.", "", "```bash", "npm install lodash", "npm run build", "```"].join("\n");
+    const issues = auditRuleQuality({ content, format: "claude_md" }).allIssues;
+    expect(issues.find((i) => i.id === "vague-follow-best-practices")?.line).toBe(4);
+    expect(issues.find((i) => i.id === "supply-chain-unpinned-dependency")?.line).toBe(7);
+    expect(issues.find((i) => i.id === "quality-shell-no-error-handling")?.line).toBe(6);
+  });
+});
+
+describe("getSectionBreakdown", () => {
+  it("splits at headings outside fenced code and keeps frontmatter as its own section", () => {
+    const content = ["---", "name: demo", "---", "# Title", "Intro", "## Usage", "```md", "# not a heading", "```", "## Rules", "- Never edit .env"].join("\n");
+    const sections = getSectionBreakdown(content);
+    expect(sections.map((s) => [s.title, s.line])).toEqual([
+      ["Frontmatter", 1],
+      ["Title", 4],
+      ["Usage", 6],
+      ["Rules", 10],
+    ]);
+    expect(sections.every((s) => s.tokens >= 1)).toBe(true);
   });
 });
