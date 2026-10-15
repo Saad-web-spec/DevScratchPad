@@ -176,6 +176,19 @@ export const STORAGE_KEY_V1_LEGACY = "ai-skill-studio-state";
 export const CURRENT_SCHEMA_VERSION = 2;
 
 /**
+ * True when localStorage can be used. Blocked site data (a browser setting) makes even reading
+ * `window.localStorage` throw a SecurityError, so the property access itself is guarded.
+ */
+function storageAvailable(): boolean {
+  if (typeof window === "undefined") return false;
+  try {
+    return Boolean(window.localStorage);
+  } catch {
+    return false;
+  }
+}
+
+/**
  * Saves arbitrary studio state wrapped in a versioned envelope schema (v2).
  * Safely handles QuotaExceededError across browsers with multi-tier cache eviction.
  */
@@ -183,7 +196,7 @@ export function saveToStorageEnvelope<T>(
   key: string = STORAGE_KEY_V2,
   payload: T
 ): { success: boolean; error?: string } {
-  if (typeof window === "undefined" || !window.localStorage) {
+  if (!storageAvailable()) {
     return { success: false, error: "localStorage is unavailable" };
   }
 
@@ -204,7 +217,9 @@ export function saveToStorageEnvelope<T>(
         err.code === 22 ||
         err.code === 1014);
 
-    if (isQuotaError) {
+    // Eviction frees AI Skill Studio's own caches, so only a save of the studio's own state may trigger
+    // it: another tool hitting the quota (e.g. a huge graph) must not delete the studio's data.
+    if (isQuotaError && key === STORAGE_KEY_V2) {
       // Tier 1: Clear legacy unversioned studio draft and retry
       try {
         localStorage.removeItem(STORAGE_KEY_V1_LEGACY);
@@ -253,7 +268,7 @@ export function loadFromStorageEnvelope<T>(
   key: string = STORAGE_KEY_V2,
   legacyKey: string = STORAGE_KEY_V1_LEGACY
 ): T | null {
-  if (typeof window === "undefined" || !window.localStorage) {
+  if (!storageAvailable()) {
     return null;
   }
 
@@ -292,6 +307,16 @@ export function loadFromStorageEnvelope<T>(
   }
 
   return null;
+}
+
+/** Removes one key (e.g. a retired setting); storage errors are ignored. */
+export function removeStorageKey(key: string): void {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.removeItem(key);
+  } catch {
+    // Gracefully handle storage errors
+  }
 }
 
 /**

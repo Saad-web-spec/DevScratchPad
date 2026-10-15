@@ -18,6 +18,7 @@ import {
   X,
   FileText,
 } from "lucide-react";
+import { SkillGraphIcon } from "@/components/icons/SkillGraphIcon";
 import { cn } from "@/lib/utils";
 import { downloadAiKitZip, downloadSkillFolderZip } from "./lib/zipExporter";
 import { EXPORT_FORMATS, getExportTarget } from "./lib/exportTargets";
@@ -2293,6 +2294,14 @@ export function ClaudeSkillsClient({
 
           {/* Right: Status Indicators & SKILL navigation */}
           <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+            <Link
+              href="/graph"
+              className="p-1.5 text-zinc-700 hover:text-zinc-900 hover:bg-zinc-100 active:bg-zinc-200 rounded-md transition-colors flex items-center justify-center shrink-0"
+              title="Skill Graph: visual editor & runner"
+              aria-label="Skill Graph: visual editor & runner"
+            >
+              <SkillGraphIcon className="w-5 h-5" />
+            </Link>
             <Link
               href="/skill"
               className="p-1 hover:bg-zinc-100 active:bg-zinc-200 rounded-md transition-colors flex items-center justify-center shrink-0"

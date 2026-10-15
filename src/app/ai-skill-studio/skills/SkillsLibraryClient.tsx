@@ -28,6 +28,7 @@ import {
   ArrowUpDown
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { SkillGraphIcon } from "@/components/icons/SkillGraphIcon";
 import { useModKeyLabel } from "@/lib/useModKeyLabel";
 import { getAllSkills } from "@/data/skills/skillsData";
 import { SkillItem, UserUploadedSkill, SkillCategory, SkillPlatform } from "@/data/skills/skillTypes";
@@ -90,6 +91,14 @@ function HubHeader() {
 
         {/* Right: Link to AI Skill Studio */}
         <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+          <Link
+            href="/graph"
+            className="text-zinc-700 hover:text-zinc-900 hover:bg-zinc-100 text-xs px-2.5 py-1.5 rounded-md flex items-center gap-1.5 transition-colors font-semibold"
+            title="Skill Graph: visual editor & runner for SKILL.md"
+          >
+            <SkillGraphIcon className="w-4 h-4" />
+            <span className="hidden sm:inline">Skill Graph</span>
+          </Link>
           <Link
             href="/ai-skill-studio"
             className="text-zinc-700 hover:text-zinc-900 hover:bg-zinc-100 text-xs px-2.5 py-1.5 rounded-md flex items-center gap-1.5 transition-colors font-semibold"

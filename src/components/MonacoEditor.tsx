@@ -173,6 +173,8 @@ export function MonacoEditor(props: EditorProps) {
     ...DEFAULT_OPTIONS,
     ...props.options,
     ...ENFORCED_OPTIONS,
+    // A page with its own typography (e.g. /graph) may pass its code font; every other editor keeps the site font.
+    fontFamily: props.options?.fontFamily ?? ENFORCED_OPTIONS.fontFamily,
     scrollbar: { ...DEFAULT_SCROLLBAR, ...props.options?.scrollbar },
   };
 

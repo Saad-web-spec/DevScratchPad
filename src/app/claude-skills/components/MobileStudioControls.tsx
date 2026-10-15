@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useRef } from "react";
 import { ArrowLeft, Check, Copy, Sliders, Terminal } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -60,6 +60,9 @@ export interface MobileActionBarProps {
   handleCopy: () => void;
 }
 
+/** CSS variable with the space the bar takes at the bottom of the screen, so other floating UI (the guide) sits above it. */
+export const ACTION_BAR_SPACE_VAR = "--studio-action-bar-space";
+
 /** Floating action bar pinned to the bottom of the viewport below the lg breakpoint: jump to the code, or copy it. */
 export function MobileActionBar({
   mobileTab,
@@ -69,8 +72,31 @@ export function MobileActionBar({
   copied,
   handleCopy,
 }: MobileActionBarProps) {
+  const barRef = useRef<HTMLDivElement>(null);
+
+  // Publish the bar's real height (it grows with the phone's text size) for anything that must clear it.
+  useEffect(() => {
+    const bar = barRef.current;
+    if (!bar) return;
+    const root = document.documentElement;
+    const update = () => {
+      // Hidden (lg and up) means no rects; offsetParent is always null for fixed elements, so it cannot tell.
+      const visible = bar.getClientRects().length > 0;
+      root.style.setProperty(ACTION_BAR_SPACE_VAR, visible ? `${Math.ceil(window.innerHeight - bar.getBoundingClientRect().top)}px` : "0px");
+    };
+    update();
+    const observer = new ResizeObserver(update);
+    observer.observe(bar);
+    window.addEventListener("resize", update);
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("resize", update);
+      root.style.removeProperty(ACTION_BAR_SPACE_VAR);
+    };
+  }, []);
+
   return (
-    <div data-guide-hide className="lg:hidden fixed bottom-3 left-3 right-3 z-40">
+    <div ref={barRef} data-guide-hide className="lg:hidden fixed bottom-3 left-3 right-3 z-40">
       {mobileTab === "form" ? (
         <button
           type="button"

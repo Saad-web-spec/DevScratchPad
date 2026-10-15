@@ -645,3 +645,77 @@ All AI agents operating in this repository MUST follow this 5-step loop:
 - **Gotcha — local directives**: `LocalProjectAnalysis.synthesizedDirectives` mixes plain sentences (manifest) with evidence lines that are already bullets (including nested `  - ` carried-over rules); the apply handler only prefixes lines that aren't bullets.
 - **Gotcha — `showDirectoryPicker` must be called as a method on `window`**; a detached reference throws "Illegal invocation".
 - **Status**: ✅ Complete (see TASK.md for verification)
+
+### Session: 2026-10-15 — Skill Graph (`/graph`)
+- **Agent**: Claude Code (Opus)
+- **What**: New route `/graph`: a Graph SKILL.md (frontmatter `topology` + `## @node:` sections) edited as Markdown (Monaco) or on a canvas, run in the browser in parallel, exported for Claude Code / Cursor. Pure logic lives in `src/app/graph/lib/` (`graphSkill.ts` parse/serialize/validate/layout, `graphRunner.ts`, `graphProviders.ts`, `graphExport.ts`); UI in `GraphClient.tsx` and `components/`.
+- **Decision — Markdown is the source of truth**: canvas/inspector edits go through `serializeGraphSkill`, so they reformat the frontmatter (prompt bodies and the preamble are kept verbatim). Edits are blocked while the frontmatter fails to parse, so a broken file is never overwritten by the last good graph.
+- **Decision — no React Flow / dagre**: the canvas is ~400 lines of SVG + absolutely positioned nodes; layout is layered longest-path with barycenter ordering. Node positions are not stored in the file.
+- **Decision — what "fresh context" means here**: every node is one stateless call whose request is its rendered prompt plus the payloads of incoming edges that the prompt didn't already reference. The bias meter only counts upstream material; `{{goal}}` is always allowed. Reasoning tags are stripped from outputs.
+- **Gotcha — JSON contracts and slices**: when a source returns a JSON object with a key named after the target node, only that slice crosses the edge. A slice is plain text, so the contract check must run on the source output, not the slice (it flagged every splitter edge red before).
+- **Gotcha — CSP**: `/graph` is excluded from the catch-all header rule (`graph(?:/|$)` in the negative lookahead) and gets its own block with the provider hosts. Adding a provider means adding its host to `graphConnectHosts` in `next.config.ts`; arbitrary base URLs are not possible.
+- **Gotcha — restoring saved state**: `GraphClient` reads localStorage through `useSyncExternalStore` (server snapshot `null`) and mounts `GraphWorkspace` with initial props, instead of `setState` in an effect.
+- **Status**: ✅ Complete (990 tests incl. 27 new, validate-presets, lint 0 errors, build; headless Chrome check of dry run, edge inspector, drag-to-connect writing the Markdown, mobile TB layout, headers on /ai-skill-studio and /skill, no console errors). Not verified: a live run with a real API key.
+
+### Session: 2026-10-15 — Skill Graph polish (streaming, blueprints, editor sync, icon)
+- **Agent**: Claude Code (Opus)
+- **What**: Streaming output, blueprints, two-way editor/canvas selection, undo/redo, resizable panes, pinch zoom, share links, Markdown results, a custom icon. See TASK.md for the list.
+- **Decision — icon**: `SkillGraphIcon` is an inline SVG (strokes in `currentColor`, one node in orange-600) so it fits both the monochrome header text and the AI area's orange accent. Use it wherever the graph is linked; don't swap in a lucide icon.
+- **Decision — undo history only covers canvas/inspector edits**: Monaco keeps its own undo. An entry can only be undone while the Markdown still equals its `after`; any typing in Monaco after a canvas edit makes the stack stale and it is dropped.
+- **Gotcha — Monaco text uses non-breaking spaces**: `.view-line` textContent has ` ` for spaces; normalize before matching text in browser tests.
+- **Gotcha — dry-run timing**: `createLlmClient(..., { dryRunTimeScale })` exists so tests don't hit the 5 s vitest timeout; the UI uses the default (1).
+- **Gotcha — finishing a run must not steal the dock tab**: it only switches to Result when the Run tab is open; otherwise inspecting a node mid-run gets yanked away.
+- **Testing without a key**: a mock OpenAI-compatible server on port 11434 (Ollama's port, already in the `/graph` CSP) with CORS and SSE exercises the real fetch/stream path from the browser.
+- **Status**: ✅ Complete (1004 tests, validate-presets, lint 0 errors and no new warnings, build; 20/20 browser checks, no console errors). Not verified: a live Claude run with a real key.
+
+### Session: 2026-10-15 — Skill Graph v2 (no model calls, graph skills for agents)
+- **Agent**: Claude Code (Opus)
+- **Decision — no API keys on /graph**: the user rejected a BYOK runner. The studio parses, validates, previews and compiles; the agent runs the exported files. The two sessions above describe a runner, providers, streaming and a `/graph` CSP block that no longer exist (`graphRunner.ts`, `graphProviders.ts` deleted; `next.config.ts` and `package.json` back to their earlier state).
+- **Decision — the purpose**: a graph skill writes down what a flat SKILL.md leaves the agent to improvise: stages (parallel steps), contracts on edges, fresh-context steps, pass/fail gates, per-step tools and model tier. The orchestrator SKILL.md holds only the plan; each step's prompt lives in its subagent file and loads when that step runs.
+- **Gotcha — controlled inputs and a trimming parser**: every inspector keystroke re-serializes the Markdown and the parser trims values, so a typed trailing space vanished ("Onlyverifiedclaims."). Inspector text fields use `useDraft`, which keeps the local text unless the saved value changes for another reason.
+- **Gotcha — empty `tools: []`**: Claude Code reads a missing `tools:` line as "inherit every tool", and the exporter omits empty lists, so an empty list is a validation warning; blueprints give the splitter and merger `[Read]`.
+- **Gotcha — fonts per route**: `src/app/graph/layout.tsx` imports the fontsource CSS and wraps the route in `.graph-theme`, which overrides `--font-sans` / `--font-mono` (Tailwind v4 `font-sans` resolves through the variable).
+- **Status**: ✅ Complete (1007 tests, validate-presets, lint 0 errors with no new warnings, build; 22/22 browser checks, no console errors).
+
+### Session: 2026-10-15 — Skill Graph v2 (no model calls, graph skills for agents)
+- **Agent**: Claude Code (Opus)
+- **Decision — no API keys on /graph**: the user rejected a BYOK runner. The studio parses, validates, previews and compiles; the agent runs the exported files. The two sessions above describe a runner, providers, streaming and a `/graph` CSP block that no longer exist (`graphRunner.ts`, `graphProviders.ts` deleted; `next.config.ts` and `package.json` back to their earlier state).
+- **Decision — the purpose**: a graph skill writes down what a flat SKILL.md leaves the agent to improvise: stages (parallel steps), contracts on edges, fresh-context steps, pass/fail gates, per-step tools and model tier. The orchestrator SKILL.md holds only the plan; each step's prompt lives in its subagent file and loads when that step runs.
+- **Gotcha — controlled inputs and a trimming parser**: every inspector keystroke re-serializes the Markdown and the parser trims values, so a typed trailing space vanished ("Onlyverifiedclaims."). Inspector text fields use `useDraft`, which keeps the local text unless the saved value changes for another reason.
+- **Gotcha — empty `tools: []`**: Claude Code reads a missing `tools:` line as "inherit every tool", and the exporter omits empty lists, so an empty list is a validation warning; blueprints give the splitter and merger `[Read]`.
+- **Gotcha — fonts per route**: `src/app/graph/layout.tsx` imports the fontsource CSS and wraps the route in `.graph-theme`, which overrides `--font-sans` / `--font-mono` (Tailwind v4 `font-sans` resolves through the variable).
+- **Status**: ✅ Complete (1007 tests, validate-presets, lint 0 errors with no new warnings, build; 22/22 browser checks, no console errors).
+
+### Session: 2026-10-16 — Skill Graph: loops, checks, lanes and approvals
+- **Agent**: Claude Code (Opus)
+- **Source**: "Loops and Graphs" by @hanakoxbt (X article 2091515787366306154, Substack mirror). The "Karpathy said" framing on X is unverified promo; the ideas match Anthropic's agent guidance.
+- **Decision — additive spec**: new fields (`run`, `check`, `risk`) and types (`code`, `approval`) keep `spec: skill-graph/1`; older files parse unchanged. `runsWithoutSubagent()` is the single test for "no subagent file, the orchestrator does it".
+- **Decision — `on_fail` meaning depends on the node**: with a gate it re-runs upstream steps; with only a `check` it re-runs the node itself; on a `code` node it re-runs the direct agent predecessors.
+- **Gotcha — every edge already hands its payload**: the previewer puts un-referenced incoming payloads in the task message, so `unread-edge` fires only when a prompt names some upstream inputs but not this one, and never for edges out of `code`/`approval` steps (waiting is their point).
+- **Gotcha — `toSlug` moved** to `graphSkill.ts` (graphPlan needs it for payload paths; importing graphExport would be circular). graphExport re-exports it.
+- **Status**: ✅ Complete (1037 tests, validate-presets, lint 0 errors with no new warnings, build; headless Chrome check of the new blueprint, inspector and plan, no console errors).
+
+### Session: 2026-10-16 — Skill Graph: guide, share cards, SEO and security hardening
+- **Agent**: Claude Code (Opus)
+- **Decision — model/tools allowlist**: both are written verbatim into `.claude/agents/*.md` frontmatter, so `MODEL_PATTERN` / `TOOL_PATTERN` in `graphSkill.ts` are errors in validation and filters in `buildSubagent`. A newline in either could add `permissionMode`, `hooks` or `mcpServers` to an exported subagent from a share link.
+- **Decision — shared graphs are untrusted**: opening a link seeds the undo history with the previous draft and shows `SharedReview` (commands, Bash, Edit/Write, MCP) until dismissed.
+- **Gotcha — next/og fonts**: Satori reads ttf/otf/woff, not woff2, so the fontsource packages cannot be used; static woff files live in `src/app/graph/_og/`. CSS radial-gradient dot grids do not tile in next/og; the card draws its dots as SVG circles.
+- **Gotcha — backslashes through the Bash tool**: `\` inside heredoc'd scripts got halved, which wrote a real NUL byte into a regex. Build backslashes with `String.fromCharCode(92)` or use the Edit/Write tools.
+- **Open — storage eviction**: `saveToStorageEnvelope` still evicts other tools' data on a quota error; the new size caps make that unreachable from /graph, but the behaviour is shared.
+- **Status**: ✅ Complete (80 graph tests, validate-presets, lint 0 errors with no new warnings, build).
+
+### Session: 2026-10-16 — Skill Graph: no-code authoring
+- **Agent**: Claude Code (Opus)
+- **Decision — the minimum is nodes, edges, prompts, name and description**: every edge already delivers its payload, so references and contracts are refinements. The UI hides them behind Insert input, auto-defined contracts and a collapsed Advanced panel; the guide leads with the same message.
+- **Gotcha — contract names commit per keystroke**: `setEdgeContract` drops the previous contract when it has no description and no edge uses it, otherwise typing "findings" would define f, fi, fin…
+- **Gotcha — Monaco virtualizes lines**: an e2e check that reads `.view-lines` misses text that is off screen; read the autosaved source instead. A CDP script (Node 24 global WebSocket + installed Chrome) works without Puppeteer.
+- **Status**: ✅ Complete (86 graph tests, validate-presets, lint 0 errors with no new warnings, build).
+
+### Session: 2026-10-16 — Skill Graph: review fixes
+- **Agent**: Claude Code (Opus); fixes from a fresh-context verifier pass (12 findings, all confirmed and fixed).
+- **Gotcha — unknown edge ends**: the Markdown is parsed on every keystroke, so edges can point at ids that do not exist yet. `predecessorsOf`/`successorsOf` drop them; never `find(...) as GraphNode` on an edge end.
+- **Gotcha — one default per setting**: `on_fail` unset means stop in the inspector, plan panel and export; `isKeyedJson` is the single rule for when a JSON output is split per target.
+- **Gotcha — plain-object maps**: `graph.contracts[name]` resolves `constructor`/`toString`; use `getContract`. `__proto__` is refused as a contract name.
+- **Gotcha — CRLF files**: `src/lib/storage.ts` has Windows line endings, so multi-line string replacement in scripts silently misses; use the Edit tool there.
+- **E2E**: `%TEMP%/graph-e2e/check2.mjs <project> <outdir>` drives the installed Chrome over CDP (26 checks). Open about:blank and then `Page.navigate`: the /json/new request drops a `#graph=` fragment.
+- **Status**: ✅ Complete (1064 tests, 22 CLI tests, validate-presets, lint 0 errors, build, 26/26 browser checks).

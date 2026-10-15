@@ -343,3 +343,118 @@ node ./cli/bin/devscratchpad.mjs audit
 
 
 
+
+## 2026-10-15 — Skill Graph (`/graph`): Visual DAG Editor & Parallel Runner
+
+- [x] Graph SKILL.md format: `topology` (nodes, edges with `from`/`to` lists and `contract`) in frontmatter, one `## @node: <id>` section per prompt; parser, serializer (round-trips, keeps unknown keys, writes fan-out/fan-in in compact form), validator (cycles, unknown nodes/refs, refs not upstream, missing prompts, isolation leaks) in `src/app/graph/lib/graphSkill.ts`
+- [x] Two-way sync: Monaco edits redraw the canvas (a YAML error keeps the last valid graph); canvas and inspector edits rewrite the Markdown
+- [x] Canvas (custom SVG/HTML, no React Flow): layered auto-layout (left-to-right, top-to-bottom on portrait canvases), pan/zoom/fit, drag a handle to connect (cycles and edges into the input node refused), Delete removes the selection, contract labels, edges animate while data crosses them
+- [x] Runner (`graphRunner.ts`): each node starts when its parents finish (fan-out runs in parallel, 6 calls max); one stateless call per node; JSON slices keyed by target id; `<thinking>`-style blocks stripped before an output travels; JSON contracts checked; failures skip downstream nodes; Stop aborts
+- [x] Prior-context bias badge on `isolated_context` nodes: static (references outside incoming edges) and measured on the last run (characters from outside incoming edges); inspector shows the source breakdown and the exact request
+- [x] Providers (BYOK, browser-direct): Claude via `@anthropic-ai/sdk` (lazy chunk, server-side fallback `"default"`, refusal handling), OpenAI / OpenRouter / Gemini / Ollama / LM Studio via OpenAI-compatible fetch, and a dry run with no model. Key stays in memory unless "Remember" is ticked
+- [x] `/graph` CSP adds only the provider hosts to `connect-src`; every other route is unchanged
+- [x] Export: Claude Code kit ZIP (orchestrator skill + one subagent per node + Cursor `.mdc` + graph source + README), single self-orchestrating SKILL.md, graph source
+- [x] Skill Graph icon in the AI Skill Studio header and the Skill Hub header; sitemap entry; explainer + FAQ JSON-LD on the page
+- [x] Tests: `src/app/graph/lib/__tests__/graph.test.ts` (27)
+- [x] Pinch-to-zoom on touch screens (two-finger pinch around the midpoint; tested with CDP touch events)
+- [x] Share link for graphs (`#graph=` LZ hash, graph only; cleared after it loads)
+- [ ] Live run against a real Claude key (Anthropic path verified by types and unit tests only; the OpenAI-compatible path was run end to end against a local mock server)
+
+## 2026-10-15 — Skill Graph polish: streaming, blueprints, editor sync, icon
+
+- [x] Custom Skill Graph icon (`src/components/icons/SkillGraphIcon.tsx`, zinc strokes + one orange node) in the studio header, Skill Hub header and graph header; `/graph` favicon `src/app/graph/icon.svg`
+- [x] Streaming: Claude via the SDK's `messages.stream` (64k max tokens), OpenAI-compatible via SSE (`stream: true`, falls back to JSON), dry run types its text; live text shows on the node card and in the Run tab
+- [x] Blueprints menu: parallel audit, PR review, RFC discovery, bug triage (the AGENTS.md graph workflows) plus a blank graph; loading one is undoable
+- [x] Editor <-> canvas: selecting a node tints its frontmatter entry and prompt section in Monaco (orange gutter bar) and scrolls to it; putting the cursor in a section selects the node and pans the canvas to it
+- [x] Undo / redo for canvas and inspector edits (Ctrl+Z / Ctrl+Shift+Z on the canvas, buttons in the canvas toolbar); typing in a field undoes as one step
+- [x] Resizable editor and details panes (drag or arrow keys; sizes saved)
+- [x] Run progress chip (settled/total, elapsed), Ctrl+Enter runs from anywhere (also inside Monaco), the dock only jumps to Result if the Run tab was open
+- [x] Node cards redesigned: type tile (dark when done, orange while running), streamed text / duration and tokens in the footer, bias badge hangs off the card; contract labels are pills in the gap at each fan-out / fan-in
+- [x] Result tab renders Markdown (marked + DOMPurify, lazy) with a Raw toggle
+- [x] Mobile: toolbar buttons icon-only below `sm`
+- [x] Tests: `graphExtras.test.ts` (14: blueprints, line mapping, share hash, streaming, SSE parsing, JSON-mode retry, provider errors); 20-check headless Chrome run against a mock OpenAI-compatible server
+
+## 2026-10-15 — Skill Graph v2: graph skills for agents (no model calls)
+
+The page no longer runs models. It is an editor and compiler for graph skills that the user's own agent (Claude Code, Cursor) runs with its subagents. This supersedes the runner, provider, streaming and CSP items in the two sections above.
+
+- [x] Removed: BYOK runner, providers (Claude/OpenAI/OpenRouter/Gemini/Ollama/LM Studio), streaming, Run/Result tabs, `@anthropic-ai/sdk`, the `/graph` CSP block. A remembered API key from older builds is deleted on load
+- [x] Spec `skill-graph/1`: `contracts:` (format + description per contract), per-node `tools`, `model` tier, `gate`, `on_fail` (retry/stop), `max_retries`; validation for undefined contracts, unknown tools, empty tool lists, retry without a gate, text output feeding a JSON contract
+- [x] `graphPlan.ts`: stages the agent runs, and a "What its subagent will receive" preview with ⟨placeholders⟩ (same instructions the exporter compiles)
+- [x] Export: orchestrator SKILL.md is a plan (stages, hand-offs, contracts table, gate handling, handoff rules); subagents carry `tools:` and `model:`; README reports up-front vs on-demand tokens
+- [x] Agent plan tab (load budget, stage timeline) and a "Walk through plan" stepper on the canvas
+- [x] Inspector: model tier, tool toggles, gate editor, contracts editor; text fields keep their spaces while typing (the parser trims, so fields hold a local draft)
+- [x] Header: no Studio/Hub links, no back-to-workspace control; "100% local" with a laptop-check icon
+- [x] Look: zinc + orange accent only, soft-tint main action (no black button), Manrope + JetBrains Mono scoped to `/graph` via `src/app/graph/layout.tsx` and `.graph-theme`; `MonacoEditor` accepts an optional `fontFamily`
+- [x] Explainer rewritten around the purpose: why flat skills break down, what a graph skill adds, what the agent does with it
+- [x] Tests: `graph.test.ts` + `graphExtras.test.ts` (44); 22-check headless Chrome run including a real ZIP export
+
+## 2026-10-15 — Skill Graph v2: graph skills for agents (no model calls)
+
+The page no longer runs models. It is an editor and compiler for graph skills that the user's own agent (Claude Code, Cursor) runs with its subagents. This supersedes the runner, provider, streaming and CSP items in the two sections above.
+
+- [x] Removed: BYOK runner, providers (Claude/OpenAI/OpenRouter/Gemini/Ollama/LM Studio), streaming, Run/Result tabs, `@anthropic-ai/sdk`, the `/graph` CSP block. A remembered API key from older builds is deleted on load
+- [x] Spec `skill-graph/1`: `contracts:` (format + description per contract), per-node `tools`, `model` tier, `gate`, `on_fail` (retry/stop), `max_retries`; validation for undefined contracts, unknown tools, empty tool lists, retry without a gate, text output feeding a JSON contract
+- [x] `graphPlan.ts`: stages the agent runs, and a "What its subagent will receive" preview with ⟨placeholders⟩ (same instructions the exporter compiles)
+- [x] Export: orchestrator SKILL.md is a plan (stages, hand-offs, contracts table, gate handling, handoff rules); subagents carry `tools:` and `model:`; README reports up-front vs on-demand tokens
+- [x] Agent plan tab (load budget, stage timeline) and a "Walk through plan" stepper on the canvas
+- [x] Inspector: model tier, tool toggles, gate editor, contracts editor; text fields keep their spaces while typing (the parser trims, so fields hold a local draft)
+- [x] Header: no Studio/Hub links, no back-to-workspace control; "100% local" with a laptop-check icon
+- [x] Look: zinc + orange accent only, soft-tint main action (no black button), Manrope + JetBrains Mono scoped to `/graph` via `src/app/graph/layout.tsx` and `.graph-theme`; `MonacoEditor` accepts an optional `fontFamily`
+- [x] Explainer rewritten around the purpose: why flat skills break down, what a graph skill adds, what the agent does with it
+- [x] Tests: `graph.test.ts` + `graphExtras.test.ts` (44); 22-check headless Chrome run including a real ZIP export
+
+## 2026-10-16 — Skill Graph: loops, checks, lanes and approvals
+
+From the "Loops and Graphs" article (@hanakoxbt): a check that can fail, edges that carry data, return only what failed, gate by blast radius, one human checkpoint. All additive to `skill-graph/1`.
+
+- [x] Spec: node types `code` (`run:` shell command; `{{refs}}` become saved payload files under `.skill-graph/<slug>/`) and `approval` (human checkpoint); per-node `check:` (command that must exit 0) and `risk:` (`contained` / `wide` / `irreversible`)
+- [x] Validation: `missing-run`, `unread-edge` (target names other inputs but not this one), `no-parallelism` (4+ steps, all sequential), `parallel-writers`, `retry-cap` (>3), `irreversible-unapproved` (error), `irreversible-retry`, `wide-without-check`, `gate-without-check` (model alone judges file edits), `approval-guards-nothing`; `{{refs}}` in commands are checked like prompt refs
+- [x] Export: code and approval steps run by the orchestrator (no subagent file); command checks loop the step (or count as GATE: FAIL on a verifier); gate failures return one line per failed step (`what | evidence | redo`) and only those steps re-run; irreversible steps never auto-retry; handoff rule 5
+- [x] Inspector: Checks section (command check, blast radius, gate, on-fail and retries), Command field for code steps, question field for approvals; previews for what a command runs and what an approval shows; card and plan chips for check and risk; status bar counts only real subagents
+- [x] Blueprint "Ship a change": plan → implement (loops on `npm test`, wide) → `git diff` code step → 2 parallel fresh-context reviewers → gate → approval → open PR (irreversible)
+- [x] Tests: `graphReliability.test.ts` (29); all 74 graph tests and 1037 total pass
+- [ ] Next: dynamic fan-out (`foreach` over a splitter's list), learning edge (`learnings.md` the splitter reads), Claude Code Workflow script export with JSON-schema contracts
+
+## 2026-10-16 — Skill Graph: fixes, guide, share cards, SEO, security hardening
+
+- [x] Agent plan walkthrough scrolls only the dock (no page jump) and keeps a 16px margin, so the active stage card is never clipped
+- [x] Loading a blueprint, a blank graph or a file re-fits the canvas (`fitRequest` nonce) even after the user panned or zoomed
+- [x] Model menu adds `fable`; "inherit" reads "inherit (session model)"
+- [x] Truncation: risk chip moved to the card's top row (footer keeps room for the id), hover titles on ids and labels, editor-header counts drop whole parts via container queries, plan commands wrap
+- [x] `/graph/guide`: 15-section guide (quick start, workspace, node types and fields, edges/contracts, references, fresh context, gates/checks/approvals, models/tools, issues table, walkthrough, export, sharing/privacy, shortcuts, troubleshooting); linked from the studio header and explainer; in sitemap and llms.txt
+- [x] Share cards: `opengraph-image` + `twitter-image` for `/graph` and `/graph/guide` (next/og, Manrope + JetBrains Mono woff in `src/app/graph/_og/`); minimal design with no dark fills: orange-tile mark, headline, one line, and a four-node graph (goal → two parallel workers → orange verifier); old hard-coded og-ai-skill-studio.png removed from `/graph` metadata
+- [x] SEO: BreadcrumbList on both pages, TechArticle + HowTo on the guide, twitter metadata and keywords on the guide
+- [x] Security: `model`/`tools` allowlisted (`bad-model`, `bad-tool` errors) and re-checked in `buildSubagent` (frontmatter injection of permissionMode/hooks/mcpServers); parse caps (500k chars, 200 nodes, 2,000 edges); share hash capped at 32k chars and decoded size at the source cap; opening a share link keeps the saved draft one undo away; review banner lists commands, Bash, file-editing and MCP steps of a shared graph; analytics drops the URL fragment; raw localStorage calls replaced by `src/lib/storage.ts` (`removeStorageKey`)
+- [x] Tests: `graphSecurity.test.ts` (6); all 80 graph tests pass
+
+## 2026-10-16 — Skill Graph: build without writing contracts or references
+
+- [x] Naming a contract on an edge defines it (`setEdgeContract`: JSON when the name says so, otherwise Markdown); half-typed names that no edge uses and that have no description are pruned
+- [x] Prompt field gets an **Insert input** menu (`promptInputs`): the goal, each incoming step's whole output, this step's part of a JSON output, group shortcuts when every node of that type feeds the step, and `{{inputs}}`; only direct inputs, so it never breaks a fresh context
+- [x] Inspector: model, output, fresh context, tools, checks, gates, on-failure and incoming contracts moved into a collapsed **Advanced** panel with a one-line summary of what is set
+- [x] Guide: "What you need (and what you don't)" table up front; quick start without YAML; walkthrough and export before an **Advanced** half (contracts, references, fresh context, gates, models, new "The file format" section); TOC grouped; sharing section mentions the review banner and undo
+- [x] Tests: `graphAuthoring.test.ts` (6); 86 graph tests pass; headless Chrome check of the inspector (Advanced collapsed, Insert input, auto-defined contract, no console errors)
+
+## 2026-10-16 — Skill Graph: independent review fixes and full re-validation
+
+- [x] Crash: an edge from a missing node (a half-typed id) crashed the Agent plan and Inspector; `predecessorsOf`/`successorsOf` skip unknown ends and the three unguarded lookups are guarded
+- [x] `agent-name-collision` error when two ids slug to one subagent file (`review_a` / `review-a`)
+- [x] Frontmatter: commas banned inside tool patterns (no smuggled second tool); `tools`/`model` JSON-quoted when not plain YAML
+- [x] Gate without `on_fail` now stops in the export too (one default everywhere)
+- [x] Shared-link banner also lists steps with no tool limit, and reviews only the graph from the link
+- [x] Export refuses while the SKILL.md does not parse (it used to export the last good graph)
+- [x] Blocked site data no longer crashes the studio (`storageAvailable()` in `src/lib/storage.ts`, guarded snapshot read); a failed autosave shows a notice once
+- [x] Storage quota eviction runs only for AI Skill Studio's own key
+- [x] `getContract` (own properties only), `__proto__` refused as a contract name; `setEdgeContract` prunes only contracts with the inferred format and no description
+- [x] `isKeyedJson` shared by plan, export, preview and Insert input (a single-target JSON output is one unkeyed value); scoped `Bash(...)` counts as able to run its own check
+- [x] Canvas bias badge: light orange when clean, rose when it leaks (no dark fill)
+- [x] Guide severities corrected (contract-undefined and isolation-leak are warnings, irreversible-unapproved is an error), new errors listed, gate default and banner described
+- [x] Tests: `graphReview.test.ts` (12), `storageQuota.test.ts` (3); 1064 tests, 22 CLI tests, validate-presets, lint 0 errors (63 older warnings outside /graph), build; 26/26 headless Chrome checks (inspector, insert input, contracts, blueprint fit, walkthrough scroll, share banner, undo after a link, injected model blocked, broken edge, guide anchors and JSON-LD, OG/X images and tags)
+
+## 2026-10-16 — Layout fixes: Blueprints menu, mobile guide mascot
+
+- [x] Skill Graph popovers (Blueprints, Node, Export) measure themselves on open and shift back inside the window; a narrow editor pane no longer cuts the Blueprints menu off on the left
+- [x] AI Skill Studio mobile: the action bar publishes its real height (`--studio-action-bar-space`, `MobileStudioControls.tsx`) and the guide mascot and "New here?" bubble float 12px above it, so large phone text no longer makes them overlap "View Code"
+- [x] Canvas cards 216 → 252px and the LR layer gap 136 → 164px, so blueprint ids (up to 19 characters) and contract pills (up to 20) are no longer cut off; checked every blueprint in headless Chrome
+- [x] Verified: headless Chrome at 1100/1280/1600px (menu inside the window) and 390px phone with normal and large text (mascot and bubble clear the bar); Skill Graph suite 26/26; 1064 tests, validate-presets, lint 0 errors, build

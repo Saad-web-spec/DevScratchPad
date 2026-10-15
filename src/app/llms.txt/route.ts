@@ -77,6 +77,8 @@ DevScratchpad (${SITE_URL}) is an open developer utility suite built for securit
 - [Developer Tools Directory](${SITE_URL}/developer-tools): Complete directory of 28 client-side developer utilities across 5 categories.
 - [AI Skill Studio](${SITE_URL}/ai-skill-studio): Cursor Rules (.mdc), Claude Skills (SKILL.md), CLAUDE.md, AGENTS.md, Windsurf Cascade, GitHub Copilot, OpenAI, Gemini Prompts & MCP Config Generator with 100% client-side privacy.
 - [AI Skill Library](${SITE_URL}/skill): Curated directory of production-tested AI skills and prompt templates for Claude Code CLI and agent work.
+- [Skill Graph](${SITE_URL}/graph): Visual editor and compiler for multi-agent skills: draw steps, contracts, fresh-context verifiers and gates, then export an orchestrating SKILL.md with one Claude Code subagent per step, or a Cursor rule. Runs entirely in the browser.
+- [Skill Graph Guide](${SITE_URL}/graph/guide): Step-by-step guide to building a graph skill: node types, edges and contracts, prompt references, gates and checks, validation and export.
 - [Universal Rules Converter](${SITE_URL}/ai-skill-studio/rules-converter): Migrate and convert legacy .cursorrules, .mdc, and prompts to Claude Code, Windsurf, Copilot, and Gemini rules client-side.
 - [Headless Terminal CLI](${SITE_URL}/cli): Zero-install command-line management (\`npx devscratchpad\`) for downloading, auditing, and scaffolding repository rulebooks.
 - [Developer Troubleshooting Recipes](${SITE_URL}/recipes): Curated catalog of verified solutions for common developer exceptions, terminal errors, and format conversions.

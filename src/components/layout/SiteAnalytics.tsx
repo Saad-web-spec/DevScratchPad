@@ -23,8 +23,9 @@ function isExcluded(url: string): boolean {
   return loadFromStorageEnvelope<boolean>(EXCLUDE_KEY, EXCLUDE_KEY) === true;
 }
 
+/** Drops opted-out visits, and the URL fragment of the rest: Skill Graph share links carry a whole graph after the #. */
 function dropIfExcluded<T extends { url: string }>(event: T): T | null {
-  return isExcluded(event.url) ? null : event;
+  return isExcluded(event.url) ? null : { ...event, url: event.url.split("#")[0] };
 }
 
 export function SiteAnalytics() {

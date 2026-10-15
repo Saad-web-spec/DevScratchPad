@@ -154,8 +154,9 @@ export function StudioGuide({ onRequestTab }: StudioGuideProps) {
 
   if (!isMounted) return null;
 
+  // Below lg it floats 12px above the mobile action bar, whatever height the phone's text size gives it.
   return (
-    <div data-guide-hide className="fixed z-[60] left-3 bottom-20 lg:left-5 lg:bottom-5 flex items-end gap-2.5 font-gemini print:hidden">
+    <div data-guide-hide className="fixed z-[60] left-3 bottom-[calc(var(--studio-action-bar-space,4.25rem)+0.75rem)] lg:left-5 lg:bottom-5 flex items-end gap-2.5 font-gemini print:hidden">
       <button
         ref={mascotRef}
         type="button"

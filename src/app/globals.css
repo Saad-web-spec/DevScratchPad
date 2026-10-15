@@ -493,3 +493,44 @@ body.studio-guide-running [data-guide-hide] {
     animation: none;
   }
 }
+
+/* Skill Graph (/graph) has its own typography: Manrope for the interface, JetBrains Mono for code.
+   `font-sans` / `font-mono` resolve through these variables, so the override is scoped to the route. */
+.graph-theme {
+  --font-sans: "Manrope Variable", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-mono: "JetBrains Mono Variable", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-family: var(--font-sans);
+  font-feature-settings: "cv11", "ss01";
+}
+
+/* Skill Graph canvas: a quiet dot grid */
+.graph-canvas-grid {
+  background-color: #fafafa;
+  background-image: radial-gradient(circle, #d4d4d8 1px, transparent 1px);
+  background-size: 22px 22px;
+}
+
+/* Skill Graph canvas: dashes travel along an edge while data is crossing it; still for reduced motion */
+@keyframes graph-edge-flow {
+  to { stroke-dashoffset: -24; }
+}
+.graph-edge-flow {
+  stroke-dasharray: 6 6;
+  animation: graph-edge-flow 0.7s linear infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .graph-edge-flow {
+    animation: none;
+  }
+}
+
+/* Skill Graph editor: lines of the node selected on the canvas (light tint + orange bar in the gutter, never over the text) */
+.monaco-editor .graph-node-line {
+  background: rgba(234, 88, 12, 0.06);
+}
+.monaco-editor .margin-view-overlays .graph-node-gutter {
+  width: 3px !important;
+  margin-left: 4px;
+  background: #ea580c;
+  border-radius: 2px;
+}
