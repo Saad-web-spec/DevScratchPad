@@ -719,3 +719,9 @@ All AI agents operating in this repository MUST follow this 5-step loop:
 - **Gotcha — CRLF files**: `src/lib/storage.ts` has Windows line endings, so multi-line string replacement in scripts silently misses; use the Edit tool there.
 - **E2E**: `%TEMP%/graph-e2e/check2.mjs <project> <outdir>` drives the installed Chrome over CDP (26 checks). Open about:blank and then `Page.navigate`: the /json/new request drops a `#graph=` fragment.
 - **Status**: ✅ Complete (1064 tests, 22 CLI tests, validate-presets, lint 0 errors, build, 26/26 browser checks).
+
+### Session: 2026-10-16 — Skill Graph: bolder share cards
+- **Agent**: Claude Code (Opus); the user found the /graph link preview too faint in WhatsApp.
+- **Gotcha — preview size**: chat apps show the 1200×630 card at roughly a fifth of its size, so text under ~22px and 2px strokes vanish. Size share-card type and strokes for the thumbnail, not the full image.
+- **Gotcha — Satori backgrounds**: a `radial-gradient` with `backgroundSize` does not tile into a dot grid in next/og; draw repeated patterns as plain SVG circles (no `<pattern>` support).
+- **Status**: ✅ Complete (validate-presets, lint 0 errors, build).

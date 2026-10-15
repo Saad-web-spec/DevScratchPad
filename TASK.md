@@ -458,3 +458,8 @@ From the "Loops and Graphs" article (@hanakoxbt): a check that can fail, edges t
 - [x] AI Skill Studio mobile: the action bar publishes its real height (`--studio-action-bar-space`, `MobileStudioControls.tsx`) and the guide mascot and "New here?" bubble float 12px above it, so large phone text no longer makes them overlap "View Code"
 - [x] Canvas cards 216 → 252px and the LR layer gap 136 → 164px, so blueprint ids (up to 19 characters) and contract pills (up to 20) are no longer cut off; checked every blueprint in headless Chrome
 - [x] Verified: headless Chrome at 1100/1280/1600px (menu inside the window) and 390px phone with normal and large text (mascot and bubble clear the bar); Skill Graph suite 26/26; 1064 tests, validate-presets, lint 0 errors, build
+
+## 2026-10-16 — Skill Graph: bolder share cards
+
+- [x] `/graph` and `/graph/guide` OG/X cards redesigned for thumbnail size (`src/app/graph/_og/shareImage.tsx`): headline 50 → 58px, subtitle on one line, larger brand mark and wordmark, nodes 136×56 → 164×70 with 22px labels and soft shadows, edges 2 → 3.5px, solid orange Verify node as the focal point, dotted editor canvas on the right panel, guide eyebrow as an orange pill
+- [x] Verified: both images rendered from the dev server and checked visually; validate-presets, lint 0 errors (no new warnings), build
