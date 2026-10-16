@@ -9,6 +9,9 @@
  * solid edges, and orange only for the highlighted words and the fresh-context edges.
  *
  * Nothing important sits in the bottom-left corner, where X draws its own domain label over the image.
+ *
+ * After a design change, update the date comment in the four opengraph-image / twitter-image route files:
+ * the image URL hash comes from those files, and LinkedIn and X keep showing the old image until it changes.
  */
 import { ImageResponse } from "next/og";
 import { readFile } from "node:fs/promises";
