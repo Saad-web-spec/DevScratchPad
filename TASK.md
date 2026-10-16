@@ -463,3 +463,11 @@ From the "Loops and Graphs" article (@hanakoxbt): a check that can fail, edges t
 
 - [x] `/graph` and `/graph/guide` OG/X cards redesigned for thumbnail size (`src/app/graph/_og/shareImage.tsx`): headline 50 → 58px, subtitle on one line, larger brand mark and wordmark, nodes 136×56 → 164×70 with 22px labels and soft shadows, edges 2 → 3.5px, solid orange Verify node as the focal point, dotted editor canvas on the right panel, guide eyebrow as an orange pill
 - [x] Verified: both images rendered from the dev server and checked visually; validate-presets, lint 0 errors (no new warnings), build
+
+## 2026-10-16 — Skill Graph: mobile editor blockage & node card text clipping fixes
+
+- [x] Mobile Markdown editor white blockage fixed (`src/app/graph/GraphClient.tsx`): hid the right pane (`rightPaneRef`, containing canvas + dock) on mobile when `mobileView === "editor"` (`mobileView === "editor" ? "hidden" : "flex"` with `lg:flex`) so it no longer steals 50% of `<main>`'s vertical flex height as an empty white pane below the editor; added `lg:flex-none` on `<section aria-label="SKILL.md source">` and triggered `editorRef.current?.layout()` via `requestAnimationFrame` on tab toggle
+- [x] Monaco sticky-scroll overlay disabled (`stickyScroll: { enabled: false }` in `src/components/MonacoEditor.tsx` and `src/app/graph/GraphClient.tsx`) so pinned YAML parent headers (`topology:`, `edges:`) do not cover top lines on narrow mobile screens
+- [x] Canvas node card 2-line label clipping fixed (`src/app/graph/lib/graphSkill.ts`, `src/app/graph/components/GraphCanvas.tsx`, `src/app/globals.css`): increased `NODE_HEIGHT` from `88` to `96`, tightened vertical card padding to `px-3 py-2.5` (`+12px` inner height), added `shrink-0` and `leading-[1.25]` to the `line-clamp-2` label and `shrink-0 leading-none` to the header/footer rows so Flexbox never squishes 2-line labels (`5 & 6. MERGE & FINAL ANSWER`) into the footer pill, and set `text-size-adjust: 100%` on `.graph-theme`
+- [x] Toolbar popovers clamped (`max-w-[calc(100vw-1rem)]` in `src/app/graph/components/ToolbarPopover.tsx`) so wide menus never overflow narrow mobile viewports
+

@@ -97,7 +97,7 @@ export function ToolbarPopover({ label, ariaLabel, align = "left", variant = "de
           ref={panelRef}
           style={shift ? { transform: `translateX(${shift}px)` } : undefined}
           className={cn(
-            "absolute top-full z-50 mt-1.5 rounded-lg border border-zinc-200 bg-white p-1 shadow-lg",
+            "absolute top-full z-50 mt-1.5 max-w-[calc(100vw-1rem)] rounded-lg border border-zinc-200 bg-white p-1 shadow-lg",
             align === "right" ? "right-0" : "left-0",
             panelClassName
           )}

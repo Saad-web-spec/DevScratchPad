@@ -1080,7 +1080,7 @@ function cleanLabelText(label: string): string {
 /* ------------------------------------------------------------------ canvas layout */
 
 export const NODE_WIDTH = 252;
-export const NODE_HEIGHT = 88;
+export const NODE_HEIGHT = 96;
 /** Gap between layers along the flow, and between siblings inside a layer, per direction. */
 /** Sized for the blueprints: cards fit a 19-character id beside its model and tool count, and the LR layer gap fits a 20-character contract pill. */
 export const LAYOUT_GAPS = { LR: { layer: 164, sibling: 28 }, TB: { layer: 64, sibling: 22 } } as const;

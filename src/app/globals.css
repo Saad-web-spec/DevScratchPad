@@ -501,6 +501,8 @@ body.studio-guide-running [data-guide-hide] {
   --font-mono: "JetBrains Mono Variable", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   font-family: var(--font-sans);
   font-feature-settings: "cv11", "ss01";
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
 }
 
 /* Skill Graph canvas: a quiet dot grid */

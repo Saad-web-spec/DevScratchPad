@@ -99,7 +99,7 @@ function RiskChip({ node }: { node: GraphNode }) {
   return (
     <span
       title={node.risk === "irreversible" ? "Hard to undo: runs only after an approval" : "Wide blast radius: needs a command check"}
-      className={cn("shrink-0 rounded-md px-1.5 py-px text-[10px] font-semibold leading-tight", node.risk === "irreversible" ? "bg-orange-50 text-orange-700" : "bg-zinc-100 text-zinc-600")}
+      className={cn("shrink-0 rounded-md px-1.5 py-0.5 text-[10px] font-semibold leading-none", node.risk === "irreversible" ? "bg-orange-50 text-orange-700" : "bg-zinc-100 text-zinc-600")}
     >
       {node.risk}
     </span>
@@ -110,8 +110,8 @@ function RiskChip({ node }: { node: GraphNode }) {
 function NodeFooter({ node }: { node: GraphNode }) {
   const name = node.type === "code" && node.run ? `$ ${node.run}` : node.id;
   return (
-    <span className="flex min-w-0 items-center gap-1.5 text-[10px] text-zinc-400">
-      <span className="min-w-0 truncate font-mono" title={name}>
+    <span className="flex min-w-0 shrink-0 items-center gap-1.5 text-[10px] leading-none text-zinc-400">
+      <span className="min-w-0 truncate font-mono leading-tight" title={name}>
         {name}
       </span>
       {node.check && (
@@ -119,7 +119,7 @@ function NodeFooter({ node }: { node: GraphNode }) {
           <ListChecks className="h-2.5 w-2.5" />
         </span>
       )}
-      {node.model && <span className="shrink-0 rounded-md bg-zinc-100 px-1.5 py-px font-semibold text-zinc-600">{node.model}</span>}
+      {node.model && <span className="shrink-0 rounded-md bg-zinc-100 px-1.5 py-0.5 font-semibold leading-none text-zinc-600">{node.model}</span>}
       {node.tools && node.tools.length > 0 && (
         <span className="flex shrink-0 items-center gap-0.5" title={node.tools.join(", ")}>
           <Wrench className="h-2.5 w-2.5" />
@@ -481,7 +481,7 @@ export function GraphCanvas({
               }}
               style={{ left: position.x, top: position.y, width: NODE_WIDTH, height: NODE_HEIGHT }}
               className={cn(
-                "group pointer-events-auto absolute flex cursor-pointer items-start gap-2.5 overflow-visible rounded-xl border bg-white p-3 text-left shadow-xs outline-hidden transition-[border-color,box-shadow,opacity]",
+                "group pointer-events-auto absolute flex cursor-pointer items-start gap-2.5 overflow-visible rounded-xl border bg-white px-3 py-2.5 text-left shadow-xs outline-hidden transition-[border-color,box-shadow,opacity]",
                 selected ? "border-orange-500 ring-4 ring-orange-500/15" : "border-zinc-200 hover:border-zinc-300",
                 running && "border-orange-500 ring-4 ring-orange-400/20",
                 dimmed && "opacity-50",
@@ -492,15 +492,15 @@ export function GraphCanvas({
                 <Icon className="h-4 w-4" />
               </span>
               <span className="flex h-full min-w-0 flex-1 flex-col justify-between">
-                <span className="flex items-center justify-between gap-2">
-                  <span className={cn("truncate text-[10px] font-bold uppercase tracking-[0.08em]", theme.label)}>{node.type}</span>
+                <span className="flex shrink-0 items-center justify-between gap-2 leading-none">
+                  <span className={cn("truncate text-[10px] font-bold uppercase leading-none tracking-[0.08em]", theme.label)}>{node.type}</span>
                   <span className="ml-auto flex shrink-0 items-center gap-1.5">
                     <RiskChip node={node} />
                   {running &&<span className="h-2 w-2 shrink-0 animate-pulse rounded-full bg-orange-500" aria-hidden />}
                   {finished && (node.type === "verifier" ? <ShieldCheck className="h-3.5 w-3.5 text-zinc-900" /> : <Check className="h-3.5 w-3.5 text-zinc-900" />)}
                   </span>
                 </span>
-                <span className="line-clamp-2 text-[12.5px] font-bold leading-tight tracking-[-0.01em] text-zinc-900" title={node.label}>
+                <span className="line-clamp-2 shrink-0 text-[12.5px] font-bold leading-[1.25] tracking-[-0.01em] text-zinc-900" title={node.label}>
                   {node.label}
                 </span>
                 <NodeFooter node={node} />

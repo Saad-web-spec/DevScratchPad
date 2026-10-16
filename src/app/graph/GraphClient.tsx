@@ -448,6 +448,12 @@ function GraphWorkspace({ initial, shared }: WorkspaceProps) {
     setEditorReady(true);
   };
 
+  useEffect(() => {
+    if (!editorReady || (mobileView !== "editor" && !editorOpen)) return;
+    const frame = requestAnimationFrame(() => editorRef.current?.layout());
+    return () => cancelAnimationFrame(frame);
+  }, [mobileView, editorOpen, editorReady]);
+
   /* ----------------------------------------------------------- graph editing */
 
   /** Applies an edit made on the canvas or in the inspector by rewriting the Markdown (undoable). */
@@ -884,9 +890,9 @@ function GraphWorkspace({ initial, shared }: WorkspaceProps) {
           )}
           <section
             aria-label="SKILL.md source"
-            className={cn("min-h-0 flex-col bg-white lg:w-(--editor-w) lg:shrink-0", editorOpen ? "lg:flex" : "lg:hidden", mobileView === "editor" ? "flex flex-1" : "hidden")}
+            className={cn("min-h-0 flex-col bg-white lg:w-(--editor-w) lg:shrink-0", editorOpen ? "lg:flex" : "lg:hidden", mobileView === "editor" ? "flex flex-1 lg:flex-none" : "hidden")}
           >
-            <div className="@container flex items-center justify-between gap-2 border-b border-zinc-100 px-3 py-1.5">
+            <div className="@container flex shrink-0 items-center justify-between gap-2 border-b border-zinc-100 px-3 py-1.5">
               <div className="flex min-w-0 items-center gap-2 text-xs">
                 <span className="font-mono text-[12.5px] font-semibold text-zinc-900">SKILL.md</span>
                 {parsed.fatal ? (
@@ -978,6 +984,7 @@ function GraphWorkspace({ initial, shared }: WorkspaceProps) {
                   wordWrap: "on",
                   lineNumbers: "on",
                   tabSize: 2,
+                  stickyScroll: { enabled: false },
                   // Room below the last line so it never sits flush against the window edge.
                   scrollBeyondLastLine: true,
                   padding: { top: 12, bottom: 32 },
@@ -993,7 +1000,7 @@ function GraphWorkspace({ initial, shared }: WorkspaceProps) {
           {editorOpen && <Splitter orientation="vertical" value={editorWidth} range={EDITOR_WIDTH} label="Resize the Markdown editor" onChange={setEditorWidth} measure={(clientX) => measureEditor(clientX)} />}
 
           {/* Canvas + dock */}
-          <div ref={rightPaneRef} className="flex min-h-0 min-w-0 flex-1 flex-col">
+          <div ref={rightPaneRef} className={cn("min-h-0 min-w-0 flex-1 flex-col lg:flex", mobileView === "editor" ? "hidden" : "flex")}>
             <section aria-label="Graph canvas" className={cn("min-h-0 flex-1 lg:block lg:min-h-40", mobileView === "canvas" ? "block" : "hidden")}>
               <GraphCanvas
                 graph={graph}

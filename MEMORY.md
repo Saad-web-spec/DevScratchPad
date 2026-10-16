@@ -725,3 +725,11 @@ All AI agents operating in this repository MUST follow this 5-step loop:
 - **Gotcha — preview size**: chat apps show the 1200×630 card at roughly a fifth of its size, so text under ~22px and 2px strokes vanish. Size share-card type and strokes for the thumbnail, not the full image.
 - **Gotcha — Satori backgrounds**: a `radial-gradient` with `backgroundSize` does not tile into a dot grid in next/og; draw repeated patterns as plain SVG circles (no `<pattern>` support).
 - **Status**: ✅ Complete (validate-presets, lint 0 errors, build).
+
+### Session: 2026-10-16 — Skill Graph: mobile editor white blockage & node card text clipping fixes
+- **Agent**: Antigravity (Gemini)
+- **Gotcha — sibling `flex-1` panes in mobile tab views**: In `GraphClient.tsx`, `<main>` is `flex-col` below `lg`. Hiding only the inner `<section>` children of `rightPaneRef` while leaving `rightPaneRef` itself as `flex flex-1` caused an empty `flex-1` container to steal 50% of the vertical viewport height below the Markdown editor on mobile. Always toggle `hidden` (`mobileView === "editor" ? "hidden" : "flex"` with `lg:flex`) on the outer flex-item wrapper itself, and pair mobile `flex-1` with `lg:flex-none` when desktop uses an explicit width (`lg:w-(--editor-w)`).
+- **Gotcha — Flexbox `min-height: auto` with `line-clamp-2`**: `line-clamp-2` sets `overflow: hidden`, which changes a flex child's automatic minimum size from its content height to `0`. Inside a fixed-height `justify-between` card (`NODE_HEIGHT`), any vertical deficit is absorbed entirely by the `line-clamp-2` label, slicing the bottom of the second line without triggering an ellipsis. Fix by giving the card sufficient inner height (`NODE_HEIGHT = 96`, `px-3 py-2.5`) and adding `shrink-0` to the header, `line-clamp-2` label, and footer.
+- **Gotcha — Monaco sticky scroll on mobile**: Monaco's default `stickyScroll` pins nested YAML headers at the top of the viewport, creating a white overlay bar over the first lines on compact screens; disable with `stickyScroll: { enabled: false }`.
+- **Status**: ✅ Complete (1064 tests, validate-presets, lint 0 errors, build).
+

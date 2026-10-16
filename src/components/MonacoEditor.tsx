@@ -139,6 +139,7 @@ const DEFAULT_OPTIONS = {
   lineHeight: 20,
   padding: { top: 12, bottom: 12 },
   minimap: { enabled: false },
+  stickyScroll: { enabled: false },
   scrollBeyondLastLine: false,
   automaticLayout: true,
   tabSize: 2,
