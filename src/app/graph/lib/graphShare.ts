@@ -12,11 +12,10 @@ export const SHARE_URL_SOFT_LIMIT = 8000;
 
 export interface SharedGraph {
   source: string;
-  goal?: string;
 }
 
 export function encodeShareHash(shared: SharedGraph): string {
-  const payload = JSON.stringify(shared.goal ? { s: shared.source, g: shared.goal } : { s: shared.source });
+  const payload = JSON.stringify({ s: shared.source });
   return `#${HASH_KEY}=${LZString.compressToEncodedURIComponent(payload)}`;
 }
 
@@ -32,9 +31,10 @@ export function decodeShareHash(hash: string): SharedGraph | null {
   try {
     const json = LZString.decompressFromEncodedURIComponent(match[1]);
     if (!json || json.length > MAX_SOURCE_LENGTH + 1_000) return null;
-    const data = JSON.parse(json) as { s?: unknown; g?: unknown };
+    // Links from the old runner also carry a goal (`g`); it is ignored.
+    const data = JSON.parse(json) as { s?: unknown };
     if (typeof data.s !== "string" || data.s.trim() === "") return null;
-    return { source: data.s, goal: typeof data.g === "string" ? data.g : undefined };
+    return { source: data.s };
   } catch {
     return null;
   }

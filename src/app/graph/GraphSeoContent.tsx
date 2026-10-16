@@ -20,7 +20,7 @@ export const GRAPH_FAQS: { question: string; answer: string }[] = [
   {
     question: "What do I get when I export?",
     answer:
-      "A ZIP with an orchestrating skill under .claude/skills/<name>/, one Claude Code subagent per step under .claude/agents/ (with its tools, model and gate), a Cursor rule under .cursor/rules/, the editable graph source, and a README. There is also a single self-orchestrating SKILL.md for agents without subagents.",
+      "A ZIP with an orchestrating skill under .claude/skills/<name>/, one Claude Code subagent per model step under .claude/agents/ (with its tools and model; checks, gates and approvals are run by the orchestrating skill), a Cursor rule under .cursor/rules/, the editable graph source, and a README. There is also a single self-orchestrating SKILL.md for agents without subagents.",
   },
   {
     question: "What does the prior-context bias badge mean?",

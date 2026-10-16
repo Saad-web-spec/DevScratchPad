@@ -46,6 +46,7 @@ import {
   isValidNodeId,
   nodeAtLine,
   nodeLineRanges,
+  findOrphanSections,
   parseGraphSkill,
   removeEdge,
   removeNode,
@@ -58,6 +59,7 @@ import {
   updateContract,
   updateNode,
   validateGraph,
+  type GraphIssue,
   type IsolationReport,
   type NodeType,
   type SkillGraph,
@@ -346,7 +348,17 @@ function GraphWorkspace({ initial, shared }: WorkspaceProps) {
   if (parsed.graph && parsed.graph !== lastGood) setLastGood(parsed.graph);
   const graph = parsed.graph ?? lastGood;
 
-  const issues = useMemo(() => validateGraph(graph), [graph]);
+  const issues = useMemo(() => {
+    // A prompt section whose id matches no node is dropped the next time the canvas rewrites the Markdown.
+    const orphans = parsed.graph
+      ? findOrphanSections(source, parsed.graph).map((id): GraphIssue => ({
+          severity: "warning",
+          code: "orphan-section",
+          message: `"## @node: ${id}" matches no node, so its prompt is ignored and is removed on the next canvas edit. Fix the id, or add a node "${id}".`,
+        }))
+      : [];
+    return [...validateGraph(graph), ...orphans];
+  }, [graph, parsed.graph, source]);
   const errorCount = issues.filter((issue) => issue.severity === "error").length;
   const warningCount = issues.length - errorCount;
   const plan = useMemo(() => buildPlan(graph), [graph]);
@@ -817,7 +829,7 @@ function GraphWorkspace({ initial, shared }: WorkspaceProps) {
                 <>
                   <MenuItem
                     icon={<Package className="h-3.5 w-3.5" />}
-                    hint="Orchestrating skill + one subagent per node (tools, model, gate) + Cursor rule + graph source"
+                    hint="Orchestrating skill + one subagent per model step (tools, model) + Cursor rule + graph source"
                     onClick={() => {
                       close();
                       void exportZip();

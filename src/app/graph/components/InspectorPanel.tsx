@@ -361,15 +361,30 @@ function FailureFields({ node, retryLabel, onNode, children }: { node: GraphNode
           <input
             type="number"
             min={0}
-            max={5}
+            max={RETRY_CAP}
             value={node.maxRetries ?? DEFAULT_MAX_RETRIES}
-            onChange={(event) => onNode(node.id, { maxRetries: Math.max(0, Math.min(5, Math.round(Number(event.target.value) || 0))) })}
+            onChange={(event) => onNode(node.id, { maxRetries: Math.max(0, Math.min(RETRY_CAP, Math.round(Number(event.target.value) || 0))) })}
             className={FIELD}
           />
         </Field>
       )}
       {children}
     </div>
+  );
+}
+
+/** How much a step can break; decides which safeguards the checker asks for. */
+function RiskField({ node, onNode }: { node: GraphNode; onNode: InspectorProps["onNode"] }) {
+  return (
+    <Field label="Blast radius">
+      <select value={node.risk ?? "contained"} onChange={(event) => onNode(node.id, { risk: event.target.value === "contained" ? undefined : (event.target.value as RiskLane) })} className={FIELD}>
+        {RISK_LANES.map((lane) => (
+          <option key={lane} value={lane}>
+            {lane}
+          </option>
+        ))}
+      </select>
+    </Field>
   );
 }
 
@@ -389,15 +404,7 @@ function ChecksSection({ node, onNode }: { node: GraphNode; onNode: InspectorPro
             className={cn(FIELD, "font-mono")}
           />
         </Field>
-        <Field label="Blast radius">
-          <select value={node.risk ?? "contained"} onChange={(event) => onNode(node.id, { risk: event.target.value === "contained" ? undefined : (event.target.value as RiskLane) })} className={FIELD}>
-            {RISK_LANES.map((lane) => (
-              <option key={lane} value={lane}>
-                {lane}
-              </option>
-            ))}
-          </select>
-        </Field>
+        <RiskField node={node} onNode={onNode} />
       </div>
       <p className={NOTE}>
         The command runs when the step returns and passes on exit code 0, so a program can fail the work, not only a model. {RISK_HINT[node.risk ?? "contained"]}
@@ -548,6 +555,7 @@ function advancedSummary(graph: SkillGraph, node: GraphNode): string {
     contracts > 0 && `${contracts} contract${contracts === 1 ? "" : "s"}`,
   ].filter((part): part is string => typeof part === "string" && part !== "");
   if (parts.length > 0) return parts.join(" · ");
+  if (node.type === "code") return "blast radius, on failure, contracts";
   return runsWithoutSubagent(node.type) ? "on failure, contracts" : "model, tools, checks, contracts";
 }
 
@@ -605,6 +613,8 @@ function NodeInspector({ graph, issues, node, onNode, onRename, onRemoveNode, on
             <code className="font-mono text-zinc-700">{"{{workers}}"}</code> becomes the path of a file holding that output. A non-zero exit fails the step.
           </p>
           <AdvancedSection summary={summary}>
+            <RiskField node={node} onNode={onNode} />
+            <p className={NOTE}>{RISK_HINT[node.risk ?? "contained"]}</p>
             <FailureFields node={node} retryLabel="re-run upstream" onNode={onNode} />
             <IncomingEdges graph={graph} node={node} onEdgeContract={onEdgeContract} />
           </AdvancedSection>

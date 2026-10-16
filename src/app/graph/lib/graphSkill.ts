@@ -876,6 +876,14 @@ function validateReliability(graph: SkillGraph): GraphIssue[] {
     }
 
     const ancestors = nodesOf(ancestorsOf(graph, node.id));
+    if (node.type === "code" && node.onFail === "retry" && !predecessorsOf(graph, node.id).some((id) => byId.has(id) && !runsWithoutSubagent((byId.get(id) as GraphNode).type))) {
+      issues.push({
+        severity: "warning",
+        code: "retry-nothing-upstream",
+        nodeId: node.id,
+        message: `"${node.id}" re-runs the steps before it on failure, but none of them is a subagent, so it will stop instead. Set on_fail: stop, or connect it after a subagent step.`,
+      });
+    }
     if (node.risk === "irreversible") {
       if (!ancestors.some((a) => a.type === "approval")) {
         issues.push({

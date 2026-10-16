@@ -358,7 +358,7 @@ node ./cli/bin/devscratchpad.mjs audit
 - [x] Tests: `src/app/graph/lib/__tests__/graph.test.ts` (27)
 - [x] Pinch-to-zoom on touch screens (two-finger pinch around the midpoint; tested with CDP touch events)
 - [x] Share link for graphs (`#graph=` LZ hash, graph only; cleared after it loads)
-- [ ] Live run against a real Claude key (Anthropic path verified by types and unit tests only; the OpenAI-compatible path was run end to end against a local mock server)
+- [x] ~~Live run against a real Claude key~~ (superseded: the runner was removed in Skill Graph v2, the page no longer calls models)
 
 ## 2026-10-15 — Skill Graph polish: streaming, blueprints, editor sync, icon
 
@@ -470,4 +470,19 @@ From the "Loops and Graphs" article (@hanakoxbt): a check that can fail, edges t
 - [x] Monaco sticky-scroll overlay disabled (`stickyScroll: { enabled: false }` in `src/components/MonacoEditor.tsx` and `src/app/graph/GraphClient.tsx`) so pinned YAML parent headers (`topology:`, `edges:`) do not cover top lines on narrow mobile screens
 - [x] Canvas node card 2-line label clipping fixed (`src/app/graph/lib/graphSkill.ts`, `src/app/graph/components/GraphCanvas.tsx`, `src/app/globals.css`): increased `NODE_HEIGHT` from `88` to `96`, tightened vertical card padding to `px-3 py-2.5` (`+12px` inner height), added `shrink-0` and `leading-[1.25]` to the `line-clamp-2` label and `shrink-0 leading-none` to the header/footer rows so Flexbox never squishes 2-line labels (`5 & 6. MERGE & FINAL ANSWER`) into the footer pill, and set `text-size-adjust: 100%` on `.graph-theme`
 - [x] Toolbar popovers clamped (`max-w-[calc(100vw-1rem)]` in `src/app/graph/components/ToolbarPopover.tsx`) so wide menus never overflow narrow mobile viewports
+
+## 2026-10-16 — Skill Graph: share card redesign & unfinished-work sweep
+
+- [x] Share cards (`src/app/graph/_og/shareImage.tsx`, `cards.ts`): replaced the uncommitted "studio window" draft (gradients, ~10 pieces of 11–14px text, "Valid Graph" / "Zero CoT Leak" badges) with a flat white card: real Skill Graph mark, 60px headline with one orange word (`highlight`), one-line subtitle, "Compiles to" SKILL.md / Subagents / Cursor .mdc, and a top-to-bottom four-node graph on a dotted zinc-50 panel (218×84 cards, 4px edges, solid orange Verify); guide card numbers the stages (`numbered`); nothing important in the bottom-left corner where X draws its domain label; checked at 1200px and a 320px thumbnail
+- [x] Share cards, per user: all four nodes use the same white card (Verify was solid orange, then black; no special border); solid fan-out edges and ports black; mark tile and "Compiles to" chips light; orange only for the highlighted words and dashed fresh-context edges. `/` and `/ai-skill-studio` share images unchanged
+- [x] Orphan `## @node:` sections (id not in the topology) now show as an `orphan-section` warning in the Issues tab instead of silently disappearing on the next canvas edit (`findOrphanSections` was test-only)
+- [x] Code steps: Blast radius field in the Inspector; the export adds the "Hard to undo" / "Wide reach" lines and never auto-retries an irreversible command
+- [x] `retry-nothing-upstream` warning: a code step with `on_fail: retry` and no subagent before it stops instead
+- [x] Max retries input capped at `RETRY_CAP` (3), matching its label (it allowed 5)
+- [x] Export menu hint and FAQ said every node gets a subagent "with its gate"; now "one subagent per model step (tools, model)"
+- [x] Removed the old runner's `goal` field from share links (old links still open)
+- [x] Guide issues table lists both new warnings
+- [x] Tests: `graphGaps.test.ts` (7); 1071 tests, validate-presets, typecheck, lint 0 errors (63 older warnings), build
+- [ ] Decide: should a step with no `tools` list count as able to edit files for `parallel-writers` / `gate-without-check`? The share banner and guide say it "may use every tool", but the checks treat it as read-only. Changing it would flag most blueprints
+- [ ] `spec:` version is read and ignored (`graphSkill.ts` `void _spec`); warn on an unknown version once a `skill-graph/2` exists
 

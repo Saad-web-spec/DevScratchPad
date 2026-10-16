@@ -733,3 +733,11 @@ All AI agents operating in this repository MUST follow this 5-step loop:
 - **Gotcha — Monaco sticky scroll on mobile**: Monaco's default `stickyScroll` pins nested YAML headers at the top of the viewport, creating a white overlay bar over the first lines on compact screens; disable with `stickyScroll: { enabled: false }`.
 - **Status**: ✅ Complete (1064 tests, validate-presets, lint 0 errors, build).
 
+
+### Session: 2026-10-16 — Skill Graph: share card redesign & unfinished-work sweep
+- **Agent**: Claude Code (Opus)
+- **Decision — share card carries one message**: feeds show it at ~1/4 size, so anything under ~18px is noise there. Flat white, no gradients, one orange word in the headline, a top-to-bottom graph (lets four nodes be large on a 548px panel). Check every change at a 320px thumbnail, not just 1200px.
+- **Gotcha — X's large card draws the domain over the image's bottom-left corner**: keep the URL and other content out of that corner.
+- **Gotcha — Satori headline highlight**: split the line into `<span>`s inside a `whiteSpace: "pre"` flex row, or the spaces around the highlighted word collapse.
+- **Gotcha — per-type Inspector branches**: the spec lets every node type carry `risk`/`check`/`gate`, but each Inspector branch and exporter function picks its own subset. When adding a field, grep `codeStepLines`, `approvalStepLines`, `verificationLines` and each `node.type ===` branch in `InspectorPanel.tsx`.
+- **Status**: ✅ Complete (1071 tests, validate-presets, typecheck, lint 0 errors, build).

@@ -173,6 +173,8 @@ const ISSUES: { severity: "Error" | "Warning"; message: string; fix: string }[] 
   { severity: "Warning", message: "Wide step without a check", fix: "Add check: npm test (or your test command), or a code step after it." },
   { severity: "Warning", message: "Empty tools list", fix: "Claude Code reads [] as every tool. List what the step needs, or remove the key." },
   { severity: "Warning", message: "Nothing runs in parallel", fix: "If every step really needs the one before, one agent with a check may serve you better than a graph." },
+  { severity: "Warning", message: "Prompt section matches no node", fix: "A ## @node: section whose id is not in the topology is ignored and removed on the next canvas edit. Fix the id, or add the node." },
+  { severity: "Warning", message: "Code step re-runs nothing", fix: "on_fail: retry on a code step re-runs the subagent steps before it. With none, it stops instead; set on_fail: stop or connect it after a subagent." },
 ];
 
 const EXPORTS: { path: string; what: string }[] = [

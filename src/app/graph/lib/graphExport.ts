@@ -125,11 +125,15 @@ function codeStepLines(graph: SkillGraph, node: GraphNode): string[] {
     .map((id) => graph.nodes.find((n) => n.id === id))
     .filter((source): source is GraphNode => source !== undefined && !runsWithoutSubagent(source.type));
   const retries = node.maxRetries ?? DEFAULT_MAX_RETRIES;
+  // An irreversible command is never re-run automatically, whatever on_fail says.
+  const retry = node.onFail === "retry" && upstream.length > 0 && node.risk !== "irreversible";
   lines.push(
-    node.onFail === "retry" && upstream.length > 0
+    retry
       ? `  - If it exits non-zero: re-run ${upstream.map((n) => `**${cleanLabel(n.label)}**`).join(" and ")} with the last 40 lines of output as the reason (at most ${times(retries)}), then run it again. If it still fails, stop and show the user the output.`
       : "  - If it exits non-zero: stop and show the user the output."
   );
+  if (node.risk === "irreversible") lines.push("  - Hard to undo: run it only after the approval before it said yes, and never re-run it automatically.");
+  else if (node.risk === "wide") lines.push("  - Wide reach: nothing after it starts until it exits 0.");
   return lines;
 }
 
