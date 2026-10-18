@@ -1,11 +1,11 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { ListChecks, Lock, ShieldCheck, SquareTerminal, UserCheck, Wrench } from "lucide-react";
+import { FileText, GraduationCap, Layers, ListChecks, Scale, Lock, RotateCcw, ShieldCheck, SquareTerminal, UserCheck, Wrench } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { DEFAULT_MAX_RETRIES, type GraphNode, type SkillGraph } from "../lib/graphSkill";
-import { buildPlan, compileRun } from "../lib/graphPlan";
-import { agentName, handOff, loadBudget, outputSummary } from "../lib/graphExport";
+import { DEFAULT_MAX_PARALLEL, DEFAULT_MAX_RETRIES, handoffOf, type GraphNode, type SkillGraph } from "../lib/graphSkill";
+import { buildPlan, compileRun, experiencePath } from "../lib/graphPlan";
+import { agentName, handOff, judgeAgentName, loadBudget, outputSummary, reflectAgentName } from "../lib/graphExport";
 import { NODE_THEME } from "./theme";
 
 function formatTokens(value: number): string {
@@ -158,6 +158,26 @@ export function PlanPanel({ graph, activeStage, onSelectNode }: PlanPanelProps) 
                               <ShieldCheck className="h-3 w-3" /> gate · {node.onFail === "retry" ? `re-run ×${node.maxRetries ?? DEFAULT_MAX_RETRIES}` : "stop on fail"}
                             </span>
                           )}
+                          {node.foreach && (
+                            <span className={cn(CHIP, "bg-orange-50 text-orange-700")} title={`One run per item of ${node.foreach}`}>
+                              <Layers className="h-3 w-3" /> each of {node.foreach} · ≤{node.maxParallel ?? DEFAULT_MAX_PARALLEL} at once
+                            </span>
+                          )}
+                          {node.probe && (
+                            <span className={cn(CHIP, "bg-orange-50 text-orange-700")} title={`${node.probe} candidates side by side; ${judgeAgentName(graph, node)} keeps the best`}>
+                              <Scale className="h-3 w-3" /> probe ×{node.probe}
+                            </span>
+                          )}
+                          {handoffOf(graph, node) === "file" && graph.edges.some((edge) => edge.from === node.id) && (
+                            <span className={cn(CHIP, "bg-zinc-100 text-zinc-600")} title="Saved to a file; later steps get the path">
+                              <FileText className="h-3 w-3" /> file
+                            </span>
+                          )}
+                          {node.onFail === "retry" && node.retryTarget && (
+                            <span className={cn(CHIP, "bg-zinc-100 text-zinc-600")} title={`A failure restarts the run at ${node.retryTarget}`}>
+                              <RotateCcw className="h-3 w-3" /> from {node.retryTarget}
+                            </span>
+                          )}
                           {node.risk && node.risk !== "contained" && (
                             <span className={cn(CHIP, node.risk === "irreversible" ? "bg-orange-50 text-orange-700" : "bg-zinc-100 text-zinc-600")}>{node.risk}</span>
                           )}
@@ -180,6 +200,20 @@ export function PlanPanel({ graph, activeStage, onSelectNode }: PlanPanelProps) 
           );
         })}
       </ol>
+      {graph.experience && (
+        <div className="rounded-lg border border-zinc-200 bg-white px-3 py-2.5 text-[13px]">
+          <p className="flex flex-wrap items-center gap-x-2 gap-y-1">
+            <GraduationCap className="h-3.5 w-3.5 text-orange-500" />
+            <span className="font-semibold text-zinc-900">Learn</span>
+            <code className="font-mono text-[11px] text-zinc-400">{reflectAgentName(graph)}</code>
+            <span className="rounded-md bg-zinc-100 px-1.5 py-px text-[11px] font-semibold text-zinc-600">haiku</span>
+          </p>
+          <p className="mt-1 pl-[22px] text-xs leading-relaxed text-zinc-500">
+            Before stage 1, each step gets its lessons from <PlanText text={`\`${experiencePath(graph)}\``} />. After the last stage, the reflect step updates that file from the run&apos;s failed
+            checks, gates and retries (at most {graph.experience.maxLessons} lessons).
+          </p>
+        </div>
+      )}
       <p className="text-xs leading-relaxed text-zinc-500">
         Your agent runs this plan itself with its own subagents. Nothing here calls a model: the studio checks the graph and compiles it into the files the agent reads.
       </p>

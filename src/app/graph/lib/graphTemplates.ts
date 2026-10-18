@@ -164,6 +164,8 @@ export const SHIP_CHANGE_GRAPH_SKILL = `---
 name: ship-a-change
 description: Implements a change in a loop on the test suite, reviews the diff in parallel, gates it in a fresh context, and opens a pull request after one approval.
 spec: skill-graph/1
+experience:
+  max_lessons: 20
 topology:
   nodes:
     - id: goal
@@ -208,6 +210,7 @@ topology:
       gate: No blocking finding is left open, and every finding cites a line of the diff.
       on_fail: retry
       max_retries: 2
+      retry_target: implement
     - id: approve
       type: approval
       label: APPROVE PULL REQUEST
@@ -305,6 +308,103 @@ Commit the change on a new branch, push it, and open a pull request. Use the sum
 {{gate.output}}
 `;
 
+/**
+ * Fan-out over a list the graph only learns at run time: one fresh-context review per changed file,
+ * outputs handed on by file so a large review set is not re-typed into every later step.
+ */
+export const REVIEW_EACH_FILE_GRAPH_SKILL = `---
+name: review-each-file
+description: Lists the files a change touches, reviews each one in its own fresh-context run, merges the findings and gates them before reporting.
+spec: skill-graph/2
+handoff: file
+topology:
+  nodes:
+    - id: goal
+      type: input
+      label: CHANGE TO REVIEW
+    - id: scope
+      type: orchestrator
+      label: LIST THE FILES
+      model: sonnet
+      tools: [Read, Grep, Glob, "Bash(git diff:*)"]
+      output_format: json
+    - id: review_file
+      type: worker
+      label: REVIEW EACH FILE
+      isolated_context: true
+      model: haiku
+      tools: [Read, Grep, Glob]
+      foreach: scope.files
+      max_parallel: 6
+      max_items: 40
+    - id: merge
+      type: synthesizer
+      label: MERGE FINDINGS
+      model: sonnet
+      tools: [Read]
+    - id: gate
+      type: verifier
+      label: GATE (Fresh Context)
+      isolated_context: true
+      model: opus
+      tools: [Read, Grep, Glob]
+      gate: Every blocking finding names a file and line that exist, and no finding is listed twice.
+      on_fail: retry
+      max_retries: 1
+      retry_target: merge
+  edges:
+    - from: goal
+      to: scope
+    - from: scope
+      to: review_file
+      contract: file_list
+    - from: review_file
+      to: merge
+      contract: file_reviews
+    - from: merge
+      to: gate
+      contract: findings
+contracts:
+  file_list:
+    format: json
+    description: "{ files: the changed paths to review, focus: one sentence on what the change is for }"
+    required: [files, focus]
+  file_reviews:
+    format: json
+    description: One entry per file, in file order; each lists its findings with line, severity and evidence.
+  findings:
+    format: markdown
+    description: Findings grouped by severity (blocking, should fix, nit); each names the file and line.
+---
+
+# Node Prompts & Edge Contracts
+
+## @node: scope
+Find the files this change touches (run git diff --name-only for the range the user gives, or against the main branch). Leave out generated files, lockfiles and binaries.
+
+The change:
+{{goal}}
+
+Return JSON: {"files": [the paths], "focus": "one sentence on what the change is for"}.
+
+## @node: review_file
+Review this one file as part of a change whose purpose is: {{scope.focus}}
+
+File: {{item}}
+
+Read the file and its diff. Report only real problems in this file: bugs, missed edge cases, security issues, and code that does not do what the change is for. For each give the line, a severity (blocking, should fix, nit) and the evidence. If the file is fine, say so in one line.
+
+## @node: merge
+Merge these per-file reviews into one list. Drop duplicates, group by severity (blocking first), and keep the file, line and evidence of each finding.
+
+{{review_file.output}}
+
+## @node: gate
+You see only the merged findings, not how they were produced. Open each file and line a blocking finding names and check that it exists and says what the finding claims.
+
+{{merge.output}}
+`;
+
 /* ------------------------------------------------------------------ blueprints */
 
 interface FanOutSpec {
@@ -399,6 +499,12 @@ export const BLUEPRINTS: readonly Blueprint[] = [
     title: "Ship a change",
     hint: "Edit until tests pass, review the diff in parallel, approve once before the PR",
     source: SHIP_CHANGE_GRAPH_SKILL,
+  },
+  {
+    id: "review-each-file",
+    title: "Review each file",
+    hint: "One fresh-context review per changed file, however many there are, then merge and gate",
+    source: REVIEW_EACH_FILE_GRAPH_SKILL,
   },
   {
     id: "pr-review-graph",

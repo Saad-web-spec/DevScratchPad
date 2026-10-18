@@ -1,12 +1,18 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { AlertCircle, AlertTriangle, ArrowRight, ChevronDown, ChevronRight, Lock, Plus, ShieldCheck, Trash2, X } from "lucide-react";
+import { AlertCircle, AlertTriangle, ArrowRight, Check, ChevronDown, ChevronRight, Download, Lock, Plus, ShieldCheck, Trash2, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   CONTRACT_FORMATS,
+  DEFAULT_MAX_LESSONS,
+  DEFAULT_MAX_PARALLEL,
   DEFAULT_MAX_RETRIES,
   KNOWN_TOOLS,
+  MAX_LESSONS_CAP,
+  MAX_PARALLEL_CAP,
+  PROBE_MAX,
+  PROBE_MIN,
   MODEL_TIERS,
   NODE_TYPES,
   RETRY_CAP,
@@ -16,18 +22,25 @@ import {
   connectableSources,
   extractTemplateRefs,
   getContract,
+  handoffOf,
   predecessorsOf,
   promptInputs,
+  retryTargetOptions,
   runsWithoutSubagent,
+  toSlug,
+  wantsJsonOutput,
   type Contract,
   type ContractFormat,
+  type ExperienceSettings,
+  type HandoffMode,
   type GraphIssue,
   type GraphNode,
   type NodeType,
   type RiskLane,
   type SkillGraph,
 } from "../lib/graphSkill";
-import { previewNodeContext } from "../lib/graphPlan";
+import { experiencePath, previewNodeContext } from "../lib/graphPlan";
+import { isOrphanLesson, type Lesson } from "../lib/graphLessons";
 import type { Selection } from "./GraphCanvas";
 import { FIELD, LABEL, NODE_THEME, SMALL_BUTTON } from "./theme";
 
@@ -81,7 +94,7 @@ interface InspectorProps {
   graph: SkillGraph;
   issues: GraphIssue[];
   selection: Selection;
-  onMeta: (patch: { name?: string; description?: string }) => void;
+  onMeta: (patch: { name?: string; description?: string; experience?: ExperienceSettings; handoff?: HandoffMode }) => void;
   onNode: (id: string, patch: Partial<Omit<GraphNode, "id">>) => void;
   onRename: (id: string, nextId: string) => boolean;
   onRemoveNode: (id: string) => void;
@@ -92,6 +105,14 @@ interface InspectorProps {
   onContract: (name: string, contract: Contract | null) => void;
   onRenameContract: (name: string, nextName: string) => boolean;
   onSelect: (selection: Selection) => void;
+  /** Lessons read from the pasted experience file (kept in the page only, never in the graph source). */
+  lessons: Lesson[];
+  lessonsText: string;
+  onLessonsText: (text: string) => void;
+  /** Moves the lesson into its step's prompt and out of the lessons file. */
+  onBakeLesson: (lesson: Lesson) => void;
+  onDiscardLesson: (lesson: Lesson) => void;
+  onDownloadLessons: () => void;
 }
 
 /**
@@ -204,6 +225,29 @@ function ContractEditor({ name, contract, uses, onContract, onRenameContract }: 
           </button>
         )}
       </span>
+      <div className={cn("col-span-2 grid grid-cols-1 gap-2 sm:col-span-4", contract.format === "json" && "sm:grid-cols-[17.5rem_minmax(0,1fr)]")}>
+        {contract.format === "json" && (
+          <DraftInput
+            value={(contract.required ?? []).join(", ")}
+            aria-label={`Keys every ${name} payload must have`}
+            placeholder="Required keys, e.g. plan, files"
+            spellCheck={false}
+            onValue={(next) => {
+              const keys = [...new Set(next.split(",").map((key) => key.trim()).filter(Boolean))];
+              onContract(name, { ...contract, required: keys.length > 0 ? keys : undefined });
+            }}
+            className={cn(FIELD, "font-mono")}
+          />
+        )}
+        <DraftInput
+          value={contract.check ?? ""}
+          aria-label={`Command that checks a ${name} payload`}
+          placeholder="Check command, e.g. node validate.mjs {{payload}}"
+          spellCheck={false}
+          onValue={(next) => onContract(name, { ...contract, check: next.trim() ? next : undefined })}
+          className={cn(FIELD, "font-mono")}
+        />
+      </div>
     </div>
   );
 }
@@ -420,8 +464,29 @@ const RISK_HINT: Record<RiskLane, string> = {
   irreversible: "Hard to undo: an approval step must come first, and it is never retried automatically.",
 };
 
-/** On-fail behaviour and the retry cap, shared by gates, command checks and code steps. */
-function FailureFields({ node, retryLabel, onNode, children }: { node: GraphNode; retryLabel: string; onNode: InspectorProps["onNode"]; children?: React.ReactNode }) {
+/** What a failure re-runs when no retry target is set, in the words of the "Restart at" menu. */
+function defaultRestart(node: GraphNode): string {
+  if (node.gate !== undefined) return "steps the gate names";
+  return node.type === "code" ? "the steps before it" : "this step";
+}
+
+/** On-fail behaviour, the retry cap and the retry target, shared by gates, command checks and code steps. */
+function FailureFields({
+  graph,
+  node,
+  retryLabel,
+  onNode,
+  children,
+}: {
+  graph: SkillGraph;
+  node: GraphNode;
+  retryLabel: string;
+  onNode: InspectorProps["onNode"];
+  children?: React.ReactNode;
+}) {
+  const options = retryTargetOptions(graph, node);
+  // A target the validator flags stays listed, so the menu shows what the Markdown says.
+  const stale = node.retryTarget !== undefined && !options.some((option) => option.id === node.retryTarget);
   return (
     <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
       <Field label="On fail">
@@ -440,6 +505,19 @@ function FailureFields({ node, retryLabel, onNode, children }: { node: GraphNode
             onChange={(event) => onNode(node.id, { maxRetries: Math.max(0, Math.min(RETRY_CAP, Math.round(Number(event.target.value) || 0))) })}
             className={FIELD}
           />
+        </Field>
+      )}
+      {node.onFail === "retry" && (options.length > 0 || stale) && (
+        <Field label="Restart at">
+          <select value={node.retryTarget ?? ""} onChange={(event) => onNode(node.id, { retryTarget: event.target.value || undefined })} className={cn(FIELD, "font-mono")}>
+            <option value="">{defaultRestart(node)}</option>
+            {stale && <option value={node.retryTarget}>{node.retryTarget} (not upstream)</option>}
+            {options.map((option) => (
+              <option key={option.id} value={option.id}>
+                {option.id}
+              </option>
+            ))}
+          </select>
         </Field>
       )}
       {children}
@@ -463,7 +541,7 @@ function RiskField({ node, onNode }: { node: GraphNode; onNode: InspectorProps["
 }
 
 /** Command check, blast radius and the model gate of a step that runs as a subagent. */
-function ChecksSection({ node, onNode }: { node: GraphNode; onNode: InspectorProps["onNode"] }) {
+function ChecksSection({ graph, node, onNode }: { graph: SkillGraph; node: GraphNode; onNode: InspectorProps["onNode"] }) {
   const hasGate = node.gate !== undefined;
   return (
     <>
@@ -498,11 +576,11 @@ function ChecksSection({ node, onNode }: { node: GraphNode; onNode: InspectorPro
         </button>
       )}
       {(hasGate || node.check) && (
-        <FailureFields node={node} retryLabel={hasGate ? "re-run upstream" : "re-run this step"} onNode={onNode}>
+        <FailureFields graph={graph} node={node} retryLabel={hasGate ? "re-run upstream" : "re-run this step"} onNode={onNode}>
           {hasGate && (
             <button
               type="button"
-              onClick={() => onNode(node.id, { gate: undefined, ...(node.check ? {} : { onFail: undefined, maxRetries: undefined }) })}
+              onClick={() => onNode(node.id, { gate: undefined, ...(node.check ? {} : { onFail: undefined, maxRetries: undefined, retryTarget: undefined }) })}
               className={cn(SMALL_BUTTON, "self-end justify-self-start hover:border-rose-300 hover:bg-rose-50 hover:text-rose-700")}
             >
               <Trash2 className="h-3 w-3" /> Remove gate
@@ -601,6 +679,247 @@ function PromptField({ graph, node, onNode }: { graph: SkillGraph; node: GraphNo
   );
 }
 
+/** Lessons from the experience file, each with its evidence and the two ways to clear it. */
+function LessonList({ graph, lessons, showStep, onBake, onDiscard }: { graph: SkillGraph; lessons: Lesson[]; showStep: boolean; onBake: (lesson: Lesson) => void; onDiscard: (lesson: Lesson) => void }) {
+  return (
+    <ul className="space-y-1.5">
+      {lessons.map((lesson) => {
+        const orphan = isOrphanLesson(graph, lesson);
+        return (
+          <li key={`${lesson.number}-${lesson.step}`} className="rounded-lg border border-zinc-200 p-2.5">
+            <p className="text-[13px] leading-snug text-zinc-800">
+              <span className="mr-1.5 font-mono text-[11px] font-semibold text-zinc-400">L{lesson.number}</span>
+              {showStep && <span className={cn("mr-1.5 font-mono text-[11.5px] font-medium", orphan ? "text-amber-700" : "text-zinc-700")}>{lesson.step}</span>}
+              {lesson.rule}
+            </p>
+            <p className="mt-1 text-[11.5px] leading-relaxed text-zinc-500">
+              {lesson.evidence && <>{lesson.evidence} · </>}seen {lesson.seen} · helped {lesson.helped}
+              {orphan && <span className="text-amber-700"> · no model step with this id</span>}
+            </p>
+            <div className="mt-2 flex gap-1.5">
+              <button
+                type="button"
+                disabled={orphan}
+                onClick={() => onBake(lesson)}
+                title="Add the rule to the step's prompt and remove it from the lessons file"
+                className={cn(SMALL_BUTTON, "hover:border-orange-300 hover:bg-orange-50 hover:text-orange-700 disabled:opacity-40 disabled:hover:border-zinc-200 disabled:hover:bg-white disabled:hover:text-zinc-600")}
+              >
+                <Check className="h-3 w-3" /> Bake in
+              </button>
+              <button type="button" onClick={() => onDiscard(lesson)} className={cn(SMALL_BUTTON, "hover:border-rose-300 hover:bg-rose-50 hover:text-rose-700")}>
+                <X className="h-3 w-3" /> Discard
+              </button>
+            </div>
+          </li>
+        );
+      })}
+    </ul>
+  );
+}
+
+/** Turns learning on, and reads the lessons file back in so a lesson can be baked into its step. */
+function LearningSection({ graph, onMeta, lessons, lessonsText, onLessonsText, onBakeLesson, onDiscardLesson, onDownloadLessons }: InspectorProps) {
+  const experience = graph.experience;
+  const path = experiencePath(graph);
+  return (
+    <>
+      <SectionTitle>Learning</SectionTitle>
+      <div className="flex flex-wrap items-end gap-3">
+        <label className="flex items-center gap-2 pb-2 text-[13px] font-semibold text-zinc-700">
+          <input
+            type="checkbox"
+            checked={experience !== undefined}
+            onChange={(event) => onMeta({ experience: event.target.checked ? { maxLessons: DEFAULT_MAX_LESSONS } : undefined })}
+            className="h-4 w-4 accent-orange-600"
+          />
+          Learn from runs
+        </label>
+        {experience && (
+          <Field label={`Max lessons (≤${MAX_LESSONS_CAP})`} className="w-36">
+            <input
+              type="number"
+              min={1}
+              max={MAX_LESSONS_CAP}
+              value={experience.maxLessons}
+              onChange={(event) => onMeta({ experience: { maxLessons: Math.max(1, Math.min(MAX_LESSONS_CAP, Math.round(Number(event.target.value) || 1))) } })}
+              className={FIELD}
+            />
+          </Field>
+        )}
+      </div>
+      <p className={NOTE}>
+        {experience ? (
+          <>
+            After each run, a reflect step writes lessons to <code className="font-mono text-zinc-700">{path}</code>, only from failed checks, gates and retries. The next run hands each step its own
+            lessons. Paste the file here to make a lesson permanent.
+          </>
+        ) : (
+          "When on, the skill keeps lessons from failed checks, gates and retries, and hands each step its own lessons on the next run."
+        )}
+      </p>
+      {experience && (
+        <>
+          <textarea
+            value={lessonsText}
+            onChange={(event) => onLessonsText(event.target.value)}
+            rows={lessonsText ? 4 : 2}
+            spellCheck={false}
+            aria-label="Paste EXPERIENCE.md"
+            placeholder="Paste EXPERIENCE.md from your repository"
+            className={cn(FIELD, "resize-y font-mono text-[11.5px] leading-relaxed")}
+          />
+          {lessonsText.trim() !== "" && lessons.length === 0 && <p className={NOTE}>No lessons found. Each lesson starts with a line like - [L1] implement: …</p>}
+          {lessons.length > 0 && (
+            <>
+              <LessonList graph={graph} lessons={lessons} showStep onBake={onBakeLesson} onDiscard={onDiscardLesson} />
+              <button type="button" onClick={onDownloadLessons} className={cn(SMALL_BUTTON, "hover:border-zinc-300 hover:bg-zinc-50 hover:text-zinc-900")}>
+                <Download className="h-3 w-3" /> Download EXPERIENCE.md
+              </button>
+            </>
+          )}
+        </>
+      )}
+    </>
+  );
+}
+
+/** A step's own handoff, or the graph's. */
+function HandoffField({ graph, node, onNode }: { graph: SkillGraph; node: GraphNode; onNode: InspectorProps["onNode"] }) {
+  return (
+    <Field label="Hand on output">
+      <select value={node.handoff ?? ""} onChange={(event) => onNode(node.id, { handoff: (event.target.value || undefined) as HandoffMode | undefined })} className={FIELD}>
+        <option value="">as the skill does ({graph.handoff ?? "inline"})</option>
+        <option value="inline">inline (in the task)</option>
+        <option value="file">as a file</option>
+      </select>
+    </Field>
+  );
+}
+
+/** Lists a fan-out step can run over: each JSON step feeding it, and the required keys of its contract. */
+function foreachOptions(graph: SkillGraph, node: GraphNode): string[] {
+  return predecessorsOf(graph, node.id).flatMap((id) => {
+    const source = graph.nodes.find((n) => n.id === id);
+    if (!source || source.type === "input" || source.type === "approval" || !wantsJsonOutput(graph, source)) return [];
+    const contract = graph.edges.find((edge) => edge.from === id && edge.to === node.id)?.contract;
+    const keys = (contract ? getContract(graph, contract)?.required : undefined) ?? [];
+    return [id, ...keys.map((key) => `${id}.${key}`)];
+  });
+}
+
+/** Fan-out: run the step once per item of a list an earlier step returns. */
+function FanOutSection({ graph, node, onNode }: { graph: SkillGraph; node: GraphNode; onNode: InspectorProps["onNode"] }) {
+  const options = foreachOptions(graph, node);
+  const listId = `graph-foreach-${node.id}`;
+  return (
+    <>
+      <SectionTitle>Fan-out</SectionTitle>
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-[minmax(0,1fr)_7rem_7rem]">
+        <Field label="Run once per item of" className="col-span-2 sm:col-span-1">
+          <DraftInput
+            value={node.foreach ?? ""}
+            list={listId}
+            placeholder={options[1] ?? options[0] ?? "plan.files"}
+            spellCheck={false}
+            onValue={(next) => onNode(node.id, next.trim() ? { foreach: next.trim() } : { foreach: undefined, maxParallel: undefined, maxItems: undefined })}
+            className={cn(FIELD, "font-mono")}
+          />
+          <datalist id={listId}>
+            {options.map((option) => (
+              <option key={option} value={option} />
+            ))}
+          </datalist>
+        </Field>
+        {node.foreach && (
+          <>
+            <Field label={`At once (≤${MAX_PARALLEL_CAP})`}>
+              <input
+                type="number"
+                min={1}
+                max={MAX_PARALLEL_CAP}
+                value={node.maxParallel ?? DEFAULT_MAX_PARALLEL}
+                onChange={(event) => onNode(node.id, { maxParallel: Math.max(1, Math.min(MAX_PARALLEL_CAP, Math.round(Number(event.target.value) || 1))) })}
+                className={FIELD}
+              />
+            </Field>
+            <Field label="Max items">
+              <input
+                type="number"
+                min={1}
+                value={node.maxItems ?? ""}
+                placeholder="no cap"
+                onChange={(event) => {
+                  const value = Math.round(Number(event.target.value));
+                  onNode(node.id, { maxItems: event.target.value === "" || !(value >= 1) ? undefined : value });
+                }}
+                className={FIELD}
+              />
+            </Field>
+          </>
+        )}
+      </div>
+      <p className={NOTE}>
+        {node.foreach ? (
+          <>
+            One run per item, each in its own subagent, with the item as <code className="font-mono text-zinc-700">{"{{item}}"}</code>. The step&apos;s output is a JSON array of the
+            runs&apos; results, in item order.
+          </>
+        ) : (
+          <>Name a JSON array an earlier step returns (step.key) to run this step once per item, for example once per changed file.</>
+        )}
+      </p>
+    </>
+  );
+}
+
+/** Probing: run several candidates of the step, drop those that fail their checks, and let a judge keep the best. */
+function ProbeSection({ node, onNode }: { node: GraphNode; onNode: InspectorProps["onNode"] }) {
+  const on = node.probe !== undefined;
+  return (
+    <>
+      <SectionTitle>Probe</SectionTitle>
+      <div className="grid grid-cols-1 gap-2 sm:grid-cols-[9rem_minmax(0,1fr)]">
+        <Field label="Candidates">
+          <select
+            value={node.probe ?? ""}
+            onChange={(event) => onNode(node.id, event.target.value ? { probe: Number(event.target.value) } : { probe: undefined, probeHints: undefined })}
+            className={FIELD}
+          >
+            <option value="">off (one run)</option>
+            {Array.from({ length: PROBE_MAX - PROBE_MIN + 1 }, (_, index) => PROBE_MIN + index).map((count) => (
+              <option key={count} value={count}>
+                {count} candidates
+              </option>
+            ))}
+          </select>
+        </Field>
+        {on && (
+          <Field label="Approach per candidate (one per line)">
+            <DraftTextarea
+              value={(node.probeHints ?? []).join("\n")}
+              rows={Math.max(2, node.probe ?? 2)}
+              placeholder={"The smallest change that works.\nReuse existing helpers wherever possible."}
+              onValue={(next) => {
+                const hints = next
+                  .split("\n")
+                  .map((hint) => hint.trim())
+                  .filter(Boolean);
+                onNode(node.id, { probeHints: hints.length > 0 ? hints : undefined });
+              }}
+              className={cn(FIELD, "resize-y")}
+            />
+          </Field>
+        )}
+      </div>
+      <p className={NOTE}>
+        {on
+          ? `${node.probe} candidates run side by side with different approaches; contract checks drop the broken ones and a fresh-context judge keeps the best (or combines two). Costs about ${(node.probe ?? 0) + 1} runs of this step. A candidate without an approach uses its own.`
+          : "Try several approaches to this step and keep the best. Only for steps that read (a plan, a review, research): candidates of a step that edits files would overwrite each other."}
+      </p>
+    </>
+  );
+}
+
 /** Settings most graphs never need: collapsed, with a one-line summary of what is set. */
 function AdvancedSection({ summary, children }: { summary: string; children: React.ReactNode }) {
   return (
@@ -626,6 +945,10 @@ function advancedSummary(graph: SkillGraph, node: GraphNode): string {
     node.gate !== undefined && "gate",
     node.risk && node.risk !== "contained" && node.risk,
     node.type === "code" && node.onFail === "retry" && "retries",
+    node.retryTarget && `restarts at ${node.retryTarget}`,
+    node.foreach && `each of ${node.foreach}`,
+    node.probe && `probe ×${node.probe}`,
+    handoffOf(graph, node) === "file" && "file handoff",
     contracts > 0 && `${contracts} contract${contracts === 1 ? "" : "s"}`,
   ].filter((part): part is string => typeof part === "string" && part !== "");
   if (parts.length > 0) return parts.join(" · ");
@@ -634,8 +957,9 @@ function advancedSummary(graph: SkillGraph, node: GraphNode): string {
   return runsWithoutSubagent(node.type) ? "on failure, contracts" : "model, tools, checks, contracts";
 }
 
-function NodeInspector({ graph, issues, node, onNode, onRename, onRemoveNode, onEdgeContract, onConnect }: InspectorProps & { node: GraphNode }) {
+function NodeInspector({ graph, issues, node, onNode, onRename, onRemoveNode, onEdgeContract, onConnect, lessons, onBakeLesson, onDiscardLesson }: InspectorProps & { node: GraphNode }) {
   const summary = advancedSummary(graph, node);
+  const nodeLessons = graph.experience ? lessons.filter((lesson) => lesson.step === node.id) : [];
   const theme = NODE_THEME[node.type];
   const nodeIssues = issues.filter((issue) => issue.nodeId === node.id);
   const refs = extractTemplateRefs(node.prompt);
@@ -690,7 +1014,8 @@ function NodeInspector({ graph, issues, node, onNode, onRename, onRemoveNode, on
           <AdvancedSection summary={summary}>
             <RiskField node={node} onNode={onNode} />
             <p className={NOTE}>{RISK_HINT[node.risk ?? "contained"]}</p>
-            <FailureFields node={node} retryLabel="re-run upstream" onNode={onNode} />
+            <FailureFields graph={graph} node={node} retryLabel="re-run upstream" onNode={onNode} />
+            <HandoffField graph={graph} node={node} onNode={onNode} />
             <IncomingEdges graph={graph} node={node} onEdgeContract={onEdgeContract} onConnect={onConnect} />
           </AdvancedSection>
           <ContextPreview graph={graph} node={node} />
@@ -748,6 +1073,7 @@ function NodeInspector({ graph, issues, node, onNode, onRename, onRemoveNode, on
                   <option value="text">text</option>
                 </select>
               </Field>
+              <HandoffField graph={graph} node={node} onNode={onNode} />
               <label className="col-span-2 flex items-center gap-2 self-end pb-2 text-[13px] font-semibold text-zinc-700 sm:col-span-1">
                 <input type="checkbox" checked={node.isolatedContext} onChange={(event) => onNode(node.id, { isolatedContext: event.target.checked })} className="h-4 w-4 accent-orange-600" />
                 <Lock className="h-3.5 w-3.5 text-orange-500" /> Fresh context
@@ -761,9 +1087,17 @@ function NodeInspector({ graph, issues, node, onNode, onRename, onRemoveNode, on
               </p>
             )}
 
-            <ChecksSection node={node} onNode={onNode} />
+            <FanOutSection graph={graph} node={node} onNode={onNode} />
+            <ProbeSection node={node} onNode={onNode} />
+            <ChecksSection graph={graph} node={node} onNode={onNode} />
             <IncomingEdges graph={graph} node={node} onEdgeContract={onEdgeContract} onConnect={onConnect} />
           </AdvancedSection>
+          {nodeLessons.length > 0 && (
+            <div className="space-y-2">
+              <span className={LABEL}>Lessons from runs</span>
+              <LessonList graph={graph} lessons={nodeLessons} showStep={false} onBake={onBakeLesson} onDiscard={onDiscardLesson} />
+            </div>
+          )}
           <ContextPreview graph={graph} node={node} />
         </>
       )}
@@ -818,7 +1152,8 @@ function EdgeInspector({ graph, edgeId, onEdgeContract, onRemoveEdge, onContract
   );
 }
 
-function Overview({ graph, issues, onMeta, onSelect, onContract, onRenameContract }: InspectorProps) {
+function Overview(props: InspectorProps) {
+  const { graph, issues, onMeta, onSelect, onContract, onRenameContract } = props;
   const names = Object.keys(graph.contracts);
   const nextName = () => {
     let n = names.length + 1;
@@ -853,6 +1188,20 @@ function Overview({ graph, issues, onMeta, onSelect, onContract, onRenameContrac
       <button type="button" onClick={() => onContract(nextName(), { format: "markdown", description: "" })} className={cn(SMALL_BUTTON, "hover:border-zinc-300 hover:bg-zinc-50 hover:text-zinc-900")}>
         <Plus className="h-3 w-3" /> Add contract
       </button>
+
+      <SectionTitle>Handoffs</SectionTitle>
+      <Field label="Hand outputs on" className="sm:w-72">
+        <select value={graph.handoff ?? "inline"} onChange={(event) => onMeta({ handoff: event.target.value === "file" ? "file" : undefined })} className={FIELD}>
+          <option value="inline">inline: pasted into the next task</option>
+          <option value="file">as files: the next step reads the path</option>
+        </select>
+      </Field>
+      <p className={NOTE}>
+        As files, the agent saves each output once under <code className="font-mono text-zinc-700">.skill-graph/{toSlug(graph.name)}/</code> and hands later steps the path, so a long
+        output is never re-typed or shortened on the way. Steps that get a file need Read. A step can override this under Advanced.
+      </p>
+
+      <LearningSection {...props} />
 
       {issues.length > 0 && (
         <>

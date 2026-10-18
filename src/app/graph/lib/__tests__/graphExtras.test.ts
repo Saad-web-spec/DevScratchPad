@@ -17,7 +17,9 @@ describe("blueprints", () => {
   it.each(BLUEPRINTS.map((b) => [b.id, b.source] as const))("%s is a valid graph with a gated fresh-context verifier", (_id, source) => {
     const blueprint = load(source);
     expect(validateGraph(blueprint)).toEqual([]);
-    expect(blueprint.nodes.filter((n) => n.type === "worker").length).toBeGreaterThanOrEqual(2);
+    // Parallel work: two or more workers, or one worker that fans out over a list.
+    const workers = blueprint.nodes.filter((n) => n.type === "worker");
+    expect(workers.length >= 2 || workers.some((n) => n.foreach !== undefined)).toBe(true);
     const verifier = blueprint.nodes.find((n) => n.type === "verifier")!;
     expect(verifier.isolatedContext).toBe(true);
     expect(verifier.gate).toBeTruthy();

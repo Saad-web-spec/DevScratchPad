@@ -65,6 +65,7 @@ import {
   type SkillGraph,
 } from "./lib/graphSkill";
 import { buildPlan } from "./lib/graphPlan";
+import { bakeLesson, parseLessons, serializeLessons, type Lesson } from "./lib/graphLessons";
 import { buildExportKit, buildSingleFileSkill, toSlug } from "./lib/graphExport";
 import { MAX_HASH_LENGTH, SHARE_URL_SOFT_LIMIT, decodeShareHash, encodeShareHash } from "./lib/graphShare";
 
@@ -364,6 +365,14 @@ function GraphWorkspace({ initial, shared }: WorkspaceProps) {
   }, [graph, parsed.graph, source]);
   const errorCount = issues.filter((issue) => issue.severity === "error").length;
   const warningCount = issues.length - errorCount;
+  // The pasted lessons file lives only in this tab: it belongs to the user's repository, not to the graph.
+  const [lessonsText, setLessonsText] = useState("");
+  const lessons = useMemo(() => parseLessons(lessonsText), [lessonsText]);
+  const lessonCounts = useMemo(() => {
+    const counts = new Map<string, number>();
+    if (graph.experience) for (const lesson of lessons) counts.set(lesson.step, (counts.get(lesson.step) ?? 0) + 1);
+    return counts;
+  }, [graph.experience, lessons]);
   const plan = useMemo(() => buildPlan(graph), [graph]);
   const agentCount = plan.reduce((sum, item) => sum + item.nodes.filter((node) => !runsWithoutSubagent(node.type)).length, 0);
   const isolation = useMemo(() => {
@@ -609,6 +618,18 @@ function GraphWorkspace({ initial, shared }: WorkspaceProps) {
     }
     commit(renameContract(graph, name, nextName));
     return true;
+  };
+
+  const dropLesson = (lesson: Lesson) => setLessonsText(serializeLessons(graph, lessons.filter((other) => other !== lesson)));
+
+  const handleBakeLesson = (lesson: Lesson) => {
+    if (parsed.fatal) {
+      notify("Fix the frontmatter in the Markdown first.");
+      return;
+    }
+    commit(bakeLesson(graph, lesson));
+    dropLesson(lesson);
+    notify(`Added L${lesson.number} to the ${lesson.step} prompt. Download the lessons file to keep it trimmed.`);
   };
 
   const handleSelect = useCallback((next: Selection) => {
@@ -1034,6 +1055,7 @@ function GraphWorkspace({ initial, shared }: WorkspaceProps) {
                 graph={graph}
                 trace={trace}
                 isolation={isolation}
+                lessonCounts={lessonCounts}
                 selection={selection}
                 focusRequest={focusRequest}
                 fitRequest={fitRequest}
@@ -1089,6 +1111,12 @@ function GraphWorkspace({ initial, shared }: WorkspaceProps) {
                     onContract={(name, contract) => commit(updateContract(graph, name, contract))}
                     onRenameContract={handleRenameContract}
                     onSelect={handleSelect}
+                    lessons={lessons}
+                    lessonsText={lessonsText}
+                    onLessonsText={setLessonsText}
+                    onBakeLesson={handleBakeLesson}
+                    onDiscardLesson={dropLesson}
+                    onDownloadLessons={() => download("EXPERIENCE.md", new Blob([lessonsText], { type: "text/markdown;charset=utf-8" }))}
                   />
                 )}
                 {dockTab === "plan" && <PlanPanel graph={graph} activeStage={shownStage} onSelectNode={selectNode} />}

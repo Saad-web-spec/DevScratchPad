@@ -523,3 +523,37 @@ From the "Loops and Graphs" article (@hanakoxbt): a check that can fail, edges t
 - [x] Agent plan showed raw backticks after the step-id change (`handOff` writes Markdown for SKILL.md): `PlanText` renders `ids` as code. Verified 8/8 in headless Chrome (PR review blueprint at 25%, click Architecture & Style)
 - [ ] Decide the four open points in `SKILL_GRAPH_V2_RFC.md` §5
 - [ ] Not built (user's choice): back link from the /graph header to AI Skill Studio
+
+## 2026-10-18 — Skill Graph: retry targets, checked contracts, learning from runs (RFC A, B, F)
+
+- [x] A · `retry_target` on a gated, checked or code step (`retryPath`, `retryTargetOptions`): the gate may only name the target and the steps after it, and re-runs the target when its verdict names none; checks and commands restart there. Follows renames, cleared on remove. Validation: `retry-target-unknown`, `retry-target-not-model`, `retry-path-irreversible` (errors), `retry-path-approval`, `retry-target-unused` (warnings). Inspector: "Restart at" next to Max retries; Agent plan chip "from <id>"
+- [x] B · Checked contracts: `required: [keys]` (JSON only) compiles to a `node -e` key check, `check:` runs with `{{payload}}` as the saved payload path; both run on the producing step, which re-runs once on failure. Handoff rule 2 defers to them. Validation: `required-not-json`, `contract-bad-key` (error), `contract-check-no-payload`. Contract editor has both fields
+- [x] F · `experience:` (`max_lessons`, default 20, cap 50): plan reads `.skill-graph/<slug>/EXPERIENCE.md` before stage 1, hands each step its own lessons (on its Hand it line, so fresh-context steps get them too), keeps a failure log, and runs `<slug>-reflect` (haiku, Read only) after the last stage. Reflect learns from failed checks/commands, `GATE: FAIL` lines and retries only; counts seen/helped, prunes, caps. Kit adds the reflect agent and `.skill-graph/.gitignore` (`/*/*`, `!/*/EXPERIENCE.md`, checked with git). Validation: `experience-id-reserved` (error), `experience-no-signal`
+- [x] Studio Learning section (Inspector, nothing selected): turn learning on, set the cap, paste EXPERIENCE.md; lessons listed with evidence and counters, Bake in (adds the rule under "Learned from earlier runs:" in the step prompt, `{{` neutralised, never twice) or Discard, Download the trimmed file. Each step shows its own lessons. The pasted file stays in the tab only (`graphLessons.ts`)
+- [x] Ship-a-change template uses `experience:` and `retry_target: implement`; guide: `retry_target` row, contract checks, new "Learning from runs" section, issues and export rows
+- [x] Verified: 23 new tests (`graphLearning.test.ts`, including the generated key check run in a real shell), 1138 tests in total, validate-presets, typecheck, lint 0 errors (63 older warnings), build; /graph and /graph/guide load on the dev server
+- [x] Lesson counts on canvas cards (moved here from "not built")
+- [x] Probing: built afterwards for read-only steps (see the probing entry below)
+
+## 2026-10-18 — Skill Graph: `skill-graph/2`, fan-out and file handoffs (RFC C1, D)
+
+- [x] `spec`: read and kept (`specVersion`); saving writes `skill-graph/2` once `handoff` or `foreach` is used (`specVersionFor`), else `/1`. `unknown-spec` warning replaces the old "read and ignored" gap
+- [x] D · `foreach: <node>[.<key>]`, `max_parallel` (default 4, cap 16), `max_items`: one subagent run per item, `{{item}}` in the prompt (Insert input offers it), output = JSON array in item order (saved as `.json`). Plan: take the list, stop over `max_items`, skip on `[]`, "Hand each run", per-run checks and retries, handoff rule 10. Each run is told it returns one entry of the contract. Other keys of the same JSON the prompt names (`{{scope.focus}}`) are handed to every run
+- [x] Validation: `foreach-not-model`, `foreach-source-unknown`, `foreach-source-not-json`, `foreach-irreversible`, `item-outside-foreach` (errors); `foreach-no-cap`, `foreach-parallel-writers`, `fanout-settings-unused` (warnings). A fan-out step counts as parallel work for `no-parallelism`, and as reading its source for `unread-edge`. Renaming the source updates `foreach`
+- [x] C1 · `handoff: file` on the graph or a node (`handoffOf`): the orchestrator saves the output verbatim to `.skill-graph/<slug>/<id>.md|json`, later model steps get the path and are told to Read it, handoff rule 9. Not for the goal, approvals (they show the content) or the last step. `file-handoff-no-read` error when a receiving step lacks Read
+- [x] Kit: `.skill-graph/.gitignore` and a "Working files" README section whenever a run writes under `.skill-graph/` (`writesSkillGraphFiles`)
+- [x] Studio: Handoffs select (overview), Hand on output (Advanced → Agent, and code steps), Advanced → Fan-out (list with suggestions from JSON predecessors and their contract's required keys, at once, max items); cards show a stacked back card and "× each", a file icon for file handoffs and a lesson count; Agent plan chips for fan-out and file
+- [x] Blueprint "Review each file" (`REVIEW_EACH_FILE_GRAPH_SKILL`): scope → one fresh-context review per changed file (×6, ≤40) → merge → gate restarting at merge, all handed on by file
+- [x] Fixed while checking the compiled output: `{{scope.focus}}` compiled to "the task…" (now names the key); fan-out runs were told to return the whole collected contract
+- [x] Guide: TOC + sections "Fan-out: one run per item" and "File handoffs", node field rows, file-format text (`spec` /1 vs /2, `handoff`, `experience`), seven issue rows, export row
+- [x] Verified: `graphFanOut.test.ts` (22), 1160 tests, validate-presets, typecheck, graph lint clean (63 older warnings elsewhere left as the user asked), build; blueprint checked in headless Chrome (valid, 4 stages, stacked card, no overlaps)
+
+## 2026-10-18 — Skill Graph: probing (try several, keep the best)
+
+- [x] `probe: 2..4` and `probe_hints` on a model step (additive `/1`): candidates start together with one approach each under `### Approach`, contract checks drop the broken ones, a fresh-context judge (`<agent>-judge`, Read/Grep/Glob, the step's model) returns `CHOSEN`, `WHY`, `---` and the final answer. One survivor skips the judge. Failed candidates go to the failure log when learning is on; handoff rule "candidates never see each other"
+- [x] Read-only only: `probe-side-effects` error for steps that can edit files, run unscoped Bash/PowerShell, or are wide/irreversible. Checked against the Claude Code docs: `isolation: worktree` exists, but a subagent worktree starts from the remote default branch without uncommitted changes or node_modules, and its path is not returned, so file-editing candidates are not supported
+- [x] Validation: `probe-not-model`, `probe-foreach` (errors), `probe-hints-unused`, `probe-hints-extra` (warnings), judge file name in `agent-name-collision`
+- [x] Studio: Advanced → Probe (candidates, one approach per line, cost note); card chip "×N probe"; Agent plan chip; preview shows the `### Approach` block; judge in kit, single-file skill and load budget
+- [x] Guide: "Probing: try several, keep the best" section, field rows, issue rows, export row
+- [x] Verified: `graphProbe.test.ts` (10), 1170 tests, validate-presets, typecheck, graph lint clean, build; probed plan checked on the canvas in headless Chrome
+

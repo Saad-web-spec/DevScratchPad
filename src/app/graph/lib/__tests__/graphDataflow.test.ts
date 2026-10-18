@@ -65,8 +65,12 @@ describe("a failed gate sends work back to the step that can fix it", () => {
   const ship = load(SHIP_CHANGE_GRAPH_SKILL);
 
   it("lists the upstream steps the gate may name and marks the one that edits files", () => {
+    // Without a retry target the gate may name any model step upstream.
+    const open = updateNode(ship, "gate", { retryTarget: undefined });
+    expect(buildSubagent(open, nodeOf(open, "gate"))).toContain("Steps you can name: `plan`, `implement` (edits files), `review_correctness`, `review_security`.");
+    // The template restarts at implement, so plan is no longer offered.
     const gate = buildSubagent(ship, nodeOf(ship, "gate"));
-    expect(gate).toContain("Steps you can name: `plan`, `implement` (edits files), `review_correctness`, `review_security`.");
+    expect(gate).toContain("Steps you can name: `implement` (edits files), `review_correctness`, `review_security`.");
     expect(gate).toContain("name the step that edits files, not the step that reported the fault");
   });
 

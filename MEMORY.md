@@ -773,3 +773,29 @@ All AI agents operating in this repository MUST follow this 5-step loop:
 - **Status**: ✅ Complete (1115 tests, 23 CLI tests, validate-presets, typecheck, lint 0 errors, build, 12/12 browser checks).
 - **Gotcha — compiler strings are Markdown**: `handOff`, `outputSummary` and plan lines are written for SKILL.md (backticks around ids). Any studio panel that shows them must render them (`PlanText` in `PlanPanel.tsx`), not print them raw.
 - **Gotcha — Monaco DOM text uses ` ` for spaces**: normalise `.view-line` text before matching it in browser checks.
+
+### Session: 2026-10-18 — Skill Graph: retry targets, checked contracts, learning from runs
+- **Agent**: Claude Code (Opus)
+- **Decision — learning from hard signals only** (user's call, after reviewing Harness², Google Research): lessons come only from failed checks/commands, `GATE: FAIL` lines and retries; they are auto-applied next run, and bake-in in the studio is optional. Probing (N candidates per step) is deferred.
+- **Decision — reflect is a subagent with `tools: Read`**: Claude Code reads no tools list as "every tool", so Read is the smallest grant. Its file is written by the orchestrator, keeping steps read-only.
+- **Gotcha — fresh-context steps get only their "Hand it" line** (handoff rule 4): anything every step must receive (lessons) has to be on that line, not only in an intro paragraph.
+- **Gotcha — `.skill-graph/**` cannot re-include EXPERIENCE.md**: git never re-includes a file whose folder is ignored; use `/*/*` + `!/*/EXPERIENCE.md`.
+- **Gotcha — template edits move test counts**: ship-a-change now exports 7 subagents (reflect included) and its gate offers only implement onward.
+- **Status**: ✅ Complete (1138 tests, validate-presets, typecheck, lint 0 errors, build).
+
+### Session: 2026-10-18 — Skill Graph: `skill-graph/2`, fan-out and file handoffs
+- **Agent**: Claude Code (Opus)
+- **Decision — `{{item}}` shadows a node named `item` inside fan-out steps** (`isItemRef`); every ref resolver (validator, isolation, readPredecessors, jsonKeysFor, preview, toAgentPrompt) must check it first.
+- **Gotcha — a fan-out run returns one entry**: contract lines in `nodeInstructions` describe the collected array, so they are worded differently for `foreach` steps.
+- **Gotcha — the 63 lint warnings outside src/app/graph are left on purpose** (user's call, 2026-10-18); do not fix them unasked.
+- **Gotcha — stopping a `npm run dev` background task leaves `next dev` running** (PID in `.next/dev/logs`); a second `npm run dev` exits with "Another next dev server is already running". `npm run build` still works beside it.
+- **Status**: ✅ Complete (1160 tests, validate-presets, typecheck, graph lint clean, build).
+
+### Session: 2026-10-18 — Skill Graph: probing
+- **Agent**: Claude Code (Opus)
+- **Decision — probe only read-only steps** (user asked for probing): Claude Code's `isolation: worktree` subagents branch from the remote default branch (no uncommitted work, no node_modules) and do not return their path, so candidates that edit files cannot be compared or merged reliably. Probe the plan, not the implementation.
+- **Decision — the judge returns the answer itself** (`CHOSEN`, `WHY`, `---`, answer), so it can combine two candidates without the orchestrator doing the step's work.
+- **Gotcha — Python heredoc edits of TS with `
+` or backticks** broke twice (escapes became real newlines, or the match failed); use the Edit tool for strings with escapes.
+- **Status**: ✅ Complete (1170 tests, validate-presets, typecheck, graph lint clean, build).
+

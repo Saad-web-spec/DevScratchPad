@@ -1,10 +1,10 @@
 "use client";
 
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { Bot, Check, CircleDot, Cpu, ListChecks, Lock, Merge, Minus, Plus, Redo2, Scan, ShieldCheck, Split, SquareTerminal, Undo2, UserCheck, Wrench, type LucideIcon } from "lucide-react";
+import { Fragment, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { Bot, Check, CircleDot, Cpu, FileText, GraduationCap, ListChecks, Lock, Merge, Minus, Plus, Redo2, Scan, ShieldCheck, Split, SquareTerminal, Undo2, UserCheck, Wrench, type LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { NODE_THEME } from "./theme";
-import { LAYOUT_GAPS, NODE_HEIGHT, NODE_WIDTH, layoutGraph, type GraphLayout, type GraphNode, type IsolationReport, type NodeLayout, type NodeType, type SkillGraph } from "../lib/graphSkill";
+import { LAYOUT_GAPS, NODE_HEIGHT, NODE_WIDTH, handoffOf, layoutGraph, type GraphLayout, type GraphNode, type IsolationReport, type NodeLayout, type NodeType, type SkillGraph } from "../lib/graphSkill";
 
 export type Selection = { kind: "node"; id: string } | { kind: "edge"; id: string } | null;
 
@@ -71,6 +71,8 @@ interface GraphCanvasProps {
   /** Plan walkthrough; null when not stepping through the plan. */
   trace: Trace | null;
   isolation: Map<string, IsolationReport>;
+  /** Lessons per step id from the pasted experience file; steps without lessons are absent. */
+  lessonCounts: Map<string, number>;
   selection: Selection;
   /** Bumped when a node is selected from outside the canvas (the editor), so the canvas brings it into view. */
   focusRequest: FocusRequest | null;
@@ -115,8 +117,8 @@ function RiskChip({ node }: { node: GraphNode }) {
   );
 }
 
-/** Bottom line of a node card: the id, the model tier, how many tools the node's agent gets and its check. */
-function NodeFooter({ node }: { node: GraphNode }) {
+/** Bottom line of a node card: the id, the model tier, how many tools the node's agent gets, its check and a file handoff. */
+function NodeFooter({ node, fileHandoff }: { node: GraphNode; fileHandoff: boolean }) {
   const name = node.type === "code" && node.run ? `$ ${node.run}` : node.id;
   return (
     <span className="flex min-w-0 shrink-0 items-center gap-1.5 text-[10px] leading-none text-zinc-400">
@@ -126,6 +128,21 @@ function NodeFooter({ node }: { node: GraphNode }) {
       {node.check && (
         <span className="flex shrink-0 items-center" title={`Check: ${node.check}`}>
           <ListChecks className="h-2.5 w-2.5" />
+        </span>
+      )}
+      {fileHandoff && (
+        <span className="flex shrink-0 items-center" title="Hands its output on as a file">
+          <FileText className="h-2.5 w-2.5" />
+        </span>
+      )}
+      {node.foreach && (
+        <span title={`Runs once per item of ${node.foreach}`} className="shrink-0 rounded-md bg-orange-50 px-1.5 py-0.5 font-semibold leading-none text-orange-700">
+          × each
+        </span>
+      )}
+      {node.probe && (
+        <span title={`${node.probe} candidates; a judge keeps the best`} className="shrink-0 rounded-md bg-orange-50 px-1.5 py-0.5 font-semibold leading-none text-orange-700">
+          ×{node.probe} probe
         </span>
       )}
       {node.model && <span className="shrink-0 rounded-md bg-zinc-100 px-1.5 py-0.5 font-semibold leading-none text-zinc-600">{node.model}</span>}
@@ -145,6 +162,7 @@ export function GraphCanvas({
   graph,
   trace,
   isolation,
+  lessonCounts,
   selection,
   focusRequest,
   fitRequest,
@@ -502,8 +520,16 @@ export function GraphCanvas({
           const Icon = TYPE_ICON[node.type];
           const theme = NODE_THEME[node.type];
           return (
+            <Fragment key={node.id}>
+            {node.foreach && (
+              // A second card peeking out behind: this step runs once per item.
+              <div
+                aria-hidden
+                style={{ left: position.x + 6, top: position.y + 6, width: NODE_WIDTH, height: NODE_HEIGHT }}
+                className={cn("pointer-events-none absolute rounded-xl border border-zinc-300 bg-white shadow-xs", dimmed && "opacity-50")}
+              />
+            )}
             <div
-              key={node.id}
               data-node-id={node.id}
               role="button"
               tabIndex={0}
@@ -532,6 +558,15 @@ export function GraphCanvas({
                 <span className="flex shrink-0 items-center justify-between gap-2 leading-none">
                   <span className={cn("truncate text-[10px] font-bold uppercase leading-none tracking-[0.08em]", theme.label)}>{node.type}</span>
                   <span className="ml-auto flex shrink-0 items-center gap-1.5">
+                    {(lessonCounts.get(node.id) ?? 0) > 0 && (
+                      <span
+                        title={`${lessonCounts.get(node.id)} lesson${lessonCounts.get(node.id) === 1 ? "" : "s"} from earlier runs`}
+                        className="flex shrink-0 items-center gap-0.5 rounded-md bg-zinc-100 px-1.5 py-0.5 text-[10px] font-semibold leading-none text-zinc-600"
+                      >
+                        <GraduationCap className="h-2.5 w-2.5" />
+                        {lessonCounts.get(node.id)}
+                      </span>
+                    )}
                     <RiskChip node={node} />
                   {running &&<span className="h-2 w-2 shrink-0 animate-pulse rounded-full bg-orange-500" aria-hidden />}
                   {finished && (node.type === "verifier" ? <ShieldCheck className="h-3.5 w-3.5 text-zinc-900" /> : <Check className="h-3.5 w-3.5 text-zinc-900" />)}
@@ -540,7 +575,7 @@ export function GraphCanvas({
                 <span className="line-clamp-2 shrink-0 text-[12.5px] font-bold leading-[1.25] tracking-[-0.01em] text-zinc-900" title={node.label}>
                   {node.label}
                 </span>
-                <NodeFooter node={node} />
+                <NodeFooter node={node} fileHandoff={handoffOf(graph, node) === "file"} />
               </span>
               {node.isolatedContext && report && <IsolationBadge report={report} />}
 
@@ -564,6 +599,7 @@ export function GraphCanvas({
                 )}
               />
             </div>
+            </Fragment>
           );
         })}
       </div>

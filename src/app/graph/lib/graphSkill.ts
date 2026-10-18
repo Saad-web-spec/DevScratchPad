@@ -28,6 +28,22 @@ export function runsWithoutSubagent(type: NodeType): boolean {
 
 /** Format version written into every file so agents and tools can recognise a graph skill. */
 export const SPEC_VERSION = "skill-graph/1";
+/** Written instead of `/1` when a graph uses a field that changes what an output is (`handoff`, `foreach`). */
+export const SPEC_VERSION_2 = "skill-graph/2";
+export const KNOWN_SPEC_VERSIONS: readonly string[] = [SPEC_VERSION, SPEC_VERSION_2];
+
+/** How a step's output reaches the steps after it: pasted into their task, or saved to a file whose path they get. */
+export type HandoffMode = "inline" | "file";
+
+/** Runs of a `foreach` step that may run at once when `max_parallel` is unset, and the most it may be set to. */
+export const DEFAULT_MAX_PARALLEL = 4;
+export const MAX_PARALLEL_CAP = 16;
+
+/** Probing runs 2 to 4 candidates of a step; each one costs a full run of it. */
+export const PROBE_MIN = 2;
+export const PROBE_MAX = 4;
+/** An approach hint is one line written into the candidate's task. */
+export const MAX_PROBE_HINT_LENGTH = 200;
 
 export type GateFailure = "retry" | "stop";
 
@@ -63,12 +79,26 @@ export interface GraphNode {
   onFail?: GateFailure;
   /** How many times a failed gate or check may re-run the work (default 1). */
   maxRetries?: number;
+  /** Where a failed gate, check or code step restarts: an upstream model step (unset: the direct predecessors). */
+  retryTarget?: string;
   /** `code` nodes: the shell command to run. `{{refs}}` in it become paths of files holding those outputs. */
   run?: string;
   /** A command that must exit 0 once the node is done, so a program (not only a model) decides it passed. */
   check?: string;
   /** Blast radius of the node's work. Unset means contained. */
   risk?: RiskLane;
+  /** How this node's output is handed on; unset follows the graph's `handoff`. */
+  handoff?: HandoffMode;
+  /** Fan-out: run once per item of a JSON array, `<node>` (its output is the array) or `<node>.<key>`. */
+  foreach?: string;
+  /** Fan-out runs that may run at once (default 4, at most 16). */
+  maxParallel?: number;
+  /** Fan-out: stop and report instead of starting more runs than this. */
+  maxItems?: number;
+  /** Probing: run this many candidates of the step side by side, and keep the best (2 to 4). */
+  probe?: number;
+  /** One approach hint per candidate, in order; candidates without one use their own approach. */
+  probeHints?: string[];
   /** The node's prompt template (the body of its `## @node:` section). */
   prompt: string;
 }
@@ -79,7 +109,25 @@ export type ContractFormat = "json" | "markdown" | "text";
 export interface Contract {
   format: ContractFormat;
   description: string;
+  /** JSON contracts: top-level keys a payload must have, checked by a generated `node -e` command. */
+  required?: string[];
+  /** A command that must exit 0 on the payload; `{{payload}}` becomes the path of the file holding it. */
+  check?: string;
 }
+
+/** Key names a `required` list may hold; they are written into a shell command, so nothing else gets through. */
+export const CONTRACT_KEY_PATTERN = /^[A-Za-z0-9_-]+$/;
+
+/** The experience file: lessons from earlier runs, fed to each step and updated by a reflect step after the run. */
+export interface ExperienceSettings {
+  maxLessons: number;
+}
+
+export const DEFAULT_MAX_LESSONS = 20;
+export const MAX_LESSONS_CAP = 50;
+
+/** Node ids the experience file needs for itself: `experience.md` and `EXPERIENCE.md` are one file on Windows and macOS, and `reflect` is its step. */
+export const EXPERIENCE_RESERVED_IDS: readonly string[] = ["experience", "reflect"];
 
 export const CONTRACT_FORMATS: readonly ContractFormat[] = ["json", "markdown", "text"];
 
@@ -112,6 +160,12 @@ export interface SkillGraph {
   edges: GraphEdge[];
   /** Named payload contracts referenced by edges. */
   contracts: Record<string, Contract>;
+  /** Set when the skill learns from its runs (`experience:` in the frontmatter). */
+  experience?: ExperienceSettings;
+  /** Default handoff for every step's output (unset: inline). */
+  handoff?: HandoffMode;
+  /** The `spec:` value as read, so an unknown version can be reported. Saving writes the version the graph needs. */
+  specVersion?: string;
   /** Markdown between the frontmatter and the first `## @node:` section. */
   preamble: string;
   /** Frontmatter keys other than name/description/topology, kept so a round trip loses nothing. */
@@ -218,6 +272,41 @@ function splitSections(body: string): { preamble: string; sections: Map<string, 
   return { preamble: preambleLines.join("\n").trim(), sections };
 }
 
+/**
+ * `experience:` alone, `experience: true` or a mapping turns learning on; `false` or a missing key
+ * leaves it off. `max_lessons` is clamped to 1..MAX_LESSONS_CAP.
+ */
+function parseExperience(raw: unknown): ExperienceSettings | undefined {
+  if (raw === undefined || raw === false) return undefined;
+  const entry = isRecord(raw) ? raw : {};
+  const max = typeof entry.max_lessons === "number" && Number.isFinite(entry.max_lessons) ? Math.round(entry.max_lessons) : DEFAULT_MAX_LESSONS;
+  return { maxLessons: Math.max(1, Math.min(MAX_LESSONS_CAP, max)) };
+}
+
+function asHandoff(value: unknown): HandoffMode | undefined {
+  return value === "file" || value === "inline" ? value : undefined;
+}
+
+/** A whole number of at least 1, clamped to `cap` when one is given; anything else is unset. */
+function asCount(value: unknown, cap?: number): number | undefined {
+  if (typeof value !== "number" || !Number.isInteger(value) || value < 1) return undefined;
+  return cap === undefined ? value : Math.min(cap, value);
+}
+
+/** 2 to 4 candidates; `probe: 1`, `false` or anything else means no probing. */
+function asProbe(value: unknown): number | undefined {
+  if (typeof value !== "number" || !Number.isInteger(value) || value < PROBE_MIN) return undefined;
+  return Math.min(PROBE_MAX, value);
+}
+
+/** Hints are single lines (they are written into a task), trimmed and capped. */
+function asProbeHints(value: unknown): string[] | undefined {
+  const hints = asStringList(value)
+    .map((hint) => hint.replace(/\s+/g, " ").trim().slice(0, MAX_PROBE_HINT_LENGTH))
+    .filter(Boolean);
+  return hints.length > 0 ? hints : undefined;
+}
+
 /** Parses a Graph SKILL.md. Structural problems are reported by `validateGraph`, not thrown. */
 export function parseGraphSkill(source: string): ParseResult {
   if (source.length > MAX_SOURCE_LENGTH) return { graph: null, fatal: `The file is too large (over ${MAX_SOURCE_LENGTH.toLocaleString("en-US")} characters).` };
@@ -233,8 +322,7 @@ export function parseGraphSkill(source: string): ParseResult {
   }
   if (!isRecord(data)) return { graph: null, fatal: "Frontmatter must be a YAML mapping." };
 
-  const { name, description, topology, contracts: rawContracts, spec: _spec, ...extraFrontmatter } = data;
-  void _spec;
+  const { name, description, topology, contracts: rawContracts, experience: rawExperience, handoff: rawHandoff, spec, ...extraFrontmatter } = data;
   const topologyRecord = isRecord(topology) ? topology : {};
   const { preamble, sections } = splitSections(source.slice(match[0].length));
 
@@ -257,9 +345,16 @@ export function parseGraphSkill(source: string): ParseResult {
       gate: typeof raw.gate === "string" && raw.gate.trim() ? raw.gate.trim() : undefined,
       onFail: raw.on_fail === "retry" || raw.on_fail === "stop" ? raw.on_fail : undefined,
       maxRetries: typeof raw.max_retries === "number" && Number.isInteger(raw.max_retries) && raw.max_retries >= 0 ? raw.max_retries : undefined,
+      retryTarget: typeof raw.retry_target === "string" && raw.retry_target.trim() ? raw.retry_target.trim() : undefined,
       run: typeof raw.run === "string" && raw.run.trim() ? raw.run.trim() : undefined,
       check: typeof raw.check === "string" && raw.check.trim() ? raw.check.trim() : undefined,
       risk: typeof raw.risk === "string" && (RISK_LANES as readonly string[]).includes(raw.risk) ? (raw.risk as RiskLane) : undefined,
+      handoff: asHandoff(raw.handoff),
+      foreach: typeof raw.foreach === "string" && raw.foreach.trim() ? raw.foreach.trim() : undefined,
+      maxParallel: asCount(raw.max_parallel, MAX_PARALLEL_CAP),
+      maxItems: asCount(raw.max_items),
+      probe: asProbe(raw.probe),
+      probeHints: asProbeHints(raw.probe_hints),
       prompt: sections.get(id) ?? "",
     });
   }
@@ -283,7 +378,12 @@ export function parseGraphSkill(source: string): ParseResult {
       if (!isUsableContractName(contractName)) continue;
       const entry = isRecord(raw) ? raw : {};
       const format = typeof entry.format === "string" && (CONTRACT_FORMATS as readonly string[]).includes(entry.format) ? (entry.format as ContractFormat) : "markdown";
-      contracts[contractName] = { format, description: typeof entry.description === "string" ? entry.description.trim() : typeof raw === "string" ? raw.trim() : "" };
+      const contract: Contract = { format, description: typeof entry.description === "string" ? entry.description.trim() : typeof raw === "string" ? raw.trim() : "" };
+      // Kept even when malformed, so the validator can say what is wrong instead of the key vanishing.
+      const required = [...new Set(asStringList(entry.required).map((key) => key.trim()).filter(Boolean))];
+      if (required.length > 0) contract.required = required;
+      if (typeof entry.check === "string" && entry.check.trim()) contract.check = entry.check.trim();
+      contracts[contractName] = contract;
     }
   }
 
@@ -294,6 +394,9 @@ export function parseGraphSkill(source: string): ParseResult {
       nodes,
       edges,
       contracts,
+      experience: parseExperience(rawExperience),
+      handoff: asHandoff(rawHandoff),
+      specVersion: typeof spec === "string" ? spec.trim() : spec === undefined ? undefined : String(spec),
       preamble,
       extraFrontmatter,
     },
@@ -332,12 +435,45 @@ function groupEdges(edges: GraphEdge[]): { from: string | string[]; to: string |
   });
 }
 
+/** `skill-graph/2` once a field that changes what an output is appears, so graphs that use none keep diffing cleanly as `/1`. */
+export function specVersionFor(graph: SkillGraph): string {
+  const usesV2 = graph.handoff !== undefined || graph.nodes.some((node) => node.handoff !== undefined || node.foreach !== undefined);
+  return usesV2 ? SPEC_VERSION_2 : SPEC_VERSION;
+}
+
+/** How a node's output reaches its consumers. The goal and an approval's answer are always passed inline. */
+export function handoffOf(graph: SkillGraph, node: GraphNode): HandoffMode {
+  if (node.type === "input" || node.type === "approval") return "inline";
+  return node.handoff ?? graph.handoff ?? "inline";
+}
+
+export interface ForeachSource {
+  /** Id of the step whose JSON holds the list. */
+  node: string;
+  /** Top-level key of that JSON holding the array; empty when the whole output is the array. */
+  key: string;
+}
+
+/** Where a fan-out step's list comes from, or null when it is not a fan-out step. */
+export function foreachSource(node: GraphNode): ForeachSource | null {
+  if (!node.foreach) return null;
+  const dot = node.foreach.indexOf(".");
+  return dot === -1 ? { node: node.foreach, key: "" } : { node: node.foreach.slice(0, dot), key: node.foreach.slice(dot + 1) };
+}
+
+/** `files` from PLAN's JSON, or the JSON array PLAN returns, in the words of the plan. */
+export function foreachListName(source: ForeachSource): string {
+  return source.key ? `\`${source.key}\`` : "the JSON array";
+}
+
 /** Serializes the graph back to a Graph SKILL.md (frontmatter topology + one section per node). */
 export function serializeGraphSkill(graph: SkillGraph): string {
   const frontmatter: Record<string, unknown> = {
     name: graph.name,
     description: graph.description,
-    spec: SPEC_VERSION,
+    spec: specVersionFor(graph),
+    ...(graph.handoff ? { handoff: graph.handoff } : {}),
+    ...(graph.experience ? { experience: { max_lessons: graph.experience.maxLessons } } : {}),
     ...graph.extraFrontmatter,
     topology: {
       nodes: graph.nodes.map((node) => {
@@ -349,9 +485,16 @@ export function serializeGraphSkill(graph: SkillGraph): string {
         if (node.gate) entry.gate = node.gate;
         if (node.onFail) entry.on_fail = node.onFail;
         if (node.maxRetries !== undefined) entry.max_retries = node.maxRetries;
+        if (node.retryTarget) entry.retry_target = node.retryTarget;
         if (node.run) entry.run = node.run;
         if (node.check) entry.check = node.check;
         if (node.risk) entry.risk = node.risk;
+        if (node.handoff) entry.handoff = node.handoff;
+        if (node.foreach) entry.foreach = node.foreach;
+        if (node.maxParallel !== undefined) entry.max_parallel = node.maxParallel;
+        if (node.maxItems !== undefined) entry.max_items = node.maxItems;
+        if (node.probe !== undefined) entry.probe = node.probe;
+        if (node.probeHints && node.probeHints.length > 0) entry.probe_hints = node.probeHints;
         return entry;
       }),
       edges: groupEdges(graph.edges),
@@ -359,10 +502,13 @@ export function serializeGraphSkill(graph: SkillGraph): string {
   };
   if (Object.keys(graph.contracts).length > 0) {
     frontmatter.contracts = Object.fromEntries(
-      Object.entries(graph.contracts).map(([contractName, contract]) => [
-        contractName,
-        contract.description ? { format: contract.format, description: contract.description } : { format: contract.format },
-      ])
+      Object.entries(graph.contracts).map(([contractName, contract]) => {
+        const entry: Record<string, unknown> = { format: contract.format };
+        if (contract.description) entry.description = contract.description;
+        if (contract.required && contract.required.length > 0) entry.required = contract.required;
+        if (contract.check) entry.check = contract.check;
+        return [contractName, entry];
+      })
     );
   }
 
@@ -400,6 +546,11 @@ export function extractTemplateRefs(prompt: string): TemplateRef[] {
     refs.push({ raw, head: dot === -1 ? raw : raw.slice(0, dot), path: dot === -1 ? "" : raw.slice(dot + 1) });
   }
   return refs;
+}
+
+/** In a fan-out step, `{{item}}` is the item the run handles (it shadows a node named `item`). */
+export function isItemRef(node: GraphNode, head: string): boolean {
+  return head === "item" && node.foreach !== undefined;
 }
 
 /** References a node reads: its prompt plus, for `code` nodes, its command. */
@@ -487,6 +638,33 @@ export function hasCommandCheck(node: GraphNode): boolean {
   return node.check !== undefined || (node.type === "code" && node.run !== undefined);
 }
 
+/** Steps a `retry_target` may name: model steps upstream of the node (code, approval and input steps have nothing to redo). */
+export function retryTargetOptions(graph: SkillGraph, node: GraphNode): GraphNode[] {
+  const ancestors = ancestorsOf(graph, node.id);
+  return graph.nodes.filter((n) => ancestors.has(n.id) && !runsWithoutSubagent(n.type));
+}
+
+/**
+ * What a failure re-runs when the node has a usable `retry_target`: the target, then every step
+ * between it and the node, in graph order. Null when the target is unset or not upstream.
+ */
+export function retryPath(graph: SkillGraph, node: GraphNode): GraphNode[] | null {
+  const target = node.retryTarget;
+  if (!target || !ancestorsOf(graph, node.id).has(target)) return null;
+  const between = descendantsOf(graph, target);
+  const upstream = ancestorsOf(graph, node.id);
+  const order = topologicalOrder(graph) ?? graph.nodes.map((n) => n.id);
+  return order.flatMap((id) => {
+    const step = graph.nodes.find((n) => n.id === id);
+    return step && (id === target || (between.has(id) && upstream.has(id))) ? [step] : [];
+  });
+}
+
+/** True when a failure of the node re-runs work: a gate, a check or a code step set to retry. */
+export function retriesOnFail(node: GraphNode): boolean {
+  return node.onFail === "retry" && (node.gate !== undefined || hasCommandCheck(node));
+}
+
 /** Kahn topological order over known nodes. Returns null when the graph contains a cycle. */
 export function topologicalOrder(graph: SkillGraph): string[] | null {
   const ids = new Set(graph.nodes.map((node) => node.id));
@@ -553,10 +731,15 @@ export function isKeyedJson(graph: SkillGraph, node: GraphNode): boolean {
  */
 export function jsonKeysFor(graph: SkillGraph, source: GraphNode, consumer: GraphNode): string[] | null {
   if (!isKeyedJson(graph, source)) return null;
-  const refs = nodeRefs(consumer).filter((ref) => ref.head === source.id);
+  const refs = nodeRefs(consumer)
+    .filter((ref) => ref.head === source.id && !isItemRef(consumer, ref.head))
+    .map((ref) => ref.path);
+  // A fan-out step reads its list as if its prompt named `{{source.key}}`.
+  const list = foreachSource(consumer);
+  if (list?.node === source.id) refs.push(list.key);
   if (refs.length === 0) return [consumer.id];
-  if (refs.some((ref) => ref.path === "" || ref.path === "output")) return null;
-  return [...new Set(refs.map((ref) => ref.path.split(".")[0]))];
+  if (refs.some((path) => path === "" || path === "output")) return null;
+  return [...new Set(refs.map((path) => path.split(".")[0]))];
 }
 
 /** The keys a keyed JSON output must contain: every key its steps read (none when all read it whole). */
@@ -630,7 +813,7 @@ export function analyzeIsolation(graph: SkillGraph, node: GraphNode): IsolationR
   let total = 0;
 
   for (const ref of nodeRefs(node)) {
-    if (ref.head === "goal") continue;
+    if (ref.head === "goal" || isItemRef(node, ref.head)) continue;
     if (ref.head === "inputs") {
       total += 1;
       continue;
@@ -746,7 +929,16 @@ export function validateGraph(graph: SkillGraph): GraphIssue[] {
 
     const ancestors = ancestorsOf(graph, node.id);
     for (const ref of nodeRefs(node)) {
-      if (ref.head === "goal" || ref.head === "inputs") continue;
+      if (ref.head === "goal" || ref.head === "inputs" || isItemRef(node, ref.head)) continue;
+      if (ref.head === "item" && !ids.has("item")) {
+        issues.push({
+          severity: "error",
+          code: "item-outside-foreach",
+          nodeId: node.id,
+          message: `{{item}} in "${node.id}" only means something in a fan-out step. Set foreach: on it, or remove the reference.`,
+        });
+        continue;
+      }
       const isNode = ids.has(ref.head);
       const group = isNode ? [] : resolveGroup(graph, ref.head, node);
       if (!isNode && group.length === 0) {
@@ -786,6 +978,32 @@ export function validateGraph(graph: SkillGraph): GraphIssue[] {
       code: "contract-undefined",
       message: `Contract "${contract}" is used on an edge but not defined under contracts:, so agents cannot check that handoff.`,
     });
+  }
+  for (const [contractName, contract] of Object.entries(graph.contracts)) {
+    if (contract.required && contract.required.length > 0) {
+      if (contract.format !== "json") {
+        issues.push({
+          severity: "warning",
+          code: "required-not-json",
+          message: `Contract "${contractName}" lists required keys but is ${contract.format}. Only JSON payloads have keys; set format: json or remove required.`,
+        });
+      }
+      const bad = contract.required.filter((key) => !CONTRACT_KEY_PATTERN.test(key));
+      if (bad.length > 0) {
+        issues.push({
+          severity: "error",
+          code: "contract-bad-key",
+          message: `Contract "${contractName}" has required keys that are not plain names (${bad.map((key) => `"${key}"`).join(", ")}). Use letters, digits, _ or -.`,
+        });
+      }
+    }
+    if (contract.check && !/\{\{\s*payload\s*\}\}/.test(contract.check)) {
+      issues.push({
+        severity: "warning",
+        code: "contract-check-no-payload",
+        message: `The check on contract "${contractName}" never reads {{payload}}, so it does not look at the payload. Put {{payload}} where the file path goes.`,
+      });
+    }
   }
   for (const node of graph.nodes) {
     if (node.outputFormat !== "text") continue;
@@ -846,7 +1064,158 @@ export function validateGraph(graph: SkillGraph): GraphIssue[] {
     issues.push({ severity: "warning", code: "no-sink", message: "No node is at the end of the graph, so there is no final answer." });
   }
 
-  issues.push(...validateFlow(graph), ...validateReliability(graph));
+  issues.push(...validateFlow(graph), ...validateReliability(graph), ...validateExperience(graph), ...validateFanOutAndHandoffs(graph), ...validateProbing(graph));
+  if (graph.specVersion !== undefined && !KNOWN_SPEC_VERSIONS.includes(graph.specVersion)) {
+    issues.push({
+      severity: "warning",
+      code: "unknown-spec",
+      message: `spec: ${graph.specVersion} is not a version this studio knows (${KNOWN_SPEC_VERSIONS.join(", ")}). It is read as the newest one, and saving writes the version the graph needs.`,
+    });
+  }
+  return issues;
+}
+
+/**
+ * True when running the step twice could change the repository or the world: it may edit files,
+ * run unscoped shell commands, or is marked wide or irreversible. Probing needs steps without them.
+ */
+export function hasSideEffects(node: GraphNode): boolean {
+  if (writesFiles(node) || (node.risk !== undefined && node.risk !== "contained")) return true;
+  return (node.tools ?? []).some((tool) => tool === "Bash" || tool === "PowerShell");
+}
+
+/** Probed steps run several candidates side by side, so they must leave no trace a second candidate would trip over. */
+function validateProbing(graph: SkillGraph): GraphIssue[] {
+  const issues: GraphIssue[] = [];
+  const slugs = new Map(graph.nodes.map((node) => [toSlug(node.id, "node"), node.id]));
+  for (const node of graph.nodes) {
+    if (node.probe === undefined) {
+      if (node.probeHints) issues.push({ severity: "warning", code: "probe-hints-unused", nodeId: node.id, message: `"${node.id}" has probe_hints but no probe:, so they are ignored.` });
+      continue;
+    }
+    if (runsWithoutSubagent(node.type)) {
+      issues.push({ severity: "error", code: "probe-not-model", nodeId: node.id, message: `"${node.id}" is a ${node.type} step; only model steps can be probed. Remove probe.` });
+      continue;
+    }
+    if (hasSideEffects(node)) {
+      issues.push({
+        severity: "error",
+        code: "probe-side-effects",
+        nodeId: node.id,
+        message: `"${node.id}" can change files or run shell commands, so its candidates would overwrite each other. Probe a step that only reads (a plan, a review, research), or limit its tools to Read, Grep, Glob and scoped Bash.`,
+      });
+    }
+    if (node.foreach) {
+      issues.push({ severity: "error", code: "probe-foreach", nodeId: node.id, message: `"${node.id}" fans out and is probed, so every item would run ${node.probe} times. Use one or the other.` });
+    }
+    if (node.probeHints && node.probeHints.length > node.probe) {
+      issues.push({
+        severity: "warning",
+        code: "probe-hints-extra",
+        nodeId: node.id,
+        message: `"${node.id}" has ${node.probeHints.length} approach hints for ${node.probe} candidates; the extra ones are never used.`,
+      });
+    }
+    const judge = slugs.get(`${toSlug(node.id, "node")}-judge`);
+    if (judge) {
+      issues.push({ severity: "error", code: "agent-name-collision", nodeId: judge, message: `"${judge}" would export to the same file as the judge of the probed step "${node.id}". Rename one.` });
+    }
+  }
+  return issues;
+}
+
+/** True when the node's agent can open a file: it has Read, or no tools list (every tool). */
+function canReadFiles(node: GraphNode): boolean {
+  return node.tools === undefined || node.tools.length === 0 || node.tools.some((tool) => baseToolName(tool) === "Read");
+}
+
+/** Fan-out steps need a JSON list from a direct predecessor; file handoffs need a reader at the other end. */
+function validateFanOutAndHandoffs(graph: SkillGraph): GraphIssue[] {
+  const issues: GraphIssue[] = [];
+  const byId = new Map(graph.nodes.map((node) => [node.id, node]));
+  for (const node of graph.nodes) {
+    const list = foreachSource(node);
+    if (list) {
+      const source = byId.get(list.node);
+      if (runsWithoutSubagent(node.type)) {
+        issues.push({ severity: "error", code: "foreach-not-model", nodeId: node.id, message: `"${node.id}" is a ${node.type} step; only model steps can fan out. Remove foreach.` });
+      } else if (!source || !predecessorsOf(graph, node.id).includes(list.node)) {
+        issues.push({
+          severity: "error",
+          code: "foreach-source-unknown",
+          nodeId: node.id,
+          message: `"${node.id}" fans out over "${node.foreach}", but "${list.node}" is not a step with an edge into it. Use <step>.<key> of a step connected to it.`,
+        });
+      } else if (source.type === "input" || source.type === "approval" || !wantsJsonOutput(graph, source)) {
+        issues.push({
+          severity: "error",
+          code: "foreach-source-not-json",
+          nodeId: node.id,
+          message: `"${node.id}" fans out over "${node.foreach}", but "${list.node}" does not return JSON. Give the edge a JSON contract, or set output_format: json on "${list.node}".`,
+        });
+      }
+      if (node.risk === "irreversible") {
+        issues.push({ severity: "error", code: "foreach-irreversible", nodeId: node.id, message: `"${node.id}" is irreversible and fans out, so one approval would cover any number of hard-to-undo runs. Remove foreach, or move the irreversible work to a step after it.` });
+      }
+      if (node.maxItems === undefined) {
+        issues.push({
+          severity: "warning",
+          code: "foreach-no-cap",
+          nodeId: node.id,
+          message: `"${node.id}" has no max_items, so a long list would start that many runs. Set max_items to stop and ask instead.`,
+        });
+      }
+      if (writesFiles(node) && (node.maxParallel ?? DEFAULT_MAX_PARALLEL) > 1) {
+        issues.push({
+          severity: "warning",
+          code: "foreach-parallel-writers",
+          nodeId: node.id,
+          message: `"${node.id}" runs up to ${node.maxParallel ?? DEFAULT_MAX_PARALLEL} copies at once and can edit files, so runs may overwrite each other. Set max_parallel: 1, or limit its tools.`,
+        });
+      }
+    } else if (node.maxParallel !== undefined || node.maxItems !== undefined) {
+      issues.push({ severity: "warning", code: "fanout-settings-unused", nodeId: node.id, message: `"${node.id}" sets max_parallel or max_items but does not fan out (no foreach:).` });
+    }
+
+    if (runsWithoutSubagent(node.type) || canReadFiles(node)) continue;
+    const fileInputs = predecessorsOf(graph, node.id).filter((id) => {
+      const source = byId.get(id);
+      return source !== undefined && handoffOf(graph, source) === "file";
+    });
+    if (fileInputs.length > 0) {
+      issues.push({
+        severity: "error",
+        code: "file-handoff-no-read",
+        nodeId: node.id,
+        message: `"${node.id}" gets ${fileInputs.map((id) => `"${id}"`).join(", ")} as a file but cannot use Read. Add Read to its tools, or hand those outputs on inline.`,
+      });
+    }
+  }
+  return issues;
+}
+
+/** The experience file needs evidence to learn from, and two names for itself. */
+function validateExperience(graph: SkillGraph): GraphIssue[] {
+  if (!graph.experience) return [];
+  const issues: GraphIssue[] = [];
+  for (const node of graph.nodes) {
+    if (EXPERIENCE_RESERVED_IDS.includes(toSlug(node.id, "node"))) {
+      issues.push({
+        severity: "error",
+        code: "experience-id-reserved",
+        nodeId: node.id,
+        message: `"${node.id}" is a name the experience file uses for itself (EXPERIENCE.md and the reflect step). Rename the node.`,
+      });
+    }
+  }
+  const contractChecks = Object.values(graph.contracts).some((contract) => contract.check || (contract.required && contract.required.length > 0));
+  if (!contractChecks && !graph.nodes.some((node) => node.gate !== undefined || hasCommandCheck(node))) {
+    issues.push({
+      severity: "warning",
+      code: "experience-no-signal",
+      message: "The skill learns from failed checks, gates and code steps, and this graph has none, so it would never write a lesson. Add a check (e.g. npm test) or a gate.",
+    });
+  }
   return issues;
 }
 
@@ -854,9 +1223,12 @@ export function validateGraph(graph: SkillGraph): GraphIssue[] {
 function readPredecessors(graph: SkillGraph, node: GraphNode): Set<string> | null {
   const preds = predecessorsOf(graph, node.id);
   const read = new Set<string>();
+  // A fan-out step reads its list's source even when no prompt reference names it.
+  const list = foreachSource(node);
+  if (list) read.add(list.node);
   let explicit = false;
   for (const ref of nodeRefs(node)) {
-    if (ref.head === "goal") continue;
+    if (ref.head === "goal" || isItemRef(node, ref.head)) continue;
     explicit = true;
     if (ref.head === "inputs") preds.forEach((id) => read.add(id));
     else if (graph.nodes.some((n) => n.id === ref.head)) read.add(ref.head);
@@ -892,7 +1264,8 @@ function validateFlow(graph: SkillGraph): GraphIssue[] {
   if (topologicalOrder(graph) !== null) {
     const steps = graph.nodes.filter((node) => node.type !== "input");
     const waves = executionWaves(graph).map((wave) => wave.filter((node) => node.type !== "input"));
-    if (steps.length >= 4 && waves.every((wave) => wave.length <= 1)) {
+    // A fan-out step runs in parallel with itself, so a chain around one is not "no parallelism".
+    if (steps.length >= 4 && waves.every((wave) => wave.length <= 1) && !steps.some((node) => node.foreach !== undefined)) {
       issues.push({
         severity: "warning",
         code: "no-parallelism",
@@ -933,7 +1306,55 @@ function validateReliability(graph: SkillGraph): GraphIssue[] {
     }
 
     const ancestors = nodesOf(ancestorsOf(graph, node.id));
-    if (node.type === "code" && node.onFail === "retry" && !predecessorsOf(graph, node.id).some((id) => byId.has(id) && !runsWithoutSubagent((byId.get(id) as GraphNode).type))) {
+    if (node.retryTarget) {
+      const target = byId.get(node.retryTarget);
+      const path = retryPath(graph, node);
+      if (!target || !path) {
+        issues.push({
+          severity: "error",
+          code: "retry-target-unknown",
+          nodeId: node.id,
+          message: target
+            ? `"${node.id}" restarts at "${node.retryTarget}" on failure, but "${node.retryTarget}" does not run before it. Pick a step upstream.`
+            : `"${node.id}" restarts at "${node.retryTarget}" on failure, but there is no node with that id.`,
+        });
+      } else if (runsWithoutSubagent(target.type)) {
+        issues.push({
+          severity: "error",
+          code: "retry-target-not-model",
+          nodeId: node.id,
+          message: `"${node.id}" restarts at "${target.id}", a ${target.type} step with no work to redo. Pick the model step that does the work.`,
+        });
+      } else {
+        const irreversible = path.find((step) => step.risk === "irreversible");
+        if (irreversible) {
+          issues.push({
+            severity: "error",
+            code: "retry-path-irreversible",
+            nodeId: node.id,
+            message: `Restarting at "${target.id}" would re-run "${irreversible.id}", which is irreversible. Restart after it, or set on_fail: stop.`,
+          });
+        }
+        const approval = path.find((step) => step.type === "approval");
+        if (approval) {
+          issues.push({
+            severity: "warning",
+            code: "retry-path-approval",
+            nodeId: node.id,
+            message: `Restarting at "${target.id}" passes the approval "${approval.id}", so you would be asked again on every retry.`,
+          });
+        }
+      }
+      if (!retriesOnFail(node)) {
+        issues.push({
+          severity: "warning",
+          code: "retry-target-unused",
+          nodeId: node.id,
+          message: `"${node.id}" has a retry target but never retries. It needs a gate, a check or a command, and on_fail: retry.`,
+        });
+      }
+    }
+    if (node.type === "code" && node.onFail === "retry" && !retryPath(graph, node) && !predecessorsOf(graph, node.id).some((id) => byId.has(id) && !runsWithoutSubagent((byId.get(id) as GraphNode).type))) {
       issues.push({
         severity: "warning",
         code: "retry-nothing-upstream",
@@ -1036,7 +1457,7 @@ export function addNode(graph: SkillGraph, type: NodeType, after?: string): { gr
 export function removeNode(graph: SkillGraph, id: string): SkillGraph {
   return {
     ...graph,
-    nodes: graph.nodes.filter((node) => node.id !== id),
+    nodes: graph.nodes.filter((node) => node.id !== id).map((node) => (node.retryTarget === id ? { ...node, retryTarget: undefined } : node)),
     edges: graph.edges.filter((edge) => edge.from !== id && edge.to !== id),
   };
 }
@@ -1056,7 +1477,14 @@ export function renameNode(graph: SkillGraph, id: string, nextId: string): Skill
     });
   return {
     ...graph,
-    nodes: graph.nodes.map((node) => ({ ...node, id: node.id === id ? nextId : node.id, prompt: rewrite(node.prompt), ...(node.run ? { run: rewrite(node.run) } : {}) })),
+    nodes: graph.nodes.map((node) => ({
+      ...node,
+      id: node.id === id ? nextId : node.id,
+      prompt: rewrite(node.prompt),
+      ...(node.run ? { run: rewrite(node.run) } : {}),
+      ...(node.retryTarget === id ? { retryTarget: nextId } : {}),
+      ...(foreachSource(node)?.node === id ? { foreach: `${nextId}${(node.foreach as string).slice(id.length)}` } : {}),
+    })),
     edges: graph.edges.map((edge) => ({
       ...edge,
       from: edge.from === id ? nextId : edge.from,
@@ -1126,6 +1554,7 @@ export interface PromptInput {
  */
 export function promptInputs(graph: SkillGraph, node: GraphNode): PromptInput[] {
   const inputs: PromptInput[] = [];
+  if (node.foreach) inputs.push({ ref: "{{item}}", label: "This run's item from the list" });
   if (graph.nodes.some((n) => n.type === "input")) inputs.push({ ref: "{{goal}}", label: "The user's goal" });
   const preds = predecessorsOf(graph, node.id)
     .map((id) => graph.nodes.find((n) => n.id === id))

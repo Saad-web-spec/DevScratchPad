@@ -146,13 +146,15 @@ describe("compiled plan", () => {
 
   it("runs code steps and approvals itself, without subagent files", () => {
     const agents = files.filter((f) => f.path.startsWith(".claude/agents/")).map((f) => f.path);
-    expect(agents).toHaveLength(6);
+    // Six model steps plus the reflect step the experience file adds.
+    expect(agents).toHaveLength(7);
+    expect(agents).toContain(".claude/agents/ship-a-change-reflect.md");
     expect(agents.some((p) => p.endsWith("-diff.md") || p.endsWith("-approve.md"))).toBe(false);
     expect(skill).toContain("**COLLECT DIFF** (`diff`) → you run a command with Bash (no subagent, no model)");
     expect(skill).toContain("Run: `git diff --stat && git diff`");
     expect(skill).toContain("**APPROVE PULL REQUEST** (`approve`) → you ask the user (no subagent)");
     expect(skill).toContain("Continue only on an explicit yes.");
-    expect(loadBudget(ship).perNode).toHaveLength(6);
+    expect(loadBudget(ship).perNode).toHaveLength(7);
   });
 
   it("loops a step on its command check", () => {

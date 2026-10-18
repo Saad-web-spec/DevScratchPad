@@ -94,6 +94,10 @@ const TOC: { id: string; title: string; group?: string }[] = [
   { id: "prompts", title: "References" },
   { id: "fresh-context", title: "Fresh context" },
   { id: "safety", title: "Gates, checks and approvals" },
+  { id: "fan-out", title: "Fan-out: one run per item" },
+  { id: "file-handoffs", title: "File handoffs" },
+  { id: "probing", title: "Probing: try several, keep the best" },
+  { id: "learning", title: "Learning from runs" },
   { id: "models", title: "Models and tools" },
   { id: "file-format", title: "The file format" },
   { id: "issues", title: "Errors and warnings", group: "Reference" },
@@ -143,9 +147,16 @@ const NODE_FIELDS: { field: string; meaning: string }[] = [
   { field: "gate", meaning: "Pass criteria. The step must end its answer with GATE: PASS or GATE: FAIL." },
   { field: "on_fail", meaning: "retry re-runs the failed upstream work with the reason; stop halts and reports." },
   { field: "max_retries", meaning: "How many re-runs a failed gate or check gets (default 1; more than 3 is flagged)." },
+  { field: "retry_target", meaning: "Where a failed gate, check or command restarts: a model step before it. Unset, a gate re-runs the steps it names, a check re-runs its own step and a command re-runs the steps before it." },
   { field: "check", meaning: "A command that must exit 0 when the step is done, e.g. npm test." },
   { field: "run", meaning: "code nodes only: the command to run." },
   { field: "risk", meaning: "contained (default), wide or irreversible. Decides which safeguards the checker asks for." },
+  { field: "foreach", meaning: "Fan-out: run the step once per item of a JSON array, written step.key (or step when its whole output is the array). Each run reads its item as {{item}}." },
+  { field: "max_parallel", meaning: "Fan-out runs that may run at once (default 4, at most 16)." },
+  { field: "max_items", meaning: "Fan-out: stop and ask instead of starting more runs than this." },
+  { field: "probe", meaning: "2 to 4: run that many candidates of a read-only step side by side, and let a fresh-context judge keep the best." },
+  { field: "probe_hints", meaning: "One approach per candidate, in order, e.g. [The smallest change that works., Reuse existing helpers.]. A candidate without one uses its own." },
+  { field: "handoff", meaning: "inline or file: how this step's output reaches the next steps. Unset follows the skill's handoff." },
 ];
 
 const REFERENCES: { ref: string; meaning: string }[] = [
@@ -174,6 +185,23 @@ const ISSUES: { severity: "Error" | "Warning"; message: string; fix: string }[] 
   { severity: "Warning", message: "Empty tools list", fix: "Claude Code reads [] as every tool. List what the step needs, or remove the key." },
   { severity: "Warning", message: "Nothing runs in parallel", fix: "If every step really needs the one before, one agent with a check may serve you better than a graph." },
   { severity: "Warning", message: "Prompt section matches no node", fix: "A ## @node: section whose id is not in the topology is ignored and removed on the next canvas edit. Fix the id, or add the node." },
+  { severity: "Error", message: "Retry target is not upstream, or not a model step", fix: "Pick a step that runs before this one and does model work. Code, approval and input steps have nothing to redo." },
+  { severity: "Error", message: "Restarting would re-run an irreversible step", fix: "Pick a retry target after the irreversible step, or set on_fail: stop." },
+  { severity: "Warning", message: "Restarting passes an approval", fix: "You would be asked again on every retry. Move the retry target after the approval if that is not what you want." },
+  { severity: "Warning", message: "Contract check never reads {{payload}}", fix: "Put {{payload}} where the command expects the file path, e.g. node validate.mjs {{payload}}." },
+  { severity: "Warning", message: "Required keys on a non-JSON contract", fix: "Only JSON payloads have keys. Set the format to json, or clear the keys." },
+  { severity: "Error", message: "Fan-out list is not a connected JSON step", fix: "foreach must name a step with an edge into this one (step.key), and that step must return JSON: give the edge a JSON contract or set output_format: json." },
+  { severity: "Error", message: "Irreversible step fans out", fix: "One approval cannot cover any number of hard-to-undo runs. Remove foreach, or move the irreversible work to a step after it." },
+  { severity: "Error", message: "{{item}} outside a fan-out step", fix: "{{item}} only exists in a step with foreach. Set foreach on the step, or remove the reference." },
+  { severity: "Warning", message: "Fan-out without max_items", fix: "Set max_items so a long list stops and asks instead of starting hundreds of runs." },
+  { severity: "Warning", message: "Fan-out runs can all edit files", fix: "Copies of the step run in parallel. Set max_parallel: 1, or limit its tools to reading." },
+  { severity: "Error", message: "Step gets a file but cannot read it", fix: "Add Read to its tools, or set that input's handoff to inline." },
+  { severity: "Warning", message: "Unknown spec version", fix: "The file says a spec: this studio does not know. It is read as the newest version, and saving writes skill-graph/1 or /2, whichever the graph needs." },
+  { severity: "Error", message: "Probed step can change files or run shell commands", fix: "Candidates run side by side and would overwrite each other. Probe a step that only reads (a plan, a review, research), or limit its tools to Read, Grep, Glob and scoped Bash." },
+  { severity: "Error", message: "Probed step also fans out", fix: "Every item would run once per candidate. Use one or the other." },
+  { severity: "Warning", message: "Approach hints without probe, or more hints than candidates", fix: "Set probe:, or remove the hints that are never used." },
+  { severity: "Error", message: "Node name used by the experience file", fix: "With learning on, experience and reflect are taken (EXPERIENCE.md and the reflect step). Rename the node." },
+  { severity: "Warning", message: "Learning is on but nothing can fail", fix: "The skill learns only from failed checks, gates and commands. Add a check (e.g. npm test) or a gate." },
   { severity: "Warning", message: "Code step re-runs nothing", fix: "on_fail: retry on a code step re-runs the subagent steps before it. With none, it stops instead; set on_fail: stop or connect it after a subagent." },
 ];
 
@@ -183,6 +211,9 @@ const EXPORTS: { path: string; what: string }[] = [
   { path: ".claude/agents/<name>-<node>.md", what: "One Claude Code subagent per model step, with its tools, model and prompt." },
   { path: ".cursor/rules/<name>.mdc", what: "The same skill as a Cursor rule." },
   { path: "README.md", what: "What is in the kit and how to install it." },
+  { path: ".claude/agents/<name>-reflect.md", what: "With learning on: the step that updates the lessons file after each run." },
+  { path: ".claude/agents/<name>-<node>-judge.md", what: "For each probed step: the judge that keeps the best candidate." },
+  { path: ".skill-graph/.gitignore", what: "When the skill saves working files (file handoffs, contract checks, lessons): keeps them out of git, except the lessons file, which you commit." },
 ];
 
 const SHORTCUTS: { keys: string; action: string }[] = [
@@ -327,6 +358,16 @@ const SAFETY_EXAMPLE = `- id: implement
   tools: [Bash]
   risk: irreversible       # needs an approval upstream
   on_fail: stop`;
+
+const FANOUT_EXAMPLE = `- id: review_file
+  type: worker
+  foreach: scope.files     # one run per path in scope's JSON
+  max_parallel: 6          # at most 6 subagents at once
+  max_items: 40            # more than 40 files: stop and ask
+  isolated_context: true
+
+## @node: review_file
+Review this one file: {{item}}`;
 
 /* ------------------------------------------------------------------ page */
 
@@ -482,6 +523,12 @@ export default function GraphGuidePage() {
               Markdown. Below the name you can change its format and describe what a valid payload looks like. All of a skill&apos;s contracts are also listed in the Inspector when
               nothing is selected.
             </P>
+            <P>
+              A description is checked by the agent reading it. To have a program check a payload instead, give a JSON contract its <b>required keys</b> (
+              <C>required: [files, steps]</C>), or give any contract a <b>check command</b> with <C>{"{{payload}}"}</C> where the file path goes (
+              <C>{"check: node validate.mjs {{payload}}"}</C>). The agent saves the payload to a file, runs the command, and re-runs the step once if it fails. Required keys need
+              Node.js on the machine that runs the skill.
+            </P>
           </Section>
 
           <Section id="prompts" title="References">
@@ -518,7 +565,8 @@ export default function GraphGuidePage() {
               <li>
                 <b className="text-zinc-900">gate</b>: written pass criteria. The step ends with <C>GATE: PASS</C> or <C>GATE: FAIL</C>; with <C>on_fail: retry</C> only the failed work
                 is re-run, with the reason, up to <C>max_retries</C> times. The gate can name any step before it, so a bad change goes back to the step that wrote it, and the
-                steps between that step and the gate (a diff, the reviews) run again before the gate does.
+                steps between that step and the gate (a diff, the reviews) run again before the gate does. Set <b>Restart at</b> (<C>retry_target</C>) to say where a failed loop
+                starts again: the gate may then only name that step and the ones after it, and re-runs that step when its verdict names none.
               </li>
               <li>
                 <b className="text-zinc-900">approval</b>: a node that stops and asks you before going on.
@@ -530,6 +578,91 @@ export default function GraphGuidePage() {
               gaps are warnings. A gate without <C>on_fail</C> stops and reports; set <C>on_fail: retry</C> to re-run the failed work.
             </P>
             <CodeBlock title="a guarded change">{SAFETY_EXAMPLE}</CodeBlock>
+          </Section>
+
+          <Section id="fan-out" title="Fan-out: one run per item">
+            <P>
+              Some work only knows its size at run time: the files a change touches, the failing tests, the packages in a monorepo. A <b>fan-out</b> step runs once per item of a
+              list an earlier step returns, each run in its own subagent. Set it under <b>Advanced → Fan-out</b> (<C>foreach</C> in the file), or start from the{" "}
+              <b>Review each file</b> blueprint.
+            </P>
+            <ul className="list-disc space-y-2 pl-5 text-[15px] leading-relaxed text-zinc-600">
+              <li>
+                <b className="text-zinc-900">The list</b> is a JSON array from a step connected to it: <C>scope.files</C> is the <C>files</C> key of <C>scope</C>&apos;s JSON. Each
+                run reads its own item as <C>{"{{item}}"}</C> (in <b>Insert input</b>) and never sees the others.
+              </li>
+              <li>
+                <b className="text-zinc-900">The output</b> is a JSON array of the runs&apos; results, in item order, so the next step gets everything in one place.
+              </li>
+              <li>
+                <b className="text-zinc-900">Limits:</b> <C>max_parallel</C> runs at once (default 4, at most 16) and <C>max_items</C> stops the run and asks you before a long list
+                starts that many subagents. A run whose check or gate fails is retried on its own.
+              </li>
+            </ul>
+            <CodeBlock title="one review per changed file">{FANOUT_EXAMPLE}</CodeBlock>
+            <Note>Fan-out steps that can edit files run side by side and may overwrite each other; the checker warns unless max_parallel is 1. An irreversible step cannot fan out.</Note>
+          </Section>
+
+          <Section id="file-handoffs" title="File handoffs">
+            <P>
+              By default the agent pastes each output into the next step&apos;s task. For long outputs (a big diff, many reviews) that costs tokens every time it is handed on, and a
+              long paste can come out shortened. Set <b>Hand outputs on → as files</b> in the Inspector with nothing selected (<C>handoff: file</C>), and the agent saves each output
+              once to <C>.skill-graph/&lt;name&gt;/&lt;step&gt;.md</C> (or <C>.json</C>) and hands later steps only the path.
+            </P>
+            <P>
+              A step can override the skill&apos;s choice under <b>Advanced → Agent → Hand on output</b>. Steps that get a file need the Read tool; the checker says so if one cannot
+              read it. Approvals still show you the content, and the last step&apos;s answer comes back to you as usual. Cards that hand on by file show a small file icon.
+            </P>
+          </Section>
+
+          <Section id="probing" title="Probing: try several, keep the best">
+            <P>
+              For a step whose answer decides a lot, such as the plan before an implementation, set <b>Advanced → Probe</b> (<C>probe: 3</C>). The agent runs that many{" "}
+              <b>candidates</b> of the step at once, each with its own approach, then a fresh-context <b>judge</b> picks the best one or combines two that fit together.
+            </P>
+            <ul className="list-disc space-y-2 pl-5 text-[15px] leading-relaxed text-zinc-600">
+              <li>
+                <b className="text-zinc-900">Approaches:</b> one per line under the candidates (<C>probe_hints</C>), for example &ldquo;The smallest change that works.&rdquo; A
+                candidate without one uses its own best approach.
+              </li>
+              <li>
+                <b className="text-zinc-900">Checks first:</b> the step&apos;s contract checks run on every candidate and drop the broken ones before the judge sees them. The judge
+                then checks claims against the repository, says which candidate it chose and why, and returns the final answer.
+              </li>
+              <li>
+                <b className="text-zinc-900">Cost:</b> about one run per candidate plus the judge, so a probe of 3 costs roughly four runs of that step. Use it where a better
+                answer saves work later.
+              </li>
+            </ul>
+            <Note>
+              Only steps that read can be probed. Candidates of a step that edits files or runs unrestricted shell commands would overwrite each other in your checkout, and a
+              separate git worktree per candidate starts without your uncommitted changes or installed packages. Probe the plan, not the implementation.
+            </Note>
+          </Section>
+
+          <Section id="learning" title="Learning from runs">
+            <P>
+              Tick <b>Learn from runs</b> in the Inspector (with nothing selected; <C>experience:</C> in the file) and the skill keeps lessons between runs. Before the first stage,
+              the agent reads <C>.skill-graph/&lt;name&gt;/EXPERIENCE.md</C> and hands each step only its own lessons. After the last stage, a small reflect step updates the file.
+            </P>
+            <ul className="list-disc space-y-2 pl-5 text-[15px] leading-relaxed text-zinc-600">
+              <li>
+                <b className="text-zinc-900">Only hard evidence.</b> A lesson is written only from a failed check or command, a <C>GATE: FAIL</C> line or a retry, and quotes it. A
+                run where nothing failed adds nothing.
+              </li>
+              <li>
+                <b className="text-zinc-900">It stays short.</b> Each lesson counts how often a step got it and how often that step then passed. A lesson used 5 times that never
+                helped is removed, and the file holds at most <C>max_lessons</C> (20 by default).
+              </li>
+              <li>
+                <b className="text-zinc-900">Lessons are advice.</b> They cannot add tools, widen a step&apos;s scope or skip an approval.
+              </li>
+            </ul>
+            <P>
+              Commit <C>EXPERIENCE.md</C> so your team shares the lessons; the <C>.skill-graph/.gitignore</C> in the kit keeps it and ignores the payload files beside it. To make a
+              lesson permanent, paste the file under <b>Learning</b> and press <b>Bake in</b>: the rule is added to that step&apos;s prompt and removed from the file. Download the
+              trimmed file and replace the one in your repository. The file is read in your browser and never uploaded.
+            </P>
           </Section>
 
           <Section id="models" title="Models and tools">
@@ -551,8 +684,10 @@ export default function GraphGuidePage() {
 
           <Section id="file-format" title="The file format">
             <P>
-              For people who prefer the editor: a graph skill is a normal <C>SKILL.md</C>. The frontmatter holds <C>name</C>, <C>description</C>, <C>spec: skill-graph/1</C>, a{" "}
-              <C>topology</C> (nodes and edges) and <C>contracts</C>. The body holds one <C>## @node: id</C> section per step with its prompt. Every field of a node:
+              For people who prefer the editor: a graph skill is a normal <C>SKILL.md</C>. The frontmatter holds <C>name</C>, <C>description</C>, <C>spec</C>, a{" "}
+              <C>topology</C> (nodes and edges) and <C>contracts</C>, and optionally <C>handoff</C> and <C>experience</C>. The body holds one <C>## @node: id</C> section per step
+              with its prompt. <C>spec</C> is <C>skill-graph/1</C>, or <C>skill-graph/2</C> once a step uses <C>foreach</C> or <C>handoff</C> (<C>probe</C> stays <C>/1</C>); the studio writes the right one
+              when it saves. Every field of a node:
             </P>
             <Table head={["Field", "Meaning"]} rows={NODE_FIELDS.map((item) => [<C key={item.field}>{item.field}</C>, item.meaning])} />
             <CodeBlock title="edges and contracts">{EDGE_EXAMPLE}</CodeBlock>

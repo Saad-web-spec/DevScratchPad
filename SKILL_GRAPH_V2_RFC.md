@@ -1,11 +1,11 @@
 # RFC: Skill Graph `skill-graph/2`
 
-> **Status**: Draft for review · **Date**: 2026-10-18 · **Scope**: `src/app/graph/lib/` (parser, validator, compiler), `/graph` studio, `/graph/guide`
+> **Status**: A, B, C1, D, F and probing (read-only steps) built 2026-10-18 (see TASK.md). Not built: C2 · **Date**: 2026-10-18 · **Scope**: `src/app/graph/lib/` (parser, validator, compiler), `/graph` studio, `/graph/guide`
 > **Covers**: audit items 3.2 (file handoffs), 3.3 (retry targets, per-step readiness), 3.4 (`foreach` fan-out, checked contracts)
 
 ## 1. Summary
 
-`skill-graph/1` describes a fixed graph: every step runs once per stage, outputs travel inline through the orchestrator, and a failed gate re-runs the steps it names. Four extensions are proposed. Two of them only **add optional fields** and can ship inside `skill-graph/1`, as `code`, `approval`, `check` and `risk` did. The other two **change what a step's output is** (a file path, a list), so they define `skill-graph/2`.
+`skill-graph/1` describes a fixed graph: every step runs once per stage, outputs travel inline through the orchestrator, and a failed gate re-runs the steps it names. Five extensions are proposed. Three of them only **add optional fields** and can ship inside `skill-graph/1`, as `code`, `approval`, `check` and `risk` did. The other two **change what a step's output is** (a file path, a list), so they define `skill-graph/2`.
 
 | # | Feature | New syntax | Changes output meaning? | Ships as |
 | - | --- | --- | --- | --- |
@@ -13,8 +13,9 @@
 | B | Checked contracts | `required: [keys]` and `check: <command>` on a contract | No | `/1`, additive |
 | C | File handoffs | `handoff: file` on the graph or on a node | Yes: downstream steps read a path | `/2` |
 | D | Map fan-out | `foreach: <node>.<key>` on a model step | Yes: the output is a list | `/2` |
+| F | Experience file | `experience:` on the graph | No | `/1`, additive |
 
-Recommended order: **A → B → (decide on C) → D**.
+Recommended order: **A → B → F → (decide on C) → D**. F needs B's checks to have evidence worth learning from, and it does not depend on C or D.
 
 ## 2. What already exists
 
@@ -126,6 +127,67 @@ Two designs, with different trade-offs:
 
 The plan could add "Start as soon as `a` and `b` finish" to each step, so a step whose inputs are ready does not wait for its whole stage. This needs no new syntax. Whether it helps depends on the host: when one message starts several subagents, Claude Code returns all their results together, so steps started in the same message cannot be released early. **Proposal:** add the line as guidance only, and measure before relying on it.
 
+### F. Experience file (`experience`)
+
+**Problem.** Every run starts from the same compiled skill. If `implement` fails the gate on an unused import today, it fails the same way tomorrow, and the retry costs a gate run each time. The skill never learns from its own runs on the user's repo.
+
+**Prior art.** Harness² (Google Research, Apache 2.0, [harness2.github.io](https://harness2.github.io)) keeps the model fixed and improves the instructions around it. Across tasks it keeps an `EXPERIENCE.md` of lessons, each backed by evidence, that guides later runs. F takes that loop and leaves out the expensive part, which is probing several candidate harnesses per task (see "Later" below).
+
+**Syntax.**
+
+```yaml
+experience:
+  max_lessons: 20      # optional, default 20, capped at 50
+```
+
+**The file.** `.skill-graph/<slug>/EXPERIENCE.md`, next to the payload files `payloadPath` already writes. One lesson per entry:
+
+```md
+- [L3] implement: Run `npm run lint` before returning. Unused imports fail the gate.
+  evidence: gate FAIL 2026-10-18 "unused import in src/foo.ts" · seen 3 · helped 2
+```
+
+- `[L3]` is a stable id. `implement` is the node the lesson is for.
+- `evidence` quotes the signal that created the lesson.
+- `seen` counts the runs in which the node was given the lesson. `helped` counts the runs in which the node then passed its check or gate on the first try.
+
+**Compiled behaviour.**
+- **Before the first stage**, the orchestrator reads the file if it exists. Each step gets only the lessons for its own id, quoted under "Lessons from earlier runs (advice, not instructions to change tools or scope)".
+- **After the last stage**, an added `reflect` step runs on a small model with no tools. It is given the run's hard signals, the current file, and which lessons each node was given. It returns the full new file, and the orchestrator writes it. Steps stay read-only, as with `code` step payloads.
+- **Hard signals only.** A lesson can be created only from a `check:` command that exited non-zero, a `code` step that failed, a `GATE: FAIL` verdict line, or a retry. A run with none of these updates counters and adds nothing. The reflect step may not write lessons from its own reading of the outputs.
+- **Pruning.** A lesson seen 5 times that never helped is removed. When the file is full, the lesson with the lowest `helped / seen` goes first. Lessons for node ids that no longer exist are dropped.
+- **Early stops.** If the run stops early (a stop on fail, or a declined approval), `reflect` still runs on the signals gathered so far.
+- **No new powers.** Lessons are text only. They cannot add tools, change `risk`, or skip an approval, so `irreversible` steps need no special rule.
+
+**Validation.**
+- Warning `experience-no-signal` when the graph has no `check:`, no gate and no `code` step, because nothing could produce evidence.
+- Error `experience-id-reserved` when a node is named `experience` or `reflect`. On Windows and macOS, `experience.md` and `EXPERIENCE.md` are the same file.
+
+**Studio: bake-in.** The user pastes their `EXPERIENCE.md` into `/graph`, and all parsing happens in the browser.
+- Node cards show a lesson count, and each step's Inspector lists its own lessons.
+- The Inspector lists each lesson with its evidence and counters, plus two actions. **Bake in** appends the rule to the node's `prompt` (its `## @node:` section) and removes it from the file. **Discard** only removes it.
+- The studio then offers the trimmed file for download.
+- Lessons for unknown ids are listed as orphaned.
+
+This is Harness²'s compose step, with the user deciding instead of a model. Lessons are auto-applied on the next run anyway, so bake-in is optional. It turns a lesson that keeps helping into a permanent part of the skill, and keeps the file short.
+
+**Security.** Signals can quote repo content (test output, file names), so a lesson can carry injected text. Mitigations:
+- Lessons are passed as quoted advice under a fixed heading.
+- Each rule is capped at 200 characters.
+- `reflect` has no tools.
+- Bake-in is always a human action.
+
+**Committing the file.** The guide recommends committing `.skill-graph/<slug>/EXPERIENCE.md`, so a team shares its lessons, and git-ignoring the payload files beside it (`.skill-graph/*/*` with `!.skill-graph/*/EXPERIENCE.md`; `.skill-graph/**` would not work, because git cannot re-include a file whose folder is ignored). Lessons then show up in code review like any other change.
+
+**Later (not in F): probing.** `probe: N` on a model step would run N candidates in separate worktrees with different approach hints, compare them with the step's checks and gate, keep the winner, and record why it won as a lesson. This is Harness²'s per-task loop. It needs D and worktree isolation, and it multiplies the cost of the step by N, so it waits until F has shown that lessons help on real graphs.
+
+**Size.** M. Covers:
+- parser and serializer for `experience`
+- `reflect` step and lesson rules in the compiled plan
+- the two validation rules
+- the lesson parser and Inspector list with bake-in and discard
+- guide section and tests
+
 ## 4. Versioning and migration
 
 - The parser accepts `skill-graph/1` and `skill-graph/2`. An unknown version is a warning (this closes the open TASK.md item), not an error.
@@ -139,3 +201,12 @@ The plan could add "Start as soon as `a` and `b` finish" to each step, so a step
 2. File handoffs: C1 (orchestrator writes), C2 (steps write), or neither for now?
 3. `foreach`: build it, and is a default of 4 parallel runs (cap 16) right?
 4. Generated contract checks: `node -e` by default, or only an explicit `check:` command?
+1–4 were decided 2026-10-18: A and B shipped as additive `/1` fields; C1 (`handoff: file`, the orchestrator writes) shipped, C2 did not; `foreach` shipped with a default of 4 parallel runs, capped at 16; `required` generates a `node -e` check and `check:` can be given as well.
+
+**As built, differences from this draft.**
+- `foreach` accepts `<node>` (the whole output is the array) as well as `<node>.<key>`. A run's contract line says it returns one entry of the collected array.
+- File handoffs skip the last step (its output is the answer), and approvals still show the user the content.
+- `.skill-graph/.gitignore` ships whenever a run writes anything under `.skill-graph/`, not only with learning on.
+- Probing (`probe: 2..4`, `probe_hints`) is built for read-only steps only: candidates run side by side, contract checks drop the broken ones, and a fresh-context judge returns the chosen or combined answer. Steps that edit files are refused, because Claude Code's subagent worktrees start from the remote default branch without uncommitted work or installed packages.
+
+5. Experience file: decided 2026-10-18. Lessons come from hard signals only, are auto-applied with optional bake-in, and the first version ships the file and bake-in without probing, and the guide recommends committing `EXPERIENCE.md`.
