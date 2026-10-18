@@ -114,14 +114,17 @@ interface MenuItemProps {
   children: ReactNode;
   hint?: string;
   onClick: () => void;
+  /** Shown but not clickable, e.g. "Tidy layout" when the cards are already in the automatic layout. */
+  disabled?: boolean;
 }
 
-export function MenuItem({ icon, children, hint, onClick }: MenuItemProps) {
+export function MenuItem({ icon, children, hint, onClick, disabled = false }: MenuItemProps) {
   return (
     <button
       type="button"
       onClick={onClick}
-      className="group flex w-full items-start gap-2.5 rounded-lg px-2.5 py-2 text-left text-[13px] text-zinc-700 transition-colors hover:bg-zinc-100 hover:text-zinc-900 focus-visible:bg-zinc-100 focus-visible:outline-hidden"
+      disabled={disabled}
+      className="group flex w-full items-start gap-2.5 rounded-lg px-2.5 py-2 text-left text-[13px] text-zinc-700 transition-colors enabled:hover:bg-zinc-100 enabled:hover:text-zinc-900 focus-visible:bg-zinc-100 focus-visible:outline-hidden disabled:cursor-not-allowed disabled:opacity-45"
     >
       {icon && <span className="mt-0.5 shrink-0 text-zinc-500">{icon}</span>}
       <span className="min-w-0">

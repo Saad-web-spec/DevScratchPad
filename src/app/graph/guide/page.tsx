@@ -113,7 +113,7 @@ const NEEDS: { part: string; needed: boolean; where: React.ReactNode }[] = [
   { part: "Skill name and when to use it", needed: true, where: <>Inspector, with nothing selected</> },
   { part: "Contracts", needed: false, where: <>Click an edge and type a name; it is defined for you</> },
   { part: "References", needed: false, where: <>Inspector → Insert input, above the prompt</> },
-  { part: "Model, tools, gates, checks, risk", needed: false, where: <>Inspector → Advanced</> },
+  { part: "Model, tools, gates, checks, risk", needed: false, where: <>Inspector → Agent and Checks</> },
 ];
 
 const QUICK_START: { title: string; body: React.ReactNode }[] = [
@@ -218,9 +218,13 @@ const EXPORTS: { path: string; what: string }[] = [
 
 const SHORTCUTS: { keys: string; action: string }[] = [
   { keys: "Drag the background", action: "Pan the canvas" },
+  { keys: "Drag a card", action: "Move it; every card then keeps its place (saved in the file under layout:)" },
+  { keys: "Arrow keys (card selected)", action: "Nudge the card (Shift moves five times as far)" },
+  { keys: "Tidy layout button", action: "Put every card back in the automatic arrangement" },
+  { keys: "Reset (toolbar)", action: "Tidy layout, reset the view (graph in view, editor shown, default panel sizes), or start over from the starting graph" },
   { keys: "Scroll / pinch", action: "Zoom around the pointer" },
   { keys: "Drag a node's handle onto another node", action: "Add an edge" },
-  { keys: "Advanced → Incoming → Connect from…", action: "Add an edge from the keyboard" },
+  { keys: "Inspector → Inputs → Connect from…", action: "Add an edge from the keyboard" },
   { keys: "Click a node or edge", action: "Select it and open it in the Inspector" },
   { keys: "Delete / Backspace", action: "Remove the selected node or edge" },
   { keys: "Esc", action: "Clear the selection" },
@@ -237,6 +241,10 @@ const TROUBLESHOOTING: { question: string; answer: React.ReactNode }[] = [
   {
     question: "I lost my view of the graph.",
     answer: <>Press the fit button (the frame icon, “Fit graph to view”) at the bottom left of the canvas. Loading a blueprint or opening a file also re-frames the graph.</>,
+  },
+  {
+    question: "My cards are in a mess after moving them.",
+    answer: <>Open <b>Reset</b> in the toolbar. <b>Tidy layout</b> puts every card back in the automatic arrangement (also the grid icon next to fit-to-view), <b>Reset view</b> brings the graph back into view and restores the panel sizes, and <b>Start over</b> loads the starting graph. Each one can be undone with {"Ctrl+Z"} on the canvas; Tidy and Reset view never change the graph itself.</>,
   },
   {
     question: "My agent never picks the skill.",
@@ -464,8 +472,8 @@ export default function GraphGuidePage() {
               rows={[
                 ["Toolbar", <>Walk through plan, the validity status (click it to see issues), <b>+ Node</b>, <b>Share</b> and <b>Export</b>.</>],
                 ["Editor (left)", <>The <C>SKILL.md</C> source. This file is the single source of truth: the canvas is drawn from it, and canvas edits are written back into it. <b>Blueprints</b>, open file and hide editor sit at its top.</>],
-                ["Canvas (right)", <>The graph, laid out in stages from left to right (top to bottom on narrow screens). Zoom controls, undo/redo and fit-to-view are at its bottom left.</>],
-                ["Details (bottom)", <><b>Inspector</b> edits the selected node or edge (or the skill itself when nothing is selected); the settings most graphs never need sit under its collapsed <b>Advanced</b> panel. <b>Agent plan</b> shows what the agent will do and how much it loads. <b>Issues</b> lists errors and warnings.</>],
+                ["Canvas (middle)", <>The graph, laid out in stages from left to right (top to bottom when the canvas is taller than wide). Drag a card to put it where you want; the place is saved. Zoom controls, undo/redo, fit-to-view and <b>Tidy layout</b> are at its bottom left.</>],
+                ["Panel (right)", <><b>Inspector</b> edits the selected step or edge, or the skill itself when nothing is selected. Its settings come in sections (Prompt, Agent, Checks, Fan-out, Probe, Inputs, What it receives) that fold away and show what is set on their right, so open only the one you need. <b>Agent plan</b> shows the stages the agent runs: one card per step with what it reads, what it returns, and what is set on it (tools, fresh context, checks, gates, fan-out, probing); click a card to edit the step. <b>Issues</b> lists errors and warnings. Drag the line on its left to make it wider.</>],
               ]}
             />
             <P>Drag the dividers between areas to resize them. On a phone, switch between editor, canvas and details with the tabs above the workspace.</P>
@@ -547,7 +555,7 @@ export default function GraphGuidePage() {
 
           <Section id="fresh-context" title="Fresh context">
             <P>
-              Tick <b>Fresh context</b> (under <b>Advanced → Agent</b>; <C>isolated_context: true</C> in the file) on a step that must judge work without being swayed by how it was produced, typically a verifier or reviewer. Its subagent starts with
+              Tick <b>Fresh context</b> (in the Inspector&apos;s <b>Agent</b> section; <C>isolated_context: true</C> in the file) on a step that must judge work without being swayed by how it was produced, typically a verifier or reviewer. Its subagent starts with
               an empty context and receives only what its incoming edges carry.
             </P>
             <P>
@@ -557,7 +565,7 @@ export default function GraphGuidePage() {
           </Section>
 
           <Section id="safety" title="Gates, checks and approvals">
-            <P>Three tools decide whether work passes, from strongest to softest. Checks and gates are under <b>Advanced → Checks</b>; an approval is its own node type.</P>
+            <P>Three tools decide whether work passes, from strongest to softest. Checks and gates are in the Inspector&apos;s <b>Checks</b> section; an approval is its own node type.</P>
             <ul className="list-disc space-y-2 pl-5 text-[15px] leading-relaxed text-zinc-600">
               <li>
                 <b className="text-zinc-900">check</b>: a command such as <C>npm test</C> that must exit 0. A program, not a model, decides.
@@ -583,7 +591,7 @@ export default function GraphGuidePage() {
           <Section id="fan-out" title="Fan-out: one run per item">
             <P>
               Some work only knows its size at run time: the files a change touches, the failing tests, the packages in a monorepo. A <b>fan-out</b> step runs once per item of a
-              list an earlier step returns, each run in its own subagent. Set it under <b>Advanced → Fan-out</b> (<C>foreach</C> in the file), or start from the{" "}
+              list an earlier step returns, each run in its own subagent. Set it in the Inspector&apos;s <b>Fan-out</b> section (<C>foreach</C> in the file), or start from the{" "}
               <b>Review each file</b> blueprint.
             </P>
             <ul className="list-disc space-y-2 pl-5 text-[15px] leading-relaxed text-zinc-600">
@@ -610,14 +618,14 @@ export default function GraphGuidePage() {
               once to <C>.skill-graph/&lt;name&gt;/&lt;step&gt;.md</C> (or <C>.json</C>) and hands later steps only the path.
             </P>
             <P>
-              A step can override the skill&apos;s choice under <b>Advanced → Agent → Hand on output</b>. Steps that get a file need the Read tool; the checker says so if one cannot
+              A step can override the skill&apos;s choice with <b>Hand on output</b> in its <b>Agent</b> section. Steps that get a file need the Read tool; the checker says so if one cannot
               read it. Approvals still show you the content, and the last step&apos;s answer comes back to you as usual. Cards that hand on by file show a small file icon.
             </P>
           </Section>
 
           <Section id="probing" title="Probing: try several, keep the best">
             <P>
-              For a step whose answer decides a lot, such as the plan before an implementation, set <b>Advanced → Probe</b> (<C>probe: 3</C>). The agent runs that many{" "}
+              For a step whose answer decides a lot, such as the plan before an implementation, open the Inspector&apos;s <b>Probe</b> section (<C>probe: 3</C>). The agent runs that many{" "}
               <b>candidates</b> of the step at once, each with its own approach, then a fresh-context <b>judge</b> picks the best one or combines two that fit together.
             </P>
             <ul className="list-disc space-y-2 pl-5 text-[15px] leading-relaxed text-zinc-600">
@@ -667,7 +675,7 @@ export default function GraphGuidePage() {
 
           <Section id="models" title="Models and tools">
             <P>
-              Both live under <b>Advanced → Agent</b>. <C>model</C> picks which model runs a step. The menu offers Claude Code&apos;s aliases: <C>haiku</C> (fast and cheap, good for focused workers), <C>sonnet</C>{" "}
+              Both are in the Inspector&apos;s <b>Agent</b> section. <C>model</C> picks which model runs a step. The menu offers Claude Code&apos;s aliases: <C>haiku</C> (fast and cheap, good for focused workers), <C>sonnet</C>{" "}
               (balanced), <C>opus</C> and <C>fable</C> (strongest, good for planners and verifiers). <b>inherit</b> leaves the field out, so the step runs on whatever model your
               Claude Code session uses. You can also type a full model id in the source.
             </P>
@@ -678,7 +686,7 @@ export default function GraphGuidePage() {
             <P>
               <C>tools</C> follows least privilege: give a step only what it needs. Readers and reviewers usually need <C>[Read, Grep, Glob]</C>; only implementers need{" "}
               <C>Edit</C>, <C>Write</C> or <C>Bash</C>. MCP tools are written <C>mcp__server__tool</C>. Scoped tools such as <C>Bash(npm test:*)</C> and MCP tools are added with
-              the field under the tool chips (Advanced → Agent); click one of their chips to remove it.
+              the field under the tool chips (Agent section); click one of their chips to remove it.
             </P>
           </Section>
 

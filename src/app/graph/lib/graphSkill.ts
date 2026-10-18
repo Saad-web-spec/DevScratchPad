@@ -166,6 +166,8 @@ export interface SkillGraph {
   handoff?: HandoffMode;
   /** The `spec:` value as read, so an unknown version can be reported. Saving writes the version the graph needs. */
   specVersion?: string;
+  /** Where the user placed each card on the canvas (`layout.positions`); unset means the automatic layout. */
+  positions?: Record<string, NodeLayout>;
   /** Markdown between the frontmatter and the first `## @node:` section. */
   preamble: string;
   /** Frontmatter keys other than name/description/topology, kept so a round trip loses nothing. */
@@ -283,6 +285,22 @@ function parseExperience(raw: unknown): ExperienceSettings | undefined {
   return { maxLessons: Math.max(1, Math.min(MAX_LESSONS_CAP, max)) };
 }
 
+/** Canvas coordinates are kept within this range, so a hand-edited or hostile file cannot push a card off to infinity. */
+const MAX_COORDINATE = 100_000;
+
+/** `layout: { positions: { plan: "300, 40" } }`; a `[300, 40]` pair is read too. Anything malformed is skipped. */
+function parsePositions(raw: unknown): Record<string, NodeLayout> | undefined {
+  if (!isRecord(raw) || !isRecord(raw.positions)) return undefined;
+  const positions: Record<string, NodeLayout> = {};
+  for (const [id, value] of Object.entries(raw.positions)) {
+    if (!NODE_ID_PATTERN.test(id)) continue;
+    const pair = typeof value === "string" ? value.split(",").map((part) => Number(part.trim())) : Array.isArray(value) ? value.map(Number) : [];
+    if (pair.length !== 2 || !pair.every((n) => Number.isFinite(n) && Math.abs(n) <= MAX_COORDINATE)) continue;
+    positions[id] = { x: Math.round(pair[0]), y: Math.round(pair[1]) };
+  }
+  return Object.keys(positions).length > 0 ? positions : undefined;
+}
+
 function asHandoff(value: unknown): HandoffMode | undefined {
   return value === "file" || value === "inline" ? value : undefined;
 }
@@ -322,7 +340,7 @@ export function parseGraphSkill(source: string): ParseResult {
   }
   if (!isRecord(data)) return { graph: null, fatal: "Frontmatter must be a YAML mapping." };
 
-  const { name, description, topology, contracts: rawContracts, experience: rawExperience, handoff: rawHandoff, spec, ...extraFrontmatter } = data;
+  const { name, description, topology, contracts: rawContracts, experience: rawExperience, handoff: rawHandoff, layout: rawLayout, spec, ...extraFrontmatter } = data;
   const topologyRecord = isRecord(topology) ? topology : {};
   const { preamble, sections } = splitSections(source.slice(match[0].length));
 
@@ -397,6 +415,7 @@ export function parseGraphSkill(source: string): ParseResult {
       experience: parseExperience(rawExperience),
       handoff: asHandoff(rawHandoff),
       specVersion: typeof spec === "string" ? spec.trim() : spec === undefined ? undefined : String(spec),
+      positions: parsePositions(rawLayout),
       preamble,
       extraFrontmatter,
     },
@@ -510,6 +529,19 @@ export function serializeGraphSkill(graph: SkillGraph): string {
         return [contractName, entry];
       })
     );
+  }
+
+  // Last in the frontmatter: it is the studio's, not the agent's, and changes whenever a card moves.
+  const placed = graph.nodes.filter((node) => graph.positions?.[node.id] !== undefined);
+  if (placed.length > 0) {
+    frontmatter.layout = {
+      positions: Object.fromEntries(
+        placed.map((node) => {
+          const { x, y } = (graph.positions as Record<string, NodeLayout>)[node.id];
+          return [node.id, `${Math.round(x)}, ${Math.round(y)}`];
+        })
+      ),
+    };
   }
 
   const yaml = stringifyYaml(frontmatter, { lineWidth: 0, flowCollectionPadding: false }).trimEnd();
@@ -1454,11 +1486,43 @@ export function addNode(graph: SkillGraph, type: NodeType, after?: string): { gr
   return { graph: { ...graph, nodes: [...graph.nodes, node], edges }, id };
 }
 
+function withoutKey(positions: Record<string, NodeLayout> | undefined, id: string): Record<string, NodeLayout> | undefined {
+  if (!positions || !(id in positions)) return positions;
+  const rest = { ...positions };
+  delete rest[id];
+  return Object.keys(rest).length > 0 ? rest : undefined;
+}
+
+/** Cards snap to this grid when dragged, so hand-placed graphs line up. */
+export const LAYOUT_GRID = 8;
+
+/**
+ * Places a card where the user dropped it. The first move pins every card where it is on screen,
+ * so moving one card never makes the others jump to a different automatic layout.
+ */
+export function moveNode(graph: SkillGraph, id: string, position: NodeLayout, onScreen: Map<string, NodeLayout>): SkillGraph {
+  const snap = (value: number) => Math.round(value / LAYOUT_GRID) * LAYOUT_GRID;
+  const clampCoordinate = (value: number) => Math.max(-MAX_COORDINATE, Math.min(MAX_COORDINATE, value));
+  const positions: Record<string, NodeLayout> = {};
+  for (const node of graph.nodes) {
+    const current = graph.positions?.[node.id] ?? onScreen.get(node.id);
+    if (current) positions[node.id] = { x: Math.round(current.x), y: Math.round(current.y) };
+  }
+  positions[id] = { x: clampCoordinate(snap(position.x)), y: clampCoordinate(snap(position.y)) };
+  return { ...graph, positions };
+}
+
+/** Back to the automatic layout. */
+export function clearPositions(graph: SkillGraph): SkillGraph {
+  return { ...graph, positions: undefined };
+}
+
 export function removeNode(graph: SkillGraph, id: string): SkillGraph {
   return {
     ...graph,
     nodes: graph.nodes.filter((node) => node.id !== id).map((node) => (node.retryTarget === id ? { ...node, retryTarget: undefined } : node)),
     edges: graph.edges.filter((edge) => edge.from !== id && edge.to !== id),
+    positions: withoutKey(graph.positions, id),
   };
 }
 
@@ -1475,8 +1539,10 @@ export function renameNode(graph: SkillGraph, id: string, nextId: string): Skill
       const head = dot === -1 ? raw : raw.slice(0, dot);
       return head === id ? `{{${nextId}${dot === -1 ? "" : raw.slice(dot)}}}` : full;
     });
+  const positions = graph.positions?.[id] ? { ...withoutKey(graph.positions, id), [nextId]: graph.positions[id] } : graph.positions;
   return {
     ...graph,
+    positions,
     nodes: graph.nodes.map((node) => ({
       ...node,
       id: node.id === id ? nextId : node.id,
@@ -1606,6 +1672,11 @@ export interface GraphLayout {
    * lane they take through each column between their ends. Other edges have no entry.
    */
   routes: Map<string, NodeLayout[]>;
+  /** Top-left corner of the area the cards cover (0, 0 for the automatic layout; hand-placed cards can sit above or left of it). */
+  minX: number;
+  minY: number;
+  /** True when the user placed the cards: edges then leave from the side that faces their target. */
+  manual: boolean;
 }
 
 /** Cross-axis room a layer-skipping edge reserves in each column it passes, so it never runs through a card. */
@@ -1698,8 +1769,44 @@ export function layoutGraph(graph: SkillGraph, direction: LayoutDirection = "LR"
   for (const [key, chain] of slots) if (chain.length > 0) routes.set(key, chain.map((slot) => slotCentres.get(slot) as NodeLayout));
 
   return direction === "LR"
-    ? { direction, positions, width: flowExtent, height: crossExtent, routes }
-    : { direction, positions, width: crossExtent, height: flowExtent, routes };
+    ? { direction, positions, width: flowExtent, height: crossExtent, routes, minX: 0, minY: 0, manual: false }
+    : { direction, positions, width: crossExtent, height: flowExtent, routes, minX: 0, minY: 0, manual: false };
+}
+
+function overlaps(a: NodeLayout, b: NodeLayout): boolean {
+  return Math.abs(a.x - b.x) < NODE_WIDTH + LAYOUT_GAPS.LR.sibling && Math.abs(a.y - b.y) < NODE_HEIGHT + LAYOUT_GAPS.LR.sibling;
+}
+
+/**
+ * The layout the canvas draws: the automatic one, or the user's placement once they have moved a
+ * card. A card that has no place yet (just added) goes to the right of the step it connects from,
+ * or below everything, moved down until it overlaps no other card.
+ */
+export function canvasLayout(graph: SkillGraph, direction: LayoutDirection = "LR"): GraphLayout {
+  if (!graph.positions || !graph.nodes.some((node) => graph.positions?.[node.id])) return layoutGraph(graph, direction);
+  const placed = new Map<string, NodeLayout>();
+  for (const node of graph.nodes) {
+    const position = graph.positions[node.id];
+    if (position) placed.set(node.id, position);
+  }
+  const order = topologicalOrder(graph) ?? graph.nodes.map((node) => node.id);
+  for (const id of order) {
+    if (placed.has(id)) continue;
+    const from = predecessorsOf(graph, id).find((pred) => placed.has(pred));
+    const all = [...placed.values()];
+    const bottom = Math.max(...all.map((p) => p.y)) + NODE_HEIGHT + LAYOUT_GAPS.LR.sibling * 2;
+    const left = Math.min(...all.map((p) => p.x));
+    const start = from ? { x: (placed.get(from) as NodeLayout).x + NODE_WIDTH + LAYOUT_GAPS.LR.layer, y: (placed.get(from) as NodeLayout).y } : { x: left, y: bottom };
+    const spot = { ...start };
+    while ([...placed.values()].some((other) => overlaps(other, spot))) spot.y += NODE_HEIGHT + LAYOUT_GAPS.LR.sibling;
+    placed.set(id, spot);
+  }
+  const all = [...placed.values()];
+  const minX = Math.min(...all.map((p) => p.x));
+  const minY = Math.min(...all.map((p) => p.y));
+  const maxX = Math.max(...all.map((p) => p.x)) + NODE_WIDTH;
+  const maxY = Math.max(...all.map((p) => p.y)) + NODE_HEIGHT;
+  return { direction, positions: placed, width: maxX - minX, height: maxY - minY, routes: new Map(), minX, minY, manual: true };
 }
 
 /* ------------------------------------------------------------------ source <-> node mapping */

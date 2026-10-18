@@ -12,6 +12,7 @@ import {
   FilePlus,
   FileUp,
   LaptopMinimalCheck,
+  LayoutGrid,
   LayoutTemplate,
   PanelLeftClose,
   PanelLeftOpen,
@@ -22,6 +23,8 @@ import {
   Pause,
   Play,
   Plus,
+  RotateCcw,
+  Scan,
   StepBack,
   StepForward,
   X,
@@ -42,6 +45,8 @@ import {
   runsWithoutSubagent,
   addEdge,
   addNode,
+  clearPositions,
+  moveNode,
   analyzeIsolation,
   isValidNodeId,
   nodeAtLine,
@@ -61,6 +66,7 @@ import {
   validateGraph,
   type GraphIssue,
   type IsolationReport,
+  type NodeLayout,
   type NodeType,
   type SkillGraph,
 } from "./lib/graphSkill";
@@ -75,8 +81,9 @@ const LEGACY_KEY_STORAGE_KEY = "devscratchpad_graph_key_v1";
 
 interface StoredState {
   source: string;
-  /** Desktop pane sizes in percent. */
+  /** Desktop pane sizes in percent of the workspace width. */
   editorWidth?: number;
+  panelWidth?: number;
   /** Desktop only: the Markdown editor can be hidden to give the canvas the full width. */
   editorOpen?: boolean;
   dockHeight?: number;
@@ -99,8 +106,9 @@ interface HistoryEntry {
 const HISTORY_LIMIT = 100;
 /** Edits closer together than this (typing in an inspector field) undo as one step. */
 const HISTORY_COALESCE_MS = 700;
-const EDITOR_WIDTH = { min: 22, max: 60, initial: 30 };
-const DOCK_HEIGHT = { min: 20, max: 70, initial: 36 };
+const EDITOR_WIDTH = { min: 18, max: 50, initial: 26 };
+/** The Inspector / plan / issues panel, in percent of the canvas + panel area to the right of the editor. */
+const PANEL_WIDTH = { min: 26, max: 55, initial: 34 };
 /** Time each stage stays highlighted while the walkthrough plays. */
 const WALKTHROUGH_STEP_MS = 1400;
 
@@ -209,6 +217,7 @@ function Splitter({
   label,
   onChange,
   measure,
+  reverse = false,
 }: {
   orientation: "vertical" | "horizontal";
   value: number;
@@ -217,6 +226,8 @@ function Splitter({
   onChange: (value: number) => void;
   /** Returns the percent for a pointer position, relative to the pane container. */
   measure: (clientX: number, clientY: number) => number;
+  /** The pane it sizes sits after it (the side panel), so the arrow keys work the other way round. */
+  reverse?: boolean;
 }) {
   const [dragging, setDragging] = useState(false);
   const vertical = orientation === "vertical";
@@ -240,7 +251,7 @@ function Splitter({
         setDragging(false);
       }}
       onKeyDown={(event) => {
-        const step = event.shiftKey ? 6 : 2;
+        const step = (event.shiftKey ? 6 : 2) * (reverse ? -1 : 1);
         const decrease = vertical ? "ArrowLeft" : "ArrowUp";
         const increase = vertical ? "ArrowRight" : "ArrowDown";
         if (event.key === decrease) onChange(clamp(value - step, range));
@@ -315,7 +326,7 @@ function GraphWorkspace({ initial, shared }: WorkspaceProps) {
   const [source, setSource] = useState(shared?.source ?? (initial && initial.source.trim() !== "" ? initial.source : DEFAULT_GRAPH_SKILL));
   const [editorWidth, setEditorWidth] = useState(clamp(initial?.editorWidth ?? EDITOR_WIDTH.initial, EDITOR_WIDTH));
   const [editorOpen, setEditorOpen] = useState(initial?.editorOpen !== false);
-  const [dockHeight, setDockHeight] = useState(clamp(initial?.dockHeight ?? DOCK_HEIGHT.initial, DOCK_HEIGHT));
+  const [panelWidth, setPanelWidth] = useState(clamp(initial?.panelWidth ?? PANEL_WIDTH.initial, PANEL_WIDTH));
 
   const [selection, setSelection] = useState<Selection>(null);
   const [focusRequest, setFocusRequest] = useState<FocusRequest | null>(null);
@@ -410,12 +421,12 @@ function GraphWorkspace({ initial, shared }: WorkspaceProps) {
   const saveFailed = useRef(false);
   useEffect(() => {
     const timer = setTimeout(() => {
-      const saved = saveToStorageEnvelope<StoredState>(STORAGE_KEY, { source, editorWidth, dockHeight, editorOpen }).success;
+      const saved = saveToStorageEnvelope<StoredState>(STORAGE_KEY, { source, editorWidth, panelWidth, editorOpen }).success;
       if (!saved && !saveFailed.current) notify("This browser could not save your graph. Export the graph source (.md) to keep it.");
       saveFailed.current = !saved;
     }, 400);
     return () => clearTimeout(timer);
-  }, [source, editorWidth, dockHeight, editorOpen, notify]);
+  }, [source, editorWidth, panelWidth, editorOpen, notify]);
 
   useEffect(() => {
     selectionRef.current = selection;
@@ -632,6 +643,21 @@ function GraphWorkspace({ initial, shared }: WorkspaceProps) {
     notify(`Added L${lesson.number} to the ${lesson.step} prompt. Download the lessons file to keep it trimmed.`);
   };
 
+  /** A card dropped on the canvas: saved in the file, selected, and undoable like any other edit. */
+  const handleMoveNode = useCallback(
+    (id: string, position: NodeLayout, onScreen: Map<string, NodeLayout>) => {
+      const selected: Selection = { kind: "node", id };
+      commit(moveNode(graph, id, position, onScreen), selected);
+      setSelection(selected);
+    },
+    [graph, commit]
+  );
+
+  const handleTidy = useCallback(() => {
+    commit(clearPositions(graph));
+    notify(`Back to the automatic layout (${modKey}+Z undoes it)`);
+  }, [graph, commit, notify, modKey]);
+
   const handleSelect = useCallback((next: Selection) => {
     setSelection(next);
     if (next) setDockTab("inspector");
@@ -719,7 +745,22 @@ function GraphWorkspace({ initial, shared }: WorkspaceProps) {
     setSelection(null);
     setFitRequest((count) => count + 1);
     stopWalkthrough();
+    // A new document starts at its first line, not wherever the old one was scrolled to.
+    requestAnimationFrame(() => editorRef.current?.setScrollTop(0));
     if (message) notify(message);
+  };
+
+  /** Brings the workspace back to how it opens: graph in view, editor shown, default pane sizes, nothing selected. */
+  const resetView = () => {
+    stopWalkthrough();
+    setSelection(null);
+    setDockTab("inspector");
+    setEditorOpen(true);
+    setEditorWidth(EDITOR_WIDTH.initial);
+    setPanelWidth(PANEL_WIDTH.initial);
+    setFitRequest((count) => count + 1);
+    requestAnimationFrame(() => editorRef.current?.setScrollTop(0));
+    notify("Reset the view: graph in view, default panel sizes");
   };
 
   const openFile = async (file: File | undefined) => {
@@ -732,9 +773,9 @@ function GraphWorkspace({ initial, shared }: WorkspaceProps) {
     const rect = mainRef.current?.getBoundingClientRect();
     return rect ? ((clientX - rect.left) / rect.width) * 100 : editorWidth;
   };
-  const measureDock = (_clientX: number, clientY: number) => {
+  const measurePanel = (clientX: number) => {
     const rect = rightPaneRef.current?.getBoundingClientRect();
-    return rect ? ((rect.bottom - clientY) / rect.height) * 100 : dockHeight;
+    return rect ? ((rect.right - clientX) / rect.width) * 100 : panelWidth;
   };
 
   return (
@@ -815,6 +856,57 @@ function GraphWorkspace({ initial, shared }: WorkspaceProps) {
           </button>
 
           <div className="ml-auto flex items-center gap-2">
+            <ToolbarPopover
+              ariaLabel="Reset"
+              label={
+                <>
+                  <RotateCcw className="h-3.5 w-3.5 text-zinc-500" />
+                  <span className="hidden sm:inline">Reset</span>
+                </>
+              }
+              panelClassName="w-72"
+              align="right"
+            >
+              {(close) => (
+                <>
+                  <MenuItem
+                    icon={<LayoutGrid className="h-3.5 w-3.5" />}
+                    hint={graph.positions ? "Put every card back in the automatic arrangement" : "The cards are already in the automatic arrangement"}
+                    disabled={!graph.positions}
+                    onClick={() => {
+                      close();
+                      handleTidy();
+                      setFitRequest((count) => count + 1);
+                    }}
+                  >
+                    Tidy layout
+                  </MenuItem>
+                  <MenuItem
+                    icon={<Scan className="h-3.5 w-3.5" />}
+                    hint="Fit the graph to the canvas, show the editor and restore the panel sizes"
+                    onClick={() => {
+                      close();
+                      resetView();
+                    }}
+                  >
+                    Reset view
+                  </MenuItem>
+                  <div className="my-1 h-px bg-zinc-100" />
+                  <MenuItem
+                    icon={<RotateCcw className="h-3.5 w-3.5" />}
+                    hint={`Load the starting graph again. ${modKey}+Z on the canvas brings yours back`}
+                    onClick={() => {
+                      close();
+                      setLessonsText("");
+                      replaceSource(DEFAULT_GRAPH_SKILL, `Started over from the starting graph (${modKey}+Z on the canvas brings yours back)`);
+                    }}
+                  >
+                    Start over
+                  </MenuItem>
+                </>
+              )}
+            </ToolbarPopover>
+
             <ToolbarPopover
               ariaLabel="Add node"
               label={
@@ -927,7 +1019,7 @@ function GraphWorkspace({ initial, shared }: WorkspaceProps) {
           ))}
         </div>
 
-        <main ref={mainRef} className="flex min-h-0 flex-1 flex-col lg:flex-row" style={{ "--editor-w": `${editorWidth}%`, "--dock-h": `${dockHeight}%` } as React.CSSProperties}>
+        <main ref={mainRef} className="flex min-h-0 flex-1 flex-col lg:flex-row" style={{ "--editor-w": `${editorWidth}%`, "--panel-w": `${panelWidth}%` } as React.CSSProperties}>
           {/* Markdown editor */}
           {!editorOpen && (
             <div className="hidden w-10 shrink-0 flex-col items-center border-r border-zinc-200 bg-white py-2 lg:flex">
@@ -1048,9 +1140,9 @@ function GraphWorkspace({ initial, shared }: WorkspaceProps) {
 
           {editorOpen && <Splitter orientation="vertical" value={editorWidth} range={EDITOR_WIDTH} label="Resize the Markdown editor" onChange={setEditorWidth} measure={(clientX) => measureEditor(clientX)} />}
 
-          {/* Canvas + dock */}
-          <div ref={rightPaneRef} className={cn("min-h-0 min-w-0 flex-1 flex-col lg:flex", mobileView === "editor" ? "hidden" : "flex")}>
-            <section aria-label="Graph canvas" className={cn("min-h-0 flex-1 lg:block lg:min-h-40", mobileView === "canvas" ? "block" : "hidden")}>
+          {/* Canvas | panel */}
+          <div ref={rightPaneRef} className={cn("min-h-0 min-w-0 flex-1 flex-col lg:flex lg:flex-row", mobileView === "editor" ? "hidden" : "flex")}>
+            <section aria-label="Graph canvas" className={cn("min-h-0 min-w-0 flex-1 lg:block", mobileView === "canvas" ? "block" : "hidden")}>
               <GraphCanvas
                 graph={graph}
                 trace={trace}
@@ -1066,16 +1158,18 @@ function GraphWorkspace({ initial, shared }: WorkspaceProps) {
                 onSelect={handleSelect}
                 onConnect={handleConnect}
                 onDeleteSelection={handleDeleteSelection}
+                onMoveNode={handleMoveNode}
+                onTidy={handleTidy}
               />
             </section>
 
-            <Splitter orientation="horizontal" value={dockHeight} range={DOCK_HEIGHT} label="Resize the details panel" onChange={setDockHeight} measure={measureDock} />
+            <Splitter orientation="vertical" reverse value={panelWidth} range={PANEL_WIDTH} label="Resize the side panel" onChange={setPanelWidth} measure={measurePanel} />
 
             <section
               aria-label="Details"
-              className={cn("min-h-0 flex-col bg-white lg:flex lg:h-(--dock-h) lg:flex-none", mobileView === "details" ? "flex flex-1 border-t border-zinc-200 lg:border-t-0" : "hidden")}
+              className={cn("min-h-0 flex-col bg-white lg:flex lg:w-(--panel-w) lg:min-w-[23rem] lg:flex-none", mobileView === "details" ? "flex flex-1 border-t border-zinc-200 lg:border-t-0" : "hidden")}
             >
-              <div role="tablist" aria-label="Details" className="flex shrink-0 items-center gap-1 border-b border-zinc-100 px-3">
+              <div role="tablist" aria-label="Details" className="flex shrink-0 items-center gap-1 border-b border-zinc-200 px-2">
                 {(
                   [
                     ["inspector", "Inspector"],
@@ -1095,7 +1189,7 @@ function GraphWorkspace({ initial, shared }: WorkspaceProps) {
                   </button>
                 ))}
               </div>
-              <div className="min-h-0 flex-1 overflow-y-auto p-4">
+              <div className="graph-panel-scroll min-h-0 flex-1 overflow-y-auto overscroll-contain">
                 {dockTab === "inspector" && (
                   <InspectorPanel
                     graph={graph}
@@ -1119,8 +1213,16 @@ function GraphWorkspace({ initial, shared }: WorkspaceProps) {
                     onDownloadLessons={() => download("EXPERIENCE.md", new Blob([lessonsText], { type: "text/markdown;charset=utf-8" }))}
                   />
                 )}
-                {dockTab === "plan" && <PlanPanel graph={graph} activeStage={shownStage} onSelectNode={selectNode} />}
-                {dockTab === "issues" && <IssueList issues={issues} onSelectNode={selectNode} />}
+                {dockTab === "plan" && (
+                  <div className="p-4">
+                    <PlanPanel graph={graph} activeStage={shownStage} onSelectNode={selectNode} />
+                  </div>
+                )}
+                {dockTab === "issues" && (
+                  <div className="p-4">
+                    <IssueList issues={issues} onSelectNode={selectNode} />
+                  </div>
+                )}
               </div>
             </section>
           </div>

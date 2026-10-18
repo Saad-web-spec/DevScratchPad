@@ -799,3 +799,12 @@ All AI agents operating in this repository MUST follow this 5-step loop:
 ` or backticks** broke twice (escapes became real newlines, or the match failed); use the Edit tool for strings with escapes.
 - **Status**: ✅ Complete (1170 tests, validate-presets, typecheck, graph lint clean, build).
 
+### Session: 2026-10-18 — Skill Graph: movable cards and side panel
+- **Agent**: Claude Code (Opus)
+- **Decision — positions live in the graph file** (`layout:`, last in the frontmatter), so a placement survives reloads, share links and kits; agents ignore it and the compiled skill is unchanged.
+- **Decision — the first drag pins every card**, so moving one never makes the others jump to a different automatic layout; Tidy is the way back.
+- **Gotcha — CSS % on the side panel is relative to the canvas + panel area**, not `<main>`; the splitter's `measurePanel` must measure the same element (`rightPaneRef`).
+- **Gotcha — viewport breakpoints (`sm:`) do not fit a 400px panel**: Inspector grids are fixed two-column now; use container queries if a wider variant is ever needed.
+- **Gotcha — headless browser checks of drags need real input**: `Input.dispatchMouseEvent` over CDP (synthetic PointerEvents fail `setPointerCapture`).
+- **Status**: ✅ Complete (1177 tests, validate-presets, typecheck, graph lint clean, build).
+

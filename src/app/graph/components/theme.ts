@@ -4,8 +4,21 @@
  * told apart by their icon, not by color. Typography comes from `.graph-theme` (Manrope +
  * JetBrains Mono, globals.css).
  */
+import { Bot, CircleDot, Cpu, Merge, ShieldCheck, Split, SquareTerminal, UserCheck, type LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { NodeType } from "../lib/graphSkill";
+
+/** The icon that tells node types apart (on the canvas cards and in the Inspector header). */
+export const TYPE_ICON: Record<NodeType, LucideIcon> = {
+  input: CircleDot,
+  orchestrator: Split,
+  worker: Cpu,
+  verifier: ShieldCheck,
+  synthesizer: Merge,
+  agent: Bot,
+  code: SquareTerminal,
+  approval: UserCheck,
+};
 
 export const FOCUS_RING = "focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-orange-500/40 focus-visible:ring-offset-1";
 

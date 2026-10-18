@@ -1,7 +1,7 @@
 "use client";
 
-import { useRef, useState } from "react";
-import { AlertCircle, AlertTriangle, ArrowRight, Check, ChevronDown, ChevronRight, Download, Lock, Plus, ShieldCheck, Trash2, X } from "lucide-react";
+import { createContext, useContext, useRef, useState } from "react";
+import { AlertCircle, AlertTriangle, ArrowRight, Check, ChevronDown, ChevronRight, Download, Lock, Plus, ShieldCheck, Trash2, Waypoints, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   CONTRACT_FORMATS,
@@ -39,10 +39,10 @@ import {
   type RiskLane,
   type SkillGraph,
 } from "../lib/graphSkill";
-import { experiencePath, previewNodeContext } from "../lib/graphPlan";
+import { estimateTokens, experiencePath, previewNodeContext } from "../lib/graphPlan";
 import { isOrphanLesson, type Lesson } from "../lib/graphLessons";
 import type { Selection } from "./GraphCanvas";
-import { FIELD, LABEL, NODE_THEME, SMALL_BUTTON } from "./theme";
+import { FIELD, LABEL, SMALL_BUTTON, TYPE_ICON } from "./theme";
 
 const NOTE = "text-xs leading-relaxed text-zinc-500";
 
@@ -52,15 +52,6 @@ function Field({ label, children, className }: { label: string; children: React.
       <span className={LABEL}>{label}</span>
       {children}
     </label>
-  );
-}
-
-function SectionTitle({ children }: { children: React.ReactNode }) {
-  return (
-    <h4 className="flex items-center gap-2 border-t border-zinc-100 pt-4 text-[13px] font-bold tracking-[-0.01em] text-zinc-900">
-      <span aria-hidden className="h-3.5 w-1 rounded-full bg-orange-500" />
-      {children}
-    </h4>
   );
 }
 
@@ -195,37 +186,34 @@ function ContractsDatalist({ graph }: { graph: SkillGraph }) {
 /** Format + description of one contract (shared by every edge that names it). */
 function ContractEditor({ name, contract, uses, onContract, onRenameContract }: { name: string; contract: Contract; uses: number; onContract: InspectorProps["onContract"]; onRenameContract?: InspectorProps["onRenameContract"] }) {
   return (
-    <div className="grid grid-cols-[minmax(0,1fr)_6.5rem] gap-2 rounded-lg border border-zinc-200 p-2 sm:grid-cols-[11rem_6.5rem_minmax(0,1fr)_auto]">
-      {onRenameContract ? (
-        <CommitInput value={name} ariaLabel="Contract name" onCommit={(next) => onRenameContract(name, next)} />
-      ) : (
-        <span className="self-center truncate font-mono text-xs font-medium text-zinc-900">{name}</span>
-      )}
-      <select value={contract.format} aria-label={`Format of ${name}`} onChange={(event) => onContract(name, { ...contract, format: event.target.value as ContractFormat })} className={FIELD}>
-        {CONTRACT_FORMATS.map((format) => (
-          <option key={format} value={format}>
-            {format}
-          </option>
-        ))}
-      </select>
+    <div className="space-y-2 rounded-lg border border-zinc-200 bg-white p-2.5">
+      <div className="flex items-center gap-2">
+        {onRenameContract ? (
+          <CommitInput value={name} ariaLabel="Contract name" onCommit={(next) => onRenameContract(name, next)} className="min-w-0 flex-1" />
+        ) : (
+          <span className="min-w-0 flex-1 truncate font-mono text-[12.5px] font-semibold text-zinc-900">{name}</span>
+        )}
+        <select value={contract.format} aria-label={`Format of ${name}`} onChange={(event) => onContract(name, { ...contract, format: event.target.value as ContractFormat })} className={cn(FIELD, "w-28 shrink-0")}>
+          {CONTRACT_FORMATS.map((format) => (
+            <option key={format} value={format}>
+              {format}
+            </option>
+          ))}
+        </select>
+        {onRenameContract && (
+          <button type="button" aria-label={`Delete contract ${name}`} title="Delete contract" onClick={() => onContract(name, null)} className="shrink-0 rounded-md p-1.5 text-zinc-400 transition-colors hover:bg-rose-50 hover:text-rose-600">
+            <Trash2 className="h-3.5 w-3.5" />
+          </button>
+        )}
+      </div>
       <DraftInput
         value={contract.description}
         aria-label={`What a valid ${name} payload contains`}
         placeholder="What a valid payload contains"
         onValue={(next) => onContract(name, { ...contract, description: next })}
-        className={cn(FIELD, "col-span-2 sm:col-span-1")}
+        className={FIELD}
       />
-      <span className="col-span-2 flex items-center justify-between gap-2 sm:col-span-1 sm:justify-end">
-        <span className="text-[11px] text-zinc-400">
-          {uses} edge{uses === 1 ? "" : "s"}
-        </span>
-        {onRenameContract && (
-          <button type="button" aria-label={`Delete contract ${name}`} onClick={() => onContract(name, null)} className="rounded-md p-1 text-zinc-400 hover:bg-rose-50 hover:text-rose-600">
-            <Trash2 className="h-3.5 w-3.5" />
-          </button>
-        )}
-      </span>
-      <div className={cn("col-span-2 grid grid-cols-1 gap-2 sm:col-span-4", contract.format === "json" && "sm:grid-cols-[17.5rem_minmax(0,1fr)]")}>
+      <div className="grid grid-cols-1 gap-2">
         {contract.format === "json" && (
           <DraftInput
             value={(contract.required ?? []).join(", ")}
@@ -248,6 +236,9 @@ function ContractEditor({ name, contract, uses, onContract, onRenameContract }: 
           className={cn(FIELD, "font-mono")}
         />
       </div>
+      <p className="text-[11px] text-zinc-400">
+        Used on {uses} edge{uses === 1 ? "" : "s"}
+      </p>
     </div>
   );
 }
@@ -271,7 +262,7 @@ function PlaceholderText({ text, className }: { text: string; className?: string
 }
 
 const PREVIEW_TEXT = {
-  agent: { title: "What its subagent will receive", system: "Instructions", user: "Task message from the orchestrator" },
+  agent: { title: "What it receives", system: "Instructions", user: "Task message from the orchestrator" },
   code: { title: "What the agent runs", system: "Command", user: "Files saved first" },
   approval: { title: "What you will be asked", system: "Question", user: "Shown to you" },
 };
@@ -281,9 +272,8 @@ function ContextPreview({ graph, node }: { graph: SkillGraph; node: GraphNode })
   const preview = previewNodeContext(graph, node);
   const text = PREVIEW_TEXT[node.type === "code" || node.type === "approval" ? node.type : "agent"];
   return (
-    <details className="group rounded-lg border border-zinc-200" open>
-      <summary className="cursor-pointer rounded-lg px-3 py-2 text-[13px] font-bold text-zinc-900 hover:bg-zinc-50">{text.title}</summary>
-      <div className="space-y-2.5 border-t border-zinc-200 p-3">
+    <>
+      <div className="space-y-2.5">
         {preview.sources.length > 0 && (
           <p className="flex flex-wrap items-center gap-1 text-xs text-zinc-500">
             From:
@@ -301,17 +291,17 @@ function ContextPreview({ graph, node }: { graph: SkillGraph; node: GraphNode })
         )}
         <div>
           <span className={LABEL}>{text.system}</span>
-          <PlaceholderText text={preview.system} className="max-h-52 bg-white" />
+          <PlaceholderText text={preview.system} className="max-h-72 bg-white" />
         </div>
         <div>
           <span className={LABEL}>{text.user}</span>
-          <PlaceholderText text={preview.user} className="max-h-32 bg-white" />
+          <PlaceholderText text={preview.user} className="max-h-40 bg-white" />
         </div>
         <p className={NOTE}>
           <span className="rounded bg-zinc-200/70 px-1 font-mono text-zinc-900">⟨placeholders⟩</span> are filled in by the agent at run time with the outputs named.
         </p>
       </div>
-    </details>
+    </>
   );
 }
 
@@ -419,7 +409,6 @@ function IncomingEdges({ graph, node, onEdgeContract, onConnect }: { graph: Skil
   if (incoming.length === 0 && sources.length === 0) return null;
   return (
     <>
-      <SectionTitle>Incoming</SectionTitle>
       {/* The same edge as dragging a canvas handle, for keyboards and small screens. */}
       {sources.length > 0 && (
         <select
@@ -439,7 +428,9 @@ function IncomingEdges({ graph, node, onEdgeContract, onConnect }: { graph: Skil
       <ul className="space-y-1.5">
         {incoming.map((edge) => (
           <li key={edge.from} className="flex items-center gap-2 text-xs">
-            <span className="w-28 shrink-0 truncate font-mono text-zinc-700">{edge.from}</span>
+            <span className="w-24 shrink-0 truncate font-mono text-zinc-700" title={edge.from}>
+              {edge.from}
+            </span>
             <ArrowRight className="h-3.5 w-3.5 shrink-0 text-zinc-400" />
             <DraftInput
               value={edge.contract ?? ""}
@@ -488,7 +479,7 @@ function FailureFields({
   // A target the validator flags stays listed, so the menu shows what the Markdown says.
   const stale = node.retryTarget !== undefined && !options.some((option) => option.id === node.retryTarget);
   return (
-    <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+    <div className="grid grid-cols-2 gap-2">
       <Field label="On fail">
         <select value={node.onFail ?? "stop"} onChange={(event) => onNode(node.id, { onFail: event.target.value as "retry" | "stop" })} className={FIELD}>
           <option value="retry">{retryLabel}</option>
@@ -545,8 +536,7 @@ function ChecksSection({ graph, node, onNode }: { graph: SkillGraph; node: Graph
   const hasGate = node.gate !== undefined;
   return (
     <>
-      <SectionTitle>Checks</SectionTitle>
-      <div className="grid grid-cols-1 gap-2 sm:grid-cols-[minmax(0,1fr)_10rem]">
+      <div className="grid grid-cols-[minmax(0,1fr)_8.5rem] gap-2">
         <Field label="Command check">
           <DraftInput
             value={node.check ?? ""}
@@ -581,7 +571,7 @@ function ChecksSection({ graph, node, onNode }: { graph: SkillGraph; node: Graph
             <button
               type="button"
               onClick={() => onNode(node.id, { gate: undefined, ...(node.check ? {} : { onFail: undefined, maxRetries: undefined, retryTarget: undefined }) })}
-              className={cn(SMALL_BUTTON, "self-end justify-self-start hover:border-rose-300 hover:bg-rose-50 hover:text-rose-700")}
+              className={cn(SMALL_BUTTON, "col-span-2 justify-self-start hover:border-rose-300 hover:bg-rose-50 hover:text-rose-700")}
             >
               <Trash2 className="h-3 w-3" /> Remove gate
             </button>
@@ -626,10 +616,10 @@ function PromptField({ graph, node, onNode }: { graph: SkillGraph; node: GraphNo
 
   return (
     <div>
-      <div className="mb-1 flex items-center justify-between gap-2">
-        <span className={LABEL}>Prompt</span>
+      <div className="mb-1.5 flex items-start justify-between gap-2">
+        <PromptRefs node={node} />
         {inputs.length > 0 && (
-          <div className="relative">
+          <div className="relative shrink-0">
             <button
               type="button"
               aria-expanded={menuOpen}
@@ -638,7 +628,7 @@ function PromptField({ graph, node, onNode }: { graph: SkillGraph; node: GraphNo
               onBlur={(event) => {
                 if (!event.currentTarget.parentElement?.contains(event.relatedTarget as Node | null)) setMenuOpen(false);
               }}
-              className={cn(SMALL_BUTTON, "py-0.5 hover:border-zinc-300 hover:bg-zinc-50 hover:text-zinc-900")}
+              className={cn(SMALL_BUTTON, "whitespace-nowrap py-0.5 hover:border-zinc-300 hover:bg-zinc-50 hover:text-zinc-900")}
             >
               <Plus className="h-3 w-3" /> Insert input <ChevronDown className="h-3 w-3" />
             </button>
@@ -723,7 +713,6 @@ function LearningSection({ graph, onMeta, lessons, lessonsText, onLessonsText, o
   const path = experiencePath(graph);
   return (
     <>
-      <SectionTitle>Learning</SectionTitle>
       <div className="flex flex-wrap items-end gap-3">
         <label className="flex items-center gap-2 pb-2 text-[13px] font-semibold text-zinc-700">
           <input
@@ -788,9 +777,9 @@ function HandoffField({ graph, node, onNode }: { graph: SkillGraph; node: GraphN
   return (
     <Field label="Hand on output">
       <select value={node.handoff ?? ""} onChange={(event) => onNode(node.id, { handoff: (event.target.value || undefined) as HandoffMode | undefined })} className={FIELD}>
-        <option value="">as the skill does ({graph.handoff ?? "inline"})</option>
-        <option value="inline">inline (in the task)</option>
-        <option value="file">as a file</option>
+        <option value="">Skill default ({graph.handoff === "file" ? "as a file" : "inline"})</option>
+        <option value="inline">Inline, in the next task</option>
+        <option value="file">As a file the next step reads</option>
       </select>
     </Field>
   );
@@ -813,9 +802,8 @@ function FanOutSection({ graph, node, onNode }: { graph: SkillGraph; node: Graph
   const listId = `graph-foreach-${node.id}`;
   return (
     <>
-      <SectionTitle>Fan-out</SectionTitle>
-      <div className="grid grid-cols-2 gap-2 sm:grid-cols-[minmax(0,1fr)_7rem_7rem]">
-        <Field label="Run once per item of" className="col-span-2 sm:col-span-1">
+      <div className="grid grid-cols-2 gap-2">
+        <Field label="Run once per item of" className="col-span-2">
           <DraftInput
             value={node.foreach ?? ""}
             list={listId}
@@ -877,8 +865,7 @@ function ProbeSection({ node, onNode }: { node: GraphNode; onNode: InspectorProp
   const on = node.probe !== undefined;
   return (
     <>
-      <SectionTitle>Probe</SectionTitle>
-      <div className="grid grid-cols-1 gap-2 sm:grid-cols-[9rem_minmax(0,1fr)]">
+      <div className="grid grid-cols-1 gap-2">
         <Field label="Candidates">
           <select
             value={node.probe ?? ""}
@@ -920,141 +907,233 @@ function ProbeSection({ node, onNode }: { node: GraphNode; onNode: InspectorProp
   );
 }
 
-/** Settings most graphs never need: collapsed, with a one-line summary of what is set. */
-function AdvancedSection({ summary, children }: { summary: string; children: React.ReactNode }) {
+/* ------------------------------------------------------------------ panel layout */
+
+/** Which sections are open. Kept above the node views, so switching steps keeps the same sections open. */
+const SectionState = createContext<{ open: Record<string, boolean>; toggle: (id: string, fallback: boolean) => void } | null>(null);
+
+/**
+ * A full-width group of settings that folds away. Closed, it still says what is set on its right, so
+ * the panel reads as a summary of the step and opens only where you want to change something.
+ */
+function PanelSection({ id, title, summary, defaultOpen = false, children }: { id: string; title: string; summary?: React.ReactNode; defaultOpen?: boolean; children: React.ReactNode }) {
+  const state = useContext(SectionState);
+  const open = state?.open[id] ?? defaultOpen;
+  // Clipped only while it folds or unfolds, so menus inside an open section are not cut off.
+  const [moving, setMoving] = useState(false);
+  const bodyId = `inspector-${id}`;
   return (
-    <details className="group rounded-lg border border-zinc-200">
-      <summary className="flex cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-[13px] font-bold text-zinc-900 hover:bg-zinc-50">
-        <ChevronRight className="h-3.5 w-3.5 text-zinc-400 transition-transform group-open:rotate-90" />
-        Advanced
-        <span className="truncate font-medium text-zinc-500">{summary}</span>
-      </summary>
-      <div className="space-y-3.5 border-t border-zinc-200 p-3 [&>h4:first-child]:border-t-0 [&>h4:first-child]:pt-0">{children}</div>
-    </details>
+    <section className="border-b border-zinc-100">
+      <button
+        type="button"
+        aria-expanded={open}
+        aria-controls={bodyId}
+        onClick={() => {
+          setMoving(true);
+          state?.toggle(id, defaultOpen);
+        }}
+        className="flex w-full items-center gap-2 px-4 py-2.5 text-left transition-colors hover:bg-zinc-50 focus-visible:bg-zinc-50 focus-visible:outline-hidden"
+      >
+        <ChevronRight className={cn("h-3.5 w-3.5 shrink-0 text-zinc-400 transition-transform duration-200", open && "rotate-90 text-zinc-600")} />
+        <span className="shrink-0 text-[13px] font-bold tracking-[-0.01em] text-zinc-900">{title}</span>
+        {summary && <span className="ml-auto min-w-0 truncate pl-3 text-right text-[11.5px] text-zinc-500">{summary}</span>}
+      </button>
+      <div
+        id={bodyId}
+        inert={!open}
+        onTransitionEnd={() => setMoving(false)}
+        className={cn("grid transition-[grid-template-rows] duration-200 ease-out", open ? "grid-rows-[1fr]" : "grid-rows-[0fr]")}
+      >
+        <div className={cn("min-h-0", (!open || moving) && "overflow-hidden")}>
+          <div className="space-y-3 px-4 pb-4 pt-0.5">{children}</div>
+        </div>
+      </div>
+    </section>
   );
 }
 
-/** "sonnet · 6 tools · fresh context · check · gate · 1 contract", or what the section holds when nothing is set. */
-function advancedSummary(graph: SkillGraph, node: GraphNode): string {
-  const contracts = graph.edges.filter((edge) => edge.to === node.id && edge.contract !== undefined).length;
-  const parts = [
-    node.model,
-    node.tools !== undefined && `${node.tools.length} tool${node.tools.length === 1 ? "" : "s"}`,
+/** Top of the panel: what is selected, its name, and how to remove it. Stays in view while the sections scroll. */
+function PanelHeader({ icon, title, meta, onRemove, removeLabel }: { icon: React.ReactNode; title: React.ReactNode; meta?: React.ReactNode; onRemove?: () => void; removeLabel?: string }) {
+  return (
+    <div className="sticky top-0 z-10 border-b border-zinc-200 bg-white/95 px-4 py-3 backdrop-blur-sm">
+      <div className="flex items-start gap-3">
+        <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-zinc-200 bg-zinc-50 text-zinc-700">{icon}</span>
+        <div className="min-w-0 flex-1">
+          {title}
+          {meta && <div className="mt-1 flex min-w-0 items-center gap-1.5">{meta}</div>}
+        </div>
+        {onRemove && (
+          <button
+            type="button"
+            onClick={onRemove}
+            aria-label={removeLabel}
+            title={removeLabel}
+            className="shrink-0 rounded-lg p-1.5 text-zinc-400 transition-colors hover:bg-rose-50 hover:text-rose-600 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-orange-500/30"
+          >
+            <Trash2 className="h-4 w-4" />
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/** A heading that is also its own input: looks like text until you hover or type. */
+const TITLE_INPUT =
+  "-mx-1.5 block w-[calc(100%+0.75rem)] truncate rounded-md border border-transparent bg-transparent px-1.5 py-0.5 text-[15px] font-extrabold tracking-[-0.015em] text-zinc-900 transition-colors placeholder:text-zinc-400 hover:border-zinc-200 focus-visible:border-orange-500 focus-visible:bg-white focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-orange-500/20";
+const META_SELECT =
+  "h-6 shrink-0 rounded-md border border-zinc-200 bg-zinc-50 pl-1.5 pr-1 text-[10.5px] font-bold uppercase tracking-[0.06em] text-zinc-600 transition-colors hover:border-zinc-300 focus-visible:border-orange-500 focus-visible:outline-hidden";
+
+function plural(count: number, word: string): string {
+  return `${count} ${word}${count === 1 ? "" : "s"}`;
+}
+
+/** "1 error · 2 warnings" for the problems section. */
+function issueSummary(issues: GraphIssue[]): React.ReactNode {
+  const errors = issues.filter((issue) => issue.severity === "error").length;
+  const warnings = issues.length - errors;
+  return (
+    <>
+      {errors > 0 && <span className="font-semibold text-red-600">{plural(errors, "error")}</span>}
+      {errors > 0 && warnings > 0 && " · "}
+      {warnings > 0 && <span className="font-semibold text-amber-700">{plural(warnings, "warning")}</span>}
+    </>
+  );
+}
+
+/** What a step's prompt reads, as chips, beside the "Insert input" menu. */
+function PromptRefs({ node }: { node: GraphNode }) {
+  const refs = extractTemplateRefs(node.prompt);
+  if (refs.length === 0) return <span className="text-xs text-zinc-400">No inputs referenced</span>;
+  return (
+    <span className="flex min-w-0 flex-wrap items-center gap-1">
+      {refs.map((ref) => (
+        <code key={ref.raw} className="rounded-md bg-zinc-100 px-1.5 py-0.5 font-mono text-[10.5px] text-zinc-700">{`{{${ref.raw}}}`}</code>
+      ))}
+    </span>
+  );
+}
+
+function agentSummary(graph: SkillGraph, node: GraphNode): string {
+  return [
+    node.model ?? "inherit",
+    node.tools === undefined || node.tools.length === 0 ? "all tools" : plural(node.tools.length, "tool"),
     node.isolatedContext && "fresh context",
-    node.check && "check",
+    handoffOf(graph, node) === "file" && "file",
+  ]
+    .filter(Boolean)
+    .join(" · ");
+}
+
+function checksSummary(node: GraphNode): string {
+  const parts = [
+    node.check && `$ ${node.check}`,
     node.gate !== undefined && "gate",
     node.risk && node.risk !== "contained" && node.risk,
-    node.type === "code" && node.onFail === "retry" && "retries",
-    node.retryTarget && `restarts at ${node.retryTarget}`,
-    node.foreach && `each of ${node.foreach}`,
-    node.probe && `probe ×${node.probe}`,
-    handoffOf(graph, node) === "file" && "file handoff",
-    contracts > 0 && `${contracts} contract${contracts === 1 ? "" : "s"}`,
-  ].filter((part): part is string => typeof part === "string" && part !== "");
-  if (parts.length > 0) return parts.join(" · ");
-  if (node.type === "code") return "blast radius, on failure, contracts";
-  if (node.type === "approval") return "incoming steps, contracts";
-  return runsWithoutSubagent(node.type) ? "on failure, contracts" : "model, tools, checks, contracts";
+    node.onFail === "retry" && `retry ×${node.maxRetries ?? DEFAULT_MAX_RETRIES}`,
+    node.retryTarget && `from ${node.retryTarget}`,
+  ].filter((part): part is string => typeof part === "string");
+  return parts.length > 0 ? parts.join(" · ") : "none";
+}
+
+function inputsSummary(graph: SkillGraph, node: GraphNode): string {
+  const incoming = graph.edges.filter((edge) => edge.to === node.id);
+  const contracts = incoming.filter((edge) => edge.contract).length;
+  if (incoming.length === 0) return "none";
+  return `${plural(incoming.length, "step")}${contracts > 0 ? ` · ${plural(contracts, "contract")}` : ""}`;
+}
+
+function previewSummary(graph: SkillGraph, node: GraphNode): string {
+  const preview = previewNodeContext(graph, node);
+  return node.type === "code" || node.type === "approval" ? "" : `~${estimateTokens(`${preview.system}\n${preview.user}`).toLocaleString("en-US")} tokens`;
 }
 
 function NodeInspector({ graph, issues, node, onNode, onRename, onRemoveNode, onEdgeContract, onConnect, lessons, onBakeLesson, onDiscardLesson }: InspectorProps & { node: GraphNode }) {
-  const summary = advancedSummary(graph, node);
   const nodeLessons = graph.experience ? lessons.filter((lesson) => lesson.step === node.id) : [];
-  const theme = NODE_THEME[node.type];
   const nodeIssues = issues.filter((issue) => issue.nodeId === node.id);
-  const refs = extractTemplateRefs(node.prompt);
   const report = analyzeIsolation(graph, node);
+  const Icon = TYPE_ICON[node.type];
+  const model = !runsWithoutSubagent(node.type);
+  const preds = predecessorsOf(graph, node.id).length;
 
   return (
-    <div className="space-y-3.5">
-      <p className="flex items-center gap-2 text-[15px] font-extrabold tracking-[-0.015em] text-zinc-900">
-        {node.label}
-        <span className={cn("rounded-md px-1.5 py-0.5 text-[10.5px] font-bold uppercase tracking-[0.06em]", theme.tile, theme.label)}>{node.type}</span>
-      </p>
-      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-        <Field label="Label" className="col-span-2">
-          <DraftInput value={node.label} onValue={(next) => onNode(node.id, { label: next })} className={FIELD} />
-        </Field>
-        <div>
-          <span className={LABEL}>Id</span>
-          <CommitInput value={node.id} ariaLabel="Node id" onCommit={(next) => onRename(node.id, next)} />
-        </div>
-        <Field label="Type">
-          <select value={node.type} onChange={(event) => onNode(node.id, { type: event.target.value as NodeType })} className={FIELD}>
-            {NODE_TYPES.map((type) => (
-              <option key={type} value={type}>
-                {type}
-              </option>
-            ))}
-          </select>
-        </Field>
-      </div>
+    <div>
+      <PanelHeader
+        icon={<Icon className="h-4 w-4" />}
+        title={<DraftInput value={node.label} aria-label="Label" placeholder="Name this step" onValue={(next) => onNode(node.id, { label: next })} className={TITLE_INPUT} />}
+        meta={
+          <>
+            <select value={node.type} aria-label="Type" onChange={(event) => onNode(node.id, { type: event.target.value as NodeType })} className={META_SELECT}>
+              {NODE_TYPES.map((type) => (
+                <option key={type} value={type}>
+                  {type}
+                </option>
+              ))}
+            </select>
+            <CommitInput value={node.id} ariaLabel="Node id" onCommit={(next) => onRename(node.id, next)} className="h-6 w-auto min-w-0 flex-1 rounded-md px-1.5 py-0 text-[11.5px] text-zinc-600" />
+          </>
+        }
+        onRemove={() => onRemoveNode(node.id)}
+        removeLabel="Remove this step"
+      />
+
+      {nodeIssues.length > 0 && (
+        <PanelSection id="problems" title="Problems" summary={issueSummary(nodeIssues)} defaultOpen>
+          <IssueList issues={nodeIssues} onSelectNode={() => {}} />
+        </PanelSection>
+      )}
 
       {node.type === "input" && (
-        <p className={NOTE}>
-          The input is the user&apos;s goal. When the skill triggers, the agent takes it from the request (or asks for it) and hands it to the nodes connected here.
-        </p>
+        <div className="px-4 py-4">
+          <p className={NOTE}>
+            The input is the user&apos;s goal. When the skill triggers, the agent takes it from the request (or asks for it) and hands it to the steps connected here.
+          </p>
+        </div>
       )}
 
       {node.type === "code" && (
         <>
-          <Field label="Command">
+          <PanelSection id="command" title="Command" summary={node.run ? `$ ${node.run}` : "not set"} defaultOpen>
             <DraftInput
               value={node.run ?? ""}
+              aria-label="Command"
               placeholder="npm test"
               spellCheck={false}
               onValue={(next) => onNode(node.id, { run: next.trim() ? next : undefined })}
               className={cn(FIELD, "font-mono")}
             />
-          </Field>
-          <p className={NOTE}>
-            Runs with Bash: no model, no tokens, the same result every time. Use it to merge, dedupe, diff or test. A reference such as{" "}
-            <code className="font-mono text-zinc-700">{"{{workers}}"}</code> becomes the path of a file holding that output. A non-zero exit fails the step.
-          </p>
-          <AdvancedSection summary={summary}>
+            <p className={NOTE}>
+              Runs with Bash: no model, no tokens, the same result every time. A reference such as <code className="font-mono text-zinc-700">{"{{workers}}"}</code> becomes the path of a file
+              holding that output. A non-zero exit fails the step.
+            </p>
+          </PanelSection>
+          <PanelSection id="failure" title="On failure" summary={checksSummary(node)}>
             <RiskField node={node} onNode={onNode} />
             <p className={NOTE}>{RISK_HINT[node.risk ?? "contained"]}</p>
             <FailureFields graph={graph} node={node} retryLabel="re-run upstream" onNode={onNode} />
             <HandoffField graph={graph} node={node} onNode={onNode} />
-            <IncomingEdges graph={graph} node={node} onEdgeContract={onEdgeContract} onConnect={onConnect} />
-          </AdvancedSection>
-          <ContextPreview graph={graph} node={node} />
+          </PanelSection>
         </>
       )}
 
       {node.type === "approval" && (
-        <>
-          <Field label="Ask the user">
-            <DraftTextarea value={node.prompt} rows={3} onValue={(next) => onNode(node.id, { prompt: next })} className={cn(FIELD, "resize-y")} />
-          </Field>
-          <p className={NOTE}>
-            The agent stops here, shows you what came in, and goes on only on an explicit yes. Put it right before the step that is hard to undo; anywhere earlier it only slows the run down.
-          </p>
-          <AdvancedSection summary={summary}>
-            <IncomingEdges graph={graph} node={node} onEdgeContract={onEdgeContract} onConnect={onConnect} />
-          </AdvancedSection>
-          <ContextPreview graph={graph} node={node} />
-        </>
+        <PanelSection id="question" title="Question" summary={node.prompt.trim() ? "" : "not set"} defaultOpen>
+          <DraftTextarea value={node.prompt} aria-label="Ask the user" rows={3} onValue={(next) => onNode(node.id, { prompt: next })} className={cn(FIELD, "resize-y")} />
+          <p className={NOTE}>The agent stops here, shows you what came in, and goes on only on an explicit yes. Put it right before the step that is hard to undo.</p>
+        </PanelSection>
       )}
 
-      {!runsWithoutSubagent(node.type) && (
+      {model && (
         <>
-          <PromptField key={node.id} graph={graph} node={node} onNode={onNode} />
-          {refs.length > 0 && (
-            <p className="text-xs text-zinc-500">
-              Reads:{" "}
-              {refs.map((ref) => (
-                <code key={ref.raw} className="mr-1 rounded-md bg-zinc-100 px-1.5 py-0.5 font-mono text-[11px] text-zinc-800">{`{{${ref.raw}}}`}</code>
-              ))}
-            </p>
-          )}
+          <PanelSection id="prompt" title="Prompt" defaultOpen>
+            <PromptField key={node.id} graph={graph} node={node} onNode={onNode} />
+          </PanelSection>
 
-          <AdvancedSection summary={summary}>
-            <SectionTitle>Agent</SectionTitle>
-            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-              <Field label="Model tier">
+          <PanelSection id="agent" title="Agent" summary={agentSummary(graph, node)}>
+            <div className="grid grid-cols-2 gap-2">
+              <Field label="Model">
                 <select value={node.model ?? ""} onChange={(event) => onNode(node.id, { model: event.target.value || undefined })} className={FIELD}>
-                  <option value="">inherit (session model)</option>
+                  <option value="">inherit</option>
                   {[...MODEL_TIERS, ...(node.model && !MODEL_TIERS.includes(node.model) ? [node.model] : [])].map((tier) => (
                     <option key={tier} value={tier}>
                       {tier}
@@ -1073,81 +1152,106 @@ function NodeInspector({ graph, issues, node, onNode, onRename, onRemoveNode, on
                   <option value="text">text</option>
                 </select>
               </Field>
-              <HandoffField graph={graph} node={node} onNode={onNode} />
-              <label className="col-span-2 flex items-center gap-2 self-end pb-2 text-[13px] font-semibold text-zinc-700 sm:col-span-1">
-                <input type="checkbox" checked={node.isolatedContext} onChange={(event) => onNode(node.id, { isolatedContext: event.target.checked })} className="h-4 w-4 accent-orange-600" />
-                <Lock className="h-3.5 w-3.5 text-orange-500" /> Fresh context
-              </label>
+              <div className="col-span-2">
+                <HandoffField graph={graph} node={node} onNode={onNode} />
+              </div>
             </div>
-            <ToolPicker node={node} onNode={onNode} />
+            <label className="flex cursor-pointer items-start gap-2.5 rounded-lg border border-zinc-200 px-3 py-2 transition-colors hover:border-zinc-300">
+              <input type="checkbox" checked={node.isolatedContext} onChange={(event) => onNode(node.id, { isolatedContext: event.target.checked })} className="mt-0.5 h-4 w-4 accent-orange-600" />
+              <span className="min-w-0">
+                <span className="flex items-center gap-1.5 text-[13px] font-semibold text-zinc-800">
+                  <Lock className="h-3.5 w-3.5 text-orange-500" /> Fresh context
+                </span>
+                <span className="mt-0.5 block text-xs text-zinc-500">Sees only what its incoming edges carry: no shared history.</span>
+              </span>
+            </label>
             {node.isolatedContext && (
-              <p className="text-xs text-zinc-500">
-                {report.biasPercent}% of this prompt&apos;s upstream references bypass its {predecessorsOf(graph, node.id).length} incoming edge
-                {predecessorsOf(graph, node.id).length === 1 ? "" : "s"}.
+              <p className={NOTE}>
+                {report.biasPercent}% of this prompt&apos;s upstream references bypass its {plural(preds, "incoming edge")}.
               </p>
             )}
+            <ToolPicker node={node} onNode={onNode} />
+          </PanelSection>
 
-            <FanOutSection graph={graph} node={node} onNode={onNode} />
-            <ProbeSection node={node} onNode={onNode} />
+          <PanelSection id="checks" title="Checks" summary={checksSummary(node)}>
             <ChecksSection graph={graph} node={node} onNode={onNode} />
-            <IncomingEdges graph={graph} node={node} onEdgeContract={onEdgeContract} onConnect={onConnect} />
-          </AdvancedSection>
-          {nodeLessons.length > 0 && (
-            <div className="space-y-2">
-              <span className={LABEL}>Lessons from runs</span>
-              <LessonList graph={graph} lessons={nodeLessons} showStep={false} onBake={onBakeLesson} onDiscard={onDiscardLesson} />
-            </div>
-          )}
-          <ContextPreview graph={graph} node={node} />
+          </PanelSection>
+
+          <PanelSection id="fanout" title="Fan-out" summary={node.foreach ? `each of ${node.foreach}` : "off"}>
+            <FanOutSection graph={graph} node={node} onNode={onNode} />
+          </PanelSection>
+
+          <PanelSection id="probe" title="Probe" summary={node.probe ? `${node.probe} candidates` : "off"}>
+            <ProbeSection node={node} onNode={onNode} />
+          </PanelSection>
         </>
       )}
 
-      {nodeIssues.length > 0 && <IssueList issues={nodeIssues} onSelectNode={() => {}} />}
+      {node.type !== "input" && (
+        <PanelSection id="inputs" title="Inputs" summary={inputsSummary(graph, node)}>
+          <IncomingEdges graph={graph} node={node} onEdgeContract={onEdgeContract} onConnect={onConnect} />
+          {graph.edges.every((edge) => edge.to !== node.id) && connectableSources(graph, node.id).length === 0 && <p className={NOTE}>No step can connect into this one.</p>}
+        </PanelSection>
+      )}
 
-      <button type="button" onClick={() => onRemoveNode(node.id)} className={cn(SMALL_BUTTON, "hover:border-rose-300 hover:bg-rose-50 hover:text-rose-700")}>
-        <Trash2 className="h-3 w-3" /> Remove node
-      </button>
+      {nodeLessons.length > 0 && (
+        <PanelSection id="lessons" title="Lessons" summary={plural(nodeLessons.length, "lesson")} defaultOpen>
+          <LessonList graph={graph} lessons={nodeLessons} showStep={false} onBake={onBakeLesson} onDiscard={onDiscardLesson} />
+        </PanelSection>
+      )}
+
+      {node.type !== "input" && (
+        <PanelSection id="preview" title={PREVIEW_TEXT[node.type === "code" || node.type === "approval" ? node.type : "agent"].title} summary={previewSummary(graph, node)}>
+          <ContextPreview graph={graph} node={node} />
+        </PanelSection>
+      )}
     </div>
   );
 }
 
 function EdgeInspector({ graph, edgeId, onEdgeContract, onRemoveEdge, onContract }: InspectorProps & { edgeId: string }) {
   const edge = graph.edges.find((e) => `${e.from}->${e.to}` === edgeId);
-  if (!edge) return <p className={NOTE}>This edge no longer exists.</p>;
+  if (!edge) return <p className={cn(NOTE, "p-4")}>This edge no longer exists.</p>;
   const contract = edge.contract ? getContract(graph, edge.contract) : undefined;
   const uses = edge.contract ? graph.edges.filter((e) => e.contract === edge.contract).length : 0;
   return (
-    <div className="space-y-3">
-      <p className="flex items-center gap-2 font-mono text-[13px] font-medium text-zinc-900">
-        {edge.from} <ArrowRight className="h-3.5 w-3.5 text-zinc-400" /> {edge.to}
-      </p>
-      <Field label="Contract">
+    <div>
+      <PanelHeader
+        icon={<ArrowRight className="h-4 w-4" />}
+        title={
+          <p className="flex min-w-0 items-center gap-1.5 py-0.5 font-mono text-[13px] font-semibold text-zinc-900">
+            <span className="truncate">{edge.from}</span>
+            <ArrowRight className="h-3.5 w-3.5 shrink-0 text-zinc-400" />
+            <span className="truncate">{edge.to}</span>
+          </p>
+        }
+        meta={<span className="text-xs text-zinc-500">Edge · what travels from one step to the next</span>}
+        onRemove={() => onRemoveEdge(edge.from, edge.to)}
+        removeLabel="Remove this edge"
+      />
+      <PanelSection id="edge-contract" title="Contract" summary={edge.contract ?? "none"} defaultOpen>
         <DraftInput
           value={edge.contract ?? ""}
+          aria-label="Contract"
           list="graph-contracts"
           onValue={(next) => onEdgeContract(edge.from, edge.to, next)}
           placeholder="e.g. findings_array"
           spellCheck={false}
           className={cn(FIELD, "font-mono")}
         />
-      </Field>
-      <ContractsDatalist graph={graph} />
-      {edge.contract && contract && <ContractEditor name={edge.contract} contract={contract} uses={uses} onContract={onContract} />}
-      {edge.contract && !contract && (
-        <button
-          type="button"
-          onClick={() => onContract(edge.contract as string, { format: /json/i.test(edge.contract as string) ? "json" : "markdown", description: "" })}
-          className={cn(SMALL_BUTTON, "hover:border-zinc-300 hover:bg-zinc-50 hover:text-zinc-900")}
-        >
-          <Plus className="h-3 w-3" /> Define &quot;{edge.contract}&quot;
-        </button>
-      )}
-      <p className={NOTE}>
-        The contract tells the agent what a valid payload on this edge looks like. It checks every handoff against it before the next stage starts.
-      </p>
-      <button type="button" onClick={() => onRemoveEdge(edge.from, edge.to)} className={cn(SMALL_BUTTON, "hover:border-rose-300 hover:bg-rose-50 hover:text-rose-700")}>
-        <Trash2 className="h-3 w-3" /> Remove edge
-      </button>
+        <ContractsDatalist graph={graph} />
+        {edge.contract && contract && <ContractEditor name={edge.contract} contract={contract} uses={uses} onContract={onContract} />}
+        {edge.contract && !contract && (
+          <button
+            type="button"
+            onClick={() => onContract(edge.contract as string, { format: /json/i.test(edge.contract as string) ? "json" : "markdown", description: "" })}
+            className={cn(SMALL_BUTTON, "hover:border-zinc-300 hover:bg-zinc-50 hover:text-zinc-900")}
+          >
+            <Plus className="h-3 w-3" /> Define &quot;{edge.contract}&quot;
+          </button>
+        )}
+        <p className={NOTE}>The contract tells the agent what a valid payload on this edge looks like. It checks every handoff against it before the next stage starts.</p>
+      </PanelSection>
     </div>
   );
 }
@@ -1161,65 +1265,77 @@ function Overview(props: InspectorProps) {
     return `contract_${n}`;
   };
   return (
-    <div className="space-y-3">
-      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-        <Field label="Skill name">
-          <DraftInput value={graph.name} onValue={(next) => onMeta({ name: next })} spellCheck={false} className={cn(FIELD, "font-mono")} />
-        </Field>
-        <Field label="When to use it (description)">
-          <DraftInput value={graph.description} onValue={(next) => onMeta({ description: next })} className={FIELD} />
-        </Field>
+    <div>
+      <PanelHeader
+        icon={<Waypoints className="h-4 w-4" />}
+        title={<DraftInput value={graph.name} aria-label="Skill name" placeholder="skill-name" spellCheck={false} onValue={(next) => onMeta({ name: next })} className={cn(TITLE_INPUT, "font-mono text-[14px]")} />}
+        meta={<span className="text-xs text-zinc-500">The whole skill · select a step or an edge to edit it</span>}
+      />
+      <div className="space-y-1.5 border-b border-zinc-100 px-4 py-3">
+        <span className={LABEL}>When to use it</span>
+        <DraftTextarea
+          value={graph.description}
+          aria-label="When to use it (description)"
+          rows={2}
+          placeholder="Describe when the agent should run this skill"
+          onValue={(next) => onMeta({ description: next })}
+          className={cn(FIELD, "resize-y leading-relaxed")}
+        />
       </div>
-
-      <SectionTitle>Contracts</SectionTitle>
-      {names.length === 0 && <p className={NOTE}>No contracts yet. A contract names what travels on an edge so the agent can check each handoff.</p>}
-      <div className="space-y-1.5">
-        {names.map((name) => (
-          <ContractEditor
-            key={name}
-            name={name}
-            contract={graph.contracts[name]}
-            uses={graph.edges.filter((edge) => edge.contract === name).length}
-            onContract={onContract}
-            onRenameContract={onRenameContract}
-          />
-        ))}
-      </div>
-      <button type="button" onClick={() => onContract(nextName(), { format: "markdown", description: "" })} className={cn(SMALL_BUTTON, "hover:border-zinc-300 hover:bg-zinc-50 hover:text-zinc-900")}>
-        <Plus className="h-3 w-3" /> Add contract
-      </button>
-
-      <SectionTitle>Handoffs</SectionTitle>
-      <Field label="Hand outputs on" className="sm:w-72">
-        <select value={graph.handoff ?? "inline"} onChange={(event) => onMeta({ handoff: event.target.value === "file" ? "file" : undefined })} className={FIELD}>
-          <option value="inline">inline: pasted into the next task</option>
-          <option value="file">as files: the next step reads the path</option>
-        </select>
-      </Field>
-      <p className={NOTE}>
-        As files, the agent saves each output once under <code className="font-mono text-zinc-700">.skill-graph/{toSlug(graph.name)}/</code> and hands later steps the path, so a long
-        output is never re-typed or shortened on the way. Steps that get a file need Read. A step can override this under Advanced.
-      </p>
-
-      <LearningSection {...props} />
 
       {issues.length > 0 && (
-        <>
-          <SectionTitle>Issues</SectionTitle>
+        <PanelSection id="overview-problems" title="Problems" summary={issueSummary(issues)} defaultOpen>
           <IssueList issues={issues} onSelectNode={(id) => onSelect({ kind: "node", id })} />
-        </>
+        </PanelSection>
       )}
-      <p className={NOTE}>Select a node or an edge on the canvas to edit it. Every change is written straight back into the Markdown.</p>
+
+      <PanelSection id="overview-contracts" title="Contracts" summary={names.length === 0 ? "none" : plural(names.length, "contract")}>
+        {names.length === 0 && <p className={NOTE}>No contracts yet. A contract names what travels on an edge so the agent can check each handoff.</p>}
+        <div className="space-y-2">
+          {names.map((name) => (
+            <ContractEditor
+              key={name}
+              name={name}
+              contract={graph.contracts[name]}
+              uses={graph.edges.filter((edge) => edge.contract === name).length}
+              onContract={onContract}
+              onRenameContract={onRenameContract}
+            />
+          ))}
+        </div>
+        <button type="button" onClick={() => onContract(nextName(), { format: "markdown", description: "" })} className={cn(SMALL_BUTTON, "hover:border-zinc-300 hover:bg-zinc-50 hover:text-zinc-900")}>
+          <Plus className="h-3 w-3" /> Add contract
+        </button>
+      </PanelSection>
+
+      <PanelSection id="overview-handoffs" title="Handoffs" summary={graph.handoff === "file" ? "as files" : "inline"}>
+        <select value={graph.handoff ?? "inline"} aria-label="Hand outputs on" onChange={(event) => onMeta({ handoff: event.target.value === "file" ? "file" : undefined })} className={FIELD}>
+          <option value="inline">Inline: pasted into the next task</option>
+          <option value="file">As files: the next step reads the path</option>
+        </select>
+        <p className={NOTE}>
+          As files, the agent saves each output once under <code className="font-mono text-zinc-700">.skill-graph/{toSlug(graph.name)}/</code> and hands later steps the path, so a long output is
+          never re-typed or shortened on the way. Steps that get a file need Read. A step can override this in its Agent section.
+        </p>
+      </PanelSection>
+
+      <PanelSection id="overview-learning" title="Learning" summary={graph.experience ? `on · ≤${graph.experience.maxLessons} lessons` : "off"}>
+        <LearningSection {...props} />
+      </PanelSection>
+
+      <p className={cn(NOTE, "px-4 py-4")}>Every change here is written straight back into the Markdown, and Ctrl+Z on the canvas undoes it.</p>
     </div>
   );
 }
 
 export function InspectorPanel(props: InspectorProps) {
   const { selection, graph } = props;
+  const [open, setOpen] = useState<Record<string, boolean>>({});
+  const toggle = (id: string, fallback: boolean) => setOpen((current) => ({ ...current, [id]: !(current[id] ?? fallback) }));
+  let body: React.ReactNode = <Overview {...props} />;
   if (selection?.kind === "node") {
     const node = graph.nodes.find((n) => n.id === selection.id);
-    if (node) return <NodeInspector {...props} node={node} />;
-  }
-  if (selection?.kind === "edge") return <EdgeInspector {...props} edgeId={selection.id} />;
-  return <Overview {...props} />;
+    if (node) body = <NodeInspector {...props} node={node} />;
+  } else if (selection?.kind === "edge") body = <EdgeInspector {...props} edgeId={selection.id} />;
+  return <SectionState.Provider value={{ open, toggle }}>{body}</SectionState.Provider>;
 }

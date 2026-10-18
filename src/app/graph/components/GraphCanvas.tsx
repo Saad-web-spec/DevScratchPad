@@ -1,10 +1,10 @@
 "use client";
 
 import { Fragment, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { Bot, Check, CircleDot, Cpu, FileText, GraduationCap, ListChecks, Lock, Merge, Minus, Plus, Redo2, Scan, ShieldCheck, Split, SquareTerminal, Undo2, UserCheck, Wrench, type LucideIcon } from "lucide-react";
+import { Check, FileText, GraduationCap, LayoutGrid, ListChecks, Lock, Minus, Plus, Redo2, Scan, ShieldCheck, Undo2, Wrench } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { NODE_THEME } from "./theme";
-import { LAYOUT_GAPS, NODE_HEIGHT, NODE_WIDTH, handoffOf, layoutGraph, type GraphLayout, type GraphNode, type IsolationReport, type NodeLayout, type NodeType, type SkillGraph } from "../lib/graphSkill";
+import { NODE_THEME, TYPE_ICON } from "./theme";
+import { LAYOUT_GAPS, LAYOUT_GRID, NODE_HEIGHT, NODE_WIDTH, canvasLayout, handoffOf, type GraphLayout, type GraphNode, type IsolationReport, type NodeLayout, type SkillGraph } from "../lib/graphSkill";
 
 export type Selection = { kind: "node"; id: string } | { kind: "edge"; id: string } | null;
 
@@ -25,16 +25,6 @@ export interface Trace {
   done: Set<string>;
 }
 
-const TYPE_ICON: Record<NodeType, LucideIcon> = {
-  input: CircleDot,
-  orchestrator: Split,
-  worker: Cpu,
-  verifier: ShieldCheck,
-  synthesizer: Merge,
-  agent: Bot,
-  code: SquareTerminal,
-  approval: UserCheck,
-};
 
 interface View {
   x: number;
@@ -66,6 +56,27 @@ function anchor(position: NodeLayout, layout: GraphLayout, side: "out" | "in"): 
   return { x: side === "out" ? position.x + NODE_WIDTH : position.x, y: position.y + NODE_HEIGHT / 2 };
 }
 
+type Point = { x: number; y: number };
+
+/**
+ * Ends of an edge between hand-placed cards: it leaves from the side that faces its target, so a
+ * card dragged below another connects top to bottom instead of looping around.
+ */
+function facingAnchors(a: NodeLayout, b: NodeLayout): { start: Point; end: Point; vertical: boolean; sign: number } {
+  const ca = { x: a.x + NODE_WIDTH / 2, y: a.y + NODE_HEIGHT / 2 };
+  const cb = { x: b.x + NODE_WIDTH / 2, y: b.y + NODE_HEIGHT / 2 };
+  const dx = cb.x - ca.x;
+  const dy = cb.y - ca.y;
+  // Compare in card proportions: cards are wider than tall, so "below" wins only when clearly below.
+  const vertical = Math.abs(dy) * (NODE_WIDTH / NODE_HEIGHT) > Math.abs(dx) && Math.abs(dy) > NODE_HEIGHT;
+  if (vertical) {
+    const sign = dy >= 0 ? 1 : -1;
+    return { start: { x: ca.x, y: sign > 0 ? a.y + NODE_HEIGHT : a.y }, end: { x: cb.x, y: sign > 0 ? b.y : b.y + NODE_HEIGHT }, vertical, sign };
+  }
+  const sign = dx >= 0 ? 1 : -1;
+  return { start: { x: sign > 0 ? a.x + NODE_WIDTH : a.x, y: ca.y }, end: { x: sign > 0 ? b.x : b.x + NODE_WIDTH, y: cb.y }, vertical, sign };
+}
+
 interface GraphCanvasProps {
   graph: SkillGraph;
   /** Plan walkthrough; null when not stepping through the plan. */
@@ -85,6 +96,10 @@ interface GraphCanvasProps {
   onSelect: (selection: Selection) => void;
   onConnect: (from: string, to: string) => void;
   onDeleteSelection: () => void;
+  /** Drops a card at a canvas position; `onScreen` is where every card is drawn now (the first move pins them all). */
+  onMoveNode: (id: string, position: NodeLayout, onScreen: Map<string, NodeLayout>) => void;
+  /** Clears the user's placement and returns to the automatic layout. */
+  onTidy: () => void;
 }
 
 /** The "prior context bias" meter on nodes that declare isolated_context; hangs off the card's top edge. */
@@ -173,6 +188,8 @@ export function GraphCanvas({
   onSelect,
   onConnect,
   onDeleteSelection,
+  onMoveNode,
+  onTidy,
 }: GraphCanvasProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [view, setView] = useState<View>({ x: 0, y: 0, k: 1 });
@@ -181,10 +198,20 @@ export function GraphCanvas({
   const [size, setSize] = useState({ width: 0, height: 0 });
   const [hoverEdge, setHoverEdge] = useState<string | null>(null);
   const [connecting, setConnecting] = useState<{ from: string; x: number; y: number } | null>(null);
+  /** The card being dragged and where it is now, in canvas coordinates; it is saved on release. */
+  const [dragging, setDragging] = useState<{ id: string; x: number; y: number } | null>(null);
+  /** Zoom and fit from the buttons glide; panning, wheel and pinch follow the pointer directly. */
+  const [smooth, setSmooth] = useState(false);
 
   // Portrait canvases (phones, narrow windows) read better top to bottom.
   const direction = size.height > size.width * 1.1 ? "TB" : "LR";
-  const layout = useMemo(() => layoutGraph(graph, direction), [graph, direction]);
+  const baseLayout = useMemo(() => canvasLayout(graph, direction), [graph, direction]);
+  // While a card is dragged the canvas draws it where the pointer is, and every edge as a placed one.
+  const layout = useMemo<GraphLayout>(() => {
+    if (!dragging) return baseLayout;
+    const positions = new Map(baseLayout.positions).set(dragging.id, { x: dragging.x, y: dragging.y });
+    return { ...baseLayout, positions, routes: new Map(), manual: true };
+  }, [baseLayout, dragging]);
 
   useLayoutEffect(() => {
     viewRef.current = view;
@@ -193,10 +220,10 @@ export function GraphCanvas({
   const fitTo = useCallback(
     (width: number, height: number) => {
       if (width === 0 || height === 0) return;
-      const k = Math.min(1, Math.max(MIN_ZOOM, Math.min((width - FIT_PADDING * 2) / layout.width, (height - FIT_PADDING * 2) / layout.height)));
-      setView({ k, x: (width - layout.width * k) / 2, y: (height - layout.height * k) / 2 });
+      const k = Math.min(1, Math.max(MIN_ZOOM, Math.min((width - FIT_PADDING * 2) / baseLayout.width, (height - FIT_PADDING * 2) / baseLayout.height)));
+      setView({ k, x: (width - baseLayout.width * k) / 2 - baseLayout.minX * k, y: (height - baseLayout.height * k) / 2 - baseLayout.minY * k });
     },
-    [layout.width, layout.height]
+    [baseLayout.width, baseLayout.height, baseLayout.minX, baseLayout.minY]
   );
 
   // Track the container size; keep the whole graph in view until the user pans or zooms themselves.
@@ -216,6 +243,8 @@ export function GraphCanvas({
     if (fitSeen.current !== fitRequest) {
       fitSeen.current = fitRequest;
       autoFit.current = true;
+      // A reset or a new document glides into view instead of jumping.
+      setSmooth(true);
     }
     if (autoFit.current) fitTo(size.width, size.height);
   }, [size, fitTo, fitRequest]);
@@ -239,11 +268,13 @@ export function GraphCanvas({
     const fit = Math.min((size.width - FIT_PADDING * 2) / NODE_WIDTH, (size.height - FIT_PADDING * 2) / NODE_HEIGHT);
     const next = tooSmall ? Math.max(k, Math.min(FOCUS_ZOOM, fit)) : k;
     autoFit.current = false;
+    setSmooth(true);
     setView({ k: next, x: size.width / 2 - (position.x + NODE_WIDTH / 2) * next, y: size.height / 2 - (position.y + NODE_HEIGHT / 2) * next });
   }, [focusRequest, layout.positions, size.width, size.height]);
 
-  const zoomAround = useCallback((factor: number, cx: number, cy: number) => {
+  const zoomAround = useCallback((factor: number, cx: number, cy: number, glide = false) => {
     autoFit.current = false;
+    setSmooth(glide);
     setView((current) => {
       const k = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, current.k * factor));
       const ratio = k / current.k;
@@ -301,6 +332,7 @@ export function GraphCanvas({
     const worldX = (pinch.midX - pinch.view.x) / pinch.view.k;
     const worldY = (pinch.midY - pinch.view.y) / pinch.view.k;
     autoFit.current = false;
+    setSmooth(false);
     setView({ k, x: midX - worldX * k, y: midY - worldY * k });
   };
 
@@ -325,6 +357,7 @@ export function GraphCanvas({
     if (!drag.moved && Math.hypot(dx, dy) < 4) return;
     drag.moved = true;
     autoFit.current = false;
+    setSmooth(false);
     setView((current) => ({ ...current, x: drag.originX + dx, y: drag.originY + dy }));
   };
 
@@ -341,6 +374,47 @@ export function GraphCanvas({
     if (!rect) return { x: 0, y: 0 };
     return { x: (clientX - rect.left - current.x) / current.k, y: (clientY - rect.top - current.y) / current.k };
   }, []);
+
+  /* ---------------------------------------------------------------- moving a card */
+
+  const nodeDrag = useRef<{ id: string; pointerId: number; startX: number; startY: number; origin: NodeLayout; moved: boolean } | null>(null);
+  /** A drag ends with a click on the card; that click must not count as "select". */
+  const suppressClick = useRef(false);
+
+  const onCardPointerDown = (event: React.PointerEvent<HTMLDivElement>, id: string) => {
+    if (event.button !== 0 || pinchRef.current || connecting) return;
+    const origin = baseLayout.positions.get(id);
+    if (!origin) return;
+    event.stopPropagation();
+    nodeDrag.current = { id, pointerId: event.pointerId, startX: event.clientX, startY: event.clientY, origin, moved: false };
+    event.currentTarget.setPointerCapture(event.pointerId);
+  };
+
+  const onCardPointerMove = (event: React.PointerEvent<HTMLDivElement>) => {
+    const drag = nodeDrag.current;
+    if (!drag || drag.pointerId !== event.pointerId) return;
+    if (pinchRef.current) {
+      nodeDrag.current = null;
+      setDragging(null);
+      return;
+    }
+    if (!drag.moved && Math.hypot(event.clientX - drag.startX, event.clientY - drag.startY) < 4) return;
+    drag.moved = true;
+    autoFit.current = false;
+    const k = viewRef.current.k;
+    setDragging({ id: drag.id, x: drag.origin.x + (event.clientX - drag.startX) / k, y: drag.origin.y + (event.clientY - drag.startY) / k });
+  };
+
+  const onCardPointerUp = (event: React.PointerEvent<HTMLDivElement>) => {
+    const drag = nodeDrag.current;
+    nodeDrag.current = null;
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId);
+    if (!drag?.moved) return;
+    suppressClick.current = true;
+    const k = viewRef.current.k;
+    onMoveNode(drag.id, { x: drag.origin.x + (event.clientX - drag.startX) / k, y: drag.origin.y + (event.clientY - drag.startY) / k }, baseLayout.positions);
+    setDragging(null);
+  };
 
   // Dragging from an output handle draws a line that snaps onto the node under the pointer.
   useEffect(() => {
@@ -369,6 +443,25 @@ export function GraphCanvas({
       // A repeated edge in the file is drawn once; both copies would share one key and one path.
       if (!a || !b || drawn.has(edgeKey(edge.from, edge.to))) return [];
       drawn.add(edgeKey(edge.from, edge.to));
+      if (layout.manual) {
+        const { start: p, end: q, vertical, sign } = facingAnchors(a, b);
+        const bend = Math.max(36, (vertical ? Math.abs(q.y - p.y) : Math.abs(q.x - p.x)) / 2) * sign;
+        const d = vertical
+          ? `M ${p.x} ${p.y} C ${p.x} ${p.y + bend}, ${q.x} ${q.y - bend}, ${q.x} ${q.y}`
+          : `M ${p.x} ${p.y} C ${p.x + bend} ${p.y}, ${q.x - bend} ${q.y}, ${q.x} ${q.y}`;
+        const mx = (p.x + q.x) / 2;
+        const my = (p.y + q.y) / 2;
+        const fanOut = graph.edges.filter((e) => e.contract === edge.contract && e.from === edge.from);
+        const fanIn = graph.edges.filter((e) => e.contract === edge.contract && e.to === edge.to);
+        const step = (point: Point, toward: number): Point => (vertical ? { x: point.x, y: point.y + toward * 40 } : { x: point.x + toward * 40, y: point.y });
+        let label: Point | null = null;
+        if (edge.contract) {
+          if (fanOut.length > 1) label = fanOut[0] === edge ? step(p, sign) : null;
+          else if (fanIn.length > 1) label = fanIn[0] === edge ? step(q, -sign) : null;
+          else label = { x: mx, y: my };
+        }
+        return [{ edge, key: edgeKey(edge.from, edge.to), d, mx, my, label }];
+      }
       const start = anchor(a, layout, "out");
       const end = anchor(b, layout, "in");
       const { x: x1, y: y1 } = start;
@@ -417,6 +510,16 @@ export function GraphCanvas({
       onDeleteSelection();
     } else if (event.key === "Escape") {
       onSelect(null);
+    } else if (selection?.kind === "node" && event.key.startsWith("Arrow") && !mod) {
+      // Arrow keys nudge the selected card (Shift moves five grid steps).
+      const position = baseLayout.positions.get(selection.id);
+      if (!position) return;
+      event.preventDefault();
+      const step = LAYOUT_GRID * (event.shiftKey ? 5 : 1);
+      const delta: Record<string, [number, number]> = { ArrowLeft: [-step, 0], ArrowRight: [step, 0], ArrowUp: [0, -step], ArrowDown: [0, step] };
+      const [dx, dy] = delta[event.key] ?? [0, 0];
+      autoFit.current = false;
+      onMoveNode(selection.id, { x: position.x + dx, y: position.y + dy }, baseLayout.positions);
     } else if (mod && event.key.toLowerCase() === "z") {
       event.preventDefault();
       if (event.shiftKey) onRedo();
@@ -452,7 +555,10 @@ export function GraphCanvas({
         onPointerUp={onBackgroundPointerUp}
       />
 
-      <div className="pointer-events-none absolute left-0 top-0 origin-top-left" style={{ transform: `translate(${view.x}px, ${view.y}px) scale(${view.k})` }}>
+      <div
+        className={cn("pointer-events-none absolute left-0 top-0 origin-top-left", smooth && "transition-transform duration-300 ease-out")}
+        style={{ transform: `translate(${view.x}px, ${view.y}px) scale(${view.k})` }}
+      >
         <svg width={layout.width} height={layout.height} className="absolute left-0 top-0 overflow-visible">
           {edges.map(({ edge, key, d, mx, my }) => {
             const selected = selectedKey === key;
@@ -535,16 +641,30 @@ export function GraphCanvas({
               tabIndex={0}
               aria-label={`${node.label}, ${node.type} node${running ? ", current stage" : finished ? ", done" : ""}`}
               aria-pressed={selected}
-              onClick={() => onSelect({ kind: "node", id: node.id })}
+              onPointerDown={(event) => onCardPointerDown(event, node.id)}
+              onPointerMove={onCardPointerMove}
+              onPointerUp={onCardPointerUp}
+              onPointerCancel={() => {
+                nodeDrag.current = null;
+                setDragging(null);
+              }}
+              onClick={() => {
+                if (suppressClick.current) {
+                  suppressClick.current = false;
+                  return;
+                }
+                onSelect({ kind: "node", id: node.id });
+              }}
               onKeyDown={(event) => {
                 if (event.key === "Enter" || event.key === " ") {
                   event.preventDefault();
                   onSelect({ kind: "node", id: node.id });
                 }
               }}
-              style={{ left: position.x, top: position.y, width: NODE_WIDTH, height: NODE_HEIGHT }}
+              style={{ left: position.x, top: position.y, width: NODE_WIDTH, height: NODE_HEIGHT, zIndex: dragging?.id === node.id ? 20 : undefined }}
               className={cn(
-                "group pointer-events-auto absolute flex cursor-pointer items-start gap-2.5 overflow-visible rounded-xl border bg-white px-3 py-2.5 text-left shadow-xs outline-hidden transition-[border-color,box-shadow,opacity]",
+                "group pointer-events-auto absolute flex cursor-grab touch-none select-none items-start gap-2.5 overflow-visible rounded-xl border bg-white px-3 py-2.5 text-left shadow-xs outline-hidden transition-[border-color,box-shadow,opacity] hover:shadow-sm",
+                dragging?.id === node.id && "cursor-grabbing shadow-lg",
                 selected ? "border-orange-500 ring-4 ring-orange-500/15" : "border-zinc-200 hover:border-zinc-300",
                 running && "border-orange-500 ring-4 ring-orange-400/20",
                 dimmed && "opacity-50",
@@ -611,11 +731,11 @@ export function GraphCanvas({
         <button type="button" aria-label="Redo graph edit" title="Redo (Ctrl+Shift+Z)" disabled={!canRedo} onClick={onRedo} className={cn(TOOL_BUTTON, "border-r border-zinc-200")}>
           <Redo2 className="h-3.5 w-3.5" />
         </button>
-        <button type="button" aria-label="Zoom out" onClick={() => zoomAround(1 / 1.25, size.width / 2, size.height / 2)} className={TOOL_BUTTON}>
+        <button type="button" aria-label="Zoom out" onClick={() => zoomAround(1 / 1.25, size.width / 2, size.height / 2, true)} className={TOOL_BUTTON}>
           <Minus className="h-3.5 w-3.5" />
         </button>
         <span className="w-11 border-x border-zinc-200 py-1 text-center font-mono text-[10.5px] font-medium text-zinc-500">{Math.round(view.k * 100)}%</span>
-        <button type="button" aria-label="Zoom in" onClick={() => zoomAround(1.25, size.width / 2, size.height / 2)} className={TOOL_BUTTON}>
+        <button type="button" aria-label="Zoom in" onClick={() => zoomAround(1.25, size.width / 2, size.height / 2, true)} className={TOOL_BUTTON}>
           <Plus className="h-3.5 w-3.5" />
         </button>
         <button
@@ -624,15 +744,31 @@ export function GraphCanvas({
           title="Fit graph to view"
           onClick={() => {
             autoFit.current = true;
+            setSmooth(true);
             fitTo(size.width, size.height);
           }}
           className={cn(TOOL_BUTTON, "border-l border-zinc-200")}
         >
           <Scan className="h-3.5 w-3.5" />
         </button>
+        {graph.positions && (
+          <button
+            type="button"
+            aria-label="Tidy layout"
+            title="Tidy layout: put every card back in the automatic arrangement"
+            onClick={() => {
+              autoFit.current = true;
+              setSmooth(true);
+              onTidy();
+            }}
+            className={cn(TOOL_BUTTON, "border-l border-zinc-200")}
+          >
+            <LayoutGrid className="h-3.5 w-3.5" />
+          </button>
+        )}
       </div>
       <p className="pointer-events-none absolute bottom-3.5 right-3.5 hidden rounded-full bg-white/80 px-2.5 py-1 text-[11px] text-zinc-500 backdrop-blur md:block">
-        Drag a node&apos;s handle onto another node to connect · Delete removes the selection
+        Drag a card to move it · drag its handle onto another card to connect · Delete removes the selection
       </p>
     </div>
   );

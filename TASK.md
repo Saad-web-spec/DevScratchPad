@@ -557,3 +557,19 @@ From the "Loops and Graphs" article (@hanakoxbt): a check that can fail, edges t
 - [x] Guide: "Probing: try several, keep the best" section, field rows, issue rows, export row
 - [x] Verified: `graphProbe.test.ts` (10), 1170 tests, validate-presets, typecheck, graph lint clean, build; probed plan checked on the canvas in headless Chrome
 
+## 2026-10-18 — Skill Graph: movable cards, side panel, Inspector redesign
+
+- [x] Cards can be dragged (4px threshold, 8px grid, saved on release as one undo step and selected); the first move pins every card (`moveNode`), positions live in the frontmatter as `layout: positions: { id: "x, y" }` after `contracts` (`[x, y]` read too, malformed or beyond ±100000 skipped), follow renames and removals, and never reach the compiled skill. Arrow keys nudge the selected card (Shift ×5). Tidy layout button (bottom left) clears them (`clearPositions`)
+- [x] `canvasLayout`: the user's placement or the automatic one; a new card goes right of the step it connects from (or below everything) and moves down until it overlaps nothing. Placed layouts draw edges from the sides that face each other (`facingAnchors`), with no lanes; fit uses the placement's bounds (`minX`, `minY`)
+- [x] Workspace: editor | canvas | side panel (Inspector, Agent plan, Issues) instead of a bottom dock; the canvas gets the full height; panel width in % of the canvas + panel area (26-55%, default 34%, min 23rem), resizable, stored as `panelWidth`. Zoom buttons, fit, focus and tidy glide (300ms); pan, wheel and pinch stay direct
+- [x] Inspector: sticky header (type icon, name editable in place, type and id, remove), full-width foldable sections with a one-line summary each and an animated open/close (clipped only while moving, so menus are not cut): Problems, Prompt (reference chips beside Insert input), Agent, Checks, Fan-out, Probe, Inputs, Lessons, What it receives (~tokens). Code steps: Command, On failure; approvals: Question. Edge: header + Contract. Overview: skill name and description, Problems, Contracts (narrow card editor), Handoffs, Learning. Open sections stay open across steps
+- [x] Guide: workspace table, shortcuts (drag, arrow keys, tidy), "Advanced →" paths replaced by section names, troubleshooting entry for messy cards
+- [x] Verified: `graphPlacement.test.ts` (7), 1177 tests, validate-presets, typecheck, graph lint clean, build; headless Chrome: node/edge/overview panels at 1600×1000 and 390×844, a real mouse drag, arrow nudge, undo and tidy
+
+## 2026-10-18 — Skill Graph: Agent plan redesign, workspace Reset
+
+- [x] Agent plan: one summary strip (up-front tokens, subagent prompts, saving vs a flat file) instead of three squeezed tiles; a stage timeline with numbered markers on a rail (check mark when done, orange when running), "N in parallel" chips, and one compact card per step: type icon, label, model, then "inputs → output" (ids; "4 steps" past two, contract names without the format) and only the chips that are set (tools, fresh, check, gate, restart, fan-out, probe, file, risk). Subagent name and full hand-off in the tooltip; command steps show their command. Running stage outlined in orange; learning shows as "After the run"
+- [x] Toolbar Reset menu: Tidy layout (disabled when nothing is placed), Reset view (fit, editor shown, default pane sizes, no selection, walkthrough closed), Start over (starting graph, undoable). `MenuItem` takes `disabled`. Refits glide; replacing the document scrolls the editor to line 1
+- [x] Guide: panel row, Reset shortcut row, troubleshooting answer
+- [x] Verified: 1177 tests, validate-presets, typecheck, graph lint clean, build; headless Chrome: plan panel, walkthrough highlight, Reset menu (tidy, reset view, start over) after a real drag
+
