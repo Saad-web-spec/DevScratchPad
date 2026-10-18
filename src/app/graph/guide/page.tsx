@@ -152,7 +152,7 @@ const REFERENCES: { ref: string; meaning: string }[] = [
   { ref: "{{goal}}", meaning: "The user's request, as it entered the input node." },
   { ref: "{{plan.output}}", meaning: "Everything the node with id plan returned." },
   { ref: "{{splitter.worker_research}}", meaning: "One key of a JSON output: here the worker_research value of splitter's JSON." },
-  { ref: "{{workers.output}}", meaning: "A group: the outputs of every node of that type (workers, verifiers, codes and so on)." },
+  { ref: "{{workers.output}}", meaning: "A group: the outputs of the nodes of that type that feed this step (workers, verifiers, codes and so on), or the ones upstream of it when none connect directly." },
   { ref: "{{inputs}}", meaning: "Everything arriving on this node's incoming edges." },
 ];
 
@@ -168,7 +168,7 @@ const ISSUES: { severity: "Error" | "Warning"; message: string; fix: string }[] 
   { severity: "Error", message: "Two steps would export to the same subagent file", fix: "Ids that differ only in case or in _ versus - (review_a, review-a) share a file name. Rename one." },
   { severity: "Error", message: "Invalid model or tool name", fix: "Use haiku, sonnet, opus, fable or a model id, and tool names such as Read or Bash(git diff:*) on one line, without commas inside the parentheses." },
   { severity: "Warning", message: "Never reads an incoming edge", fix: "Either use that input in the prompt or remove the edge so both steps can run in parallel." },
-  { severity: "Warning", message: "Parallel steps can all edit files", fix: "Give them separate files, or run them one after the other." },
+  { severity: "Warning", message: "Parallel steps can all edit files", fix: "A step counts when it lists Edit or Write, or has no tools list (it inherits every tool). Give them separate files, limit their tools, or run them one after the other." },
   { severity: "Error", message: "Irreversible step without approval", fix: "Add an approval node upstream so a person signs off first, and set on_fail: stop on that step." },
   { severity: "Warning", message: "Wide step without a check", fix: "Add check: npm test (or your test command), or a code step after it." },
   { severity: "Warning", message: "Empty tools list", fix: "Claude Code reads [] as every tool. List what the step needs, or remove the key." },
@@ -516,7 +516,8 @@ export default function GraphGuidePage() {
               </li>
               <li>
                 <b className="text-zinc-900">gate</b>: written pass criteria. The step ends with <C>GATE: PASS</C> or <C>GATE: FAIL</C>; with <C>on_fail: retry</C> only the failed work
-                is re-run, with the reason, up to <C>max_retries</C> times.
+                is re-run, with the reason, up to <C>max_retries</C> times. The gate can name any step before it, so a bad change goes back to the step that wrote it, and the
+                steps between that step and the gate (a diff, the reviews) run again before the gate does.
               </li>
               <li>
                 <b className="text-zinc-900">approval</b>: a node that stops and asks you before going on.

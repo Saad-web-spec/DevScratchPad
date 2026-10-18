@@ -812,9 +812,11 @@ function auditFileContent(filename, content) {
   if (base.endsWith(".mdc")) {
     const hasGlobs = /^globs:\s*\S+/m.test(content);
     const alwaysApply = /^alwaysApply:\s*true\b/m.test(content);
-    if (!hasGlobs && !alwaysApply) {
+    // A rule with only a description is "Agent Requested": Cursor attaches it when the description matches the task.
+    const hasDescription = /^description:\s*(?!["']{2}\s*$)\S+/m.test(content);
+    if (!hasGlobs && !alwaysApply && !hasDescription) {
       score -= 20;
-      issues.push('No "globs:" (and alwaysApply is not true), so Cursor never attaches this rule automatically.');
+      issues.push('No "globs:" or "description:" (and alwaysApply is not true), so Cursor never attaches this rule.');
     }
   }
 

@@ -327,30 +327,50 @@ export function GraphCanvas({
   }, [connecting, onConnect, toWorld]);
 
   const edges = useMemo(() => {
+    const drawn = new Set<string>();
     return graph.edges.flatMap((edge) => {
       const a = layout.positions.get(edge.from);
       const b = layout.positions.get(edge.to);
-      if (!a || !b) return [];
-      const { x: x1, y: y1 } = anchor(a, layout, "out");
-      const { x: x2, y: y2 } = anchor(b, layout, "in");
-      const d =
-        layout.direction === "TB"
-          ? `M ${x1} ${y1} C ${x1} ${y1 + Math.max(30, (y2 - y1) / 2)}, ${x2} ${y2 - Math.max(30, (y2 - y1) / 2)}, ${x2} ${y2}`
-          : `M ${x1} ${y1} C ${x1 + Math.max(40, (x2 - x1) / 2)} ${y1}, ${x2 - Math.max(40, (x2 - x1) / 2)} ${y2}, ${x2} ${y2}`;
+      // A repeated edge in the file is drawn once; both copies would share one key and one path.
+      if (!a || !b || drawn.has(edgeKey(edge.from, edge.to))) return [];
+      drawn.add(edgeKey(edge.from, edge.to));
+      const start = anchor(a, layout, "out");
+      const end = anchor(b, layout, "in");
+      const { x: x1, y: y1 } = start;
+      const { x: x2, y: y2 } = end;
+      const tb = layout.direction === "TB";
+      // An edge that skips layers runs straight through the lane it was given in each column between its ends.
+      const lanes = (layout.routes.get(edgeKey(edge.from, edge.to)) ?? []).flatMap((p) =>
+        tb ? [{ x: p.x, y: p.y - NODE_HEIGHT / 2 }, { x: p.x, y: p.y + NODE_HEIGHT / 2 }] : [{ x: p.x - NODE_WIDTH / 2, y: p.y }, { x: p.x + NODE_WIDTH / 2, y: p.y }]
+      );
+      const points = [start, ...lanes, end];
+      const curve = (p: { x: number; y: number }, q: { x: number; y: number }) =>
+        tb
+          ? `C ${p.x} ${p.y + Math.max(30, (q.y - p.y) / 2)}, ${q.x} ${q.y - Math.max(30, (q.y - p.y) / 2)}, ${q.x} ${q.y}`
+          : `C ${p.x + Math.max(40, (q.x - p.x) / 2)} ${p.y}, ${q.x - Math.max(40, (q.x - p.x) / 2)} ${q.y}, ${q.x} ${q.y}`;
+      // Curves cross the gaps between layers; even segments are gaps, odd ones are lanes inside a column.
+      const d = `M ${x1} ${y1} ${points
+        .slice(1)
+        .map((q, index) => (index % 2 === 0 ? curve(points[index], q) : `L ${q.x} ${q.y}`))
+        .join(" ")}`;
+      const middle = (points.length - 1) / 2;
+      const [m1, m2] = [points[Math.floor(middle)], points[Math.ceil(middle)]];
+      const mx = (m1.x + m2.x) / 2;
+      const my = (m1.y + m2.y) / 2;
       // One contract pill per fan-out (in the gap after the source) or fan-in (in the gap before the target);
       // a lone edge gets its pill at its middle. Pills sit in the gap between layers, so cards never cover them.
       const siblings = (pick: (e: typeof edge) => boolean) => graph.edges.filter((e) => e.contract === edge.contract && pick(e));
       const fanOut = siblings((e) => e.from === edge.from);
       const fanIn = siblings((e) => e.to === edge.to);
       const half = LAYOUT_GAPS[layout.direction].layer / 2;
-      const tb = layout.direction === "TB";
       let label: { x: number; y: number } | null = null;
       if (edge.contract) {
         if (fanOut.length > 1) label = fanOut[0] === edge ? (tb ? { x: x1, y: y1 + half } : { x: x1 + half, y: y1 }) : null;
         else if (fanIn.length > 1) label = fanIn[0] === edge ? (tb ? { x: x2, y: y2 - half } : { x: x2 - half, y: y2 }) : null;
-        else label = { x: (x1 + x2) / 2, y: (y1 + y2) / 2 };
+        // A lane is narrower than a pill, so a long edge's pill goes in the gap after its source.
+        else label = lanes.length > 0 ? { x: (x1 + lanes[0].x) / 2, y: (y1 + lanes[0].y) / 2 } : { x: mx, y: my };
       }
-      return [{ edge, key: edgeKey(edge.from, edge.to), d, mx: (x1 + x2) / 2, my: (y1 + y2) / 2, label }];
+      return [{ edge, key: edgeKey(edge.from, edge.to), d, mx, my, label }];
     });
   }, [graph.edges, layout]);
 

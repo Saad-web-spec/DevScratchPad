@@ -74,7 +74,7 @@ describe("previewNodeContext", () => {
   });
 
   it("tells the splitter to return JSON keyed by worker", () => {
-    expect(previewNodeContext(graph, node("splitter")).system).toContain("one key per downstream node");
+    expect(previewNodeContext(graph, node("splitter")).system).toContain("a single JSON object with these keys (`worker_research`, `worker_compare`, `worker_check`, `worker_gaps`)");
   });
 
   it("estimates tokens at about four characters each", () => {

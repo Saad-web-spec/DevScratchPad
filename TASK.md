@@ -483,6 +483,31 @@ From the "Loops and Graphs" article (@hanakoxbt): a check that can fail, edges t
 - [x] Removed the old runner's `goal` field from share links (old links still open)
 - [x] Guide issues table lists both new warnings
 - [x] Tests: `graphGaps.test.ts` (7); 1071 tests, validate-presets, typecheck, lint 0 errors (63 older warnings), build
-- [ ] Decide: should a step with no `tools` list count as able to edit files for `parallel-writers` / `gate-without-check`? The share banner and guide say it "may use every tool", but the checks treat it as read-only. Changing it would flag most blueprints
+- [x] Decided 2026-10-18: a step with no `tools` list counts as able to edit files (see Batch B below); every blueprint already lists its tools, so none is flagged
 - [ ] `spec:` version is read and ignored (`graphSkill.ts` `void _spec`); warn on an unknown version once a `skill-graph/2` exists
 
+
+## 2026-10-18 — Skill Graph: audit fixes, Batch A (SKILL_GRAPH_PLAN.md 1.1, 1.4, 1.6)
+
+- [x] 1.4 Scoped tools (`Bash(git diff:*)`, `Edit(src/**)`) no longer warn `unknown-tool`: the validator checks the name before the parenthesis (`baseToolName`) against `KNOWN_TOOLS` plus `MultiEdit`, `NotebookEdit`, `TodoWrite`, `LS`, `Task`, `Agent`, `Skill`. The Inspector chips are unchanged
+- [x] 1.1 Step ids in the compiled kit: every plan line reads `**LABEL** (\`id\`) →`, hand-offs name `LABEL (\`id\`)`, subagent prompts name the id of each output they read (group aliases list every member id), and handoff rule 6 has the orchestrator head each payload with its source id. A gate's `- <node id>:` verdict line now maps to one step (subagent file names slugify `_` to `-`, so they could not)
+- [x] 1.6 Exported kits pass `devscratchpad audit --min-score 85` (they averaged 67–72): every model step gets a trust-boundary and approval line (`nodeInstructions`), handoff rules 7–8 add the same for the orchestrator. The CLI no longer deducts 20 from an Agent Requested `.mdc` (`description:` with no `globs:`), matching the browser auditor
+- [x] Tests: `graphAudit.test.ts` (9, exports every blueprint and runs the real CLI on it); CLI test for Agent Requested `.mdc`; 1080 tests, 23 CLI tests, validate-presets, typecheck, lint 0 errors (63 older warnings), build
+
+## 2026-10-18 — Skill Graph: audit fixes, Batch B (SKILL_GRAPH_PLAN.md 1.2, 1.3, 1.5)
+
+- [x] 1.5 `writesFiles` counts model steps with no tools list (Claude Code: inherit every tool) and scoped / `MultiEdit` / `NotebookEdit` writers; commands, approvals and the input never count. New orchestrator, worker and synthesizer nodes start with `[Read, Grep, Glob]` like the blueprints (generic `agent` keeps every tool)
+- [x] 1.2 A gate's subagent lists the upstream steps it may name, in plan order, marking the ones that edit files, and is told to send a bad change to the step that wrote it. On `GATE: FAIL` the plan re-runs the named steps, then every step between them and the gate (commands too), then the gate; handoff rule 5 says the same. `ship-a-change` gains the `gate → publish` edge its prompt already read. No new warning: once the gate can name `implement`, a read-only-predecessor gate is no longer a fault
+- [x] 1.3 `jsonKeysFor` / `jsonOutputKeys`: a step whose prompt names `{{splitter.output}}` gets the whole JSON, one naming `{{splitter.key}}` gets that key, otherwise its own id; the splitter is told only the keys its steps read (plain JSON when all read it whole). `isKeyedJson` counts distinct successors
+- [x] Guide: parallel-writers fix text and the gate retry paragraph updated
+- [x] Tests: `graphDataflow.test.ts` (13); 1093 tests, 23 CLI tests, validate-presets, typecheck, lint 0 errors (63 older warnings), build
+
+## 2026-10-18 — Skill Graph: audit fixes, Batch C (SKILL_GRAPH_PLAN.md 2.1, 2.4, 2.5)
+
+- [x] 2.5 `layoutGraph` gives every layer-skipping edge a 20px routing slot (`ROUTE_LANE`) in each column it passes; slots are ordered with the cards, and `GraphLayout.routes` (keyed `from->to`) holds their centres. The canvas draws such edges through their lanes (curves across gaps, straight inside columns), with the dot at the path's middle and a lone pill in the gap after the source. `diff -> gate` and `gate -> publish` in ship-a-change no longer cross the review and approval cards (headless Chrome, LR and TB)
+- [x] 2.5 Barycenter ordering uses centred cross-axis positions, not row indices, so columns of different sizes order against where their neighbours really are
+- [x] 2.1 `resolveGroup(graph, head, consumer)`: a group alias read by a step means the nodes of that type feeding it, else the ones upstream, else all (so `ref-not-upstream` still fires). `{{inputs}}` / `{{goal}}` are never aliases. Insert input offers `{{workers.output}}` whenever 2+ workers feed the step
+- [x] 2.4 `groupEdges` writes a repeated edge once and merges sources only when their targets match in order; the canvas draws a repeated edge once (no duplicate React keys)
+- [x] Guide: `{{workers.output}}` row updated
+- [x] Tests: `graphLayout.test.ts` (19, lanes clear every card in every blueprint in both directions); 1112 tests, 23 CLI tests, validate-presets, typecheck, lint 0 errors (63 older warnings), build
+- [ ] Batch D (needs product decisions): 3.1 studio UX (scoped / MCP tool input, Connect from…, selection-aware undo, return link), 3.2–3.4 as a `skill-graph/2` RFC

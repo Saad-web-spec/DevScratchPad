@@ -742,3 +742,25 @@ All AI agents operating in this repository MUST follow this 5-step loop:
 - **Gotcha — Satori headline highlight**: split the line into `<span>`s inside a `whiteSpace: "pre"` flex row, or the spaces around the highlighted word collapse.
 - **Gotcha — per-type Inspector branches**: the spec lets every node type carry `risk`/`check`/`gate`, but each Inspector branch and exporter function picks its own subset. When adding a field, grep `codeStepLines`, `approvalStepLines`, `verificationLines` and each `node.type ===` branch in `InspectorPanel.tsx`.
 - **Status**: ✅ Complete (1071 tests, validate-presets, typecheck, lint 0 errors, build).
+
+### Session: 2026-10-18 — Skill Graph: audit fixes, Batch A
+- **Agent**: Claude Code (Opus)
+- **Context**: `SKILL_GRAPH_PLAN.md` (written by another agent) was checked against the code first. Confirmed 1.1, 1.2, 1.4, 1.5, 1.6; 1.3 and 2.1 only partly (keyed JSON for >1 successor is by design; `{{inputs}}` cannot collide with `groupAlias("input")` since `inputs` is checked first everywhere); 2.2 and 2.3 are not bugs.
+- **Decision — validator tool list ≠ picker list**: `KNOWN_TOOLS` drives the Inspector chips, so extra Claude Code tools live in a private `VALID_TOOL_NAMES`; adding to `KNOWN_TOOLS` adds chips.
+- **Gotcha — kit audit regressions**: `graphAudit.test.ts` runs the real CLI on every blueprint kit. Any new text in `nodeInstructions` / `HANDOFF_RULES` must keep a "never", an "untrusted" and an "approved/confirm" phrase, or agent files drop below 85.
+- **Gotcha — `nodeInstructions` is shared** by the studio context preview and the exported subagent files; a line added there shows in both.
+- **Status**: ✅ Complete (1080 tests, 23 CLI tests, validate-presets, typecheck, lint 0 errors, build).
+
+### Session: 2026-10-18 — Skill Graph: audit fixes, Batch B
+- **Agent**: Claude Code (Opus)
+- **Decision — unset tools mean "may edit files"**: matches Claude Code (no `tools:` inherits every tool) and the share banner. New typed nodes start read-only instead, so UI fan-outs stay quiet until the user lifts the limit.
+- **Decision — gate retry follows the path, not one node**: a gate often sees only a diff or reviews, so it gets the list of upstream steps it may name (with "edits files" marks); after re-running named steps the orchestrator re-runs everything between them and the gate. Proper `retry_target` stays in the `skill-graph/2` roadmap (plan 3.3).
+- **Gotcha — keyed JSON slicing lives in `jsonKeysFor`**: handOff, the context preview and the splitter's key list all read it; don't reintroduce `node.id` slicing inline.
+- **Status**: ✅ Complete (1093 tests, 23 CLI tests, validate-presets, typecheck, lint 0 errors, build).
+
+### Session: 2026-10-18 — Skill Graph: audit fixes, Batch C
+- **Agent**: Claude Code (Opus)
+- **Decision — routing slots, not edge bending**: long edges reserve a thin slot per column inside `layoutGraph` (Sugiyama dummy nodes), so ordering makes room for them; the canvas only follows `layout.routes`. Pills of long edges sit in the gap after the source because a lane is narrower than a pill in TB.
+- **Decision — group aliases are scoped to the reading step**: in ship-a-change `implement` and both reviewers are all `worker`s, so a global `{{workers.output}}` in the gate would have pulled in `implement`.
+- **Gotcha — headless visual check without Puppeteer**: build a share hash with `encodeShareHash` (vite-node), then `chrome --headless=new --window-size=4200,1300 --screenshot=… http://localhost:3000/graph#graph=…`; a very wide window fits the canvas near 100%, a tall one (height > 1.1 × width of the canvas) switches it to TB.
+- **Status**: ✅ Complete (1112 tests, 23 CLI tests, validate-presets, typecheck, lint 0 errors, build).

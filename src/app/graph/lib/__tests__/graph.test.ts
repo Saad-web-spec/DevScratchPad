@@ -231,8 +231,8 @@ describe("buildExportKit", () => {
   it("writes the plan with parallel stages, hand-offs, contracts, gate handling and handoff rules", () => {
     const skill = file("/SKILL.md");
     expect(skill).toContain("### Stage 2 · 4 steps in parallel");
-    expect(skill).toContain("only the `worker_research` value from SPLIT's JSON");
-    expect(skill).toMatch(/VERIFIER \(Fresh Context\)\*\* → subagent `parallel-system-audit-verifier` · fresh context/);
+    expect(skill).toContain("only the `worker_research` value from the JSON of SPLIT (`splitter`)");
+    expect(skill).toMatch(/VERIFIER \(Fresh Context\)\*\* \(`verifier`\) → subagent `parallel-system-audit-verifier` · fresh context/);
     expect(skill).toContain("On `GATE: FAIL`: re-run only the steps it names, handing each its previous output and its line of the verdict; keep every other output (at most 1 time)");
     expect(skill).toContain("| `subtask_json` | json |");
     expect(skill).toContain("## Handoff rules");
@@ -249,7 +249,7 @@ describe("buildExportKit", () => {
     expect(verifier).toContain("You start with a fresh context.");
     expect(verifier).not.toContain("{{");
     const splitter = file("-splitter.md");
-    expect(splitter).toContain("one key per downstream node");
+    expect(splitter).toContain("a single JSON object with these keys (`worker_research`, `worker_compare`, `worker_check`, `worker_gaps`)");
     expect(splitter).toContain("`subtask_json` contract (json)");
   });
 

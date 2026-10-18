@@ -238,7 +238,9 @@ topology:
       to: gate
       contract: review_findings
     - from: gate
-      to: approve
+      to:
+        - approve
+        - publish
       contract: verdict
     - from: approve
       to: publish

@@ -86,6 +86,15 @@ export const CONTRACT_FORMATS: readonly ContractFormat[] = ["json", "markdown", 
 /** Claude Code tool names offered in the editor; MCP tools (`mcp__server__tool`) are also accepted. */
 export const KNOWN_TOOLS: readonly string[] = ["Read", "Grep", "Glob", "Edit", "Write", "Bash", "WebSearch", "WebFetch"];
 
+/** Every tool name the validator accepts: the editor's list plus Claude Code tools it does not offer as chips. */
+const VALID_TOOL_NAMES: readonly string[] = [...KNOWN_TOOLS, "MultiEdit", "NotebookEdit", "TodoWrite", "LS", "Task", "Agent", "Skill"];
+
+/** The tool a permission entry grants: `Bash(git diff:*)` is the Bash tool, scoped to one command. */
+export function baseToolName(tool: string): string {
+  const paren = tool.indexOf("(");
+  return paren === -1 ? tool : tool.slice(0, paren);
+}
+
 /** Claude Code subagent model aliases; unset (`inherit`) runs the step on the parent session's model. */
 export const MODEL_TIERS: readonly string[] = ["haiku", "sonnet", "opus", "fable"];
 
@@ -298,13 +307,16 @@ function groupEdges(edges: GraphEdge[]): { from: string | string[]; to: string |
   for (const edge of edges) {
     const key = `${edge.from}\u0000${edge.contract ?? ""}`;
     const group = byFrom.get(key);
-    if (group) group.tos.push(edge.to);
-    else byFrom.set(key, { from: edge.from, tos: [edge.to], contract: edge.contract });
+    // A repeated edge carries nothing new; writing it twice would read back as `to: [b, b]`.
+    if (group) {
+      if (!group.tos.includes(edge.to)) group.tos.push(edge.to);
+    } else byFrom.set(key, { from: edge.from, tos: [edge.to], contract: edge.contract });
   }
 
+  // Sources merge only when their targets match in order, so reading the file back keeps every edge's order.
   const merged = new Map<string, { froms: string[]; tos: string[]; contract?: string }>();
   for (const group of byFrom.values()) {
-    const key = `${[...group.tos].sort().join("\u0001")}\u0000${group.contract ?? ""}`;
+    const key = `${group.tos.join("\u0001")}\u0000${group.contract ?? ""}`;
     const existing = merged.get(key);
     if (existing) existing.froms.push(group.from);
     else merged.set(key, { froms: [group.from], tos: group.tos, contract: group.contract });
@@ -400,8 +412,22 @@ export function groupAlias(type: NodeType): string {
   return `${type}s`;
 }
 
-export function resolveGroup(graph: SkillGraph, head: string): GraphNode[] {
-  return graph.nodes.filter((node) => groupAlias(node.type) === head);
+/**
+ * The nodes a group alias stands for. Read by a step, it means the nodes of that type the step reads
+ * from: its direct predecessors of the type, else its upstream ones, else every node of the type (so
+ * the validator can say which of them runs after or beside it). `{{inputs}}` and `{{goal}}` are
+ * keywords, never aliases (`input` nodes would otherwise group as `inputs`).
+ */
+export function resolveGroup(graph: SkillGraph, head: string, consumer?: GraphNode): GraphNode[] {
+  if (head === "inputs" || head === "goal") return [];
+  const all = graph.nodes.filter((node) => groupAlias(node.type) === head);
+  if (!consumer) return all;
+  const preds = new Set(predecessorsOf(graph, consumer.id));
+  const direct = all.filter((node) => preds.has(node.id));
+  if (direct.length > 0) return direct;
+  const ancestors = ancestorsOf(graph, consumer.id);
+  const upstream = all.filter((node) => ancestors.has(node.id));
+  return upstream.length > 0 ? upstream : all;
 }
 
 /* ------------------------------------------------------------------ topology */
@@ -444,9 +470,16 @@ export function descendantsOf(graph: SkillGraph, id: string): Set<string> {
   return result;
 }
 
-/** True when the node's agent may change files (it lists Edit or Write). */
+const FILE_WRITING_TOOLS: readonly string[] = ["Edit", "Write", "MultiEdit", "NotebookEdit"];
+
+/**
+ * True when the node's agent may change files: it lists a file-writing tool (scoped ones too), or
+ * it is a model step with no tools list, which Claude Code reads as "inherit every tool".
+ */
 export function writesFiles(node: GraphNode): boolean {
-  return (node.tools ?? []).some((tool) => tool === "Edit" || tool === "Write");
+  if (runsWithoutSubagent(node.type)) return false;
+  if (node.tools === undefined || node.tools.length === 0) return true;
+  return node.tools.some((tool) => FILE_WRITING_TOOLS.includes(baseToolName(tool)));
 }
 
 /** True when a program, not a model, can fail this node: it has a `check`, or it is a `code` node. */
@@ -510,7 +543,30 @@ export function wantsJsonOutput(graph: SkillGraph, node: GraphNode): boolean {
  * its own slice); with a single target it is one unkeyed value. Plan, export and the editor share this.
  */
 export function isKeyedJson(graph: SkillGraph, node: GraphNode): boolean {
-  return wantsJsonOutput(graph, node) && successorsOf(graph, node.id).length > 1;
+  return wantsJsonOutput(graph, node) && new Set(successorsOf(graph, node.id)).size > 1;
+}
+
+/**
+ * Which keys of a keyed JSON output a step receives, or null for the whole output. A prompt that
+ * names `{{source.output}}` gets everything, one that names `{{source.key}}` gets those keys, and a
+ * prompt that names neither gets the key matching its own id.
+ */
+export function jsonKeysFor(graph: SkillGraph, source: GraphNode, consumer: GraphNode): string[] | null {
+  if (!isKeyedJson(graph, source)) return null;
+  const refs = nodeRefs(consumer).filter((ref) => ref.head === source.id);
+  if (refs.length === 0) return [consumer.id];
+  if (refs.some((ref) => ref.path === "" || ref.path === "output")) return null;
+  return [...new Set(refs.map((ref) => ref.path.split(".")[0]))];
+}
+
+/** The keys a keyed JSON output must contain: every key its steps read (none when all read it whole). */
+export function jsonOutputKeys(graph: SkillGraph, node: GraphNode): string[] {
+  const keys = new Set<string>();
+  for (const id of new Set(successorsOf(graph, node.id))) {
+    const consumer = graph.nodes.find((n) => n.id === id);
+    if (consumer) jsonKeysFor(graph, node, consumer)?.forEach((key) => keys.add(key));
+  }
+  return [...keys];
 }
 
 /**
@@ -579,7 +635,7 @@ export function analyzeIsolation(graph: SkillGraph, node: GraphNode): IsolationR
       total += 1;
       continue;
     }
-    const group = ids.has(ref.head) ? [] : resolveGroup(graph, ref.head);
+    const group = ids.has(ref.head) ? [] : resolveGroup(graph, ref.head, node);
     const sources = ids.has(ref.head) ? [ref.head] : group.map((n) => n.id);
     if (sources.length === 0) continue;
     total += 1;
@@ -692,7 +748,7 @@ export function validateGraph(graph: SkillGraph): GraphIssue[] {
     for (const ref of nodeRefs(node)) {
       if (ref.head === "goal" || ref.head === "inputs") continue;
       const isNode = ids.has(ref.head);
-      const group = isNode ? [] : resolveGroup(graph, ref.head);
+      const group = isNode ? [] : resolveGroup(graph, ref.head, node);
       if (!isNode && group.length === 0) {
         issues.push({ severity: "error", code: "unknown-ref", nodeId: node.id, message: `{{${ref.raw}}} in "${node.id}" does not match any node.` });
         continue;
@@ -772,7 +828,8 @@ export function validateGraph(graph: SkillGraph): GraphIssue[] {
         });
         continue;
       }
-      if (!KNOWN_TOOLS.includes(tool) && !tool.startsWith("mcp__")) {
+      const base = baseToolName(tool);
+      if (!VALID_TOOL_NAMES.includes(base) && !base.startsWith("mcp__")) {
         issues.push({ severity: "warning", code: "unknown-tool", nodeId: node.id, message: `"${node.id}" lists the tool "${tool}", which Claude Code does not know.` });
       }
     }
@@ -803,7 +860,7 @@ function readPredecessors(graph: SkillGraph, node: GraphNode): Set<string> | nul
     explicit = true;
     if (ref.head === "inputs") preds.forEach((id) => read.add(id));
     else if (graph.nodes.some((n) => n.id === ref.head)) read.add(ref.head);
-    else resolveGroup(graph, ref.head).forEach((member) => read.add(member.id));
+    else resolveGroup(graph, ref.head, node).forEach((member) => read.add(member.id));
   }
   return explicit ? read : null;
 }
@@ -965,7 +1022,8 @@ export function addNode(graph: SkillGraph, type: NodeType, after?: string): { gr
     type,
     label: `${type[0].toUpperCase()}${type.slice(1)}`,
     isolatedContext: type === "verifier",
-    tools: type === "verifier" ? ["Read", "Grep", "Glob"] : undefined,
+    // Read-only by default, as in every blueprint; a generic agent step keeps every tool until the user limits it.
+    tools: type === "verifier" || type === "orchestrator" || type === "worker" || type === "synthesizer" ? ["Read", "Grep", "Glob"] : undefined,
     gate: type === "verifier" ? "Every claim cites concrete evidence." : undefined,
     onFail: type === "verifier" ? "retry" : undefined,
     run: type === "code" ? "npm test" : undefined,
@@ -1070,10 +1128,9 @@ export function promptInputs(graph: SkillGraph, node: GraphNode): PromptInput[] 
   const byType = new Map<NodeType, GraphNode[]>();
   for (const pred of preds) byType.set(pred.type, [...(byType.get(pred.type) ?? []), pred]);
   for (const [type, members] of byType) {
-    // A group alias is only safe when every node of that type feeds this step.
-    if (members.length > 1 && members.length === resolveGroup(graph, groupAlias(type)).length) {
-      inputs.push({ ref: `{{${groupAlias(type)}.output}}`, label: `The outputs of all ${members.length} ${groupAlias(type)}` });
-    }
+    // A group alias read by a step stands for the nodes of that type feeding it, so it is safe whenever several do.
+    const count = new Set(members.map((member) => member.id)).size;
+    if (count > 1) inputs.push({ ref: `{{${groupAlias(type)}.output}}`, label: `The outputs of all ${count} ${groupAlias(type)}` });
   }
   if (preds.length > 1) inputs.push({ ref: "{{inputs}}", label: "Everything arriving on its incoming edges" });
   return inputs;
@@ -1106,53 +1163,105 @@ export interface GraphLayout {
   positions: Map<string, NodeLayout>;
   width: number;
   height: number;
+  /**
+   * Edges that skip layers (`diff -> gate` past the reviewers), keyed `from->to`: the centre of the
+   * lane they take through each column between their ends. Other edges have no entry.
+   */
+  routes: Map<string, NodeLayout[]>;
 }
 
-/** Layered layout: layers by longest path, siblings ordered by the barycenter of their neighbours. */
+/** Cross-axis room a layer-skipping edge reserves in each column it passes, so it never runs through a card. */
+export const ROUTE_LANE = 20;
+
+/**
+ * Layered layout: layers by longest path, siblings ordered by the barycenter of their neighbours.
+ * An edge that skips layers gets a routing slot in every column it passes; the slots are sorted with
+ * the cards, so the cards make room for the edge instead of the edge crossing them.
+ */
 export function layoutGraph(graph: SkillGraph, direction: LayoutDirection = "LR"): GraphLayout {
   const layers = computeLayers(graph);
   const columns: string[][] = [];
   for (const node of graph.nodes) (columns[layers.get(node.id) ?? 0] ??= []).push(node.id);
-  const dense = columns.filter((column): column is string[] => Array.isArray(column));
 
-  const rowOf = new Map<string, number>();
-  dense.forEach((column) => column.forEach((id, index) => rowOf.set(id, index)));
-
-  const sweep = (column: string[], neighbours: (id: string) => string[]) => {
-    const score = (id: string): number => {
-      const ns = neighbours(id).filter((n) => rowOf.has(n));
-      return ns.length === 0 ? (rowOf.get(id) as number) : ns.reduce((sum, n) => sum + (rowOf.get(n) as number), 0) / ns.length;
-    };
-    column.sort((a, b) => score(a) - score(b));
-    column.forEach((id, index) => rowOf.set(id, index));
+  // Neighbours for ordering: direct edges, or the chain of routing slots a long edge passes through.
+  const preds = new Map<string, string[]>();
+  const succs = new Map<string, string[]>();
+  const link = (from: string, to: string) => {
+    succs.set(from, [...(succs.get(from) ?? []), to]);
+    preds.set(to, [...(preds.get(to) ?? []), from]);
   };
-  for (let pass = 0; pass < 2; pass += 1) {
-    for (let i = 1; i < dense.length; i += 1) sweep(dense[i], (id) => predecessorsOf(graph, id));
-    for (let i = dense.length - 2; i >= 0; i -= 1) sweep(dense[i], (id) => successorsOf(graph, id));
+  const slots = new Map<string, string[]>();
+  const ids = new Set(graph.nodes.map((node) => node.id));
+  for (const edge of graph.edges) {
+    const key = `${edge.from}->${edge.to}`;
+    if (!ids.has(edge.from) || !ids.has(edge.to) || slots.has(key)) continue;
+    const from = layers.get(edge.from) ?? 0;
+    const to = layers.get(edge.to) ?? 0;
+    const chain: string[] = [];
+    // Node ids start with a letter, so a slot id (it starts with \u0000) never collides with one.
+    for (let layer = from + 1; layer < to; layer += 1) {
+      const slot = `\u0000${key}\u0000${layer}`;
+      (columns[layer] ??= []).push(slot);
+      chain.push(slot);
+    }
+    slots.set(key, chain);
+    [edge.from, ...chain, edge.to].forEach((id, index, path) => index > 0 && link(path[index - 1], id));
   }
+  const dense = columns.filter((column): column is string[] => Array.isArray(column));
+  const isSlot = (id: string) => id.startsWith("\u0000");
 
   // Lay out along a "flow" axis (layers) and a "cross" axis (siblings), then map them to x/y.
   const gaps = LAYOUT_GAPS[direction];
   const flowSize = direction === "LR" ? NODE_WIDTH : NODE_HEIGHT;
   const crossSize = direction === "LR" ? NODE_HEIGHT : NODE_WIDTH;
-  const widest = Math.max(1, ...dense.map((column) => column.length));
-  const crossExtent = widest * crossSize + (widest - 1) * gaps.sibling;
+  const sizeOf = (id: string) => (isSlot(id) ? ROUTE_LANE : crossSize);
+  const extentOf = (column: string[]) => column.reduce((sum, id) => sum + sizeOf(id), 0) + Math.max(0, column.length - 1) * gaps.sibling;
+  const crossExtent = Math.max(crossSize, ...dense.map(extentOf));
   const flowExtent = Math.max(1, dense.length) * flowSize + Math.max(0, dense.length - 1) * gaps.layer;
 
+  // Cross-axis centre of every card and slot, each column centred, so columns of different sizes line up.
+  const centre = new Map<string, number>();
+  const place = (column: string[]) => {
+    let cursor = (crossExtent - extentOf(column)) / 2;
+    for (const id of column) {
+      centre.set(id, cursor + sizeOf(id) / 2);
+      cursor += sizeOf(id) + gaps.sibling;
+    }
+  };
+  dense.forEach(place);
+
+  const sweep = (column: string[], neighbours: Map<string, string[]>) => {
+    const score = (id: string): number => {
+      const ns = (neighbours.get(id) ?? []).filter((n) => centre.has(n));
+      return ns.length === 0 ? (centre.get(id) as number) : ns.reduce((sum, n) => sum + (centre.get(n) as number), 0) / ns.length;
+    };
+    const scores = new Map(column.map((id) => [id, score(id)]));
+    column.sort((a, b) => (scores.get(a) as number) - (scores.get(b) as number));
+    place(column);
+  };
+  for (let pass = 0; pass < 2; pass += 1) {
+    for (let i = 1; i < dense.length; i += 1) sweep(dense[i], preds);
+    for (let i = dense.length - 2; i >= 0; i -= 1) sweep(dense[i], succs);
+  }
+
   const positions = new Map<string, NodeLayout>();
+  const slotCentres = new Map<string, NodeLayout>();
+  const toXY = (flow: number, cross: number): NodeLayout => (direction === "LR" ? { x: flow, y: cross } : { x: cross, y: flow });
   dense.forEach((column, layerIndex) => {
-    const columnExtent = column.length * crossSize + (column.length - 1) * gaps.sibling;
-    const start = (crossExtent - columnExtent) / 2;
-    column.forEach((id, row) => {
-      const flow = layerIndex * (flowSize + gaps.layer);
-      const cross = start + row * (crossSize + gaps.sibling);
-      positions.set(id, direction === "LR" ? { x: flow, y: cross } : { x: cross, y: flow });
-    });
+    const flow = layerIndex * (flowSize + gaps.layer);
+    for (const id of column) {
+      const cross = centre.get(id) as number;
+      if (isSlot(id)) slotCentres.set(id, toXY(flow + flowSize / 2, cross));
+      else positions.set(id, toXY(flow, cross - crossSize / 2));
+    }
   });
 
+  const routes = new Map<string, NodeLayout[]>();
+  for (const [key, chain] of slots) if (chain.length > 0) routes.set(key, chain.map((slot) => slotCentres.get(slot) as NodeLayout));
+
   return direction === "LR"
-    ? { direction, positions, width: flowExtent, height: crossExtent }
-    : { direction, positions, width: crossExtent, height: flowExtent };
+    ? { direction, positions, width: flowExtent, height: crossExtent, routes }
+    : { direction, positions, width: crossExtent, height: flowExtent, routes };
 }
 
 /* ------------------------------------------------------------------ source <-> node mapping */

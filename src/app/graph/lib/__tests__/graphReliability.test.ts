@@ -148,9 +148,9 @@ describe("compiled plan", () => {
     const agents = files.filter((f) => f.path.startsWith(".claude/agents/")).map((f) => f.path);
     expect(agents).toHaveLength(6);
     expect(agents.some((p) => p.endsWith("-diff.md") || p.endsWith("-approve.md"))).toBe(false);
-    expect(skill).toContain("**COLLECT DIFF** → you run a command with Bash (no subagent, no model)");
+    expect(skill).toContain("**COLLECT DIFF** (`diff`) → you run a command with Bash (no subagent, no model)");
     expect(skill).toContain("Run: `git diff --stat && git diff`");
-    expect(skill).toContain("**APPROVE PULL REQUEST** → you ask the user (no subagent)");
+    expect(skill).toContain("**APPROVE PULL REQUEST** (`approve`) → you ask the user (no subagent)");
     expect(skill).toContain("Continue only on an explicit yes.");
     expect(loadBudget(ship).perNode).toHaveLength(6);
   });
