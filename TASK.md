@@ -573,3 +573,9 @@ From the "Loops and Graphs" article (@hanakoxbt): a check that can fail, edges t
 - [x] Guide: panel row, Reset shortcut row, troubleshooting answer
 - [x] Verified: 1177 tests, validate-presets, typecheck, graph lint clean, build; headless Chrome: plan panel, walkthrough highlight, Reset menu (tidy, reset view, start over) after a real drag
 
+
+## 2026-10-18 — Skill Graph: readable default framing, canvas bottom bar
+
+- [x] Default view: the automatic framing never goes below 50%; a graph too big for the canvas starts at its first step (left to right is kept; the user preferred it over flipping to top to bottom). The fit button still shows the whole graph at any size
+- [x] Bottom bar: zoom controls and the hint share one row, so the hint no longer covers the controls; the hint shortens below 52rem and hides below 34rem of canvas width (container queries)
+- [x] Verified: validate-presets, lint (0 errors), build

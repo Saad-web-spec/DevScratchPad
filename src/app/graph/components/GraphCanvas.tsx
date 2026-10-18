@@ -36,12 +36,19 @@ const MIN_ZOOM = 0.25;
 const MAX_ZOOM = 2;
 const FIT_PADDING = 40;
 const LABEL_MIN_ZOOM = 0.5;
+/** The automatic framing never shrinks the graph below this; a graph too big for the canvas starts at its first step instead. */
+const AUTO_FIT_MIN_ZOOM = 0.5;
 /** Zoom a picked node is shown at when the canvas is zoomed out past readable labels. */
 const FOCUS_ZOOM = 0.8;
 /** Width of one character in the 10px mono pill text, plus the pill's side padding and a margin to each card. */
 const PILL_CHAR_WIDTH = 6.1;
 const PILL_PADDING = 16;
 const PILL_MARGIN = 10;
+
+/** Zoom at which the whole layout fits the canvas. */
+function fitScale(layout: GraphLayout, width: number, height: number): number {
+  return Math.min((width - FIT_PADDING * 2) / layout.width, (height - FIT_PADDING * 2) / layout.height);
+}
 
 /** Longest contract name a pill shows in full; longer names are shortened (the full name is in its tooltip and the inspector). */
 function pillMaxChars(layout: GraphLayout): number {
@@ -194,7 +201,8 @@ export function GraphCanvas({
   const containerRef = useRef<HTMLDivElement>(null);
   const [view, setView] = useState<View>({ x: 0, y: 0, k: 1 });
   const viewRef = useRef(view);
-  const autoFit = useRef(true);
+  /** How the canvas keeps re-framing the graph until the user pans or zooms: at a readable size, or whole (the fit button). */
+  const autoFit = useRef<"readable" | "whole" | null>("readable");
   const [size, setSize] = useState({ width: 0, height: 0 });
   const [hoverEdge, setHoverEdge] = useState<string | null>(null);
   const [connecting, setConnecting] = useState<{ from: string; x: number; y: number } | null>(null);
@@ -217,13 +225,16 @@ export function GraphCanvas({
     viewRef.current = view;
   }, [view]);
 
+  /** Frames the graph. The automatic framing keeps cards readable; `whole` (the fit button) shows every card however small. */
   const fitTo = useCallback(
-    (width: number, height: number) => {
+    (width: number, height: number, whole = false) => {
       if (width === 0 || height === 0) return;
-      const k = Math.min(1, Math.max(MIN_ZOOM, Math.min((width - FIT_PADDING * 2) / baseLayout.width, (height - FIT_PADDING * 2) / baseLayout.height)));
-      setView({ k, x: (width - baseLayout.width * k) / 2 - baseLayout.minX * k, y: (height - baseLayout.height * k) / 2 - baseLayout.minY * k });
+      const k = Math.min(1, Math.max(whole ? MIN_ZOOM : AUTO_FIT_MIN_ZOOM, fitScale(baseLayout, width, height)));
+      // Centred on an axis the graph fits; otherwise it starts at its first step and the rest is a pan away.
+      const place = (viewport: number, extent: number, min: number) => (extent * k <= viewport ? (viewport - extent * k) / 2 : FIT_PADDING) - min * k;
+      setView({ k, x: place(width, baseLayout.width, baseLayout.minX), y: place(height, baseLayout.height, baseLayout.minY) });
     },
-    [baseLayout.width, baseLayout.height, baseLayout.minX, baseLayout.minY]
+    [baseLayout]
   );
 
   // Track the container size; keep the whole graph in view until the user pans or zooms themselves.
@@ -242,11 +253,11 @@ export function GraphCanvas({
   useEffect(() => {
     if (fitSeen.current !== fitRequest) {
       fitSeen.current = fitRequest;
-      autoFit.current = true;
+      autoFit.current = "readable";
       // A reset or a new document glides into view instead of jumping.
       setSmooth(true);
     }
-    if (autoFit.current) fitTo(size.width, size.height);
+    if (autoFit.current) fitTo(size.width, size.height, autoFit.current === "whole");
   }, [size, fitTo, fitRequest]);
 
   // A node picked in the editor is panned into view if it is off screen; one picked from the plan or the
@@ -267,13 +278,13 @@ export function GraphCanvas({
     // Zoom in only as far as the card still fits the canvas with some room around it.
     const fit = Math.min((size.width - FIT_PADDING * 2) / NODE_WIDTH, (size.height - FIT_PADDING * 2) / NODE_HEIGHT);
     const next = tooSmall ? Math.max(k, Math.min(FOCUS_ZOOM, fit)) : k;
-    autoFit.current = false;
+    autoFit.current = null;
     setSmooth(true);
     setView({ k: next, x: size.width / 2 - (position.x + NODE_WIDTH / 2) * next, y: size.height / 2 - (position.y + NODE_HEIGHT / 2) * next });
   }, [focusRequest, layout.positions, size.width, size.height]);
 
   const zoomAround = useCallback((factor: number, cx: number, cy: number, glide = false) => {
-    autoFit.current = false;
+    autoFit.current = null;
     setSmooth(glide);
     setView((current) => {
       const k = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, current.k * factor));
@@ -331,7 +342,7 @@ export function GraphCanvas({
     // Keep the world point that started under the fingers' midpoint under the current midpoint.
     const worldX = (pinch.midX - pinch.view.x) / pinch.view.k;
     const worldY = (pinch.midY - pinch.view.y) / pinch.view.k;
-    autoFit.current = false;
+    autoFit.current = null;
     setSmooth(false);
     setView({ k, x: midX - worldX * k, y: midY - worldY * k });
   };
@@ -356,7 +367,7 @@ export function GraphCanvas({
     const dy = event.clientY - drag.startY;
     if (!drag.moved && Math.hypot(dx, dy) < 4) return;
     drag.moved = true;
-    autoFit.current = false;
+    autoFit.current = null;
     setSmooth(false);
     setView((current) => ({ ...current, x: drag.originX + dx, y: drag.originY + dy }));
   };
@@ -400,7 +411,7 @@ export function GraphCanvas({
     }
     if (!drag.moved && Math.hypot(event.clientX - drag.startX, event.clientY - drag.startY) < 4) return;
     drag.moved = true;
-    autoFit.current = false;
+    autoFit.current = null;
     const k = viewRef.current.k;
     setDragging({ id: drag.id, x: drag.origin.x + (event.clientX - drag.startX) / k, y: drag.origin.y + (event.clientY - drag.startY) / k });
   };
@@ -518,7 +529,7 @@ export function GraphCanvas({
       const step = LAYOUT_GRID * (event.shiftKey ? 5 : 1);
       const delta: Record<string, [number, number]> = { ArrowLeft: [-step, 0], ArrowRight: [step, 0], ArrowUp: [0, -step], ArrowDown: [0, step] };
       const [dx, dy] = delta[event.key] ?? [0, 0];
-      autoFit.current = false;
+      autoFit.current = null;
       onMoveNode(selection.id, { x: position.x + dx, y: position.y + dy }, baseLayout.positions);
     } else if (mod && event.key.toLowerCase() === "z") {
       event.preventDefault();
@@ -546,7 +557,7 @@ export function GraphCanvas({
       onPointerMoveCapture={onTouchPointerMove}
       onPointerUpCapture={onTouchPointerEnd}
       onPointerCancelCapture={onTouchPointerEnd}
-      className="graph-canvas-grid relative h-full w-full touch-none overflow-hidden outline-hidden focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-orange-500/40"
+      className="graph-canvas-grid @container relative h-full w-full touch-none overflow-hidden outline-hidden focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-orange-500/40"
     >
       <div
         className={cn("absolute inset-0", connecting ? "cursor-crosshair" : "cursor-grab active:cursor-grabbing")}
@@ -724,52 +735,56 @@ export function GraphCanvas({
         })}
       </div>
 
-      <div className="absolute bottom-3 left-3 flex items-center overflow-hidden rounded-lg border border-zinc-200 bg-white shadow-xs">
-        <button type="button" aria-label="Undo graph edit" title="Undo (Ctrl+Z)" disabled={!canUndo} onClick={onUndo} className={TOOL_BUTTON}>
-          <Undo2 className="h-3.5 w-3.5" />
-        </button>
-        <button type="button" aria-label="Redo graph edit" title="Redo (Ctrl+Shift+Z)" disabled={!canRedo} onClick={onRedo} className={cn(TOOL_BUTTON, "border-r border-zinc-200")}>
-          <Redo2 className="h-3.5 w-3.5" />
-        </button>
-        <button type="button" aria-label="Zoom out" onClick={() => zoomAround(1 / 1.25, size.width / 2, size.height / 2, true)} className={TOOL_BUTTON}>
-          <Minus className="h-3.5 w-3.5" />
-        </button>
-        <span className="w-11 border-x border-zinc-200 py-1 text-center font-mono text-[10.5px] font-medium text-zinc-500">{Math.round(view.k * 100)}%</span>
-        <button type="button" aria-label="Zoom in" onClick={() => zoomAround(1.25, size.width / 2, size.height / 2, true)} className={TOOL_BUTTON}>
-          <Plus className="h-3.5 w-3.5" />
-        </button>
-        <button
-          type="button"
-          aria-label="Fit graph to view"
-          title="Fit graph to view"
-          onClick={() => {
-            autoFit.current = true;
-            setSmooth(true);
-            fitTo(size.width, size.height);
-          }}
-          className={cn(TOOL_BUTTON, "border-l border-zinc-200")}
-        >
-          <Scan className="h-3.5 w-3.5" />
-        </button>
-        {graph.positions && (
+      {/* Controls and hint share one row, so the hint never covers the controls; it shortens, then hides, as the canvas narrows. */}
+      <div className="pointer-events-none absolute inset-x-3 bottom-3 flex items-center justify-between gap-3">
+        <div className="pointer-events-auto flex shrink-0 items-center overflow-hidden rounded-lg border border-zinc-200 bg-white shadow-xs">
+          <button type="button" aria-label="Undo graph edit" title="Undo (Ctrl+Z)" disabled={!canUndo} onClick={onUndo} className={TOOL_BUTTON}>
+            <Undo2 className="h-3.5 w-3.5" />
+          </button>
+          <button type="button" aria-label="Redo graph edit" title="Redo (Ctrl+Shift+Z)" disabled={!canRedo} onClick={onRedo} className={cn(TOOL_BUTTON, "border-r border-zinc-200")}>
+            <Redo2 className="h-3.5 w-3.5" />
+          </button>
+          <button type="button" aria-label="Zoom out" onClick={() => zoomAround(1 / 1.25, size.width / 2, size.height / 2, true)} className={TOOL_BUTTON}>
+            <Minus className="h-3.5 w-3.5" />
+          </button>
+          <span className="w-11 border-x border-zinc-200 py-1 text-center font-mono text-[10.5px] font-medium text-zinc-500">{Math.round(view.k * 100)}%</span>
+          <button type="button" aria-label="Zoom in" onClick={() => zoomAround(1.25, size.width / 2, size.height / 2, true)} className={TOOL_BUTTON}>
+            <Plus className="h-3.5 w-3.5" />
+          </button>
           <button
             type="button"
-            aria-label="Tidy layout"
-            title="Tidy layout: put every card back in the automatic arrangement"
+            aria-label="Fit graph to view"
+            title="Fit graph to view"
             onClick={() => {
-              autoFit.current = true;
+              autoFit.current = "whole";
               setSmooth(true);
-              onTidy();
+              fitTo(size.width, size.height, true);
             }}
             className={cn(TOOL_BUTTON, "border-l border-zinc-200")}
           >
-            <LayoutGrid className="h-3.5 w-3.5" />
+            <Scan className="h-3.5 w-3.5" />
           </button>
-        )}
+          {graph.positions && (
+            <button
+              type="button"
+              aria-label="Tidy layout"
+              title="Tidy layout: put every card back in the automatic arrangement"
+              onClick={() => {
+                autoFit.current = "readable";
+                setSmooth(true);
+                onTidy();
+              }}
+              className={cn(TOOL_BUTTON, "border-l border-zinc-200")}
+            >
+              <LayoutGrid className="h-3.5 w-3.5" />
+            </button>
+          )}
+        </div>
+        <p className="hidden min-w-0 truncate rounded-full bg-white/80 px-2.5 py-1 text-[11px] text-zinc-500 backdrop-blur @[34rem]:block">
+          <span className="@[52rem]:hidden">Drag to move · drag a handle to connect</span>
+          <span className="hidden @[52rem]:inline">Drag a card to move it · drag its handle onto another card to connect · Delete removes the selection</span>
+        </p>
       </div>
-      <p className="pointer-events-none absolute bottom-3.5 right-3.5 hidden rounded-full bg-white/80 px-2.5 py-1 text-[11px] text-zinc-500 backdrop-blur md:block">
-        Drag a card to move it · drag its handle onto another card to connect · Delete removes the selection
-      </p>
     </div>
   );
 }

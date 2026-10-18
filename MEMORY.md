@@ -808,3 +808,9 @@ All AI agents operating in this repository MUST follow this 5-step loop:
 - **Gotcha — headless browser checks of drags need real input**: `Input.dispatchMouseEvent` over CDP (synthetic PointerEvents fail `setPointerCapture`).
 - **Status**: ✅ Complete (1177 tests, validate-presets, typecheck, graph lint clean, build).
 
+
+### Session: 2026-10-18 — Skill Graph: readable default framing
+- **Agent**: Claude Code (Opus 5.5)
+- **Fix**: between the editor and the side panel the canvas is ~570px wide, so a 5-layer LR graph fit at ~25%. User wants LR kept (tried auto-flipping to TB; rejected). auto-fit now floors at `AUTO_FIT_MIN_ZOOM` (fit button uses `whole`). `autoFit` ref is now `"readable" | "whole" | null`.
+- **Gotcha — absolute overlays in the canvas collide on narrow widths**: keep the bottom controls and hint in one flex row; use `@container` queries on the canvas, not viewport breakpoints.
+- **Status**: ✅ Complete (validate-presets, lint, build).
