@@ -14,6 +14,23 @@ function formatTokens(value: number): string {
 
 const CHIP = "flex items-center gap-1 rounded-md px-1.5 py-px text-[11px] font-semibold";
 
+/** Plan text as the compiled SKILL.md writes it, with its `ids` shown as code instead of raw backticks. */
+function PlanText({ text }: { text: string }) {
+  return (
+    <>
+      {text.split(/`([^`]+)`/).map((part, index) =>
+        index % 2 === 1 ? (
+          <code key={index} className="font-mono text-[11px] text-zinc-700">
+            {part}
+          </code>
+        ) : (
+          part
+        )
+      )}
+    </>
+  );
+}
+
 /** Who carries out a step: a named subagent, or the agent itself (a command or a question to you). */
 function StepTarget({ graph, node }: { graph: SkillGraph; node: GraphNode }) {
   if (node.type === "code") {
@@ -146,11 +163,11 @@ export function PlanPanel({ graph, activeStage, onSelectNode }: PlanPanelProps) 
                           )}
                         </button>
                         <p className="mt-1 pl-4 text-xs leading-relaxed text-zinc-500">
-                          Gets {handOff(graph, node).join("; ")}
+                          Gets <PlanText text={handOff(graph, node).join("; ")} />
                           {output && (
                             <>
                               {" "}
-                              · returns <span className="font-mono text-[11px] text-zinc-700">{output.replace(/`/g, "")}</span>
+                              · returns <PlanText text={output.includes("`") ? output : `\`${output}\``} />
                             </>
                           )}
                         </p>

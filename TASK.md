@@ -510,4 +510,16 @@ From the "Loops and Graphs" article (@hanakoxbt): a check that can fail, edges t
 - [x] 2.4 `groupEdges` writes a repeated edge once and merges sources only when their targets match in order; the canvas draws a repeated edge once (no duplicate React keys)
 - [x] Guide: `{{workers.output}}` row updated
 - [x] Tests: `graphLayout.test.ts` (19, lanes clear every card in every blueprint in both directions); 1112 tests, 23 CLI tests, validate-presets, typecheck, lint 0 errors (63 older warnings), build
-- [ ] Batch D (needs product decisions): 3.1 studio UX (scoped / MCP tool input, Connect from…, selection-aware undo, return link), 3.2–3.4 as a `skill-graph/2` RFC
+
+## 2026-10-18 — Skill Graph: audit fixes, Batch D (SKILL_GRAPH_PLAN.md 3.1, RFC for 3.2–3.4)
+
+- [x] Tool picker: a field under the chips adds scoped and MCP tools (`Bash(npm test:*)`, `mcp__github__get_issue`), checked against `TOOL_PATTERN` with an inline error; their chips show × and remove them
+- [x] Inspector → Advanced → Incoming: "+ Connect from…" select (`connectableSources`: not itself, not already connected, nothing after it); adds the edge and keeps the node open. Approval steps always show the section
+- [x] Undo/redo restore the selection: `HistoryEntry` stores `selectionBefore` / `selectionAfter`; `commit(next, selectionAfter)` is passed by add, connect, remove and rename. Undoing a rename or a delete reopens that node
+- [x] Guide: custom tool field and Connect from… documented
+- [x] `SKILL_GRAPH_V2_RFC.md`: retry_target and checked contracts as additive `/1` fields, file handoffs (two designs) and `foreach` as `/2`, versioning, four open decisions. `SKILL_GRAPH_PLAN.md` deleted (its status lives here)
+- [x] Verified: 12/12 headless Chrome checks over the DevTools protocol (tool field, chip removal, Connect from list and edge, undo/redo of rename, connect and delete, no console errors); 1115 tests, 23 CLI tests, validate-presets, typecheck, lint 0 errors (63 older warnings), build
+- [x] Picking a step in Agent plan or Issues: the canvas centres it and zooms to 80% when it was zoomed past readable labels (<50%), only as far as the card fits; the editor opens the section at its heading (`revealLineNearTop`) unless it is already fully on screen. Each focus request applies once, so a later edit no longer pulls the view back. Editor cursor moves still only pan
+- [x] Agent plan showed raw backticks after the step-id change (`handOff` writes Markdown for SKILL.md): `PlanText` renders `ids` as code. Verified 8/8 in headless Chrome (PR review blueprint at 25%, click Architecture & Style)
+- [ ] Decide the four open points in `SKILL_GRAPH_V2_RFC.md` §5
+- [ ] Not built (user's choice): back link from the /graph header to AI Skill Studio

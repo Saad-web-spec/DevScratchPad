@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { AlertCircle, AlertTriangle, ArrowRight, ChevronDown, ChevronRight, Lock, Plus, ShieldCheck, Trash2 } from "lucide-react";
+import { AlertCircle, AlertTriangle, ArrowRight, ChevronDown, ChevronRight, Lock, Plus, ShieldCheck, Trash2, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   CONTRACT_FORMATS,
@@ -11,7 +11,9 @@ import {
   NODE_TYPES,
   RETRY_CAP,
   RISK_LANES,
+  TOOL_PATTERN,
   analyzeIsolation,
+  connectableSources,
   extractTemplateRefs,
   getContract,
   predecessorsOf,
@@ -85,6 +87,8 @@ interface InspectorProps {
   onRemoveNode: (id: string) => void;
   onEdgeContract: (from: string, to: string, contract: string) => void;
   onRemoveEdge: (from: string, to: string) => void;
+  /** Adds the edge from → to, as dragging a canvas handle does, and keeps the node selected. */
+  onConnect: (from: string, to: string) => void;
   onContract: (name: string, contract: Contract | null) => void;
   onRenameContract: (name: string, nextName: string) => boolean;
   onSelect: (selection: Selection) => void;
@@ -271,6 +275,19 @@ function ToolPicker({ node, onNode }: { node: GraphNode; onNode: InspectorProps[
   const limited = node.tools !== undefined;
   const tools = node.tools ?? [];
   const extra = tools.filter((tool) => !KNOWN_TOOLS.includes(tool));
+  const [custom, setCustom] = useState("");
+  const [customError, setCustomError] = useState<string | null>(null);
+  const addCustom = () => {
+    const tool = custom.trim();
+    if (!tool) return;
+    if (!TOOL_PATTERN.test(tool)) {
+      setCustomError("Use a tool name, optionally with a one-line pattern in parentheses and no commas: Bash(npm test:*), mcp__github__get_issue.");
+      return;
+    }
+    if (!tools.includes(tool)) onNode(node.id, { tools: [...tools, tool] });
+    setCustom("");
+    setCustomError(null);
+  };
   return (
     <div>
       <div className="mb-1 flex items-center justify-between">
@@ -286,25 +303,65 @@ function ToolPicker({ node, onNode }: { node: GraphNode; onNode: InspectorProps[
         </label>
       </div>
       {limited ? (
-        <div className="flex flex-wrap gap-1">
-          {[...KNOWN_TOOLS, ...extra].map((tool) => {
-            const on = tools.includes(tool);
-            return (
+        <>
+          <div className="flex flex-wrap gap-1">
+            {KNOWN_TOOLS.map((tool) => {
+              const on = tools.includes(tool);
+              return (
+                <button
+                  key={tool}
+                  type="button"
+                  aria-pressed={on}
+                  onClick={() => onNode(node.id, { tools: on ? tools.filter((t) => t !== tool) : [...tools, tool] })}
+                  className={cn(
+                    "rounded-lg border px-2.5 py-1 font-mono text-[11.5px] font-medium transition-colors",
+                    on ? "border-orange-300 bg-orange-50 text-orange-700" : "border-zinc-200 bg-white text-zinc-500 hover:border-zinc-300 hover:text-zinc-800"
+                  )}
+                >
+                  {tool}
+                </button>
+              );
+            })}
+            {/* Scoped and MCP tools exist only while listed, so their chip removes them. */}
+            {extra.map((tool) => (
               <button
                 key={tool}
                 type="button"
-                aria-pressed={on}
-                onClick={() => onNode(node.id, { tools: on ? tools.filter((t) => t !== tool) : [...tools, tool] })}
-                className={cn(
-                  "rounded-lg border px-2.5 py-1 font-mono text-[11.5px] font-medium transition-colors",
-                  on ? "border-orange-300 bg-orange-50 text-orange-700" : "border-zinc-200 bg-white text-zinc-500 hover:border-zinc-300 hover:text-zinc-800"
-                )}
+                aria-label={`Remove ${tool}`}
+                title={`Remove ${tool}`}
+                onClick={() => onNode(node.id, { tools: tools.filter((t) => t !== tool) })}
+                className="inline-flex max-w-full items-center gap-1 rounded-lg border border-orange-300 bg-orange-50 px-2.5 py-1 font-mono text-[11.5px] font-medium text-orange-700 transition-colors hover:border-orange-400"
               >
-                {tool}
+                <span className="truncate">{tool}</span>
+                <X className="h-3 w-3 shrink-0" />
               </button>
-            );
-          })}
-        </div>
+            ))}
+          </div>
+          <div className="mt-1.5 flex gap-1.5">
+            <input
+              value={custom}
+              onChange={(event) => {
+                setCustom(event.target.value);
+                setCustomError(null);
+              }}
+              onKeyDown={(event) => {
+                if (event.key === "Enter") {
+                  event.preventDefault();
+                  addCustom();
+                }
+              }}
+              placeholder="Bash(npm test:*) or mcp__server__tool"
+              spellCheck={false}
+              aria-label="Add a scoped or MCP tool"
+              aria-invalid={customError !== null}
+              className={cn(FIELD, "font-mono")}
+            />
+            <button type="button" onClick={addCustom} disabled={!custom.trim()} className={cn(SMALL_BUTTON, "shrink-0 disabled:opacity-40")}>
+              <Plus className="h-3 w-3" /> Add
+            </button>
+          </div>
+          {customError && <p className="mt-1 text-xs text-rose-700">{customError}</p>}
+        </>
       ) : (
         <p className={NOTE}>Inherits every tool the agent has. Limit it so this step can only do its job.</p>
       )}
@@ -312,12 +369,29 @@ function ToolPicker({ node, onNode }: { node: GraphNode; onNode: InspectorProps[
   );
 }
 
-function IncomingEdges({ graph, node, onEdgeContract }: { graph: SkillGraph; node: GraphNode; onEdgeContract: InspectorProps["onEdgeContract"] }) {
+function IncomingEdges({ graph, node, onEdgeContract, onConnect }: { graph: SkillGraph; node: GraphNode; onEdgeContract: InspectorProps["onEdgeContract"]; onConnect: InspectorProps["onConnect"] }) {
   const incoming = graph.edges.filter((edge) => edge.to === node.id);
-  if (incoming.length === 0) return null;
+  const sources = connectableSources(graph, node.id);
+  if (incoming.length === 0 && sources.length === 0) return null;
   return (
     <>
       <SectionTitle>Incoming</SectionTitle>
+      {/* The same edge as dragging a canvas handle, for keyboards and small screens. */}
+      {sources.length > 0 && (
+        <select
+          value=""
+          onChange={(event) => event.target.value && onConnect(event.target.value, node.id)}
+          aria-label={`Connect a step into ${node.id}`}
+          className={cn(FIELD, "text-zinc-600")}
+        >
+          <option value="">+ Connect from…</option>
+          {sources.map((source) => (
+            <option key={source.id} value={source.id}>
+              {source.id} · {source.label}
+            </option>
+          ))}
+        </select>
+      )}
       <ul className="space-y-1.5">
         {incoming.map((edge) => (
           <li key={edge.from} className="flex items-center gap-2 text-xs">
@@ -556,10 +630,11 @@ function advancedSummary(graph: SkillGraph, node: GraphNode): string {
   ].filter((part): part is string => typeof part === "string" && part !== "");
   if (parts.length > 0) return parts.join(" · ");
   if (node.type === "code") return "blast radius, on failure, contracts";
+  if (node.type === "approval") return "incoming steps, contracts";
   return runsWithoutSubagent(node.type) ? "on failure, contracts" : "model, tools, checks, contracts";
 }
 
-function NodeInspector({ graph, issues, node, onNode, onRename, onRemoveNode, onEdgeContract }: InspectorProps & { node: GraphNode }) {
+function NodeInspector({ graph, issues, node, onNode, onRename, onRemoveNode, onEdgeContract, onConnect }: InspectorProps & { node: GraphNode }) {
   const summary = advancedSummary(graph, node);
   const theme = NODE_THEME[node.type];
   const nodeIssues = issues.filter((issue) => issue.nodeId === node.id);
@@ -616,7 +691,7 @@ function NodeInspector({ graph, issues, node, onNode, onRename, onRemoveNode, on
             <RiskField node={node} onNode={onNode} />
             <p className={NOTE}>{RISK_HINT[node.risk ?? "contained"]}</p>
             <FailureFields node={node} retryLabel="re-run upstream" onNode={onNode} />
-            <IncomingEdges graph={graph} node={node} onEdgeContract={onEdgeContract} />
+            <IncomingEdges graph={graph} node={node} onEdgeContract={onEdgeContract} onConnect={onConnect} />
           </AdvancedSection>
           <ContextPreview graph={graph} node={node} />
         </>
@@ -630,11 +705,9 @@ function NodeInspector({ graph, issues, node, onNode, onRename, onRemoveNode, on
           <p className={NOTE}>
             The agent stops here, shows you what came in, and goes on only on an explicit yes. Put it right before the step that is hard to undo; anywhere earlier it only slows the run down.
           </p>
-          {predecessorsOf(graph, node.id).length > 0 && (
-            <AdvancedSection summary={summary}>
-              <IncomingEdges graph={graph} node={node} onEdgeContract={onEdgeContract} />
-            </AdvancedSection>
-          )}
+          <AdvancedSection summary={summary}>
+            <IncomingEdges graph={graph} node={node} onEdgeContract={onEdgeContract} onConnect={onConnect} />
+          </AdvancedSection>
           <ContextPreview graph={graph} node={node} />
         </>
       )}
@@ -689,7 +762,7 @@ function NodeInspector({ graph, issues, node, onNode, onRename, onRemoveNode, on
             )}
 
             <ChecksSection node={node} onNode={onNode} />
-            <IncomingEdges graph={graph} node={node} onEdgeContract={onEdgeContract} />
+            <IncomingEdges graph={graph} node={node} onEdgeContract={onEdgeContract} onConnect={onConnect} />
           </AdvancedSection>
           <ContextPreview graph={graph} node={node} />
         </>

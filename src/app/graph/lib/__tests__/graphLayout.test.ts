@@ -12,6 +12,7 @@ import {
   addEdge,
   addNode,
   computeLayers,
+  connectableSources,
   layoutGraph,
   parseGraphSkill,
   promptInputs,
@@ -135,5 +136,23 @@ describe("serializeGraphSkill edges", () => {
     const targets = (from: string) => again.edges.filter((edge) => edge.from === from && edge.to.startsWith("review_")).map((edge) => edge.to);
     expect(targets(extra.id)).toEqual(["review_security", "review_correctness"]);
     expect(targets("plan")).toEqual(["review_correctness", "review_security"]);
+  });
+});
+
+describe("connectableSources (Inspector: Connect from…)", () => {
+  const ship = load(SHIP_CHANGE_GRAPH_SKILL);
+  const ids = (id: string) => connectableSources(ship, id).map((node) => node.id);
+
+  it("offers every step before or beside the node that does not feed it yet", () => {
+    expect(ids("review_security")).toEqual(["goal", "plan", "implement", "review_correctness"]);
+  });
+
+  it("never offers the node itself or anything after it, which would make a cycle", () => {
+    expect(ids("plan")).toEqual([]);
+    expect(ids("diff")).not.toContain("gate");
+  });
+
+  it("offers nothing for the input, which cannot receive edges", () => {
+    expect(ids("goal")).toEqual([]);
   });
 });

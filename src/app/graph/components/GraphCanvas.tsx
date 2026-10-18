@@ -8,6 +8,13 @@ import { LAYOUT_GAPS, NODE_HEIGHT, NODE_WIDTH, layoutGraph, type GraphLayout, ty
 
 export type Selection = { kind: "node"; id: string } | { kind: "edge"; id: string } | null;
 
+/** Bring a node into view. `readable` (picked from the plan or the issues) also zooms in when the graph is too small to read. */
+export interface FocusRequest {
+  id: string;
+  nonce: number;
+  readable?: boolean;
+}
+
 export function edgeKey(from: string, to: string): string {
   return `${from}->${to}`;
 }
@@ -39,6 +46,8 @@ const MIN_ZOOM = 0.25;
 const MAX_ZOOM = 2;
 const FIT_PADDING = 40;
 const LABEL_MIN_ZOOM = 0.5;
+/** Zoom a picked node is shown at when the canvas is zoomed out past readable labels. */
+const FOCUS_ZOOM = 0.8;
 /** Width of one character in the 10px mono pill text, plus the pill's side padding and a margin to each card. */
 const PILL_CHAR_WIDTH = 6.1;
 const PILL_PADDING = 16;
@@ -64,7 +73,7 @@ interface GraphCanvasProps {
   isolation: Map<string, IsolationReport>;
   selection: Selection;
   /** Bumped when a node is selected from outside the canvas (the editor), so the canvas brings it into view. */
-  focusRequest: { id: string; nonce: number } | null;
+  focusRequest: FocusRequest | null;
   /** Bumped when the whole document is replaced, so the canvas re-frames the new graph. */
   fitRequest: number;
   canUndo: boolean;
@@ -193,18 +202,26 @@ export function GraphCanvas({
     if (autoFit.current) fitTo(size.width, size.height);
   }, [size, fitTo, fitRequest]);
 
-  // A node picked in the editor is panned into view if it is off screen.
+  // A node picked in the editor is panned into view if it is off screen; one picked from the plan or the
+  // issues is also zoomed to a readable size, since a card at 25% is "visible" but cannot be read.
+  // Each request is applied once: later edits or resizes must not pull the view back after the user moves it.
+  const focusHandled = useRef<number | null>(null);
   useEffect(() => {
-    if (!focusRequest) return;
+    if (!focusRequest || focusHandled.current === focusRequest.nonce) return;
     const position = layout.positions.get(focusRequest.id);
     if (!position || size.width === 0) return;
+    focusHandled.current = focusRequest.nonce;
     const { x, y, k } = viewRef.current;
     const left = position.x * k + x;
     const top = position.y * k + y;
     const visible = left >= 0 && top >= 0 && left + NODE_WIDTH * k <= size.width && top + NODE_HEIGHT * k <= size.height;
-    if (visible) return;
+    const tooSmall = focusRequest.readable === true && k < LABEL_MIN_ZOOM;
+    if (visible && !tooSmall) return;
+    // Zoom in only as far as the card still fits the canvas with some room around it.
+    const fit = Math.min((size.width - FIT_PADDING * 2) / NODE_WIDTH, (size.height - FIT_PADDING * 2) / NODE_HEIGHT);
+    const next = tooSmall ? Math.max(k, Math.min(FOCUS_ZOOM, fit)) : k;
     autoFit.current = false;
-    setView({ k, x: size.width / 2 - (position.x + NODE_WIDTH / 2) * k, y: size.height / 2 - (position.y + NODE_HEIGHT / 2) * k });
+    setView({ k: next, x: size.width / 2 - (position.x + NODE_WIDTH / 2) * next, y: size.height / 2 - (position.y + NODE_HEIGHT / 2) * next });
   }, [focusRequest, layout.positions, size.width, size.height]);
 
   const zoomAround = useCallback((factor: number, cx: number, cy: number) => {

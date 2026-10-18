@@ -764,3 +764,12 @@ All AI agents operating in this repository MUST follow this 5-step loop:
 - **Decision — group aliases are scoped to the reading step**: in ship-a-change `implement` and both reviewers are all `worker`s, so a global `{{workers.output}}` in the gate would have pulled in `implement`.
 - **Gotcha — headless visual check without Puppeteer**: build a share hash with `encodeShareHash` (vite-node), then `chrome --headless=new --window-size=4200,1300 --screenshot=… http://localhost:3000/graph#graph=…`; a very wide window fits the canvas near 100%, a tall one (height > 1.1 × width of the canvas) switches it to TB.
 - **Status**: ✅ Complete (1112 tests, 23 CLI tests, validate-presets, typecheck, lint 0 errors, build).
+
+### Session: 2026-10-18 — Skill Graph: audit fixes, Batch D
+- **Agent**: Claude Code (Opus)
+- **Decision — undo carries the selection**: `commit(next, selectionAfter)` records what the edit leaves selected; handlers that change the selection must pass it, or undo/redo restores the wrong thing. The selection default is the current one.
+- **Decision — file handoffs need a design call**: a Claude Code subagent's answer lands in the orchestrator's context anyway, so file handoffs save re-typing (C1) or context (C2, needs write access on every step). See `SKILL_GRAPH_V2_RFC.md`.
+- **Gotcha — headless UI driving without Puppeteer**: launch Chrome with `--remote-debugging-port`, talk CDP over Node 24's global `WebSocket`, set React inputs with the native value setter plus an `input`/`change` event, and call `Emulation.setFocusEmulationEnabled` first, or `blur()` never fires and commit-on-blur fields (node id) silently keep only a draft.
+- **Status**: ✅ Complete (1115 tests, 23 CLI tests, validate-presets, typecheck, lint 0 errors, build, 12/12 browser checks).
+- **Gotcha — compiler strings are Markdown**: `handOff`, `outputSummary` and plan lines are written for SKILL.md (backticks around ids). Any studio panel that shows them must render them (`PlanText` in `PlanPanel.tsx`), not print them raw.
+- **Gotcha — Monaco DOM text uses ` ` for spaces**: normalise `.view-line` text before matching it in browser checks.

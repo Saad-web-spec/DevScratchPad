@@ -1070,6 +1070,15 @@ export function addEdge(graph: SkillGraph, from: string, to: string, contract?: 
   return { ...graph, edges: [...graph.edges, { from, to, contract }] };
 }
 
+/** Nodes that can feed `id` with a new edge: not itself, not already connected, and not after it (that would be a cycle). */
+export function connectableSources(graph: SkillGraph, id: string): GraphNode[] {
+  const target = graph.nodes.find((node) => node.id === id);
+  if (!target || target.type === "input") return [];
+  const preds = new Set(predecessorsOf(graph, id));
+  const after = descendantsOf(graph, id);
+  return graph.nodes.filter((node) => node.id !== id && !preds.has(node.id) && !after.has(node.id));
+}
+
 export function removeEdge(graph: SkillGraph, from: string, to: string): SkillGraph {
   return { ...graph, edges: graph.edges.filter((edge) => !(edge.from === from && edge.to === to)) };
 }

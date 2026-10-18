@@ -31,7 +31,7 @@ import { useModKeyLabel } from "@/lib/useModKeyLabel";
 import { MonacoEditor } from "@/components/MonacoEditor";
 import { SkillGraphIcon } from "@/components/icons/SkillGraphIcon";
 import { loadFromStorageEnvelope, removeStorageKey, saveToStorageEnvelope } from "@/lib/storage";
-import { GraphCanvas, edgeKey, type Selection, type Trace } from "./components/GraphCanvas";
+import { GraphCanvas, edgeKey, type FocusRequest, type Selection, type Trace } from "./components/GraphCanvas";
 import { InspectorPanel, IssueList } from "./components/InspectorPanel";
 import { PlanPanel } from "./components/PlanPanel";
 import { MenuItem, ToolbarPopover } from "./components/ToolbarPopover";
@@ -90,6 +90,9 @@ type Monaco = Parameters<OnMount>[1];
 interface HistoryEntry {
   before: string;
   after: string;
+  /** What was selected before and after the edit, so undo of a rename or a delete reopens that node. */
+  selectionBefore?: Selection;
+  selectionAfter?: Selection;
 }
 
 const HISTORY_LIMIT = 100;
@@ -314,7 +317,7 @@ function GraphWorkspace({ initial, shared }: WorkspaceProps) {
   const [dockHeight, setDockHeight] = useState(clamp(initial?.dockHeight ?? DOCK_HEIGHT.initial, DOCK_HEIGHT));
 
   const [selection, setSelection] = useState<Selection>(null);
-  const [focusRequest, setFocusRequest] = useState<{ id: string; nonce: number } | null>(null);
+  const [focusRequest, setFocusRequest] = useState<FocusRequest | null>(null);
   const [fitRequest, setFitRequest] = useState(0);
   const [dockTab, setDockTab] = useState<DockTab>("inspector");
   const [mobileView, setMobileView] = useState<MobileView>("canvas");
@@ -439,7 +442,13 @@ function GraphWorkspace({ initial, shared }: WorkspaceProps) {
     if (id !== revealedFor.current) {
       revealedFor.current = id;
       const section = ranges.at(-1);
-      if (section && !selectedFromEditor.current) editor.revealLinesInCenterIfOutsideViewport(section.start, section.end);
+      if (section && !selectedFromEditor.current) {
+        // Open the section at its heading. Centring a long prompt started it mid-screen, under the previous node's text.
+        const visible = editor.getVisibleRanges();
+        const first = visible[0]?.startLineNumber ?? 0;
+        const last = visible.at(-1)?.endLineNumber ?? 0;
+        if (section.start < first || section.end > last) editor.revealLineNearTop(section.start, monaco.editor.ScrollType.Smooth);
+      }
     }
     selectedFromEditor.current = false;
   }, [selection, source, editorReady]);
@@ -468,9 +477,12 @@ function GraphWorkspace({ initial, shared }: WorkspaceProps) {
 
   /* ----------------------------------------------------------- graph editing */
 
-  /** Applies an edit made on the canvas or in the inspector by rewriting the Markdown (undoable). */
+  /**
+   * Applies an edit made on the canvas or in the inspector by rewriting the Markdown (undoable).
+   * `selectionAfter` is what the edit leaves selected (the handler sets it); undo and redo restore it.
+   */
   const commit = useCallback(
-    (next: SkillGraph) => {
+    (next: SkillGraph, selectionAfter: Selection = selection) => {
       if (parsed.fatal) {
         notify("Fix the frontmatter in the Markdown first.");
         return;
@@ -484,13 +496,13 @@ function GraphWorkspace({ initial, shared }: WorkspaceProps) {
         const top = current.undo.at(-1);
         const undo =
           coalesce && top && top.after === source
-            ? [...current.undo.slice(0, -1), { before: top.before, after }]
-            : [...current.undo, { before: source, after }].slice(-HISTORY_LIMIT);
+            ? [...current.undo.slice(0, -1), { ...top, after, selectionAfter }]
+            : [...current.undo, { before: source, after, selectionBefore: selection, selectionAfter }].slice(-HISTORY_LIMIT);
         return { undo, redo: [] };
       });
       setSource(after);
     },
-    [parsed.fatal, notify, source]
+    [parsed.fatal, notify, source, selection]
   );
 
   const undo = useCallback(() => {
@@ -502,6 +514,7 @@ function GraphWorkspace({ initial, shared }: WorkspaceProps) {
     lastCommitAt.current = 0;
     setHistory({ undo: history.undo.slice(0, -1), redo: [...history.redo, entry] });
     setSource(entry.before);
+    setSelection(entry.selectionBefore ?? null);
   }, [history, source]);
 
   const redo = useCallback(() => {
@@ -513,19 +526,21 @@ function GraphWorkspace({ initial, shared }: WorkspaceProps) {
     lastCommitAt.current = 0;
     setHistory({ undo: [...history.undo, entry], redo: history.redo.slice(0, -1) });
     setSource(entry.after);
+    setSelection(entry.selectionAfter ?? null);
   }, [history, source]);
 
   const handleAddNode = (type: NodeType) => {
     const after = selection?.kind === "node" ? selection.id : undefined;
     const { graph: next, id } = addNode(graph, type, after);
-    commit(next);
+    commit(next, { kind: "node", id });
     setSelection({ kind: "node", id });
     setDockTab("inspector");
     setMobileView("canvas");
   };
 
+  /** Adds an edge; from the canvas it selects the new edge, from the inspector (`keepNode`) the node stays open. */
   const handleConnect = useCallback(
-    (from: string, to: string) => {
+    (from: string, to: string, keepNode = false) => {
       const target = graph.nodes.find((node) => node.id === to);
       if (target?.type === "input") {
         notify("The input node cannot receive edges.");
@@ -537,8 +552,9 @@ function GraphWorkspace({ initial, shared }: WorkspaceProps) {
         notify("That edge would create a cycle.");
         return;
       }
-      commit(next);
-      setSelection({ kind: "edge", id: edgeKey(from, to) });
+      const selected: Selection = keepNode ? { kind: "node", id: to } : { kind: "edge", id: edgeKey(from, to) };
+      commit(next, selected);
+      setSelection(selected);
       setDockTab("inspector");
     },
     [graph, commit, notify]
@@ -546,7 +562,7 @@ function GraphWorkspace({ initial, shared }: WorkspaceProps) {
 
   const handleRemoveNode = useCallback(
     (id: string) => {
-      commit(removeNode(graph, id));
+      commit(removeNode(graph, id), null);
       setSelection(null);
     },
     [graph, commit]
@@ -554,7 +570,7 @@ function GraphWorkspace({ initial, shared }: WorkspaceProps) {
 
   const handleRemoveEdge = useCallback(
     (from: string, to: string) => {
-      commit(removeEdge(graph, from, to));
+      commit(removeEdge(graph, from, to), null);
       setSelection(null);
     },
     [graph, commit]
@@ -577,7 +593,7 @@ function GraphWorkspace({ initial, shared }: WorkspaceProps) {
       notify(`"${nextId}" is already used by another node.`);
       return false;
     }
-    commit(renameNode(graph, id, nextId));
+    commit(renameNode(graph, id, nextId), { kind: "node", id: nextId });
     setSelection({ kind: "node", id: nextId });
     return true;
   };
@@ -602,7 +618,7 @@ function GraphWorkspace({ initial, shared }: WorkspaceProps) {
 
   const selectNode = (id: string) => {
     setSelection({ kind: "node", id });
-    setFocusRequest({ id, nonce: Date.now() });
+    setFocusRequest({ id, nonce: Date.now(), readable: true });
     setDockTab("inspector");
   };
 
@@ -676,7 +692,7 @@ function GraphWorkspace({ initial, shared }: WorkspaceProps) {
   /** Replaces the whole document; recorded in the undo history like any canvas edit. */
   const replaceSource = (next: string, message?: string) => {
     if (next === source) return;
-    setHistory((current) => ({ undo: [...current.undo, { before: source, after: next }].slice(-HISTORY_LIMIT), redo: [] }));
+    setHistory((current) => ({ undo: [...current.undo, { before: source, after: next, selectionBefore: selection, selectionAfter: null }].slice(-HISTORY_LIMIT), redo: [] }));
     lastCommitAt.current = 0;
     setSource(next);
     setSelection(null);
@@ -1069,6 +1085,7 @@ function GraphWorkspace({ initial, shared }: WorkspaceProps) {
                     onRemoveNode={handleRemoveNode}
                     onEdgeContract={(from, to, contract) => commit(setEdgeContract(graph, from, to, contract))}
                     onRemoveEdge={handleRemoveEdge}
+                    onConnect={(from, to) => handleConnect(from, to, true)}
                     onContract={(name, contract) => commit(updateContract(graph, name, contract))}
                     onRenameContract={handleRenameContract}
                     onSelect={handleSelect}

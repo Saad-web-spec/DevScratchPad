@@ -189,6 +189,7 @@ const SHORTCUTS: { keys: string; action: string }[] = [
   { keys: "Drag the background", action: "Pan the canvas" },
   { keys: "Scroll / pinch", action: "Zoom around the pointer" },
   { keys: "Drag a node's handle onto another node", action: "Add an edge" },
+  { keys: "Advanced → Incoming → Connect from…", action: "Add an edge from the keyboard" },
   { keys: "Click a node or edge", action: "Select it and open it in the Inspector" },
   { keys: "Delete / Backspace", action: "Remove the selected node or edge" },
   { keys: "Esc", action: "Clear the selection" },
@@ -543,7 +544,8 @@ export default function GraphGuidePage() {
             </P>
             <P>
               <C>tools</C> follows least privilege: give a step only what it needs. Readers and reviewers usually need <C>[Read, Grep, Glob]</C>; only implementers need{" "}
-              <C>Edit</C>, <C>Write</C> or <C>Bash</C>. MCP tools are written <C>mcp__server__tool</C>.
+              <C>Edit</C>, <C>Write</C> or <C>Bash</C>. MCP tools are written <C>mcp__server__tool</C>. Scoped tools such as <C>Bash(npm test:*)</C> and MCP tools are added with
+              the field under the tool chips (Advanced → Agent); click one of their chips to remove it.
             </P>
           </Section>
 
