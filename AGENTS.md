@@ -106,7 +106,7 @@ Every agent task MUST be verified with:
 
 ## Non-Negotiable Constraints
 
-- **Zero Server Transmission**: No API route may accept or transmit user-provided payload data.
+- **Zero Server Transmission**: No API route may accept or transmit user-provided payload data. Single exception: the Skill Graph connector (`src/app/graph/mcp/route.ts`, a stateless MCP server for Claude) receives tool inputs; it must process them in memory only, never store or log them (tool names only), and stay without accounts.
 - **Single-Canvas Layout**: Never introduce nested card-in-card containers.
 - **Monaco Dynamic Import**: Always use `next/dynamic` with `{ ssr: false }` for Monaco Editor.
 - **Tailwind v4 Only**: No `tailwind.config.js` — use CSS-first configuration via `postcss.config.mjs`.

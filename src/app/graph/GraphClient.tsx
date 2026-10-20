@@ -195,7 +195,11 @@ function GraphHeader() {
             <p className="hidden truncate text-xs text-zinc-500 sm:block">Design multi-agent skills as a graph, then compile them for Claude Code and Cursor.</p>
           </div>
         </div>
-        <div className="flex shrink-0 items-center gap-4">
+        <div className="flex shrink-0 items-center gap-3 sm:gap-4">
+          <Link href="/graph/connector" title="Add Skill Graph to Claude as a connector" className="text-[13px] font-semibold text-zinc-600 transition-colors hover:text-orange-700">
+            <span className="sm:hidden">Claude</span>
+            <span className="hidden sm:inline">Use in Claude</span>
+          </Link>
           <Link href="/graph/guide" className="text-[13px] font-semibold text-zinc-600 transition-colors hover:text-orange-700">
             Guide
           </Link>

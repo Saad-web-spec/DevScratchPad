@@ -154,6 +154,18 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 0.7,
     },
     {
+      url: `${SITE_URL}/graph/connector`,
+      lastModified: lastModifiedOf("src/app/graph/connector"),
+      changeFrequency: "monthly" as const,
+      priority: 0.7,
+    },
+    {
+      url: `${SITE_URL}/graph/privacy`,
+      lastModified: lastModifiedOf("src/app/graph/privacy"),
+      changeFrequency: "yearly" as const,
+      priority: 0.3,
+    },
+    {
       url: `${SITE_URL}/about`,
       lastModified: lastModifiedOf("src/app/about"),
       changeFrequency: "monthly" as const,

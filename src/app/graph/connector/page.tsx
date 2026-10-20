@@ -1,0 +1,220 @@
+import type { Metadata } from "next";
+import Link from "next/link";
+import { ArrowLeft } from "lucide-react";
+import { SkillGraphIcon } from "@/components/icons/SkillGraphIcon";
+import { CopyField } from "../components/CopyField";
+import { MAX_SOURCE_LENGTH, MAX_NODES } from "../lib/graphSkill";
+import { SHARE_URL_SOFT_LIMIT } from "../lib/graphShare";
+
+const PAGE_URL = "https://www.devscratchpad.tech/graph/connector";
+const CONNECTOR_URL = "https://www.devscratchpad.tech/graph/mcp";
+const CLAUDE_CODE_COMMAND = `claude mcp add --transport http skill-graph ${CONNECTOR_URL}`;
+const SUPPORT_EMAIL = "support@devscratchpad.tech";
+
+export const metadata: Metadata = {
+  title: "Skill Graph for Claude: Connector Setup and Guide",
+  description:
+    "Add Skill Graph to Claude as a connector. Describe your project, and Claude designs a multi-agent workflow, checks it and hands you a studio link and Claude Code files. No account, no API key.",
+  alternates: { canonical: PAGE_URL },
+  openGraph: {
+    title: "Skill Graph for Claude: Connector Setup and Guide | DevScratchpad",
+    description: "Describe your project in Claude; Claude designs the multi-agent workflow with Skill Graph, checks it and gives you the files to install.",
+    url: PAGE_URL,
+    siteName: "DevScratchpad",
+    locale: "en_US",
+    type: "article",
+  },
+};
+
+const TOOLS: { name: string; does: string }[] = [
+  { name: "get_graph_format", does: "Reads the graph skill format: node types, fields, contracts, references, the checker's rules and a full example." },
+  { name: "list_graph_templates", does: "Lists the starter graphs (Parallel audit, Ship a change, Review each file, PR review, RFC discovery, Bug triage)." },
+  { name: "get_graph_template", does: "Gets one starter graph's source, to build on." },
+  { name: "validate_graph", does: "Checks a graph: errors, warnings with how to fix them, and the stages that will run." },
+  { name: "compile_graph", does: "Turns a valid graph into files: the Claude Code kit (orchestrating SKILL.md plus one subagent per step), a single SKILL.md, or a Cursor rule." },
+  { name: "open_graph_in_studio", does: "Makes a link that opens the graph in the studio, to see it, walk through the plan, edit and export it." },
+];
+
+const PROMPTS: string[] = [
+  "Design a workflow with Skill Graph for reviewing pull requests in my repo: security, performance and test coverage in parallel, then a fresh-context check before it comments.",
+  "I'm starting a Next.js app with Stripe billing. Plan a Skill Graph workflow that implements a feature, runs npm test until it passes, and asks me before it opens the PR.",
+  "Use Skill Graph to build a bug triage workflow: read the stack trace, check recent commits and logs in parallel, then write a minimal repro. Give me the studio link.",
+  "Take the Ship a change starter graph, change the test command to pnpm test, check it, and compile it into Claude Code files.",
+];
+
+function C({ children }: { children: React.ReactNode }) {
+  return <code className="rounded-md bg-zinc-100 px-1.5 py-0.5 font-mono text-[12.5px] text-zinc-800">{children}</code>;
+}
+
+function Section({ id, title, children }: { id: string; title: string; children: React.ReactNode }) {
+  return (
+    <section id={id} className="scroll-mt-20 space-y-4 border-t border-zinc-200 pt-10">
+      <h2 className="text-xl font-extrabold tracking-[-0.02em] text-zinc-900">{title}</h2>
+      {children}
+    </section>
+  );
+}
+
+function P({ children }: { children: React.ReactNode }) {
+  return <p className="text-[15px] leading-relaxed text-zinc-600">{children}</p>;
+}
+
+function Steps({ items }: { items: React.ReactNode[] }) {
+  return (
+    <ol className="space-y-3">
+      {items.map((item, index) => (
+        <li key={index} className="flex gap-3.5 text-[15px] leading-relaxed text-zinc-600">
+          <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-orange-200 bg-orange-50 font-mono text-xs font-bold text-orange-800">{index + 1}</span>
+          <span className="min-w-0 pt-0.5">{item}</span>
+        </li>
+      ))}
+    </ol>
+  );
+}
+
+const LINK = "font-semibold text-zinc-900 underline decoration-zinc-300 underline-offset-4 hover:text-orange-700";
+
+export default function GraphConnectorPage() {
+  return (
+    <div className="min-h-screen bg-zinc-50 font-sans text-zinc-900 antialiased">
+      <header className="sticky top-0 z-40 border-b border-zinc-200 bg-white">
+        <div className="mx-auto flex h-14 max-w-3xl items-center justify-between gap-3 px-4 sm:px-6">
+          <Link href="/graph" className="flex min-w-0 items-center gap-3">
+            <SkillGraphIcon className="h-6 w-6 shrink-0 text-zinc-900" />
+            <span className="truncate text-[15px] font-extrabold tracking-[-0.02em] text-zinc-900 sm:text-base">Skill Graph · Claude</span>
+          </Link>
+          <Link href="/graph" className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-zinc-200 px-3 py-1.5 text-[13px] font-semibold text-zinc-800 transition-colors hover:border-orange-300 hover:text-orange-700">
+            <ArrowLeft className="h-3.5 w-3.5" /> Open the studio
+          </Link>
+        </div>
+      </header>
+
+      <main className="mx-auto max-w-3xl space-y-10 px-4 py-12 sm:px-6">
+        <div className="space-y-4">
+          <p className="text-xs font-semibold uppercase tracking-[0.12em] text-orange-700">Connector for Claude</p>
+          <h1 className="text-3xl font-extrabold leading-[1.15] tracking-[-0.03em] text-zinc-900 sm:text-4xl">Use Skill Graph from Claude</h1>
+          <P>
+            Describe your project in Claude. Claude designs the multi-agent workflow with Skill Graph, checks it until it has no errors, and gives you a link that opens it in the
+            studio, plus the files your agent runs. You need no account and no API key: Claude does the thinking on your own plan, and Skill Graph checks and compiles.
+          </P>
+          <div className="space-y-2 pt-2">
+            <p className="text-[13px] font-semibold text-zinc-900">Connector URL</p>
+            <CopyField value={CONNECTOR_URL} label="the connector URL" />
+          </div>
+        </div>
+
+        <Section id="claude" title="Add it in Claude (web, desktop and mobile)">
+          <Steps
+            items={[
+              <>
+                Open{" "}
+                <a href="https://claude.ai/customize/connectors" target="_blank" rel="noopener noreferrer" className={LINK}>
+                  Customize → Connectors
+                </a>{" "}
+                in Claude and choose <b>Add custom connector</b>.
+              </>,
+              <>
+                Name it <b>Skill Graph</b>, paste the connector URL above, and press <b>Add</b>. There is no sign-in step.
+              </>,
+              <>
+                In a chat, turn it on from <b>+ → Connectors</b> and ask for a workflow. The first time Claude uses a tool, it asks you to allow it; every tool only reads, so
+                you can allow them all.
+              </>,
+            ]}
+          />
+          <P>Connectors you add on the web also appear in the desktop and mobile apps. On Team and Enterprise plans, an owner may need to add the connector for the organization first.</P>
+        </Section>
+
+        <Section id="claude-code" title="Add it in Claude Code">
+          <P>Run this once in a terminal, then start Claude Code in your project. Type <C>/mcp</C> to check that skill-graph is connected.</P>
+          <CopyField value={CLAUDE_CODE_COMMAND} label="the Claude Code command" />
+          <P>
+            In Claude Code, Claude can save the compiled files straight into your repository (<C>.claude/skills/</C> and <C>.claude/agents/</C>), so the skill is ready before you
+            start the work.
+          </P>
+        </Section>
+
+        <Section id="prompts" title="Try these prompts">
+          <ul className="space-y-2.5">
+            {PROMPTS.map((prompt) => (
+              <li key={prompt} className="rounded-lg border border-zinc-200 bg-white px-4 py-3 text-sm leading-relaxed text-zinc-700">
+                {prompt}
+              </li>
+            ))}
+          </ul>
+          <P>
+            Or pick <b>Design a workflow for my project</b> from the connector&apos;s prompts in Claude and describe your project in a sentence.
+          </P>
+        </Section>
+
+        <Section id="results" title="What you get back">
+          <ul className="list-disc space-y-2 pl-5 text-[15px] leading-relaxed text-zinc-600">
+            <li>
+              <b className="text-zinc-900">A studio link.</b> It opens the graph on the canvas with its plan, where you can walk through the stages, change steps and export.
+              The graph travels inside the link, after the <C>#</C>.
+            </li>
+            <li>
+              <b className="text-zinc-900">The check.</b> Which steps run in which order, which run in parallel, and any errors or warnings with how to fix them.
+            </li>
+            <li>
+              <b className="text-zinc-900">The files.</b> An orchestrating <C>SKILL.md</C> and one Claude Code subagent per step, a single-file <C>SKILL.md</C>, or a Cursor
+              rule. The <Link href="/graph/guide#export" className={LINK}>guide</Link> explains each file.
+            </li>
+          </ul>
+        </Section>
+
+        <Section id="tools" title="What Claude can do with it">
+          <div className="overflow-x-auto rounded-xl border border-zinc-200 bg-white">
+            <table className="w-full text-left text-sm">
+              <thead className="border-b border-zinc-200 bg-zinc-50 text-xs font-semibold uppercase tracking-[0.06em] text-zinc-500">
+                <tr>
+                  <th className="px-4 py-2.5">Tool</th>
+                  <th className="px-4 py-2.5">What it does</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-zinc-100 text-zinc-600">
+                {TOOLS.map((tool) => (
+                  <tr key={tool.name} className="align-top">
+                    <td className="whitespace-nowrap px-4 py-2.5 font-mono text-[12.5px] font-medium text-zinc-900">{tool.name}</td>
+                    <td className="px-4 py-2.5 leading-relaxed">{tool.does}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <P>Every tool only reads: none of them changes anything in your Claude account, your files or on this site.</P>
+        </Section>
+
+        <Section id="limits" title="Limits">
+          <ul className="list-disc space-y-2 pl-5 text-[15px] leading-relaxed text-zinc-600">
+            <li>A graph can have up to {MAX_NODES} steps and {MAX_SOURCE_LENGTH.toLocaleString("en-US")} characters.</li>
+            <li>Links longer than about {SHARE_URL_SOFT_LIMIT.toLocaleString("en-US")} characters can be cut off by some chat apps; open them directly in a browser. A graph too large for a link comes back as files instead.</li>
+            <li>Nothing is saved on our side. Keep the link or the files; opening a link in the studio replaces the graph saved in that browser (Ctrl+Z on the canvas brings it back).</li>
+            <li>Skill Graph designs and compiles workflows; it does not run them. Your agent runs the files you install.</li>
+            <li>On claude.ai, Claude shows the compiled files for you to copy. Only Claude Code can write them into your project.</li>
+          </ul>
+        </Section>
+
+        <Section id="privacy" title="Privacy">
+          <P>
+            When Claude calls a tool, it sends us that tool&apos;s input: usually the text of a graph. We check or compile it in memory, send the answer back, and keep nothing. We
+            never see your Claude conversation, your account or your files, and we log only which tool was called, to count usage. Don&apos;t put secrets in a graph.
+          </P>
+          <P>
+            Read the full <Link href="/graph/privacy" className={LINK}>Skill Graph privacy policy</Link>.
+          </P>
+        </Section>
+
+        <Section id="support" title="Support">
+          <P>
+            Questions or a problem with the connector: email{" "}
+            <a href={`mailto:${SUPPORT_EMAIL}`} className={LINK}>
+              {SUPPORT_EMAIL}
+            </a>
+            . The <Link href="/graph/guide" className={LINK}>Skill Graph guide</Link> covers the graph format and the studio.
+          </P>
+        </Section>
+      </main>
+    </div>
+  );
+}

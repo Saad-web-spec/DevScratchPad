@@ -585,3 +585,15 @@ From the "Loops and Graphs" article (@hanakoxbt): a check that can fail, edges t
 
 - [x] /graph was 778px wide on a 375px phone: the "What the agent does / The format" grid had no mobile column template, so its `1fr` track grew to the `graph.skill.md` code block's longest line. Instagram's Android WebView zooms out to fit the widest content, which shrank the whole page to half size. The grid now uses `grid-cols-[minmax(0,1fr)]` on mobile, so the code block scrolls inside its panel
 - [x] Verified: headless Chromium at 375px (scrollWidth 375 on /graph and /graph/guide), validate-presets, lint (0 errors), build
+
+
+## 2026-10-20 — Skill Graph connector for Claude (remote MCP, no sign-in)
+
+- [x] `/graph/mcp`: stateless MCP server over Streamable HTTP (JSON responses, no sessions, protocol 2024-11-05 to 2025-11-25). Origin allowlist (Claude, Anthropic, this site, localhost; no Origin is fine), 2 MB body cap, `MCP-Protocol-Version` check, GET/DELETE 405, CORS preflight. Logs tool names only
+- [x] Six read-only tools with titles and annotations (`get_graph_format`, `list_graph_templates`, `get_graph_template`, `validate_graph`, `compile_graph`, `open_graph_in_studio`) and one prompt (`design_workflow`). Same checker and compiler as the studio; studio links carry the graph in the hash
+- [x] Format reference shared by the guide and the connector (`lib/graphReference.ts`), so they cannot drift
+- [x] `/graph/connector` (setup for Claude and Claude Code, prompts, results, tools, limits, privacy, support) and `/graph/privacy`; "Claude" link in the /graph header; note in the guide; sitemap and llms.txt
+- [x] Directory kit: `SKILL_GRAPH_CONNECTOR_SUBMISSION.md` (every portal field), icon `public/skill-graph-icon.png`
+- [x] AGENTS.md / CLAUDE.md: scoped exception to "zero server transmission" for this route only
+- [x] Verified: 1192 tests (15 new), MCP Inspector CLI (tools/list, prompts/list, tools/call), curl (initialize, notification 202, bad Origin 403), 375px overflow check, validate-presets, lint (0 errors), typecheck, build
+- [ ] Deploy, add a Vercel firewall bypass for `/graph/mcp`, test as a custom connector in Claude.ai and Claude Code, then submit at claude.ai/directory/manage

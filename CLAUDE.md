@@ -28,7 +28,7 @@ Read these files in order before executing any task:
 - **Tailwind CSS v4**: Utility classes only. No inline styles. No `tailwind.config.js`.
 - **Monaco Editor**: Always import via `next/dynamic` with `{ ssr: false }`.
 - **TypeScript**: Strict mode. Zero `any` types.
-- **Privacy**: Zero API routes for user payloads. All processing in browser sandbox.
+- **Privacy**: Zero API routes for user payloads. All processing in browser sandbox. Exception: the stateless Skill Graph MCP connector (`/graph/mcp`), which stores and logs nothing but tool names.
 - **Storage**: Always use `src/lib/storage.ts` envelope wrapper. Never raw `localStorage`.
 - **CLI**: Zero npm dependencies — Node.js standard libraries only.
 

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowLeft, ArrowRight } from "lucide-react";
 import { SkillGraphIcon } from "@/components/icons/SkillGraphIcon";
+import { NODE_FIELD_DOCS, NODE_TYPE_DOCS, REFERENCE_DOCS } from "../lib/graphReference";
 
 const PAGE_URL = "https://www.devscratchpad.tech/graph/guide";
 
@@ -123,48 +124,6 @@ const QUICK_START: { title: string; body: React.ReactNode }[] = [
   { title: "Say what each step does", body: <>Select a step and write its job in <b>Prompt</b>; every new step starts with a sensible one. Its inputs arrive on their own. To place one at a precise spot, use <b>Insert input</b> above the prompt.</> },
   { title: "Fix what the checker finds", body: <>The status next to the toolbar turns red when there are errors. Open <b>Issues</b>, click an issue to jump to its node, and fix it until it says <b>Valid</b>.</> },
   { title: "Walk through it, then export", body: <>Press <b>Walk through plan</b> to see the stages in order, then <b>Export</b> the kit and unzip it into your repository.</> },
-];
-
-const NODE_TYPES: { type: string; does: string; subagent: string }[] = [
-  { type: "input", does: "Carries the user's goal into the graph. Every graph needs one, and it cannot have incoming edges.", subagent: "No" },
-  { type: "orchestrator", does: "Plans and splits the work. Often returns JSON with one key per downstream worker.", subagent: "Yes" },
-  { type: "worker", does: "Does one focused task. Workers in the same stage run in parallel.", subagent: "Yes" },
-  { type: "verifier", does: "Checks the work, usually in a fresh context, and ends with GATE: PASS or GATE: FAIL when it has a gate.", subagent: "Yes" },
-  { type: "synthesizer", does: "Merges verified results into the final answer.", subagent: "Yes" },
-  { type: "agent", does: "A general step when none of the roles above fits.", subagent: "Yes" },
-  { type: "code", does: "Runs a shell command instead of a model (tests, a diff, a merge script). Needs run:.", subagent: "No, the agent runs the command" },
-  { type: "approval", does: "Stops and asks you before anything after it runs. Put it right before work that is hard to undo.", subagent: "No, the agent asks you" },
-];
-
-const NODE_FIELDS: { field: string; meaning: string }[] = [
-  { field: "id", meaning: "Unique name. Starts with a letter; letters, digits, _ and - only. Used in references and in the agent file names." },
-  { field: "type", meaning: "One of the eight node types above. Unknown types become agent." },
-  { field: "label", meaning: "The title shown on the canvas and in the plan." },
-  { field: "model", meaning: "haiku, sonnet, opus, fable or a full model id. Leave it out to inherit your session's model." },
-  { field: "tools", meaning: "The tools this step's subagent may use, e.g. [Read, Grep, Glob]. Leave it out for the agent's defaults." },
-  { field: "isolated_context", meaning: "true seals the step off: it sees only what its incoming edges carry." },
-  { field: "output_format", meaning: "json or text. Normally inferred from the contracts on the outgoing edges." },
-  { field: "gate", meaning: "Pass criteria. The step must end its answer with GATE: PASS or GATE: FAIL." },
-  { field: "on_fail", meaning: "retry re-runs the failed upstream work with the reason; stop halts and reports." },
-  { field: "max_retries", meaning: "How many re-runs a failed gate or check gets (default 1; more than 3 is flagged)." },
-  { field: "retry_target", meaning: "Where a failed gate, check or command restarts: a model step before it. Unset, a gate re-runs the steps it names, a check re-runs its own step and a command re-runs the steps before it." },
-  { field: "check", meaning: "A command that must exit 0 when the step is done, e.g. npm test." },
-  { field: "run", meaning: "code nodes only: the command to run." },
-  { field: "risk", meaning: "contained (default), wide or irreversible. Decides which safeguards the checker asks for." },
-  { field: "foreach", meaning: "Fan-out: run the step once per item of a JSON array, written step.key (or step when its whole output is the array). Each run reads its item as {{item}}." },
-  { field: "max_parallel", meaning: "Fan-out runs that may run at once (default 4, at most 16)." },
-  { field: "max_items", meaning: "Fan-out: stop and ask instead of starting more runs than this." },
-  { field: "probe", meaning: "2 to 4: run that many candidates of a read-only step side by side, and let a fresh-context judge keep the best." },
-  { field: "probe_hints", meaning: "One approach per candidate, in order, e.g. [The smallest change that works., Reuse existing helpers.]. A candidate without one uses its own." },
-  { field: "handoff", meaning: "inline or file: how this step's output reaches the next steps. Unset follows the skill's handoff." },
-];
-
-const REFERENCES: { ref: string; meaning: string }[] = [
-  { ref: "{{goal}}", meaning: "The user's request, as it entered the input node." },
-  { ref: "{{plan.output}}", meaning: "Everything the node with id plan returned." },
-  { ref: "{{splitter.worker_research}}", meaning: "One key of a JSON output: here the worker_research value of splitter's JSON." },
-  { ref: "{{workers.output}}", meaning: "A group: the outputs of the nodes of that type that feed this step (workers, verifiers, codes and so on), or the ones upstream of it when none connect directly." },
-  { ref: "{{inputs}}", meaning: "Everything arriving on this node's incoming edges." },
 ];
 
 const ISSUES: { severity: "Error" | "Warning"; message: string; fix: string }[] = [
@@ -436,6 +395,10 @@ export default function GraphGuidePage() {
               Skill Graph is the editor for that file. It shows the file as a graph, checks it, lets you step through the plan, and compiles it into an orchestrating skill plus one
               subagent per step. It never runs a model itself; your agent does that with the files you export.
             </P>
+            <Note>
+              Rather describe it in words? <Link href="/graph/connector" className="font-semibold text-zinc-900 underline decoration-zinc-300 underline-offset-4 hover:text-orange-700">Add Skill Graph to Claude</Link> as a
+              connector, tell Claude about your project, and it designs and checks the graph for you, then hands you a studio link and the files.
+            </Note>
           </Section>
 
           <Section id="what-you-need" title="What you need (and what you don't)">
@@ -481,7 +444,7 @@ export default function GraphGuidePage() {
 
           <Section id="nodes" title="Node types">
             <P>Each node has a type that decides its role in the plan. Steps of the same stage (no path between them) run in parallel.</P>
-            <Table head={["Type", "What it does", "Own subagent"]} rows={NODE_TYPES.map((node) => [<C key={node.type}>{node.type}</C>, node.does, node.subagent])} />
+            <Table head={["Type", "What it does", "Own subagent"]} rows={NODE_TYPE_DOCS.map((node) => [<C key={node.type}>{node.type}</C>, node.does, node.subagent])} />
             <P>
               On the canvas you set a step&apos;s label, type and prompt; everything else is under <b>Advanced</b>. The full list of fields, with the names used in the file, is in{" "}
               <a href="#file-format" className="font-semibold text-zinc-900 underline decoration-zinc-300 underline-offset-4 hover:text-orange-700">The file format</a>.
@@ -544,7 +507,7 @@ export default function GraphGuidePage() {
               A step already receives everything on its incoming edges. A <b>reference</b> says where in the prompt an input belongs, or picks only part of it. The easy way:{" "}
               <b>Insert input</b> above the prompt lists exactly what this step can read, in plain words, and writes the reference at the cursor.
             </P>
-            <Table head={["Reference", "Means"]} rows={REFERENCES.map((item) => [<C key={item.ref}>{item.ref}</C>, item.meaning])} />
+            <Table head={["Reference", "Means"]} rows={REFERENCE_DOCS.map((item) => [<C key={item.ref}>{item.ref}</C>, item.meaning])} />
             <CodeBlock title="a node prompt">{PROMPT_EXAMPLE}</CodeBlock>
             <P>
               The most useful one is a step&apos;s own part of a JSON output. If a planner returns <C>{'{"research": …, "review": …}'}</C>, inserting &ldquo;Only this step&apos;s
@@ -697,7 +660,7 @@ export default function GraphGuidePage() {
               with its prompt. <C>spec</C> is <C>skill-graph/1</C>, or <C>skill-graph/2</C> once a step uses <C>foreach</C> or <C>handoff</C> (<C>probe</C> stays <C>/1</C>); the studio writes the right one
               when it saves. Every field of a node:
             </P>
-            <Table head={["Field", "Meaning"]} rows={NODE_FIELDS.map((item) => [<C key={item.field}>{item.field}</C>, item.meaning])} />
+            <Table head={["Field", "Meaning"]} rows={NODE_FIELD_DOCS.map((item) => [<C key={item.field}>{item.field}</C>, item.meaning])} />
             <CodeBlock title="edges and contracts">{EDGE_EXAMPLE}</CodeBlock>
             <P>
               <C>from</C> and <C>to</C> accept a single id or a list, so one entry can fan out to several workers or fan several in. Each contract has a format (<C>json</C>,{" "}

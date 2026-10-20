@@ -815,8 +815,9 @@ All AI agents operating in this repository MUST follow this 5-step loop:
 - **Gotcha — absolute overlays in the canvas collide on narrow widths**: keep the bottom controls and hint in one flex row; use `@container` queries on the canvas, not viewport breakpoints.
 - **Status**: ✅ Complete (validate-presets, lint, build).
 
-### Session: 2026-10-20 — Skill Graph: Instagram in-app browser zoom-out
+### Session: 2026-10-20 — Skill Graph connector for Claude
 - **Agent**: Claude Code (Opus 5.5)
-- **Fix**: `GraphSeoContent` two-column grid had no base `grid-cols`, so on mobile the implicit `1fr` (= `minmax(auto,1fr)`) track grew to the `<pre>` code sample's width (page 778px at 375px). Added `grid-cols-[minmax(0,1fr)]`.
-- **Gotcha — in-app browsers (Instagram, Facebook; Android WebView overview mode) zoom out to fit any horizontal overflow**, so one wide element shrinks the whole page; Chrome just scrolls sideways and hides it. Grids/flex items holding `<pre>`/tables need `minmax(0,1fr)` / `min-w-0`. Check with `document.documentElement.scrollWidth` at 375px.
-- **Status**: ✅ Complete (validate-presets, lint, build).
+- **ADR — remote MCP without sign-in**: the user wants Claude to use Skill Graph, started from the site, with no accounts, no Supabase and no API keys. Anthropic's consumer OAuth cannot be used by third-party sites, so the site is a connector Claude calls, not a client of Claude. Without accounts OAuth has nothing to do, so the connector is authless. Tool inputs are processed in memory and dropped; only tool names are logged. This is the one scoped exception to ADR-001 (recorded in AGENTS.md and CLAUDE.md).
+- **Layout**: `src/app/graph/mcp/route.ts` (HTTP: origin, size, version, status codes) → `lib/mcpProtocol.ts` (JSON-RPC, testable) → `lib/graphConnector.ts` (tools, prompts) → the existing checker and compiler. `lib/graphReference.ts` holds the format docs used by both the guide and `get_graph_format`.
+- **Directory rules that shaped it** (claude.com/docs/connectors/building/submission and review-criteria): every tool needs `title` and `readOnlyHint`/`destructiveHint`; names ≤ 64; descriptions must not tell Claude how to behave; actionable errors; docs URL, privacy URL, support contact and icon required; submit at claude.ai/directory/manage from a paid plan. Invalid Origin → 403, but too strict an allowlist breaks Claude, so a missing Origin is allowed.
+- **Status**: ✅ Built and verified locally; deployment, firewall bypass, real-Claude test and submission still to do.
