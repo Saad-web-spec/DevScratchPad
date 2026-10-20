@@ -815,9 +815,35 @@ All AI agents operating in this repository MUST follow this 5-step loop:
 - **Gotcha — absolute overlays in the canvas collide on narrow widths**: keep the bottom controls and hint in one flex row; use `@container` queries on the canvas, not viewport breakpoints.
 - **Status**: ✅ Complete (validate-presets, lint, build).
 
+
+### Session: 2026-10-18 — Skill Graph intro video
+- **Agent**: Claude Code (Opus 5.5)
+- **Output**: `promo_assets/skill-graph-video/` — `scene.html` (deterministic scene, `seek(t)`), `render.py` (Playwright frames → ffmpeg, parallel segments joined with `-c copy`), `skill-graph-intro.mp4` (40 s, 1080p60, no audio). Story: build the graph → studio reveal → select Verifier (Markdown + Inspector follow) → plan walk-through → Export kit file tree → end card.
+- **Decision — a recreated scene, not a screen recording**: frame-exact motion and camera moves; it mirrors the real UI (zinc + orange, Manrope + JetBrains Mono, real labels, real export paths) and must be updated by hand if /graph changes.
+- **Gotcha — round line caps on `pathLength=1` strokes leave dots at dashoffset 1**; hide undrawn strokes.
+- **Voice-over**: `voiceover.py` narrates with Kokoro (offline neural TTS, voice `af_heart`; venv + models in `C:/Users/User/.tts/kokoro`, not in the repo) → `skill-graph-intro-voiceover.mp4`. Lines are timed to scene moments in `SCRIPT`; retime them if scene.html timings change. Windows only ships robotic SAPI voices (David/Zira/Mark).
+- **Status**: ✅ Complete (no app source changed, so no build/lint run).
+
+### Session: 2026-10-20 — Skill Graph: Instagram in-app browser zoom-out
+- **Agent**: Claude Code (Opus 5.5)
+- **Fix**: `GraphSeoContent` two-column grid had no base `grid-cols`, so on mobile the implicit `1fr` (= `minmax(auto,1fr)`) track grew to the `<pre>` code sample's width (page 778px at 375px). Added `grid-cols-[minmax(0,1fr)]`.
+- **Gotcha — in-app browsers (Instagram, Facebook; Android WebView overview mode) zoom out to fit any horizontal overflow**, so one wide element shrinks the whole page; Chrome just scrolls sideways and hides it. Grids/flex items holding `<pre>`/tables need `minmax(0,1fr)` / `min-w-0`. Check with `document.documentElement.scrollWidth` at 375px.
+- **Status**: ✅ Complete (validate-presets, lint, build).
+
 ### Session: 2026-10-20 — Skill Graph connector for Claude
 - **Agent**: Claude Code (Opus 5.5)
 - **ADR — remote MCP without sign-in**: the user wants Claude to use Skill Graph, started from the site, with no accounts, no Supabase and no API keys. Anthropic's consumer OAuth cannot be used by third-party sites, so the site is a connector Claude calls, not a client of Claude. Without accounts OAuth has nothing to do, so the connector is authless. Tool inputs are processed in memory and dropped; only tool names are logged. This is the one scoped exception to ADR-001 (recorded in AGENTS.md and CLAUDE.md).
 - **Layout**: `src/app/graph/mcp/route.ts` (HTTP: origin, size, version, status codes) → `lib/mcpProtocol.ts` (JSON-RPC, testable) → `lib/graphConnector.ts` (tools, prompts) → the existing checker and compiler. `lib/graphReference.ts` holds the format docs used by both the guide and `get_graph_format`.
 - **Directory rules that shaped it** (claude.com/docs/connectors/building/submission and review-criteria): every tool needs `title` and `readOnlyHint`/`destructiveHint`; names ≤ 64; descriptions must not tell Claude how to behave; actionable errors; docs URL, privacy URL, support contact and icon required; submit at claude.ai/directory/manage from a paid plan. Invalid Origin → 403, but too strict an allowlist breaks Claude, so a missing Origin is allowed.
 - **Status**: ✅ Built and verified locally; deployment, firewall bypass, real-Claude test and submission still to do.
+
+### Session: 2026-10-21 — Skill Graph: connector feedback round
+- **Agent**: Claude Code (Opus 5.5)
+- **Source**: a real claude.ai test of the connector (receipt app workflow) plus Claude's 8-point feedback; the user asked for all of it and the Skill Graph logo in Claude.
+- **Decision — short links without storage**: no server storage (ADR-001), so links stay self-contained: `#g=<d><data>` is raw DEFLATE (fflate, sync, same code in studio and connector) against preset dictionary `<d>` (one base64url char) from `lib/graphShareDictionary.ts`: dictionary 0 = every distinct starter-graph line + the format's repeated lines; 1–10 = that plus one starter graph. The encoder tries all (≤ 60 KB sources) and keeps the shortest. Starter graphs ~60 chars, edited starters ~180, fresh graphs ~1/3 of LZ. The connector also returns a Markdown link label.
+- **Gotcha — the share dictionaries are FROZEN**: a link only opens with byte-identical dictionary text; `graphFeedback.test` pins their SHA-256. Never edit or derive them from the live blueprints; append new dictionaries instead. Decompression is capped with a preallocated `out` buffer (fflate truncates there).
+- **Decision — draft_graph takes an outline, not prose**: the server has no model, so Claude writes `{name, description, steps[{id,type,task,after,returns,keys,gate,tools}]}` and `lib/graphDraft.ts` writes the format (input `request`, keyed split for orchestrators feeding several steps, contracts from `returns`/`keys`, read-only default tools).
+- **Gotcha — the connector icon**: as a custom connector, Claude ignores `serverInfo.icons` and shows `google.com/s2/favicons?domain=<last two host labels>`, i.e. the DevScratchpad `</>` favicon of devscratchpad.tech; a subdomain cannot change it (anthropics/claude-ai-mcp#152, #838). Only a separate registrable domain whose homepage favicon is the Skill Graph mark, or Anthropic fixing #152, changes it.
+- **Gotcha — same-page hash navigation**: going from /graph to /graph#g=… in one tab does not reload, so the link is not opened (true for `#graph=` too); browser tests must go through about:blank.
+- **Gotcha — YAML anchors**: `stringifyYaml` aliased shared arrays (`tools: &a1`) in fan-out blueprints; `aliasDuplicateObjects: false` now.
+- **Status**: ✅ Complete (262 graph tests, browser check, validate-presets, lint, typecheck, build).

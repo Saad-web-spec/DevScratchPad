@@ -73,7 +73,7 @@ describe("step ids in the compiled kit", () => {
 
   it("tells each step the ids of the outputs it reads, group aliases included", () => {
     const subagent = (id: string) => buildSubagent(graph, graph.nodes.find((node) => node.id === id)!);
-    expect(subagent("verifier")).toContain("the outputs of the workers (`worker_research`, `worker_compare`, `worker_check`, `worker_gaps`, in your task message)");
-    expect(subagent("merger")).toContain('the output of "VERIFIER (Fresh Context)" (`verifier`, in your task message)');
+    expect(subagent("verifier")).toContain("the outputs of the workers (under `### worker_research`, `### worker_compare`, `### worker_check`, `### worker_gaps` in your task message)");
+    expect(subagent("merger")).toContain('the output of "VERIFIER (Fresh Context)" (under `### verifier` in your task message)');
   });
 });

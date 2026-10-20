@@ -11,6 +11,7 @@ import {
   Download,
   FilePlus,
   FileUp,
+  History,
   LaptopMinimalCheck,
   LayoutGrid,
   LayoutTemplate,
@@ -33,7 +34,7 @@ import { cn } from "@/lib/utils";
 import { useModKeyLabel } from "@/lib/useModKeyLabel";
 import { MonacoEditor } from "@/components/MonacoEditor";
 import { SkillGraphIcon } from "@/components/icons/SkillGraphIcon";
-import { loadFromStorageEnvelope, removeStorageKey, saveToStorageEnvelope } from "@/lib/storage";
+import { formatRelativeTime, loadFromStorageEnvelope, removeStorageKey, saveToStorageEnvelope } from "@/lib/storage";
 import { GraphCanvas, edgeKey, type FocusRequest, type Selection, type Trace } from "./components/GraphCanvas";
 import { InspectorPanel, IssueList } from "./components/InspectorPanel";
 import { PlanPanel } from "./components/PlanPanel";
@@ -74,8 +75,25 @@ import { buildPlan } from "./lib/graphPlan";
 import { bakeLesson, parseLessons, serializeLessons, type Lesson } from "./lib/graphLessons";
 import { buildExportKit, buildSingleFileSkill, toSlug } from "./lib/graphExport";
 import { MAX_HASH_LENGTH, SHARE_URL_SOFT_LIMIT, decodeShareHash, encodeShareHash } from "./lib/graphShare";
+import { readRecentGraphs, rememberGraph, type RecentGraph } from "./lib/graphRecent";
 
 const STORAGE_KEY = "devscratchpad_graph_v1";
+/** Drafts that a link, a blueprint or an opened file replaced (see graphRecent.ts). */
+const RECENT_STORAGE_KEY = "devscratchpad_graph_recent_v1";
+/** The shipped graphs, which can always be loaded again, so replacing one keeps nothing. */
+const PRISTINE_GRAPHS: readonly string[] = [DEFAULT_GRAPH_SKILL, BLANK_GRAPH_SKILL, ...BLUEPRINTS.map((blueprint) => blueprint.source)];
+
+function loadRecentGraphs(): RecentGraph[] {
+  try {
+    return readRecentGraphs(loadFromStorageEnvelope<unknown>(RECENT_STORAGE_KEY, "devscratchpad_graph_legacy_unused"));
+  } catch {
+    return [];
+  }
+}
+
+function now(): number {
+  return Date.now();
+}
 /** Earlier builds could remember a model API key under this key; it is wiped on load. */
 const LEGACY_KEY_STORAGE_KEY = "devscratchpad_graph_key_v1";
 
@@ -337,11 +355,23 @@ function GraphWorkspace({ initial, shared }: WorkspaceProps) {
   const [fitRequest, setFitRequest] = useState(0);
   const [dockTab, setDockTab] = useState<DockTab>("inspector");
   const [mobileView, setMobileView] = useState<MobileView>("canvas");
-  const [notice, setNotice] = useState<string | null>(shared ? `Opened a shared graph. ${modKey}+Z on the canvas brings back your previous draft.` : null);
-  // A shared graph replaces the saved draft like any other edit, so undo brings the draft back.
-  const [history, setHistory] = useState<{ undo: HistoryEntry[]; redo: HistoryEntry[] }>(() =>
-    shared && initial && initial.source.trim() !== "" && initial.source !== shared.source ? { undo: [{ before: initial.source, after: shared.source }], redo: [] } : { undo: [], redo: [] }
+  // A shared graph replaces the saved draft like any other edit, so undo brings the draft back, and the
+  // draft is also kept under Recent graphs, which outlives this tab.
+  const replacedDraft = shared && initial && initial.source.trim() !== "" && initial.source !== shared.source ? initial.source : null;
+  const [notice, setNotice] = useState<string | null>(
+    shared
+      ? replacedDraft && !PRISTINE_GRAPHS.includes(replacedDraft)
+        ? "Opened a shared graph. Your previous graph is kept under Recent graphs (the clock above the Markdown)."
+        : "Opened a shared graph."
+      : null
   );
+  const [history, setHistory] = useState<{ undo: HistoryEntry[]; redo: HistoryEntry[] }>(() =>
+    replacedDraft && shared ? { undo: [{ before: replacedDraft, after: shared.source }], redo: [] } : { undo: [], redo: [] }
+  );
+  const [recent, setRecent] = useState<RecentGraph[]>(() => {
+    const stored = loadRecentGraphs();
+    return replacedDraft ? rememberGraph(stored, replacedDraft, now(), PRISTINE_GRAPHS) : stored;
+  });
   /** A graph from someone else's link: show what it can run until the user has looked. */
   const [reviewShared, setReviewShared] = useState(shared !== null);
   /** Walkthrough: index of the stage on show (equal to the stage count once finished), or null. */
@@ -431,6 +461,10 @@ function GraphWorkspace({ initial, shared }: WorkspaceProps) {
     }, 400);
     return () => clearTimeout(timer);
   }, [source, editorWidth, panelWidth, editorOpen, notify]);
+
+  useEffect(() => {
+    saveToStorageEnvelope<RecentGraph[]>(RECENT_STORAGE_KEY, recent);
+  }, [recent]);
 
   useEffect(() => {
     selectionRef.current = selection;
@@ -740,9 +774,21 @@ function GraphWorkspace({ initial, shared }: WorkspaceProps) {
     void copyText(url, url.length > SHARE_URL_SOFT_LIMIT ? `Copied a long share link (${Math.round(url.length / 1000)}k characters); some apps may cut it` : "Copied a share link to this graph");
   };
 
-  /** Replaces the whole document; recorded in the undo history like any canvas edit. */
+  /**
+   * Replaces the whole document; recorded in the undo history like any canvas edit, and the old one is
+   * kept under Recent graphs. A graph restored from Recent leaves the list, since it is the draft again.
+   */
   const replaceSource = (next: string, message?: string) => {
     if (next === source) return;
+    const replaced = source;
+    setRecent((current) =>
+      rememberGraph(
+        current.filter((entry) => entry.source !== next),
+        replaced,
+        now(),
+        PRISTINE_GRAPHS
+      )
+    );
     setHistory((current) => ({ undo: [...current.undo, { before: source, after: next, selectionBefore: selection, selectionAfter: null }].slice(-HISTORY_LIMIT), redo: [] }));
     lastCommitAt.current = 0;
     setSource(next);
@@ -1092,6 +1138,29 @@ function GraphWorkspace({ initial, shared }: WorkspaceProps) {
                       >
                         Blank graph
                       </MenuItem>
+                    </>
+                  )}
+                </ToolbarPopover>
+                <ToolbarPopover ariaLabel="Recent graphs" align="right" label={<History className="h-3.5 w-3.5 text-zinc-500" />} panelClassName="w-72">
+                  {(close) => (
+                    <>
+                      <p className="px-2.5 pb-1 pt-1.5 text-xs font-semibold text-zinc-900">Recent graphs</p>
+                      {recent.length === 0 ? (
+                        <p className="px-2.5 pb-2 text-xs leading-snug text-zinc-500">When a link, a blueprint or an opened file replaces your graph, the old one is kept here.</p>
+                      ) : (
+                        recent.map((entry) => (
+                          <MenuItem
+                            key={`${entry.savedAt}:${entry.name}`}
+                            hint={`Replaced ${formatRelativeTime(entry.savedAt)} · ${parseGraphSkill(entry.source).graph?.nodes.length ?? 0} nodes`}
+                            onClick={() => {
+                              close();
+                              replaceSource(entry.source, `Restored ${entry.name} (${modKey}+Z on the canvas undoes it)`);
+                            }}
+                          >
+                            <span className="block truncate font-mono text-[12.5px]">{entry.name}</span>
+                          </MenuItem>
+                        ))
+                      )}
                     </>
                   )}
                 </ToolbarPopover>

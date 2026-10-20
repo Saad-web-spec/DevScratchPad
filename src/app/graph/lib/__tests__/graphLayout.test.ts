@@ -89,13 +89,13 @@ describe("layer-skipping edges", () => {
 describe("group aliases mean the nodes feeding the step", () => {
   const ship = load(SHIP_CHANGE_GRAPH_SKILL);
   // implement, review_correctness and review_security are all workers; the gate reads only the reviews.
-  const gate = updateNode(ship, "gate", { prompt: "Diff:\n{{diff.output}}\n\nReviews:\n{{workers.output}}" });
+  const gate = updateNode(ship, "gate", { prompt: "Judge the diff against the reviews below.\n\nDiff:\n{{diff.output}}\n\nReviews:\n{{workers.output}}" });
 
   it("resolves to the direct predecessors of that type first", () => {
     expect(resolveGroup(gate, "workers", nodeOf(gate, "gate")).map((n) => n.id)).toEqual(["review_correctness", "review_security"]);
     expect(resolveGroup(gate, "workers").map((n) => n.id)).toEqual(["implement", "review_correctness", "review_security"]);
     expect(validateGraph(gate)).toEqual([]);
-    expect(buildSubagent(gate, nodeOf(gate, "gate"))).toContain("the outputs of the workers (`review_correctness`, `review_security`, in your task message)");
+    expect(buildSubagent(gate, nodeOf(gate, "gate"))).toContain("the outputs of the workers (under `### review_correctness`, `### review_security` in your task message)");
   });
 
   it("falls back to upstream nodes of the type, then flags a group that only runs after the step", () => {

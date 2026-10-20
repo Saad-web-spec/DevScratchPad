@@ -5,6 +5,7 @@ import { SkillGraphIcon } from "@/components/icons/SkillGraphIcon";
 import { CopyField } from "../components/CopyField";
 import { MAX_SOURCE_LENGTH, MAX_NODES } from "../lib/graphSkill";
 import { SHARE_URL_SOFT_LIMIT } from "../lib/graphShare";
+import { BLUEPRINTS } from "../lib/graphTemplates";
 
 const PAGE_URL = "https://www.devscratchpad.tech/graph/connector";
 const CONNECTOR_URL = "https://www.devscratchpad.tech/graph/mcp";
@@ -28,9 +29,11 @@ export const metadata: Metadata = {
 
 const TOOLS: { name: string; does: string }[] = [
   { name: "get_graph_format", does: "Reads the graph skill format: node types, fields, contracts, references, the checker's rules and a full example." },
-  { name: "list_graph_templates", does: "Lists the starter graphs (Parallel audit, Ship a change, Review each file, PR review, RFC discovery, Bug triage)." },
+  { name: "list_graph_templates", does: `Lists the starter graphs (${BLUEPRINTS.map((blueprint) => blueprint.title).join(", ")}).` },
   { name: "get_graph_template", does: "Gets one starter graph's source, to build on." },
-  { name: "validate_graph", does: "Checks a graph: errors, warnings with how to fix them, and the stages that will run." },
+  { name: "draft_graph", does: "Writes a graph from a plain outline of the steps (what each does and what it reads), so Claude does not have to write the format by hand." },
+  { name: "validate_graph", does: "Checks a graph: errors, warnings with how to fix them (weak prompts and vague gates included), and the stages that will run." },
+  { name: "dry_run_graph", does: "Walks the plan with a sample request, without running a model: what each step receives, returns and is checked by, and where a problem would hit." },
   { name: "compile_graph", does: "Turns a valid graph into files: the Claude Code kit (orchestrating SKILL.md plus one subagent per step), a single SKILL.md, or a Cursor rule." },
   { name: "open_graph_in_studio", does: "Makes a link that opens the graph in the studio, to see it, walk through the plan, edit and export it." },
 ];
@@ -40,6 +43,7 @@ const PROMPTS: string[] = [
   "I'm starting a Next.js app with Stripe billing. Plan a Skill Graph workflow that implements a feature, runs npm test until it passes, and asks me before it opens the PR.",
   "Use Skill Graph to build a bug triage workflow: read the stack trace, check recent commits and logs in parallel, then write a minimal repro. Give me the studio link.",
   "Take the Ship a change starter graph, change the test command to pnpm test, check it, and compile it into Claude Code files.",
+  "Design a Skill Graph workflow for a receipt scanning app: extract the fields in parallel, check the totals add up, then write the expense entry. Dry-run it with a sample receipt.",
 ];
 
 function C({ children }: { children: React.ReactNode }) {
@@ -122,6 +126,11 @@ export default function GraphConnectorPage() {
               </>,
             ]}
           />
+          <P>
+            If Claude reports <b>No approval received</b>, the tool never ran: Claude asked for your permission and did not get it, because the request was declined or timed
+            out while the chat was in the background. Ask again and choose <b>Allow</b>, or <b>Always allow</b> in the connector&apos;s tool settings so it never asks.
+            Skill Graph never refuses a call this way; its own errors say what to fix.
+          </P>
           <P>Connectors you add on the web also appear in the desktop and mobile apps. On Team and Enterprise plans, an owner may need to add the connector for the organization first.</P>
         </Section>
 
@@ -150,11 +159,12 @@ export default function GraphConnectorPage() {
         <Section id="results" title="What you get back">
           <ul className="list-disc space-y-2 pl-5 text-[15px] leading-relaxed text-zinc-600">
             <li>
-              <b className="text-zinc-900">A studio link.</b> It opens the graph on the canvas with its plan, where you can walk through the stages, change steps and export.
-              The graph travels inside the link, after the <C>#</C>.
+              <b className="text-zinc-900">A studio link.</b> It opens the graph on the canvas with its plan, where you can walk through the stages, change steps and export
+              all files as one zip. The graph travels inside the link, after the <C>#</C>, so Claude shows it as a short &quot;Open … in Skill Graph&quot; link.
             </li>
             <li>
-              <b className="text-zinc-900">The check.</b> Which steps run in which order, which run in parallel, and any errors or warnings with how to fix them.
+              <b className="text-zinc-900">The check and a dry run.</b> Which steps run in which order, which run in parallel, what each step receives and returns with a
+              sample request, and any errors or warnings with how to fix them.
             </li>
             <li>
               <b className="text-zinc-900">The files.</b> An orchestrating <C>SKILL.md</C> and one Claude Code subagent per step, a single-file <C>SKILL.md</C>, or a Cursor
@@ -189,7 +199,10 @@ export default function GraphConnectorPage() {
           <ul className="list-disc space-y-2 pl-5 text-[15px] leading-relaxed text-zinc-600">
             <li>A graph can have up to {MAX_NODES} steps and {MAX_SOURCE_LENGTH.toLocaleString("en-US")} characters.</li>
             <li>Links longer than about {SHARE_URL_SOFT_LIMIT.toLocaleString("en-US")} characters can be cut off by some chat apps; open them directly in a browser. A graph too large for a link comes back as files instead.</li>
-            <li>Nothing is saved on our side. Keep the link or the files; opening a link in the studio replaces the graph saved in that browser (Ctrl+Z on the canvas brings it back).</li>
+            <li>
+              Nothing is saved on our side. Keep the link or the files. Opening a link in the studio keeps the graph you had in that browser under <b>Recent graphs</b> (the
+              clock above the Markdown), so nothing is lost.
+            </li>
             <li>Skill Graph designs and compiles workflows; it does not run them. Your agent runs the files you install.</li>
             <li>On claude.ai, Claude shows the compiled files for you to copy. Only Claude Code can write them into your project.</li>
           </ul>

@@ -434,7 +434,7 @@ export default function GraphGuidePage() {
               head={["Area", "What it is for"]}
               rows={[
                 ["Toolbar", <>Walk through plan, the validity status (click it to see issues), <b>+ Node</b>, <b>Share</b> and <b>Export</b>.</>],
-                ["Editor (left)", <>The <C>SKILL.md</C> source. This file is the single source of truth: the canvas is drawn from it, and canvas edits are written back into it. <b>Blueprints</b>, open file and hide editor sit at its top.</>],
+                ["Editor (left)", <>The <C>SKILL.md</C> source. This file is the single source of truth: the canvas is drawn from it, and canvas edits are written back into it. <b>Blueprints</b>, <b>Recent graphs</b>, open file and hide editor sit at its top.</>],
                 ["Canvas (middle)", <>The graph, laid out in stages from left to right (top to bottom when the canvas is taller than wide). Drag a card to put it where you want; the place is saved. Zoom controls, undo/redo, fit-to-view and <b>Tidy layout</b> are at its bottom left.</>],
                 ["Panel (right)", <><b>Inspector</b> edits the selected step or edge, or the skill itself when nothing is selected. Its settings come in sections (Prompt, Agent, Checks, Fan-out, Probe, Inputs, What it receives) that fold away and show what is set on their right, so open only the one you need. <b>Agent plan</b> shows the stages the agent runs: one card per step with what it reads, what it returns, and what is set on it (tools, fresh context, checks, gates, fan-out, probing); click a card to edit the step. <b>Issues</b> lists errors and warnings. Drag the line on its left to make it wider.</>],
               ]}
@@ -696,8 +696,8 @@ export default function GraphGuidePage() {
             </P>
             <Note>
               Treat a graph from someone else like code from someone else. A graph opened from a link shows a yellow banner listing its commands, shell access, file edits, MCP tools and the steps with no tool limit (which may use every tool);
-              read them before you export, because your agent will run those commands with those permissions in your repository. Opening a link replaces your saved graph,
-              and Ctrl+Z on the canvas brings it back.
+              read them before you export, because your agent will run those commands with those permissions in your repository. Opening a link replaces the graph on
+              screen, and your own graph is kept under <b>Recent graphs</b> (the clock above the editor); Ctrl+Z on the canvas also brings it back.
             </Note>
           </Section>
 

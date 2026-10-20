@@ -108,7 +108,7 @@ describe("nodeLineRanges / nodeAtLine", () => {
 describe("share links", () => {
   it("round-trips a graph through the URL hash", () => {
     const hash = encodeShareHash({ source: DEFAULT_GRAPH_SKILL });
-    expect(hash.startsWith("#graph=")).toBe(true);
+    expect(hash.startsWith("#g=")).toBe(true);
     expect(decodeShareHash(hash)).toEqual({ source: DEFAULT_GRAPH_SKILL });
   });
 

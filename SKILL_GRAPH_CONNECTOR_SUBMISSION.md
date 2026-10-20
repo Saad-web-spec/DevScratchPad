@@ -19,14 +19,16 @@ Official references: [Submit a connector](https://claude.com/docs/connectors/bui
 
 ## 2. Tools
 
-Six tools, all `readOnlyHint: true`, `destructiveHint: false`, each with a `title`:
+Eight tools, all `readOnlyHint: true`, `destructiveHint: false`, each with a `title`:
 
 | Tool | Title |
 | --- | --- |
 | get_graph_format | Get the graph skill format |
 | list_graph_templates | List starter graphs |
 | get_graph_template | Get a starter graph |
+| draft_graph | Draft a graph from an outline |
 | validate_graph | Check a graph |
+| dry_run_graph | Dry-run a graph |
 | compile_graph | Compile a graph into agent files |
 | open_graph_in_studio | Get a studio link for a graph |
 
@@ -40,17 +42,17 @@ One prompt: `design_workflow` ("Design a workflow for my project").
 
   > Skill Graph turns a project description into a multi-agent workflow your agent can run. Tell Claude what you are building or what task you want automated, and it designs the workflow as a graph skill: the steps, which ones run in parallel, what each step hands the next, which steps check the work in a fresh context, and where a test or your approval decides whether work goes on.
   >
-  > Skill Graph checks the graph the way a compiler checks code: cycles, missing inputs, references to steps that have not run yet, steps that can edit files running side by side, irreversible work without an approval. Claude fixes what it finds until the graph is valid.
+  > Skill Graph checks the graph the way a compiler checks code: cycles, missing inputs, references to steps that have not run yet, steps that can edit files running side by side, irreversible work without an approval. It also flags weak prompts: a verifier without pass criteria, a step that never says what it returns. Claude fixes what it finds until the graph is valid, then dry-runs it with a sample request to see what each step receives and hands on.
   >
   > You get back a link that opens the graph in the Skill Graph studio, where you can see it on a canvas, walk through the plan stage by stage, change steps and export. When you are happy with it, Claude compiles it into files: an orchestrating SKILL.md with one Claude Code subagent per step (each with its own tools and model), a single self-orchestrating SKILL.md, or a Cursor rule. In Claude Code, Claude saves them straight into your repository.
   >
-  > Start from six starter graphs (parallel audit, ship a change, review each file, PR review, RFC discovery, bug triage) or from scratch. No account, no API key: every tool only reads, and nothing you send is stored.
+  > Start from ten starter graphs (parallel audit, ship a change, review each file, PR review, RFC discovery, bug triage, research report, write an article, analyze a dataset, design an app), from an outline of the steps, or from scratch. No account, no API key: every tool only reads, and nothing you send is stored.
 
 - **Categories** (1–5): Developer tools, Productivity (choose the closest names the portal offers)
 - **Documentation URL**: https://www.devscratchpad.tech/graph/connector
 - **Privacy policy URL**: https://www.devscratchpad.tech/graph/privacy
 - **Support contact**: support@devscratchpad.tech
-- **Icon**: `public/skill-graph-icon.png` (512×512 PNG), also served at https://www.devscratchpad.tech/skill-graph-icon.png
+- **Icon**: `public/skill-graph-icon.png` (512×512 PNG), also served at https://www.devscratchpad.tech/skill-graph-icon.png and declared in `serverInfo.icons`. Note: as a *custom* connector, Claude ignores `serverInfo.icons` and shows Google's favicon for the apex domain (devscratchpad.tech = the DevScratchpad `</>` mark); see anthropics/claude-ai-mcp#152 and #838. Upload this icon in the portal so the directory listing uses it.
 - **Slug** (permanent): `skill-graph`
 
 ## 4. Use cases

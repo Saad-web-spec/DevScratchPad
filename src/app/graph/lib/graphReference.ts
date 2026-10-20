@@ -96,6 +96,8 @@ export function graphFormatReference(): string {
     "- `foreach` must name a connected step that returns JSON. Probed steps (`probe`) may only read; they cannot edit files or run unrestricted shell commands.",
     "- Tools are Claude Code tool names (Read, Grep, Glob, Edit, Write, Bash, WebSearch, WebFetch, or scoped such as `Bash(npm test:*)`, or MCP tools `mcp__server__tool`). An empty list `[]` means every tool, so list what the step needs or leave the key out.",
     "- Models are haiku, sonnet, opus, fable or a full model id.",
+    "- A step that reads `{{source.key}}` needs `source` to return JSON, and a `required` list on that edge's contract must include the key.",
+    "- Prompt quality (warnings): a verifier needs a `gate`, and a gate must say what has to be true. A prompt must be more than a few words, say what it returns (unless a contract, `output_format` or gate does), and name its inputs with references.",
     "",
     "## Design guidance",
     "",

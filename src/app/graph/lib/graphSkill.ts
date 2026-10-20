@@ -544,7 +544,8 @@ export function serializeGraphSkill(graph: SkillGraph): string {
     };
   }
 
-  const yaml = stringifyYaml(frontmatter, { lineWidth: 0, flowCollectionPadding: false }).trimEnd();
+  // Steps often share one tools array; written out in full, not as YAML anchors (`&a1` / `*a1`) a reader must resolve.
+  const yaml = stringifyYaml(frontmatter, { lineWidth: 0, flowCollectionPadding: false, aliasDuplicateObjects: false }).trimEnd();
   const parts = [`---\n${yaml}\n---`, graph.preamble || DEFAULT_PREAMBLE];
   for (const node of graph.nodes) {
     if (runsWithoutSubagent(node.type) && node.prompt.trim() === "") continue;
@@ -1096,7 +1097,15 @@ export function validateGraph(graph: SkillGraph): GraphIssue[] {
     issues.push({ severity: "warning", code: "no-sink", message: "No node is at the end of the graph, so there is no final answer." });
   }
 
-  issues.push(...validateFlow(graph), ...validateReliability(graph), ...validateExperience(graph), ...validateFanOutAndHandoffs(graph), ...validateProbing(graph));
+  issues.push(
+    ...validateFlow(graph),
+    ...validateReliability(graph),
+    ...validateExperience(graph),
+    ...validateFanOutAndHandoffs(graph),
+    ...validateProbing(graph),
+    ...validateContractKeys(graph),
+    ...validatePrompts(graph)
+  );
   if (graph.specVersion !== undefined && !KNOWN_SPEC_VERSIONS.includes(graph.specVersion)) {
     issues.push({
       severity: "warning",
@@ -1151,6 +1160,129 @@ function validateProbing(graph: SkillGraph): GraphIssue[] {
     const judge = slugs.get(`${toSlug(node.id, "node")}-judge`);
     if (judge) {
       issues.push({ severity: "error", code: "agent-name-collision", nodeId: judge, message: `"${judge}" would export to the same file as the judge of the probed step "${node.id}". Rename one.` });
+    }
+  }
+  return issues;
+}
+
+/**
+ * A step that reads `{{source.key}}` needs the source to return JSON with that key. The plan hands it
+ * "the `key` value", so a source told to return Markdown, or a contract whose required keys leave it
+ * out, breaks the handoff on the first run.
+ */
+function validateContractKeys(graph: SkillGraph): GraphIssue[] {
+  const issues: GraphIssue[] = [];
+  const byId = new Map(graph.nodes.map((node) => [node.id, node]));
+  for (const node of graph.nodes) {
+    const read = new Map<string, Set<string>>();
+    const addKey = (sourceId: string, key: string) => read.set(sourceId, (read.get(sourceId) ?? new Set<string>()).add(key));
+    for (const ref of nodeRefs(node)) {
+      if (ref.path === "" || ref.path === "output" || isItemRef(node, ref.head) || !byId.has(ref.head)) continue;
+      addKey(ref.head, ref.path.split(".")[0]);
+    }
+    const list = foreachSource(node);
+    if (list?.key && byId.has(list.node)) addKey(list.node, list.key);
+
+    for (const [sourceId, keys] of read) {
+      const source = byId.get(sourceId) as GraphNode;
+      if (source.type === "input" || runsWithoutSubagent(source.type)) continue;
+      const shown = [...keys].map((key) => `{{${sourceId}.${key}}}`).join(", ");
+      if (!wantsJsonOutput(graph, source)) {
+        // The fan-out check already reports a list source that is not JSON.
+        if (list?.node === sourceId && keys.size === 1) continue;
+        issues.push({
+          severity: "warning",
+          code: "ref-key-not-json",
+          nodeId: node.id,
+          message: `"${node.id}" reads ${shown}, but "${sourceId}" does not return JSON, so there is no such key. Give the edge a JSON contract, set output_format: json on "${sourceId}", or read {{${sourceId}}} whole.`,
+        });
+        continue;
+      }
+      for (const edge of graph.edges) {
+        if (edge.from !== sourceId || edge.to !== node.id || !edge.contract) continue;
+        const required = getContract(graph, edge.contract)?.required;
+        if (!required || required.length === 0) continue;
+        const missing = [...keys].filter((key) => !required.includes(key));
+        if (missing.length === 0) continue;
+        issues.push({
+          severity: "warning",
+          code: "ref-key-not-in-contract",
+          nodeId: node.id,
+          message: `"${node.id}" reads ${missing.map((key) => `"${key}"`).join(", ")} from "${sourceId}", but the contract "${edge.contract}" requires only ${required.map((key) => `"${key}"`).join(", ")}, so a valid payload may lack it. Add it to required, or read a key the contract has.`,
+        });
+      }
+    }
+  }
+  return issues;
+}
+
+/** Words that tell a step what to hand back. */
+const OUTPUT_WORDS =
+  /\b(return|returns|output|outputs|produce|write|writes|list|lists|report|respond|reply|answer|format|json|markdown|table|summary|summari[sz]e|draft|give|rank|score|verdict|recommend)\b/i;
+/** Below this a prompt is a title, not instructions. */
+const MIN_PROMPT_WORDS = 6;
+/** A gate shorter than this ("looks good") gives the verifier nothing to judge by. */
+const MIN_GATE_WORDS = 4;
+
+function wordCount(text: string): number {
+  return text.split(/\s+/).filter(Boolean).length;
+}
+
+/**
+ * Prompt quality. The checks above prove the graph is wired; these flag steps that will run but leave
+ * their agent guessing: a verifier with no pass criteria, a prompt too short to act on, no word on
+ * what to return, or inputs it never names.
+ */
+function validatePrompts(graph: SkillGraph): GraphIssue[] {
+  const issues: GraphIssue[] = [];
+  const byId = new Map(graph.nodes.map((node) => [node.id, node]));
+  for (const node of graph.nodes) {
+    if (node.type === "input" || runsWithoutSubagent(node.type)) continue;
+    if (node.type === "verifier" && !node.gate) {
+      issues.push({
+        severity: "warning",
+        code: "verifier-no-gate",
+        nodeId: node.id,
+        message: `Verifier "${node.id}" has no gate, so nothing decides pass or fail and a bad result goes through. Add gate: with what must be true (e.g. every claim cites a file or source).`,
+      });
+    } else if (node.gate && wordCount(node.gate) < MIN_GATE_WORDS) {
+      issues.push({
+        severity: "warning",
+        code: "gate-vague",
+        nodeId: node.id,
+        message: `The gate of "${node.id}" ("${node.gate.trim()}") is too short to judge by. Say what must be true for it to pass, e.g. "every total matches the sum of its line items".`,
+      });
+    }
+    // An empty prompt is already an error (missing-prompt).
+    if (node.prompt.trim() === "") continue;
+    const text = node.prompt.replace(TEMPLATE_PATTERN, " ");
+    if (wordCount(text) < MIN_PROMPT_WORDS) {
+      issues.push({
+        severity: "warning",
+        code: "prompt-too-short",
+        nodeId: node.id,
+        message: `The prompt of "${node.id}" is only a few words. Say what the step does, with what, and what it returns; its agent sees nothing else.`,
+      });
+    }
+    // A contract, an output format or a gate already tells the agent the shape of its answer.
+    const shaped = node.gate !== undefined || node.outputFormat !== undefined || node.foreach !== undefined || graph.edges.some((edge) => edge.from === node.id && edge.contract);
+    if (!shaped && !OUTPUT_WORDS.test(text)) {
+      issues.push({
+        severity: "warning",
+        code: "prompt-no-output",
+        nodeId: node.id,
+        message: `"${node.id}" never says what to return, so every run may answer in a different shape. Say it in the prompt ("Return a numbered list of …"), or put a contract on its outgoing edge.`,
+      });
+    }
+    const preds = [...new Set(predecessorsOf(graph, node.id))].filter((id) => byId.get(id)?.type !== "approval");
+    if (preds.length > 0 && nodeRefs(node).length === 0 && !node.foreach) {
+      const names = preds.map((id) => (byId.get(id)?.type === "input" ? "{{goal}}" : `{{${id}}}`));
+      issues.push({
+        severity: "warning",
+        code: "prompt-no-inputs",
+        nodeId: node.id,
+        message: `"${node.id}" never names what it receives, so its prompt cannot say how to use it. Put ${names.join(", ")} where the step should use ${preds.length === 1 ? "it" : "each"}.`,
+      });
     }
   }
   return issues;

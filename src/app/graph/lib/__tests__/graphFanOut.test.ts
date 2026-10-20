@@ -90,7 +90,7 @@ describe("foreach", () => {
     expect(agent).toContain("File: your item (in your task message)");
     expect(agent).toContain("Your result is one entry of the `file_reviews` contract (json), which the orchestrator collects from every run");
     expect(agent).toContain("You handle one item of a list (`files` from `scope`)");
-    expect(agent).toContain('purpose is: the `focus` value from "LIST THE FILES" (in your task message)');
+    expect(agent).toContain('purpose is: the `focus` value from "LIST THE FILES" (under `### scope` in your task message)');
   });
 
   it("saves a fan-out output as JSON and offers {{item}} in the prompt menu", () => {

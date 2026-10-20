@@ -64,25 +64,30 @@ function frontmatterValue(value: string): string {
   return JSON.stringify(value.replace(/\s+/g, " ").trim());
 }
 
-/** Rewrites `{{...}}` references as plain words, since a subagent receives its inputs in its task message. */
+/**
+ * Rewrites `{{...}}` references as plain words, since a subagent receives its inputs in its task message.
+ * Each payload there starts with a `### <source step id>` heading (handoff rule 6), so the words name
+ * that heading: the agent knows exactly which part of its task a reference means.
+ */
 function toAgentPrompt(graph: SkillGraph, node: GraphNode): string {
+  const input = graph.nodes.find((n) => n.type === "input");
   return node.prompt.replace(/\{\{\s*([A-Za-z0-9_.\-[\]]+?)\s*\}\}/g, (full, raw: string) => {
     const dot = raw.indexOf(".");
     const head = dot === -1 ? raw : raw.slice(0, dot);
     const path = dot === -1 ? "" : raw.slice(dot + 1);
     if (isItemRef(node, head)) return "your item (in your task message)";
-    if (head === "goal") return "the user's goal (in your task message)";
-    if (head === "inputs") return "the inputs in your task message";
+    if (head === "goal") return input ? `the user's request (under \`### ${input.id}\` in your task message)` : "the user's request (in your task message)";
+    if (head === "inputs") return "every input in your task message (one `### <step id>` section each)";
     const target = graph.nodes.find((n) => n.id === head);
     if (target) {
-      const where = handoffOf(graph, target) === "file" ? "in the file named in your task message" : "in your task message";
-      if (path === "" || path === "output") return `the output of "${cleanLabel(target.label)}" (\`${target.id}\`, ${where})`;
+      const where = handoffOf(graph, target) === "file" ? `the file whose path is under \`### ${target.id}\` in your task message` : `under \`### ${target.id}\` in your task message`;
+      if (path === "" || path === "output") return `the output of "${cleanLabel(target.label)}" (${where})`;
       // `{{splitter.<own id>}}` is this step's own slice of a keyed JSON: its task.
       const key = path.split(".")[0];
-      return key === node.id ? `the task ${where}` : `the \`${key}\` value from "${cleanLabel(target.label)}" (${where})`;
+      return key === node.id ? `your task (${where})` : `the \`${key}\` value from "${cleanLabel(target.label)}" (${where})`;
     }
     const members = resolveGroup(graph, head, node);
-    if (members.length > 0) return `the outputs of the ${head} (${members.map((n) => `\`${n.id}\``).join(", ")}, in your task message)`;
+    if (members.length > 0) return `the outputs of the ${head} (under ${members.map((n) => `\`### ${n.id}\``).join(", ")} in your task message)`;
     return full;
   });
 }
@@ -424,7 +429,7 @@ function planSection(graph: SkillGraph, mode: "subagents" | "inline"): string {
   );
   lines.push("");
   const input = graph.nodes.find((node) => node.type === "input");
-  if (input) lines.push(`The input (\`${input.id}\`) is the user's goal. Ask for it if the user has not given one.`, "");
+  if (input) lines.push(`The input (\`${input.id}\`) is the user's goal: their request, word for word, handed on under \`### ${input.id}\`. Ask for it if the user has not given one.`, "");
   if (graph.experience) lines.push(...lessonsIntro(graph));
 
   for (const stage of buildPlan(graph)) {
@@ -460,7 +465,12 @@ function planSection(graph: SkillGraph, mode: "subagents" | "inline"): string {
   if (graph.experience) lines.push(...lessonsOutro(graph, mode));
 
   const sinks = graph.nodes.filter((node) => node.type !== "input" && !graph.edges.some((edge) => edge.from === node.id));
-  lines.push("## Final answer", "", `Return the output of ${sinks.map((node) => `**${cleanLabel(node.label)}**`).join(" and ") || "the last step"} to the user as it is.`);
+  const gatedSink = sinks.some((node) => node.gate);
+  lines.push(
+    "## Final answer",
+    "",
+    `Return the output of ${sinks.map((node) => `**${cleanLabel(node.label)}**`).join(" and ") || "the last step"} to the user as it is${gatedSink ? ", without its `GATE:` verdict (tell the user it passed)" : ""}.`
+  );
   return lines.join("\n");
 }
 
@@ -489,6 +499,12 @@ function handoffRules(graph: SkillGraph): string {
   const rules = [...HANDOFF_RULES];
   // The first two entries are the heading and a blank line, so the next rule number is length - 1.
   const add = (rule: string) => rules.push(`${rules.length - 1}. ${rule}`);
+  if (graph.nodes.some((node) => node.gate && !runsWithoutSubagent(node.type))) {
+    // A gate step returns its work, then the verdict; the steps after it need only the work.
+    add(
+      "A gate step's answer ends with its verdict: the `GATE: PASS` or `GATE: FAIL` line and the redo lines after it. Cut the verdict off before you hand the output on or return it; later steps and the user get only the work above it."
+    );
+  }
   if (graph.nodes.some((node) => handoffOf(graph, node) === "file")) {
     add("A step marked hand-off by file: save its output verbatim to its path before the next stage, and hand later steps the path, never the text.");
   }

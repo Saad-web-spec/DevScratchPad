@@ -597,3 +597,17 @@ From the "Loops and Graphs" article (@hanakoxbt): a check that can fail, edges t
 - [x] AGENTS.md / CLAUDE.md: scoped exception to "zero server transmission" for this route only
 - [x] Verified: 1192 tests (15 new), MCP Inspector CLI (tools/list, prompts/list, tools/call), curl (initialize, notification 202, bad Origin 403), 375px overflow check, validate-presets, lint (0 errors), typecheck, build
 - [ ] Deploy, add a Vercel firewall bypass for `/graph/mcp`, test as a custom connector in Claude.ai and Claude Code, then submit at claude.ai/directory/manage
+
+## 2026-10-21 — Skill Graph: connector feedback round (first real Claude test)
+
+- [x] Shorter links: `#g=<d><data>`, raw DEFLATE against frozen dictionaries (`lib/graphShareDictionary.ts`: a general one plus one per starter graph; the encoder keeps the shortest). Starter graphs ~60 chars (was ~2,500–3,100), an edited starter ~180, a fresh graph about a third of before; LZ `#graph=` links still open; the connector returns `[Open <name> in Skill Graph](url)`
+- [x] Nothing lost when a link opens: Recent graphs (`lib/graphRecent.ts`, clock above the Markdown) keeps up to 8 drafts replaced by a link, blueprint, blank graph or opened file
+- [x] Prompt-quality warnings: `verifier-no-gate`, `gate-vague`, `prompt-too-short`, `prompt-no-output`, `prompt-no-inputs`; handoff keys: `ref-key-not-json`, `ref-key-not-in-contract`
+- [x] Dry run (`lib/graphSimulate.ts`, tool `dry_run_graph`): each step's inputs with a sample request, required output, checks, failure path and issues at the step
+- [x] Compiled prompts name the `### <step id>` heading where each input sits; a gate's `GATE:` verdict is cut off before the next step or the user; compile output links to the studio zip export
+- [x] Approval friction: `/graph/connector` explains Claude's "No approval received" (declined or timed out on Claude's side) and Always allow
+- [x] `draft_graph` tool (`lib/graphDraft.ts`): a plain outline of steps becomes a valid graph.skill.md
+- [x] Four non-code blueprints: Research report, Write an article, Analyze a dataset, Design an app
+- [x] YAML anchors (`&a1`/`*a1`) no longer written for shared tools arrays
+- [x] Verified: 262 graph tests (20 new), full suite 1228+, CDP browser check (18 checks: `#g=` open, Recent restore, Share copy, old links, blueprints), local MCP curl, validate-presets, lint (graph clean), typecheck, build
+- [ ] Connector icon in Claude: needs a separate registrable domain with the Skill Graph favicon (Claude shows Google's favicon of the apex domain), or Anthropic honoring `serverInfo.icons`

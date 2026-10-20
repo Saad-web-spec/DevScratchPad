@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { CONNECTOR_TOOLS, callConnectorTool } from "../graphConnector";
 import { buildExportKit } from "../graphExport";
 import { INVALID_PARAMS, METHOD_NOT_FOUND, SUPPORTED_PROTOCOL_VERSIONS, handleBody, handleMessage } from "../mcpProtocol";
-import { decodeShareHash } from "../graphShare";
+import { decodeShareHash, encodeLegacyShareHash } from "../graphShare";
 import { parseGraphSkill, validateGraph, type SkillGraph } from "../graphSkill";
 import { BLUEPRINTS, DEFAULT_GRAPH_SKILL } from "../graphTemplates";
 
@@ -90,12 +90,16 @@ describe("compile_graph", () => {
 });
 
 describe("open_graph_in_studio", () => {
-  it("returns a studio link whose hash holds the graph", () => {
+  it("returns a short-labelled studio link whose hash holds the graph", () => {
     const result = call("open_graph_in_studio", { source: DEFAULT_GRAPH_SKILL });
-    const url = /Studio link: (\S+)/.exec(result.text)?.[1] ?? "";
-    expect(url.startsWith(`${context.studioUrl}#graph=`)).toBe(true);
+    const link = /Studio link: \[Open parallel-system-audit in Skill Graph\]\((\S+)\)/.exec(result.text);
+    const url = link?.[1] ?? "";
+    expect(url.startsWith(`${context.studioUrl}#g=`)).toBe(true);
     expect(decodeShareHash(url.slice(url.indexOf("#")))?.source).toBe(DEFAULT_GRAPH_SKILL);
+    // A starter graph costs next to nothing against its own dictionary.
+    expect(url.length - context.studioUrl.length).toBeLessThan(encodeLegacyShareHash({ source: DEFAULT_GRAPH_SKILL }).length / 10);
     expect(result.text).toContain("The graph is valid.");
+    expect(result.text).toContain("Recent graphs");
   });
 
   it("still links a graph with errors, and says so", () => {

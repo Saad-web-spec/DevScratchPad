@@ -147,7 +147,9 @@ topology:
 # Node Prompts & Edge Contracts
 
 ## @node: work
-Do the work described by the goal.
+Do the work this goal asks for, and return what you did and what you found:
+
+{{goal}}
 
 ## @node: answer
 Turn the work below into a clear final answer.
@@ -420,6 +422,13 @@ interface FanOutSpec {
   verifiedContract: string;
   /** Tools for the workers (the verifier is always read-only). */
   workerTools: string[];
+  /** What each worker returns; defaults to evidence-backed findings. */
+  workerReturn?: string;
+  /** How the verifier filters the worker outputs; defaults to dropping claims without evidence. */
+  verifierRule?: string;
+  /** The contract descriptions on the worker and verifier edges. */
+  findingsDescription?: string;
+  verifiedDescription?: string;
 }
 
 /** goal -> splitter -> N parallel workers -> fresh-context verifier -> synthesizer. */
@@ -443,7 +452,7 @@ function fanOutBlueprint(spec: FanOutSpec): string {
       isolatedContext: false,
       model: "haiku",
       tools: spec.workerTools,
-      prompt: `${worker.focus}\n\nYour task: {{splitter.${worker.id}}}\n\nReturn findings as a numbered list. For each one give the evidence (file, line, quote or source) and a confidence of high, medium or low.`,
+      prompt: `${worker.focus}\n\nYour task: {{splitter.${worker.id}}}\n\n${spec.workerReturn ?? "Return findings as a numbered list. For each one give the evidence (file, line, quote or source) and a confidence of high, medium or low."}`,
     })),
     {
       id: "verifier",
@@ -455,7 +464,7 @@ function fanOutBlueprint(spec: FanOutSpec): string {
       gate: spec.gate,
       onFail: "retry",
       maxRetries: 1,
-      prompt: `${spec.verifier}\n\nYou only see the raw worker outputs below, not their reasoning. Drop any claim without concrete evidence, merge duplicates, and mark what you rejected and why.\n\nOriginal input: {{goal}}\n\nWorker outputs:\n{{workers.output}}`,
+      prompt: `${spec.verifier}\n\nYou only see the raw worker outputs below, not their reasoning. ${spec.verifierRule ?? "Drop any claim without concrete evidence, merge duplicates, and mark what you rejected and why."}\n\nOriginal input: {{goal}}\n\nWorker outputs:\n{{workers.output}}`,
     },
     { id: "merger", type: "synthesizer", label: "FINAL ANSWER", isolatedContext: false, model: "sonnet", tools: ["Read"], prompt: `${spec.merger}\n\n{{verifier.output}}` },
   ];
@@ -471,8 +480,8 @@ function fanOutBlueprint(spec: FanOutSpec): string {
     ],
     contracts: {
       subtask_json: { format: "json", description: "One key per worker id; each value is that worker's task." },
-      [spec.findingsContract]: { format: "markdown", description: "A numbered list; every item has its evidence and a confidence of high, medium or low." },
-      [spec.verifiedContract]: { format: "markdown", description: "Only the items that passed verification, then the rejected ones with the reason." },
+      [spec.findingsContract]: { format: "markdown", description: spec.findingsDescription ?? "A numbered list; every item has its evidence and a confidence of high, medium or low." },
+      [spec.verifiedContract]: { format: "markdown", description: spec.verifiedDescription ?? "Only the items that passed verification, then the rejected ones with the reason." },
     },
     preamble: "# Node Prompts & Edge Contracts",
     extraFrontmatter: {},
@@ -573,6 +582,114 @@ export const BLUEPRINTS: readonly Blueprint[] = [
       merger: "Write the diagnosis: root cause, evidence, fix, and a test plan that reproduces the bug before the fix and passes after it.",
       findingsContract: "hypotheses",
       verifiedContract: "root_cause",
+    }),
+  },
+  {
+    id: "research-report",
+    title: "Research report",
+    hint: "Sources, figures, counterpoints and open questions, fact-checked in a fresh context",
+    source: fanOutBlueprint({
+      name: "research-report",
+      description: "Researches a question from four angles in parallel, fact-checks every claim against its source in a fresh context, and writes a sourced report.",
+      goalLabel: "RESEARCH QUESTION",
+      splitter: "You are the research lead. Turn the question into four research tasks, one per angle, each saying what to look for and how recent it must be.",
+      workers: [
+        { id: "sources", label: "Primary Sources", focus: "Find ONLY primary sources: official documents, papers, datasets and first-hand accounts, with what each one says." },
+        { id: "figures", label: "Figures & Data", focus: "Collect ONLY figures: statistics, dates, prices and measurements, each with where it comes from and how recent it is." },
+        { id: "counterpoints", label: "Counterpoints", focus: "Look ONLY for disagreement: credible sources that contradict the obvious answer, and the reasons they give." },
+        { id: "open_questions", label: "Open Questions", focus: "Find ONLY what is unknown or disputed: gaps in the evidence and claims that nobody has checked." },
+      ],
+      workerReturn: "Return findings as a numbered list. For each one give the source (title and URL), what it says in a short quote, and a confidence of high, medium or low.",
+      verifier: "You are a fact-checker. Check each claim against the source it cites; reject claims whose source does not say it or is not named.",
+      gate: "Every kept claim names a source that says it, and every figure has a date.",
+      workerTools: ["Read", "WebSearch", "WebFetch"],
+      merger: "Write the research report in Markdown: the answer in two sentences, Key findings with their sources, Where sources disagree, Open questions, and a list of Sources.",
+      findingsContract: "research_findings",
+      verifiedContract: "checked_findings",
+      findingsDescription: "A numbered list of claims; every claim has its source, a short quote and a confidence of high, medium or low.",
+      verifiedDescription: "Only the claims a cited source supports, then the rejected claims with the reason.",
+    }),
+  },
+  {
+    id: "write-an-article",
+    title: "Write an article",
+    hint: "Angle, outline, facts and reader in parallel, then an editor check before the draft",
+    source: fanOutBlueprint({
+      name: "write-an-article",
+      description: "Plans an article, post or newsletter from four angles in parallel, has an editor check the notes in a fresh context, and writes the draft.",
+      goalLabel: "BRIEF (topic, audience, length, voice)",
+      splitter: "You are the managing editor. Read the brief and give each writer the part of the piece they prepare, with the audience and length in mind.",
+      workers: [
+        { id: "angle", label: "Angle & Headline", focus: "Work ONLY on the angle: three possible headlines with a hook for each, and which one fits the audience best and why." },
+        { id: "outline", label: "Outline", focus: "Write ONLY the outline: the sections in order, the point of each one, and where examples go." },
+        { id: "facts", label: "Facts & Quotes", focus: "Gather ONLY the facts the piece needs: claims, figures and quotes, each with its source." },
+        { id: "reader", label: "Reader", focus: "Think ONLY about the reader: what they already know, the questions they will ask, and the jargon to avoid." },
+      ],
+      workerReturn: 'Return your notes as a numbered list. Mark each note with the source it rests on, or with "opinion" when it rests on none.',
+      verifier: "You are the editor. Check each note for accuracy and for fit with the brief.",
+      verifierRule: "Cut every factual note without a source and every note off the brief, merge duplicates, and list what you cut and why.",
+      gate: "Every fact kept has a source, and the angle and outline match the brief's audience and length.",
+      workerTools: ["Read", "WebSearch", "WebFetch"],
+      merger:
+        "Write the piece from the approved notes: the headline, a hook paragraph, the sections of the outline, and a closing line. Use only facts from the notes, in the voice and length the brief asks for.",
+      findingsContract: "content_notes",
+      verifiedContract: "approved_notes",
+      findingsDescription: "A numbered list of notes, each marked with its source or as opinion.",
+      verifiedDescription: "The notes that passed the edit, then the cut ones with the reason.",
+    }),
+  },
+  {
+    id: "analyze-a-dataset",
+    title: "Analyze a dataset",
+    hint: "Profile, clean, analyze and sanity-check a table in parallel, then re-check every figure",
+    source: fanOutBlueprint({
+      name: "analyze-a-dataset",
+      description: "Analyzes a CSV or table: profiling, cleaning rules, answers and sanity checks run in parallel, every figure is re-checked in a fresh context, then a data report.",
+      goalLabel: "DATA FILE + QUESTIONS",
+      splitter: "You are the analysis lead. Read the file path and the questions, and give each analyst their part of the work on that file.",
+      workers: [
+        { id: "profile", label: "Profile", focus: "Profile ONLY the data: columns, types, row count, missing values, duplicates and outliers. Compute every figure; never estimate it." },
+        { id: "cleaning", label: "Cleaning Rules", focus: "Propose ONLY cleaning rules: how to fix types, missing values, duplicates and bad rows, with how many rows each rule touches." },
+        { id: "analysis", label: "Analysis", focus: "Answer ONLY the questions in the task with the data: each figure, and the command or formula that produced it." },
+        { id: "sanity", label: "Sanity Checks", focus: "Check ONLY whether the data can be trusted: totals that should add up, impossible values, and gaps in time or coverage." },
+      ],
+      workerReturn:
+        "Return findings as a numbered list. For each one give the figure, how you got it (the command, formula or rows it rests on) and a confidence of high, medium or low. Never change the data file.",
+      verifier: "You are a data reviewer. Spot-check each figure against the file itself; reject figures you cannot trace back to the data.",
+      gate: "Every kept figure says how it was computed and matches the data on a spot check.",
+      workerTools: ["Read", "Grep", "Glob", "Bash"],
+      merger: "Write the data report: the answers with their figures, the cleaning steps to apply in order, and the caveats a reader must know.",
+      findingsContract: "data_findings",
+      verifiedContract: "checked_figures",
+      findingsDescription: "A numbered list; every figure has how it was computed and a confidence of high, medium or low.",
+      verifiedDescription: "Only the figures that matched the data on a spot check, then the rejected ones with the reason.",
+    }),
+  },
+  {
+    id: "design-an-app",
+    title: "Design an app",
+    hint: "Users, features, screens and data model in parallel, then a product review before the spec",
+    source: fanOutBlueprint({
+      name: "design-an-app",
+      description: "Designs an app from an idea: users, scope, screens and data model in parallel, a fresh-context product review that makes them fit together, then a product spec.",
+      goalLabel: "APP IDEA",
+      splitter: "You are the product lead. Read the idea and give each designer their part of the app, with the constraints the idea states.",
+      workers: [
+        { id: "users", label: "Users & Stories", focus: "Work ONLY on users: who they are, the jobs they need the app for, and the three most important user stories." },
+        { id: "features", label: "Features & Scope", focus: "Scope ONLY the features: the smallest useful first version, what waits for later, and why." },
+        { id: "screens", label: "Screens & Flows", focus: "Design ONLY the screens and flows: each screen, what it shows, and how the user moves between them, with empty and error states." },
+        { id: "data_model", label: "Data Model", focus: "Design ONLY the data: entities, fields and relationships, and the outside services the app needs." },
+      ],
+      workerReturn: "Return your proposals as a numbered list. For each one give the user need it serves and a confidence of high, medium or low.",
+      verifier: "You are a product reviewer. Check that the proposals fit together: every screen serves a user story, every feature has a screen, and the data model holds what the screens show.",
+      verifierRule: "Cut proposals that serve no stated user need, settle conflicts between them, and list what you cut and why.",
+      gate: "Every first-version feature maps to a user story, a screen and the data it needs.",
+      workerTools: ["Read", "WebSearch"],
+      merger: "Write the product spec in Markdown: Problem, Users and stories, First version scope, Screens and flows, Data model, Open questions.",
+      findingsContract: "design_proposals",
+      verifiedContract: "approved_design",
+      findingsDescription: "A numbered list of proposals, each with the user need it serves and a confidence of high, medium or low.",
+      verifiedDescription: "The proposals that fit together, then the cut ones with the reason.",
     }),
   },
 ];
