@@ -611,3 +611,21 @@ From the "Loops and Graphs" article (@hanakoxbt): a check that can fail, edges t
 - [x] YAML anchors (`&a1`/`*a1`) no longer written for shared tools arrays
 - [x] Verified: 262 graph tests (20 new), full suite 1228+, CDP browser check (18 checks: `#g=` open, Recent restore, Share copy, old links, blueprints), local MCP curl, validate-presets, lint (graph clean), typecheck, build
 - [ ] Connector icon in Claude: needs a separate registrable domain with the Skill Graph favicon (Claude shows Google's favicon of the apex domain), or Anthropic honoring `serverInfo.icons`
+
+## 2026-10-21 — Skill Graph: landing page, studio at /graph/studio, kit download links
+
+- [x] `/graph` is a landing page (`GraphLanding.tsx`): hero, the 33 s narrated tour, how it works, the kit, the Claude connector, the 10 blueprints, then the existing explainer and FAQ (`GraphSeoContent`, now an h2)
+- [x] The editor moved to `/graph/studio`; old `/graph#g=…` / `#graph=…` links are forwarded by an inline script (also on a same-page hashchange); studio logo links home; subpage "Open the studio" buttons, sitemap and llms.txt updated
+- [x] `/graph/studio?blueprint=<id>` opens a starter graph without the "came from a link" review banner; the query is stripped after loading
+- [x] `/graph/download#g=…`: lists the kit's files and what it can run (`lib/graphPermissions.ts`, shared with the studio banner), builds the .zip in the browser; explains empty, unreadable and invalid links
+- [x] Connector: studio links point to `/graph/studio`; `compile_graph` (kit target) adds `[Download the <name> kit](…/graph/download#g=…)`
+- [x] Connector setup page explains Claude's "anyone with the URL" notice; privacy policy covers the download page (effective 21 October 2026)
+- [x] Video: `public/videos/skill-graph-demo.mp4` (3.25–36.0 s of the narrated intro, title and end cards cut, 30 fps, 4 MB, fades for the loop) + poster; muted autoplay while on screen, Sound on restarts it once, reduced motion waits for Play
+- [x] Verified: 267 graph tests (5 new), Playwright (16 checks: old links, hash paste, blueprints, download + zip, studio hand-off, video, sound, no page errors; 375px scrollWidth on /graph, /graph/download, /graph/connector), validate-presets, lint (0 errors), typecheck, build
+- [ ] Deploy; then update the connector in Claude only if needed (the URL is unchanged)
+- [x] Orange redesign (user: flat orange looked like "slop"): gradient main CTA (`BUTTON_PRIMARY`), gradient headline word, warm glow behind the video and the closing CTA, gradient video frame, zinc section labels with gradient dots (`components/Kicker.tsx`), gradient check marks; download page and explainer follow. Verified: typecheck, lint (0 errors), validate-presets, build
+- [x] Second redesign (user: gradient version still "slop"; asked for professional, fast): left-aligned type on a 1120px grid, hairline rules, white only; orange-600 flat on the primary button and one headline word; no gradients, glows, tiles, pills, cards or shadows; real artefacts instead of mock-ups (kit file list, Claude Code command + tool calls with the blueprint's real numbers); blueprints as a hairline list; explainer and download page restyled to match; video in a plain 1px frame, header without backdrop blur
+- [x] Fixed "Encountered a script tag while rendering React component" on /graph: the share-link forward is a client component (`components/ShareLinkForward.tsx`, `useLayoutEffect` + hashchange) instead of an inline `<script>`
+- [x] Verified: Playwright 16/16 (now also console errors), 375px scrollWidth 375, typecheck, lint (0 errors), validate-presets, build
+- [x] Primary button (user: "shiny"): the soft orange tint of the studio's Export button (`border-orange-200 bg-orange-50 text-orange-800`) replaces the saturated fill, on the landing and download pages
+- [x] Headline word "graph": orange-800 instead of orange-600 (user: "shining"); no saturated orange is left on the landing page

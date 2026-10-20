@@ -348,7 +348,7 @@ export default function GraphGuidePage() {
             <SkillGraphIcon className="h-6 w-6 shrink-0 text-zinc-900" />
             <span className="truncate text-[15px] font-extrabold tracking-[-0.02em] text-zinc-900 sm:text-base">Skill Graph · Guide</span>
           </Link>
-          <Link href="/graph" className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-zinc-200 px-3 py-1.5 text-[13px] font-semibold text-zinc-800 transition-colors hover:border-orange-300 hover:text-orange-700">
+          <Link href="/graph/studio" className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-zinc-200 px-3 py-1.5 text-[13px] font-semibold text-zinc-800 transition-colors hover:border-orange-300 hover:text-orange-700">
             <ArrowLeft className="h-3.5 w-3.5" /> Open the studio
           </Link>
         </div>
@@ -716,7 +716,7 @@ export default function GraphGuidePage() {
             </dl>
           </Section>
 
-          <Link href="/graph" className="inline-flex items-center gap-1.5 text-sm font-semibold text-zinc-900 underline decoration-zinc-300 underline-offset-4 hover:text-orange-700">
+          <Link href="/graph#blueprints" className="inline-flex items-center gap-1.5 text-sm font-semibold text-zinc-900 underline decoration-zinc-300 underline-offset-4 hover:text-orange-700">
             Open Skill Graph and start from a blueprint <ArrowRight className="h-4 w-4" />
           </Link>
         </main>

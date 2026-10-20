@@ -6,7 +6,7 @@
  *    subagent starts, in its own context window.
  *  - Cursor: one rule (`.cursor/rules/<name>.mdc`) with the plan and every prompt.
  *  - A single self-orchestrating SKILL.md for agents without subagents.
- *  - The editable graph source, so the kit can be opened again in /graph.
+ *  - The editable graph source, so the kit can be opened again in /graph/studio.
  */
 import {
   DEFAULT_MAX_RETRIES,
@@ -40,6 +40,16 @@ export { toSlug };
 export interface ExportFile {
   path: string;
   content: string;
+}
+
+/** A short label for a kit file, shown beside its path (download page, landing page). */
+export function kitFileRole(path: string): string {
+  if (path.endsWith("/SKILL.md")) return "orchestrator";
+  if (path.endsWith("/graph.skill.md")) return "graph source";
+  if (path.startsWith(".claude/agents/")) return "subagent";
+  if (path.startsWith(".cursor/")) return "Cursor rule";
+  if (path === "README.md") return "readme";
+  return "support";
 }
 
 export function agentName(graph: SkillGraph, node: GraphNode): string {
@@ -662,7 +672,7 @@ export function buildExportKit(graph: SkillGraph): ExportFile[] {
         "",
         `- After each run, the \`${reflectAgentName(graph)}\` subagent writes lessons from failed checks, gates and retries to \`${experiencePath(graph)}\`. The next run hands each step its own lessons.`,
         "- Commit the lessons file so your team shares the lessons; `.skill-graph/.gitignore` keeps it and ignores the rest.",
-        `- To make a lesson permanent, open \`graph.skill.md\` in /graph, paste the lessons file under Learning, and press Bake in on the lesson.`,
+        `- To make a lesson permanent, open \`graph.skill.md\` in the Skill Graph studio (devscratchpad.tech/graph/studio), paste the lessons file under Learning, and press Bake in on the lesson.`,
         "",
       ]
     : [];
@@ -677,7 +687,7 @@ export function buildExportKit(graph: SkillGraph): ExportFile[] {
       "",
       `- Claude Code: copy \`.claude/skills/${slug}/\` and \`.claude/agents/\` into your repository's \`.claude/\` folder, then ask Claude Code to use the \`${slug}\` skill.`,
       `- Cursor: copy \`.cursor/rules/${slug}.mdc\` into \`.cursor/rules/\`.`,
-      `- Edit: open \`.claude/skills/${slug}/graph.skill.md\` in /graph and export again.`,
+      `- Edit: open \`.claude/skills/${slug}/graph.skill.md\` in the Skill Graph studio (devscratchpad.tech/graph/studio) and export again.`,
       "",
       "## What the agent loads",
       "",

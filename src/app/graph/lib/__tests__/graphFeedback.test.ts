@@ -15,7 +15,7 @@ import { dryRunGraph } from "../graphSimulate";
 import { parseGraphSkill, updateContract, updateNode, validateGraph, type SkillGraph } from "../graphSkill";
 import { BLUEPRINTS, DEFAULT_GRAPH_SKILL, SHIP_CHANGE_GRAPH_SKILL } from "../graphTemplates";
 
-const context = { studioUrl: "https://www.devscratchpad.tech/graph" };
+const context = { studioUrl: "https://www.devscratchpad.tech/graph/studio" };
 
 /** SHA-256 (first 16 hex digits) of each frozen share dictionary. */
 const PINNED_DICTIONARY_DIGESTS: string[] = [
@@ -229,7 +229,7 @@ describe("connector tools", () => {
     const result = call("draft_graph", RECEIPT_OUTLINE);
     expect(result.isError).toBe(false);
     expect(result.text).toMatch(/^Drafted "receipt-scanner": 4 stages, 5 subagents \(0 errors, 0 warnings\)/);
-    expect(result.text).toContain("[Open receipt-scanner in Skill Graph](https://www.devscratchpad.tech/graph#g=");
+    expect(result.text).toContain("[Open receipt-scanner in Skill Graph](https://www.devscratchpad.tech/graph/studio#g=");
     expect(result.text).toContain("Source (graph.skill.md):\n\n---\nname: receipt-scanner");
     expect(call("draft_graph", { name: "x" }).isError).toBe(true);
   });

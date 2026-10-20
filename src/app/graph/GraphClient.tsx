@@ -76,6 +76,7 @@ import { bakeLesson, parseLessons, serializeLessons, type Lesson } from "./lib/g
 import { buildExportKit, buildSingleFileSkill, toSlug } from "./lib/graphExport";
 import { MAX_HASH_LENGTH, SHARE_URL_SOFT_LIMIT, decodeShareHash, encodeShareHash } from "./lib/graphShare";
 import { readRecentGraphs, rememberGraph, type RecentGraph } from "./lib/graphRecent";
+import { hasPermissions, summarizePermissions } from "./lib/graphPermissions";
 
 const STORAGE_KEY = "devscratchpad_graph_v1";
 /** Drafts that a link, a blueprint or an opened file replaced (see graphRecent.ts). */
@@ -206,13 +207,13 @@ function GraphHeader() {
   return (
     <header className="sticky top-0 z-40 w-full border-b border-zinc-200 bg-white">
       <div className="mx-auto flex h-14 max-w-[1600px] items-center justify-between gap-3 px-3 sm:px-6 lg:px-8">
-        <div className="flex min-w-0 items-center gap-3">
+        <Link href="/graph" title="Skill Graph home" className="flex min-w-0 items-center gap-3">
           <SkillGraphIcon className="h-6 w-6 shrink-0 text-zinc-900" />
           <div className="min-w-0 leading-tight">
             <p className="truncate text-[15px] font-extrabold tracking-[-0.02em] text-zinc-900 sm:text-base">Skill Graph</p>
             <p className="hidden truncate text-xs text-zinc-500 sm:block">Design multi-agent skills as a graph, then compile them for Claude Code and Cursor.</p>
           </div>
-        </div>
+        </Link>
         <div className="flex shrink-0 items-center gap-3 sm:gap-4">
           <Link href="/graph/connector" title="Add Skill Graph to Claude as a connector" className="text-[13px] font-semibold text-zinc-600 transition-colors hover:text-orange-700">
             <span className="sm:hidden">Claude</span>
@@ -298,13 +299,9 @@ function Splitter({
  * and the exported kit makes your agent run its commands with its tools. Lists those before export.
  */
 function SharedReview({ graph, onDismiss }: { graph: SkillGraph; onDismiss: () => void }) {
-  const commands = graph.nodes.flatMap((node) => [node.run, node.check].filter((command): command is string => Boolean(command)).map((command) => ({ id: node.id, command })));
-  const shell = graph.nodes.filter((node) => node.tools?.some((tool) => tool === "Bash" || tool.startsWith("Bash("))).map((node) => node.id);
-  const mcp = [...new Set(graph.nodes.flatMap((node) => (node.tools ?? []).filter((tool) => tool.startsWith("mcp__"))))];
-  const writers = graph.nodes.filter((node) => node.tools?.some((tool) => tool === "Edit" || tool === "Write")).map((node) => node.id);
-  // A subagent without a tools list (or an empty one) inherits every tool: shell, edits and MCP included.
-  const unlimited = graph.nodes.filter((node) => !runsWithoutSubagent(node.type) && (node.tools === undefined || node.tools.length === 0)).map((node) => node.id);
-  if (commands.length === 0 && shell.length === 0 && mcp.length === 0 && writers.length === 0 && unlimited.length === 0) return null;
+  const permissions = summarizePermissions(graph);
+  if (!hasPermissions(permissions)) return null;
+  const { commands, shell, mcp, writers, unlimited } = permissions;
   const CHIP = "rounded-md bg-white px-1.5 py-0.5 font-mono text-[11.5px] text-zinc-800 ring-1 ring-amber-200";
   return (
     <div role="region" aria-label="Review this shared graph" className="flex items-start gap-3 border-b border-amber-200 bg-amber-50 px-3 py-2.5 text-[13px] text-amber-900 sm:px-6 lg:px-8">
@@ -339,8 +336,8 @@ function SharedReview({ graph, onDismiss }: { graph: SkillGraph; onDismiss: () =
 
 interface WorkspaceProps {
   initial: StoredState | null;
-  /** A graph opened from a share link; takes precedence over the saved session. */
-  shared: { source: string } | null;
+  /** A graph opened from a share link or a ?blueprint= link; takes precedence over the saved session. */
+  shared: { source: string; blueprint?: string } | null;
 }
 
 function GraphWorkspace({ initial, shared }: WorkspaceProps) {
@@ -360,9 +357,9 @@ function GraphWorkspace({ initial, shared }: WorkspaceProps) {
   const replacedDraft = shared && initial && initial.source.trim() !== "" && initial.source !== shared.source ? initial.source : null;
   const [notice, setNotice] = useState<string | null>(
     shared
-      ? replacedDraft && !PRISTINE_GRAPHS.includes(replacedDraft)
-        ? "Opened a shared graph. Your previous graph is kept under Recent graphs (the clock above the Markdown)."
-        : "Opened a shared graph."
+      ? `${shared.blueprint ? `Opened the ${shared.blueprint} blueprint.` : "Opened a shared graph."}${
+          replacedDraft && !PRISTINE_GRAPHS.includes(replacedDraft) ? " Your previous graph is kept under Recent graphs (the clock above the Markdown)." : ""
+        }`
       : null
   );
   const [history, setHistory] = useState<{ undo: HistoryEntry[]; redo: HistoryEntry[] }>(() =>
@@ -372,8 +369,8 @@ function GraphWorkspace({ initial, shared }: WorkspaceProps) {
     const stored = loadRecentGraphs();
     return replacedDraft ? rememberGraph(stored, replacedDraft, now(), PRISTINE_GRAPHS) : stored;
   });
-  /** A graph from someone else's link: show what it can run until the user has looked. */
-  const [reviewShared, setReviewShared] = useState(shared !== null);
+  /** A graph from someone else's link: show what it can run until the user has looked. Blueprints ship with the site. */
+  const [reviewShared, setReviewShared] = useState(shared !== null && !shared.blueprint);
   /** Walkthrough: index of the stage on show (equal to the stage count once finished), or null. */
   const [stage, setStage] = useState<number | null>(null);
   const [playing, setPlaying] = useState(false);
@@ -443,10 +440,13 @@ function GraphWorkspace({ initial, shared }: WorkspaceProps) {
     noticeTimer.current = setTimeout(() => setNotice(null), 3500);
   }, []);
 
-  // A shared graph is loaded once; drop the hash so a reload returns to the saved session.
+  // A shared graph is loaded once; drop the hash (and ?blueprint=) so a reload returns to the saved session.
   useEffect(() => {
     if (!shared) return;
-    window.history.replaceState(null, "", window.location.pathname + window.location.search);
+    const params = new URLSearchParams(window.location.search);
+    params.delete("blueprint");
+    const search = params.toString();
+    window.history.replaceState(null, "", window.location.pathname + (search ? `?${search}` : ""));
     const timer = setTimeout(() => setNotice(null), 7000);
     return () => clearTimeout(timer);
   }, [shared]);
@@ -1317,14 +1317,14 @@ function GraphWorkspace({ initial, shared }: WorkspaceProps) {
 
 const noopSubscribe = () => () => {};
 
-/** Raw stored string plus the URL hash; a primitive snapshot keeps useSyncExternalStore stable between renders. */
+/** Raw stored string plus the URL hash and query; a primitive snapshot keeps useSyncExternalStore stable between renders. */
 function readStoredSnapshot(): string {
   // Blocked site data makes even reading window.localStorage throw; treat that as nothing saved.
   let stored: StoredState | null = null;
   try {
     stored = loadFromStorageEnvelope<StoredState>(STORAGE_KEY, "devscratchpad_graph_legacy_unused");
   } catch {}
-  return [JSON.stringify(stored), window.location.hash].join("\u0000");
+  return [JSON.stringify(stored), window.location.hash, window.location.search].join("\u0000");
 }
 
 /**
@@ -1335,10 +1335,16 @@ export function GraphClient() {
   const snapshot = useSyncExternalStore(noopSubscribe, readStoredSnapshot, () => null);
   const restored = useMemo(() => {
     if (snapshot === null) return null;
-    const [storedJson, hash] = snapshot.split("\u0000");
+    const [storedJson, hash, search] = snapshot.split("\u0000");
     const stored = JSON.parse(storedJson ?? "null") as StoredState | null;
     const shared = decodeShareHash(hash ?? "");
-    return { initial: stored && typeof stored.source === "string" ? stored : null, shared: shared ? { source: shared.source } : null };
+    // /graph/studio?blueprint=<id> opens a starter graph (the landing page links to them); a share link wins.
+    const blueprintId = new URLSearchParams(search ?? "").get("blueprint");
+    const blueprint = BLUEPRINTS.find((item) => item.id === blueprintId);
+    return {
+      initial: stored && typeof stored.source === "string" ? stored : null,
+      shared: shared ? { source: shared.source } : blueprint ? { source: blueprint.source, blueprint: blueprint.title } : null,
+    };
   }, [snapshot]);
 
   // Earlier builds could remember a model API key; this page no longer uses one, so remove it.

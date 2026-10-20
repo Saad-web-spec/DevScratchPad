@@ -5,7 +5,7 @@ import { SkillGraphIcon } from "@/components/icons/SkillGraphIcon";
 
 const PAGE_URL = "https://www.devscratchpad.tech/graph/privacy";
 const SUPPORT_EMAIL = "support@devscratchpad.tech";
-const EFFECTIVE_DATE = "20 October 2026";
+const EFFECTIVE_DATE = "21 October 2026";
 
 export const metadata: Metadata = {
   title: "Skill Graph Privacy Policy (Studio and Claude Connector)",
@@ -47,7 +47,7 @@ export default function GraphPrivacyPage() {
             <SkillGraphIcon className="h-6 w-6 shrink-0 text-zinc-900" />
             <span className="truncate text-[15px] font-extrabold tracking-[-0.02em] text-zinc-900 sm:text-base">Skill Graph · Privacy</span>
           </Link>
-          <Link href="/graph" className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-zinc-200 px-3 py-1.5 text-[13px] font-semibold text-zinc-800 transition-colors hover:border-orange-300 hover:text-orange-700">
+          <Link href="/graph/studio" className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-zinc-200 px-3 py-1.5 text-[13px] font-semibold text-zinc-800 transition-colors hover:border-orange-300 hover:text-orange-700">
             <ArrowLeft className="h-3.5 w-3.5" /> Open the studio
           </Link>
         </div>
@@ -56,7 +56,7 @@ export default function GraphPrivacyPage() {
       <main className="mx-auto max-w-3xl space-y-8 px-4 py-12 sm:px-6">
         <div className="space-y-3">
           <h1 className="text-3xl font-extrabold leading-[1.15] tracking-[-0.03em] text-zinc-900">Skill Graph privacy policy</h1>
-          <P>Effective {EFFECTIVE_DATE}. This policy covers Skill Graph at devscratchpad.tech/graph (the studio) and the Skill Graph connector for Claude at devscratchpad.tech/graph/mcp.</P>
+          <P>Effective {EFFECTIVE_DATE}. This policy covers Skill Graph at devscratchpad.tech/graph (the site, the studio at /graph/studio and the kit download page at /graph/download) and the Skill Graph connector for Claude at devscratchpad.tech/graph/mcp.</P>
           <P>
             Short version: the studio keeps your graph in your browser and never uploads it. The connector receives what Claude sends when it uses a tool, answers, and keeps
             nothing. There are no accounts, and we never sell or share your data.
@@ -78,6 +78,7 @@ export default function GraphPrivacyPage() {
             items={[
               <>Parsing, checking and compiling a graph all happen on your device. The graph is saved in your browser&apos;s local storage so it is there when you come back; it is not sent to us.</>,
               <>Share links carry the graph after the <b>#</b> in the URL. Browsers do not send that part to the server, and our analytics remove it before recording a page view.</>,
+              <>Kit download links work the same way: the download page reads the graph after the <b>#</b> and builds the .zip on your device.</>,
               <>Like the rest of DevScratchpad, the page uses Vercel Web Analytics and Speed Insights: cookieless, aggregated page-view and performance statistics (page path, referrer, country, device and browser type). They never include your graph.</>,
             ]}
           />
@@ -91,7 +92,7 @@ export default function GraphPrivacyPage() {
           </P>
           <List
             items={[
-              <><b className="text-zinc-900">What we use it for:</b> only to answer that one request: check the graph, compile it, or build a studio link.</>,
+              <><b className="text-zinc-900">What we use it for:</b> only to answer that one request: check the graph, compile it, or build a studio or download link.</>,
               <><b className="text-zinc-900">Storage:</b> the input is processed in memory and discarded once the answer is sent. It is not written to a database, a file or our logs.</>,
               <><b className="text-zinc-900">What we log:</b> the name of the tool called (for example validate_graph), to count usage. Not the graph, not its contents.</>,
               <><b className="text-zinc-900">What we never receive:</b> your Claude conversation, chat history, memory, account details, name, email or files. The connector has no sign-in and no accounts.</>,

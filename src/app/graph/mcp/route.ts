@@ -74,7 +74,10 @@ export async function POST(request: Request): Promise<Response> {
   const tools = calledToolNames(body).filter((name) => KNOWN_TOOLS.has(name));
   if (tools.length > 0) console.info(`[skill-graph-mcp] ${tools.join(",")}`);
 
-  const response = handleBody(body, { studioUrl: new URL("/graph", request.url).toString() });
+  const response = handleBody(body, {
+    studioUrl: new URL("/graph/studio", request.url).toString(),
+    downloadUrl: new URL("/graph/download", request.url).toString(),
+  });
   if (response === null) return new Response(null, { status: 202, headers: baseHeaders(origin) });
   return json(response, 200, origin);
 }

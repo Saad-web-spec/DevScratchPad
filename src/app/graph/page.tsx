@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { GraphClient } from "./GraphClient";
+import { GraphLanding } from "./GraphLanding";
 import { GRAPH_FAQS, GraphSeoContent } from "./GraphSeoContent";
 
 const PAGE_URL = "https://www.devscratchpad.tech/graph";
@@ -73,8 +73,9 @@ export default function GraphPage() {
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLdGraph).replace(/</g, "\\u003c") }} />
-      <GraphClient />
-      <GraphSeoContent />
+      <GraphLanding>
+        <GraphSeoContent />
+      </GraphLanding>
     </>
   );
 }

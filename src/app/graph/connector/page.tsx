@@ -87,7 +87,7 @@ export default function GraphConnectorPage() {
             <SkillGraphIcon className="h-6 w-6 shrink-0 text-zinc-900" />
             <span className="truncate text-[15px] font-extrabold tracking-[-0.02em] text-zinc-900 sm:text-base">Skill Graph · Claude</span>
           </Link>
-          <Link href="/graph" className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-zinc-200 px-3 py-1.5 text-[13px] font-semibold text-zinc-800 transition-colors hover:border-orange-300 hover:text-orange-700">
+          <Link href="/graph/studio" className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-zinc-200 px-3 py-1.5 text-[13px] font-semibold text-zinc-800 transition-colors hover:border-orange-300 hover:text-orange-700">
             <ArrowLeft className="h-3.5 w-3.5" /> Open the studio
           </Link>
         </div>
@@ -118,7 +118,9 @@ export default function GraphConnectorPage() {
                 in Claude and choose <b>Add custom connector</b>.
               </>,
               <>
-                Name it <b>Skill Graph</b>, paste the connector URL above, and press <b>Add</b>. There is no sign-in step.
+                Name it <b>Skill Graph</b>, paste the connector URL above, leave Authentication on <b>No sign-in</b> (Claude detects it) and press <b>Add</b>.
+                Claude then notes that anyone with the URL can use the connector. That is expected and safe here: every tool only reads what Claude sends it, and the
+                connector cannot see your chats, files or account.
               </>,
               <>
                 In a chat, turn it on from <b>+ → Connectors</b> and ask for a workflow. The first time Claude uses a tool, it asks you to allow it; every tool only reads, so
@@ -169,6 +171,10 @@ export default function GraphConnectorPage() {
             <li>
               <b className="text-zinc-900">The files.</b> An orchestrating <C>SKILL.md</C> and one Claude Code subagent per step, a single-file <C>SKILL.md</C>, or a Cursor
               rule. The <Link href="/graph/guide#export" className={LINK}>guide</Link> explains each file.
+            </li>
+            <li>
+              <b className="text-zinc-900">A download link.</b> &quot;Download the … kit&quot; opens a page that lists the files and what they can run, then saves them as one
+              .zip. In Claude Code, Claude can write the files into your repository instead.
             </li>
           </ul>
         </Section>

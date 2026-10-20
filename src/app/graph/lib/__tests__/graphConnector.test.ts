@@ -6,7 +6,7 @@ import { decodeShareHash, encodeLegacyShareHash } from "../graphShare";
 import { parseGraphSkill, validateGraph, type SkillGraph } from "../graphSkill";
 import { BLUEPRINTS, DEFAULT_GRAPH_SKILL } from "../graphTemplates";
 
-const context = { studioUrl: "https://www.devscratchpad.tech/graph" };
+const context = { studioUrl: "https://www.devscratchpad.tech/graph/studio" };
 
 function call(name: string, args: Record<string, unknown> = {}) {
   const result = callConnectorTool(name, args, context);
@@ -79,6 +79,20 @@ describe("compile_graph", () => {
   it("compiles a single SKILL.md or a Cursor rule on request", () => {
     expect(call("compile_graph", { source: DEFAULT_GRAPH_SKILL, target: "single_skill" }).blocks[1].text).toMatch(/^File: \.claude\/skills\/parallel-system-audit\/SKILL\.md/);
     expect(call("compile_graph", { source: DEFAULT_GRAPH_SKILL, target: "cursor_rule" }).blocks[1].text).toMatch(/^File: \.cursor\/rules\/parallel-system-audit\.mdc/);
+  });
+
+  it("links the kit to the download page, which rebuilds the same files from the link", () => {
+    const withDownload = { ...context, downloadUrl: "https://www.devscratchpad.tech/graph/download" };
+    const result = callConnectorTool("compile_graph", { source: DEFAULT_GRAPH_SKILL }, withDownload);
+    const intro = result?.content[0].text ?? "";
+    const link = /\[Download the parallel-system-audit kit\]\((https:\/\/www\.devscratchpad\.tech\/graph\/download#g=[^)]+)\)/.exec(intro);
+    expect(link).not.toBeNull();
+    const shared = decodeShareHash(new URL(link?.[1] ?? "").hash);
+    expect(shared?.source).toBe(DEFAULT_GRAPH_SKILL);
+    expect(intro).toContain("(https://www.devscratchpad.tech/graph/studio#g=");
+    // Only the kit gets a download link; without a download page the studio export is offered instead.
+    expect(callConnectorTool("compile_graph", { source: DEFAULT_GRAPH_SKILL, target: "cursor_rule" }, withDownload)?.content[0].text).not.toContain("graph/download");
+    expect(call("compile_graph", { source: DEFAULT_GRAPH_SKILL }).blocks[0].text).toContain("Export → Claude Code + Cursor kit (.zip)");
   });
 
   it("refuses a graph with errors, and an unknown target", () => {

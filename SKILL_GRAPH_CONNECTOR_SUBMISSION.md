@@ -85,7 +85,7 @@ One prompt: `design_workflow` ("Design a workflow for my project").
 - **Reviewer instructions**:
   1. Add `https://www.devscratchpad.tech/graph/mcp` as a custom connector named Skill Graph. There is no sign-in.
   2. In a chat with the connector on, ask: "Use Skill Graph to design a workflow for reviewing pull requests: security, performance and test coverage in parallel, then a fresh-context verifier. Check it and give me the studio link."
-  3. Expected: Claude calls get_graph_format, likely list_graph_templates and get_graph_template (pr-review-graph), then validate_graph until it reports "Valid", then open_graph_in_studio. The link opens the graph at devscratchpad.tech/graph.
+  3. Expected: Claude calls get_graph_format, likely list_graph_templates and get_graph_template (pr-review-graph), then validate_graph until it reports "Valid", then open_graph_in_studio. The link opens the graph at devscratchpad.tech/graph/studio.
   4. Ask: "Compile it into Claude Code files." Expected: compile_graph returns the orchestrating SKILL.md, one subagent file per step, the graph source, a Cursor rule and a README.
   5. Error path: ask Claude to compile a graph with a cycle; compile_graph returns the checker's errors with how to fix them.
 - **Confirm**: every tool was run through MCP Inspector and as a custom connector in Claude.

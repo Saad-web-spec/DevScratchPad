@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { cn } from "@/lib/utils";
+import { CONTAINER, H2, LEAD } from "./GraphLanding";
 import { ArrowRight, FileCheck2, Gauge, Layers, Lock, ShieldCheck, Wrench, type LucideIcon } from "lucide-react";
 
 export const GRAPH_FAQS: { question: string; answer: string }[] = [
@@ -59,11 +61,6 @@ contracts:
 ## @node: worker_research
 Focus ONLY on deep research for: {{splitter.worker_research}}`;
 
-const EXPORT_TREE = `.claude/skills/parallel-system-audit/SKILL.md      the plan the agent follows
-.claude/skills/parallel-system-audit/graph.skill.md the editable graph
-.claude/agents/parallel-system-audit-verifier.md    one subagent per step
-.cursor/rules/parallel-system-audit.mdc             the same skill for Cursor`;
-
 const CODE = "rounded-md bg-zinc-100 px-1.5 py-0.5 font-mono text-[12.5px] text-zinc-800";
 
 const ADDS: { title: string; body: string; icon: LucideIcon }[] = [
@@ -86,11 +83,8 @@ const STEPS = [
 
 function CodePanel({ title, children }: { title: string; children: string }) {
   return (
-    <div className="overflow-hidden rounded-xl border border-zinc-200 bg-white">
-      <div className="flex items-center gap-2 border-b border-zinc-100 bg-zinc-50 px-4 py-2">
-        <span className="h-2 w-2 rounded-full bg-orange-500" />
-        <span className="font-mono text-xs font-medium text-zinc-500">{title}</span>
-      </div>
+    <div className="overflow-hidden rounded-lg border border-zinc-200 bg-white">
+      <div className="border-b border-zinc-200 bg-zinc-50 px-4 py-2.5 font-mono text-[12.5px] text-zinc-500">{title}</div>
       <pre className="overflow-x-auto p-4 font-mono text-[12.5px] leading-relaxed text-zinc-800">{children}</pre>
     </div>
   );
@@ -98,33 +92,30 @@ function CodePanel({ title, children }: { title: string; children: string }) {
 
 export function GraphSeoContent() {
   return (
-    <section className="border-t border-zinc-200 bg-white">
-      <div className="mx-auto max-w-5xl space-y-14 px-4 py-14 sm:px-6">
-        <div className="max-w-3xl space-y-4">
-          <p className="text-xs font-semibold uppercase tracking-[0.12em] text-orange-700">The next version of skill files</p>
-          <h1 className="text-3xl font-extrabold leading-[1.15] tracking-[-0.03em] text-zinc-900 sm:text-4xl">Skill files that tell an agent how to split the work</h1>
-          <p className="text-[15px] leading-relaxed text-zinc-600">
+    <section id="why" className="scroll-mt-14">
+      <div className={cn(CONTAINER, "space-y-14 py-14 sm:py-20")}>
+        <div className="max-w-[640px] space-y-4">
+          <h2 className={H2}>Skill files that tell an agent how to split the work</h2>
+          <p className={LEAD}>
             A normal SKILL.md is one block of instructions. The agent reads it top to bottom and improvises the rest: how to divide the task, what each helper should see, and when the result
             is good enough. On larger tasks that is where things go wrong. Helpers inherit noise, checks get skipped, and the whole skill sits in the context window from the first message.
           </p>
-          <p className="text-[15px] leading-relaxed text-zinc-600">
+          <p className={LEAD}>
             A graph skill writes those decisions down. You draw the steps and what flows between them; the studio checks the graph and compiles it into an orchestrating skill and one
             subagent per step, ready for Claude Code and Cursor.
           </p>
         </div>
 
         <div className="space-y-6">
-          <h2 className="text-xl font-extrabold tracking-[-0.02em] text-zinc-900">What a graph skill adds to SKILL.md</h2>
-          <dl className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <h2 className="text-[20px] font-semibold tracking-[-0.015em] text-zinc-950">What a graph skill adds to SKILL.md</h2>
+          <dl className="grid gap-x-8 gap-y-8 sm:grid-cols-2 lg:grid-cols-3">
             {ADDS.map((item) => (
-              <div key={item.title} className="rounded-xl border border-zinc-200 bg-white p-5">
-                <dt className="flex items-center gap-3 text-[15px] font-bold text-zinc-900">
-                  <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-zinc-100 text-zinc-800">
-                    <item.icon className="h-[18px] w-[18px]" />
-                  </span>
+              <div key={item.title} className="border-t border-zinc-200 pt-4">
+                <dt className="flex items-center gap-2.5 text-[15px] font-semibold text-zinc-950">
+                  <item.icon className="h-4 w-4 shrink-0 text-zinc-500" aria-hidden />
                   {item.title}
                 </dt>
-                <dd className="mt-3 text-sm leading-relaxed text-zinc-600">{item.body}</dd>
+                <dd className="mt-2 text-[14.5px] leading-[1.6] text-zinc-600">{item.body}</dd>
               </div>
             ))}
           </dl>
@@ -132,20 +123,18 @@ export function GraphSeoContent() {
 
         <div className="grid grid-cols-[minmax(0,1fr)] gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)]">
           <div className="space-y-5">
-            <h2 className="text-xl font-extrabold tracking-[-0.02em] text-zinc-900">What the agent does with it</h2>
-            <ol className="space-y-3.5">
+            <h2 className="text-[20px] font-semibold tracking-[-0.015em] text-zinc-950">What the agent does with it</h2>
+            <ol className="divide-y divide-zinc-200 border-y border-zinc-200">
               {STEPS.map((step, index) => (
-                <li key={step} className="flex gap-3.5 text-sm leading-relaxed text-zinc-600">
-                  <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-orange-200 bg-orange-50 font-mono text-xs font-bold text-orange-800">
-                    {index + 1}
-                  </span>
-                  <span className="pt-0.5">{step}</span>
+                <li key={step} className="flex gap-4 py-3 text-[14.5px] leading-[1.6] text-zinc-600">
+                  <span className="w-5 shrink-0 pt-px font-mono text-[12px] text-zinc-400">{String(index + 1).padStart(2, "0")}</span>
+                  <span>{step}</span>
                 </li>
               ))}
             </ol>
           </div>
           <div className="space-y-5">
-            <h2 className="text-xl font-extrabold tracking-[-0.02em] text-zinc-900">The format</h2>
+            <h2 className="text-[20px] font-semibold tracking-[-0.015em] text-zinc-950">The format</h2>
             <CodePanel title="graph.skill.md">{SPEC_EXAMPLE}</CodePanel>
             <p className="text-sm leading-relaxed text-zinc-600">
               Prompts reference upstream work with <code className={CODE}>{"{{goal}}"}</code>, <code className={CODE}>{"{{node.field}}"}</code> (one key of a JSON output),{" "}
@@ -156,27 +145,18 @@ export function GraphSeoContent() {
         </div>
 
         <div className="space-y-5">
-          <h2 className="text-xl font-extrabold tracking-[-0.02em] text-zinc-900">What you export</h2>
-          <CodePanel title="skill-kit.zip">{EXPORT_TREE}</CodePanel>
-          <p className="text-sm leading-relaxed text-zinc-600">Nothing on this page calls a model or needs an API key. Your agent runs the files with its own subagents.</p>
-        </div>
-
-        <div className="space-y-5">
-          <h2 className="text-xl font-extrabold tracking-[-0.02em] text-zinc-900">Questions</h2>
-          <dl className="divide-y divide-zinc-200 rounded-xl border border-zinc-200 bg-white">
+          <h2 className="text-[20px] font-semibold tracking-[-0.015em] text-zinc-950">Questions</h2>
+          <dl className="divide-y divide-zinc-200 border-y border-zinc-200">
             {GRAPH_FAQS.map((faq) => (
-              <div key={faq.question} className="p-5">
-                <dt className="text-[15px] font-bold text-zinc-900">{faq.question}</dt>
-                <dd className="mt-1.5 text-sm leading-relaxed text-zinc-600">{faq.answer}</dd>
+              <div key={faq.question} className="grid gap-2 py-5 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:gap-16">
+                <dt className="text-[15px] font-semibold text-zinc-950">{faq.question}</dt>
+                <dd className="text-[14.5px] leading-[1.6] text-zinc-600">{faq.answer}</dd>
               </div>
             ))}
           </dl>
         </div>
 
-        <Link href="/graph/guide" className="flex items-center gap-1.5 text-sm font-semibold text-zinc-900 underline decoration-zinc-300 underline-offset-4 hover:text-orange-700">
-          Read the full Skill Graph guide <ArrowRight className="h-4 w-4" />
-        </Link>
-        <Link href="/ai-skill-studio" className="inline-flex items-center gap-1.5 text-sm font-semibold text-zinc-900 underline decoration-zinc-300 underline-offset-4 hover:text-orange-700">
+        <Link href="/ai-skill-studio" className="inline-flex items-center gap-1.5 text-[15px] font-semibold text-zinc-950 underline decoration-zinc-300 underline-offset-[5px] transition-colors hover:decoration-orange-600">
           Generate CLAUDE.md, Cursor rules and single-file skills in AI Skill Studio <ArrowRight className="h-4 w-4" />
         </Link>
       </div>

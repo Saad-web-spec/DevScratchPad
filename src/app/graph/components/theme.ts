@@ -39,6 +39,21 @@ export const BUTTON_ACCENT = cn(
   FOCUS_RING
 );
 
+/**
+ * Pages around the studio (landing, kit download): the one call to action per view. The same soft tint as
+ * the studio's Export button (BUTTON_ACCENT); a saturated fill looked glossy. Size comes from the caller.
+ */
+export const BUTTON_PRIMARY = cn(
+  "inline-flex items-center justify-center gap-2 rounded-md border border-orange-200 bg-orange-50 font-semibold text-orange-800 transition-colors hover:border-orange-300 hover:bg-orange-100",
+  FOCUS_RING
+);
+
+/** The quieter action beside it. */
+export const BUTTON_SECONDARY = cn(
+  "inline-flex items-center justify-center gap-2 rounded-md border border-zinc-300 bg-white font-semibold text-zinc-900 transition-colors hover:bg-zinc-50",
+  FOCUS_RING
+);
+
 export const SMALL_BUTTON = cn(
   "inline-flex items-center gap-1.5 rounded-lg border border-zinc-200 bg-white px-2.5 py-1 text-xs font-semibold text-zinc-600 transition-colors",
   FOCUS_RING

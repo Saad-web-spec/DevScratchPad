@@ -36,8 +36,10 @@ export interface ToolResult {
 }
 
 export interface ConnectorContext {
-  /** Absolute URL of the studio page, e.g. https://www.devscratchpad.tech/graph. */
+  /** Absolute URL of the studio page, e.g. https://www.devscratchpad.tech/graph/studio. */
   studioUrl: string;
+  /** Absolute URL of the kit download page, e.g. https://www.devscratchpad.tech/graph/download. */
+  downloadUrl?: string;
 }
 
 /** None of the tools change anything anywhere, so every one is annotated the same way. */
@@ -159,7 +161,7 @@ export const CONNECTOR_TOOLS: readonly ConnectorTool[] = [
     name: "compile_graph",
     title: "Compile a graph into agent files",
     description:
-      "Compiles a graph.skill.md that has no errors into the files an agent runs. claude_code_kit (default): the orchestrating SKILL.md, one Claude Code subagent per model step, the graph source, a Cursor rule and a README. single_skill: one self-orchestrating SKILL.md for agents without subagents. cursor_rule: a Cursor rule. Returns each file's path and content; nothing is written or stored. Returns the checker's errors instead if the graph has any.",
+      "Compiles a graph.skill.md that has no errors into the files an agent runs. claude_code_kit (default): the orchestrating SKILL.md, one Claude Code subagent per model step, the graph source, a Cursor rule and a README. single_skill: one self-orchestrating SKILL.md for agents without subagents. cursor_rule: a Cursor rule. Returns each file's path and content, and for the kit a link that downloads every file as one .zip; nothing is written or stored. Returns the checker's errors instead if the graph has any.",
     inputSchema: {
       type: "object",
       properties: {
@@ -175,7 +177,7 @@ export const CONNECTOR_TOOLS: readonly ConnectorTool[] = [
     name: "open_graph_in_studio",
     title: "Get a studio link for a graph",
     description:
-      "Returns a link that opens a graph.skill.md in the Skill Graph studio (devscratchpad.tech/graph), where the user sees it as a graph, walks through the plan, edits it and exports it. The graph is compressed into the part of the link after #, which browsers do not send to a server, so nothing is stored.",
+      "Returns a link that opens a graph.skill.md in the Skill Graph studio (devscratchpad.tech/graph/studio), where the user sees it as a graph, walks through the plan, edits it and exports it. The graph is compressed into the part of the link after #, which browsers do not send to a server, so nothing is stored.",
     inputSchema: { type: "object", properties: { source: SOURCE_PROPERTY }, required: ["source"], additionalProperties: false },
     annotations: readOnly("Get a studio link for a graph"),
   },
@@ -262,6 +264,13 @@ function studioLink(source: string, context: ConnectorContext): string | null {
   return hash.length > MAX_HASH_LENGTH ? null : `${context.studioUrl}${hash}`;
 }
 
+/** A link to the page that builds the kit's .zip in the browser from the graph after the #. */
+function downloadLink(source: string, context: ConnectorContext): string | null {
+  if (!context.downloadUrl) return null;
+  const hash = encodeShareHash({ source });
+  return hash.length > MAX_HASH_LENGTH ? null : `${context.downloadUrl}${hash}`;
+}
+
 /** The link as Markdown with a short label, so a chat shows a few words instead of thousands of characters. */
 function markdownLink(url: string, graph: SkillGraph | null): string {
   const name = (graph?.name || "the graph").replace(/[[\]]/g, "");
@@ -320,15 +329,18 @@ function compileTool(args: Record<string, unknown>, context: ConnectorContext): 
         ? [{ path: `.cursor/rules/${slug}.mdc`, content: buildCursorRule(graph) }]
         : buildExportKit(graph);
   const url = studioLink(input.source, context);
+  const zip = target === "claude_code_kit" ? downloadLink(input.source, context) : null;
   const intro = [
     `Compiled "${graph.name || slug}" into ${plural(files.length, "file")}. Save each one at its path, relative to the repository root:`,
     ...files.map((file) => `- ${file.path}`),
     "",
     target === "cursor_rule" ? "Cursor picks the rule up from .cursor/rules/." : `Then ask Claude Code to use the ${slug} skill, or invoke it by name.`,
     "",
-    url
-      ? `To download every file at once: ${markdownLink(url, graph)}, then Export → Claude Code + Cursor kit (.zip). In the studio, Export also copies the single-file SKILL.md.`
-      : "To download every file at once, save graph.skill.md, open it in the studio (devscratchpad.tech/graph, Open file) and choose Export → Claude Code + Cursor kit (.zip).",
+    zip
+      ? `To download every file as one .zip: [Download the ${(graph.name || slug).replace(/[[\]]/g, "")} kit](${zip}). The page lists what the kit can run before the download, and builds the .zip in the browser.${url ? ` To see or edit it first: ${markdownLink(url, graph)}.` : ""}`
+      : url
+        ? `To download every file at once: ${markdownLink(url, graph)}, then Export → Claude Code + Cursor kit (.zip). In the studio, Export also copies the single-file SKILL.md.`
+        : "To download every file at once, save graph.skill.md, open it in the studio (devscratchpad.tech/graph/studio, Open file) and choose Export → Claude Code + Cursor kit (.zip).",
   ].join("\n");
   return { content: [{ type: "text", text: intro }, ...files.map((file) => ({ type: "text" as const, text: `File: ${file.path}\n\n${file.content}` }))] };
 }

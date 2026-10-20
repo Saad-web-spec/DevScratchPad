@@ -847,3 +847,14 @@ All AI agents operating in this repository MUST follow this 5-step loop:
 - **Gotcha — same-page hash navigation**: going from /graph to /graph#g=… in one tab does not reload, so the link is not opened (true for `#graph=` too); browser tests must go through about:blank.
 - **Gotcha — YAML anchors**: `stringifyYaml` aliased shared arrays (`tools: &a1`) in fan-out blueprints; `aliasDuplicateObjects: false` now.
 - **Status**: ✅ Complete (262 graph tests, browser check, validate-presets, lint, typecheck, build).
+
+### Session: 2026-10-21 — Skill Graph: landing page, /graph/studio, kit download page
+- **Agent**: Claude Code (Opus 5.5)
+- **Decision — landing first** (user: opening straight into the editor "not professional"): `/graph` = landing, `/graph/studio` = editor, `/graph/download` = kit page for connector links. Share links stay hash-based, so old `/graph#g=` links are forwarded client-side by an inline script in `graph/page.tsx`.
+- **Decision — no OAuth just to hide Claude's "No sign-in" notice**: without accounts it would be a sign-in anyone can pass; the setup page explains the notice instead.
+- **Gotcha — studio links must be full page loads**: on a Next `<Link>` navigation the new page renders before the URL changes, and `GraphClient` reads hash/query once before mounting, so `?blueprint=` and `#g=` links to the studio use `<a>`.
+- **Gotcha — headless Chrome `--window-size=390` lays out wider than 390** (minimum window width) and crops; check mobile with Playwright `viewport` + `scrollWidth`.
+- **Video for the web**: `ffmpeg -ss 3.25 -to 36.0 -i skill-graph-intro-voiceover.mp4 -vf "fps=30,fade=in:0.25 / fade=out at 32.35 (color 0xf4f4f5)" -crf 25 -ac 1 -b:a 96k -movflags +faststart` → `public/videos/skill-graph-demo.mp4`. Re-cut if scene.html timings change.
+- **Status**: ✅ Complete (267 graph tests, Playwright 16/16, validate-presets, lint 0 errors, typecheck, build).
+- **Redesign round 2 (same day)**: the gradient version was rejected as well ("still could not like colour choice and gradient and design… professional, fast, not ai slope"). Rebuilt as a restrained editorial layout: left-aligned, 1120px grid, hairline rules, white, flat orange-600 on one button and one word, real artefacts instead of mock-ups. `BUTTON_PRIMARY`/`BUTTON_SECONDARY` in `components/theme.ts` are flat now. Round 3: the flat orange-600 button was "shiny"; the primary button is now the studio's soft orange tint, and the headline word is orange-800.
+- **Gotcha — inline `<script>` in a React component warns on client navigation**: React never runs scripts it renders on the client, and Next 16 shows "Encountered a script tag while rendering React component" when /graph is reached by in-app navigation. `next/script` with `beforeInteractive` is root-layout only. The share-link forward is a client component with `useLayoutEffect` (brief flash of the landing page on an old `/graph#g=` link, which only legacy links hit).

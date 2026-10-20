@@ -148,6 +148,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 0.9,
     },
     {
+      url: `${SITE_URL}/graph/studio`,
+      lastModified: lastModifiedOf("src/app/graph/studio"),
+      changeFrequency: "weekly" as const,
+      priority: 0.8,
+    },
+    {
       url: `${SITE_URL}/graph/guide`,
       lastModified: lastModifiedOf("src/app/graph/guide"),
       changeFrequency: "monthly" as const,
