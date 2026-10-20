@@ -579,3 +579,9 @@ From the "Loops and Graphs" article (@hanakoxbt): a check that can fail, edges t
 - [x] Default view: the automatic framing never goes below 50%; a graph too big for the canvas starts at its first step (left to right is kept; the user preferred it over flipping to top to bottom). The fit button still shows the whole graph at any size
 - [x] Bottom bar: zoom controls and the hint share one row, so the hint no longer covers the controls; the hint shortens below 52rem and hides below 34rem of canvas width (container queries)
 - [x] Verified: validate-presets, lint (0 errors), build
+
+
+## 2026-10-20 — Skill Graph: page zoomed out in in-app browsers (Instagram)
+
+- [x] /graph was 778px wide on a 375px phone: the "What the agent does / The format" grid had no mobile column template, so its `1fr` track grew to the `graph.skill.md` code block's longest line. Instagram's Android WebView zooms out to fit the widest content, which shrank the whole page to half size. The grid now uses `grid-cols-[minmax(0,1fr)]` on mobile, so the code block scrolls inside its panel
+- [x] Verified: headless Chromium at 375px (scrollWidth 375 on /graph and /graph/guide), validate-presets, lint (0 errors), build

@@ -130,7 +130,7 @@ export function GraphSeoContent() {
           </dl>
         </div>
 
-        <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)]">
+        <div className="grid grid-cols-[minmax(0,1fr)] gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)]">
           <div className="space-y-5">
             <h2 className="text-xl font-extrabold tracking-[-0.02em] text-zinc-900">What the agent does with it</h2>
             <ol className="space-y-3.5">

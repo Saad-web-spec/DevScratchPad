@@ -814,3 +814,9 @@ All AI agents operating in this repository MUST follow this 5-step loop:
 - **Fix**: between the editor and the side panel the canvas is ~570px wide, so a 5-layer LR graph fit at ~25%. User wants LR kept (tried auto-flipping to TB; rejected). auto-fit now floors at `AUTO_FIT_MIN_ZOOM` (fit button uses `whole`). `autoFit` ref is now `"readable" | "whole" | null`.
 - **Gotcha — absolute overlays in the canvas collide on narrow widths**: keep the bottom controls and hint in one flex row; use `@container` queries on the canvas, not viewport breakpoints.
 - **Status**: ✅ Complete (validate-presets, lint, build).
+
+### Session: 2026-10-20 — Skill Graph: Instagram in-app browser zoom-out
+- **Agent**: Claude Code (Opus 5.5)
+- **Fix**: `GraphSeoContent` two-column grid had no base `grid-cols`, so on mobile the implicit `1fr` (= `minmax(auto,1fr)`) track grew to the `<pre>` code sample's width (page 778px at 375px). Added `grid-cols-[minmax(0,1fr)]`.
+- **Gotcha — in-app browsers (Instagram, Facebook; Android WebView overview mode) zoom out to fit any horizontal overflow**, so one wide element shrinks the whole page; Chrome just scrolls sideways and hides it. Grids/flex items holding `<pre>`/tables need `minmax(0,1fr)` / `min-w-0`. Check with `document.documentElement.scrollWidth` at 375px.
+- **Status**: ✅ Complete (validate-presets, lint, build).
