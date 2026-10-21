@@ -178,7 +178,7 @@ describe("dry run", () => {
     expect(run.text).toContain('Receives: the request "Audit our login flow"');
     expect(run.text).toContain("Stage 2 (4 steps at the same time)");
     expect(run.text).toContain("Gate: Every kept claim cites concrete evidence");
-    expect(run.text).toContain("Result: every handoff lines up.");
+    expect(run.text).toContain("Result: every reference and contract lines up.");
     expect(run.subagentCalls).toBe(7);
   });
 

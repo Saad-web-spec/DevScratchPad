@@ -6,7 +6,7 @@
  * Nothing is stored, and only the names of the tools called are logged (an anonymous usage count).
  */
 import { CONNECTOR_TOOLS } from "../lib/graphConnector";
-import { INVALID_REQUEST, PARSE_ERROR, SUPPORTED_PROTOCOL_VERSIONS, calledToolNames, errorResponse, handleBody } from "../lib/mcpProtocol";
+import { INTERNAL_ERROR, INVALID_REQUEST, PARSE_ERROR, SUPPORTED_PROTOCOL_VERSIONS, calledToolNames, errorResponse, handleBody } from "../lib/mcpProtocol";
 
 /** Comfortably above the largest graph the parser accepts (500,000 characters), once JSON-escaped. */
 const MAX_BODY_LENGTH = 2_000_000;
@@ -61,8 +61,12 @@ export async function POST(request: Request): Promise<Response> {
     return json(errorResponse(null, INVALID_REQUEST, `Unsupported MCP-Protocol-Version: ${version.slice(0, 40)}. Supported: ${SUPPORTED_PROTOCOL_VERSIONS.join(", ")}.`), 400, origin);
   }
 
+  const tooLarge = () => json(errorResponse(null, INVALID_REQUEST, "The request is too large. Graphs are limited to 500,000 characters."), 413, origin);
+  // Refuse an oversized body before reading it; the length is checked again after, since the header is optional.
+  const declared = Number(request.headers.get("content-length"));
+  if (Number.isFinite(declared) && declared > MAX_BODY_LENGTH) return tooLarge();
   const raw = await request.text();
-  if (raw.length > MAX_BODY_LENGTH) return json(errorResponse(null, INVALID_REQUEST, "The request is too large. Graphs are limited to 500,000 characters."), 413, origin);
+  if (raw.length > MAX_BODY_LENGTH) return tooLarge();
 
   let body: unknown;
   try {
@@ -74,10 +78,17 @@ export async function POST(request: Request): Promise<Response> {
   const tools = calledToolNames(body).filter((name) => KNOWN_TOOLS.has(name));
   if (tools.length > 0) console.info(`[skill-graph-mcp] ${tools.join(",")}`);
 
-  const response = handleBody(body, {
-    studioUrl: new URL("/graph/studio", request.url).toString(),
-    downloadUrl: new URL("/graph/download", request.url).toString(),
-  });
+  let response: ReturnType<typeof handleBody>;
+  try {
+    response = handleBody(body, {
+      studioUrl: new URL("/graph/studio", request.url).toString(),
+      downloadUrl: new URL("/graph/download", request.url).toString(),
+    });
+  } catch (error) {
+    // Anything a tool did not catch itself still answers as JSON-RPC, not as a framework error page.
+    console.error(`[skill-graph-mcp] request failed (${error instanceof Error ? error.name : typeof error})`);
+    return json(errorResponse(null, INTERNAL_ERROR, "The connector hit an unexpected error. Try again; if it keeps failing, the graph may be too large or malformed."), 500, origin);
+  }
   if (response === null) return new Response(null, { status: 202, headers: baseHeaders(origin) });
   return json(response, 200, origin);
 }

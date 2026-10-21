@@ -38,6 +38,7 @@ export const PARSE_ERROR = -32700;
 export const INVALID_REQUEST = -32600;
 export const METHOD_NOT_FOUND = -32601;
 export const INVALID_PARAMS = -32602;
+export const INTERNAL_ERROR = -32603;
 
 export function errorResponse(id: JsonRpcId, code: number, message: string): JsonRpcError {
   return { jsonrpc: "2.0", id, error: { code, message } };
@@ -81,7 +82,18 @@ export function handleMessage(message: unknown, context: ConnectorContext): Json
       return success(id, { tools: CONNECTOR_TOOLS });
     case "tools/call": {
       if (typeof params.name !== "string") return errorResponse(id, INVALID_PARAMS, "tools/call needs the tool name in params.name.");
-      const result = callConnectorTool(params.name, params.arguments, context);
+      let result: ReturnType<typeof callConnectorTool>;
+      try {
+        result = callConnectorTool(params.name, params.arguments, context);
+      } catch (error) {
+        // A tool that fails on its input answers inside the result (the protocol's "tool execution error"),
+        // so Claude can read it and try again. Only the tool and the error's kind are logged, never the graph.
+        console.error(`[skill-graph-mcp] ${params.name.slice(0, 64)} failed (${error instanceof Error ? error.name : typeof error})`);
+        return success(id, {
+          content: [{ type: "text", text: `${params.name} could not process this input. Check that the graph.skill.md is well formed (get_graph_format describes it), or try a smaller graph.` }],
+          isError: true,
+        });
+      }
       if (!result) return errorResponse(id, INVALID_PARAMS, `Unknown tool: ${params.name}. Available: ${CONNECTOR_TOOLS.map((tool) => tool.name).join(", ")}.`);
       return success(id, result);
     }

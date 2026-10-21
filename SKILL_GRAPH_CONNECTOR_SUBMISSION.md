@@ -19,7 +19,7 @@ Official references: [Submit a connector](https://claude.com/docs/connectors/bui
 
 ## 2. Tools
 
-Eight tools, all `readOnlyHint: true`, `destructiveHint: false`, each with a `title`:
+Nine tools, all `readOnlyHint: true`, `destructiveHint: false`, each with a `title`:
 
 | Tool | Title |
 | --- | --- |
@@ -31,6 +31,7 @@ Eight tools, all `readOnlyHint: true`, `destructiveHint: false`, each with a `ti
 | dry_run_graph | Dry-run a graph |
 | compile_graph | Compile a graph into agent files |
 | open_graph_in_studio | Get a studio link for a graph |
+| read_studio_link | Read a graph from a studio link |
 
 One prompt: `design_workflow` ("Design a workflow for my project").
 

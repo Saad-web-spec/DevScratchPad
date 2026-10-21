@@ -6,6 +6,8 @@
  */
 import {
   MODEL_PATTERN,
+  PROBE_MAX,
+  PROBE_MIN,
   RISK_LANES,
   TOOL_PATTERN,
   CONTRACT_KEY_PATTERN,
@@ -14,6 +16,7 @@ import {
   type Contract,
   type GraphEdge,
   type GraphNode,
+  type HandoffMode,
   type NodeType,
   type RiskLane,
   type SkillGraph,
@@ -25,7 +28,13 @@ type DraftStepType = (typeof DRAFT_STEP_TYPES)[number];
 /** The input node every draft starts from; steps with no `after` read it. */
 export const DRAFT_INPUT_ID = "request";
 export const MAX_DRAFT_STEPS = 50;
+/** A fan-out step without max_items stops and asks past this many items. */
+export const DRAFT_MAX_ITEMS = 20;
+const MAX_ITEMS_CAP = 1_000;
 const MAX_TEXT = 4_000;
+const FOREACH_PATTERN = /^[A-Za-z][A-Za-z0-9_-]*(\.[A-Za-z0-9_-]+)?$/;
+/** Told to a drafted verifier that feeds later steps, since they see only what it returns. */
+const PASS_ON = "The steps after you see only what you return: hand on the checked work itself, corrected where needed, together with your notes.";
 
 /** Read-only tools: a step gets more only when the outline asks for them. */
 const DEFAULT_TOOLS: readonly string[] = ["Read", "Grep", "Glob"];
@@ -55,6 +64,11 @@ interface DraftStep {
   model?: string;
   freshContext?: boolean;
   risk?: RiskLane;
+  /** Orchestrators: hand each step it feeds its own task (true), or the same output to all (false). */
+  split?: boolean;
+  foreach?: string;
+  maxItems?: number;
+  probe?: number;
 }
 
 export interface DraftResult {
@@ -102,6 +116,22 @@ function readStep(raw: unknown, index: number): DraftStep | string {
   if (risk !== undefined && !(RISK_LANES as readonly unknown[]).includes(risk)) return `${where}.risk must be one of ${RISK_LANES.join(", ")}.`;
   const onFail = raw.on_fail;
   if (onFail !== undefined && onFail !== "retry" && onFail !== "stop") return `${where}.on_fail must be retry or stop.`;
+  const split = raw.split;
+  if (split !== undefined && typeof split !== "boolean") return `${where}.split must be true or false.`;
+  if (split !== undefined && type !== "orchestrator") return `${where}.split only applies to an orchestrator.`;
+  if (split === true && keys && keys.length > 0) return `${where}: a split orchestrator returns one key per step it feeds, so it cannot also have keys. Drop keys, or set split: false.`;
+  if (split === true && format !== undefined && format !== "json") return `${where}: a split orchestrator returns JSON, one key per step it feeds; drop format or set it to json.`;
+  const modelStep = type !== "code" && type !== "approval";
+  const foreach = text(raw.foreach, 130);
+  if (raw.foreach !== undefined && (!foreach || !FOREACH_PATTERN.test(foreach))) return `${where}.foreach must be <step> or <step>.<key>, e.g. plan.files: the step whose JSON list this step runs over.`;
+  if (foreach && !modelStep) return `${where}: only model steps can fan out (foreach); a ${type} step cannot.`;
+  const maxItems = raw.max_items;
+  if (maxItems !== undefined && (!Number.isInteger(maxItems) || (maxItems as number) < 1 || (maxItems as number) > MAX_ITEMS_CAP)) return `${where}.max_items must be a whole number from 1 to ${MAX_ITEMS_CAP}.`;
+  if (maxItems !== undefined && !foreach) return `${where}.max_items only applies to a step with foreach.`;
+  const probe = raw.probe;
+  if (probe !== undefined && (!Number.isInteger(probe) || (probe as number) < PROBE_MIN || (probe as number) > PROBE_MAX)) return `${where}.probe must be a whole number from ${PROBE_MIN} to ${PROBE_MAX}.`;
+  if (probe !== undefined && !modelStep) return `${where}: only model steps can be probed; a ${type} step cannot.`;
+  if (probe !== undefined && foreach) return `${where}: a step cannot both fan out and be probed (every item would run ${probe as number} times). Use one or the other.`;
   return {
     id,
     type: type as DraftStepType,
@@ -117,7 +147,22 @@ function readStep(raw: unknown, index: number): DraftStep | string {
     model,
     freshContext: typeof raw.fresh_context === "boolean" ? raw.fresh_context : undefined,
     risk: risk as RiskLane | undefined,
+    split: split as boolean | undefined,
+    foreach,
+    maxItems: maxItems as number | undefined,
+    probe: probe as number | undefined,
   };
+}
+
+/** The step and key a fan-out step's `foreach` names. */
+function listOf(step: DraftStep): { from: string; key: string } | null {
+  if (!step.foreach) return null;
+  const dot = step.foreach.indexOf(".");
+  return dot === -1 ? { from: step.foreach, key: "" } : { from: step.foreach.slice(0, dot), key: step.foreach.slice(dot + 1) };
+}
+
+function listing(ids: string[]): string {
+  return ids.length <= 1 ? (ids[0] ?? "") : `${ids.slice(0, -1).join(", ")} and ${ids[ids.length - 1]}`;
 }
 
 /** Builds the draft, or returns what is wrong with the outline. */
@@ -126,6 +171,8 @@ export function draftGraph(args: Record<string, unknown>): DraftResult | { error
   if (!name) return { error: "name is required: a short skill name, e.g. receipt-scanner." };
   const description = text(args.description, 600);
   if (!description) return { error: "description is required: what the skill does and when to use it, in a sentence." };
+  const handoff = args.handoff;
+  if (handoff !== undefined && handoff !== "inline" && handoff !== "file") return { error: "handoff must be inline (outputs pasted into the next step's task) or file (saved to files the next steps read)." };
   if (!Array.isArray(args.steps) || args.steps.length === 0) return { error: "steps is required: at least one step, each with id, type and task." };
   if (args.steps.length > MAX_DRAFT_STEPS) return { error: `A draft can have at most ${MAX_DRAFT_STEPS} steps.` };
 
@@ -145,25 +192,73 @@ export function draftGraph(args: Record<string, unknown>): DraftResult | { error
   const notes: string[] = [];
   const readOnlySteps: string[] = [];
   const parents = (step: DraftStep) => (step.after.length > 0 ? [...new Set(step.after)] : [DRAFT_INPUT_ID]);
-  const childCount = (id: string) => steps.filter((step) => parents(step).includes(id)).length;
+  const childrenOf = (id: string) => steps.filter((step) => parents(step).includes(id));
+  const childCount = (id: string) => childrenOf(id).length;
   const byId = new Map(steps.map((step) => [step.id, step]));
-  // An orchestrator that feeds several steps hands each its own task: JSON keyed by step id.
-  const splits = (step: DraftStep) => step.type === "orchestrator" && childCount(step.id) > 1 && (step.format === undefined || step.format === "json");
+
+  // A fan-out step runs over a JSON list that a step it reads returns.
+  for (const step of steps) {
+    const list = listOf(step);
+    if (!list) continue;
+    if (!step.after.includes(list.from)) return { error: `Step "${step.id}" fans out over "${step.foreach}", so "${list.from}" must be in its after.` };
+    const source = byId.get(list.from);
+    if (!source) return { error: `Step "${step.id}" fans out over the request, which is plain text. Add a step that turns it into a JSON list, and fan out over that.` };
+    if (source.type === "code" || source.type === "approval") return { error: `Step "${step.id}" fans out over "${list.from}", a ${source.type} step. Fan out over a model step that returns a JSON list.` };
+    if (source.format && source.format !== "json") return { error: `Step "${step.id}" fans out over "${list.from}", which returns ${source.format}; a fan-out needs a JSON list. Set its format to json.` };
+    if (list.key && source.keys && !source.keys.includes(list.key)) return { error: `Step "${step.id}" fans out over "${step.foreach}", but "${list.from}" has no "${list.key}" among its keys (${source.keys.join(", ")}).` };
+  }
+
+  // An orchestrator that feeds several steps hands each its own task (JSON keyed by step id), unless the
+  // outline says what it returns: then it is data, and every step it feeds reads the whole of it.
+  const splitting = new Set(
+    steps
+      .filter((step) => step.type === "orchestrator" && childCount(step.id) > 1 && (step.split ?? (!step.keys && !step.returns && (step.format === undefined || step.format === "json"))))
+      .map((step) => step.id)
+  );
+  for (const step of steps) {
+    const list = listOf(step);
+    if (list && !list.key && splitting.has(list.from)) {
+      return { error: `Step "${step.id}" fans out over all of "${list.from}", but "${list.from}" hands each step it feeds its own key. Use foreach: ${list.from}.<key>, or set split: false on "${list.from}".` };
+    }
+  }
+  /** The key of a split orchestrator's JSON a step reads: its list when it fans out over it, else its task. */
+  const sliceKey = (step: DraftStep, from: string) => {
+    const list = listOf(step);
+    return list?.from === from ? list.key : step.id;
+  };
 
   const contracts: Record<string, Contract> = {};
   const contractOf = new Map<string, string>();
   for (const step of steps) {
     // A contract lives on edges; the last step says what it returns in its prompt instead.
     if (step.type === "approval" || childCount(step.id) === 0) continue;
-    if (splits(step)) {
-      contracts[`${step.id}_tasks`] = { format: "json", description: step.returns ?? "One key per step id; each value is that step's task in one or two sentences." };
+    const listKeys = steps.flatMap((child) => {
+      const list = listOf(child);
+      return list?.from === step.id ? [list.key] : [];
+    });
+    if (splitting.has(step.id)) {
+      const children = childrenOf(step.id);
+      const keys = [...new Set(children.map((child) => sliceKey(child, step.id)))];
+      const tasks = children.filter((child) => sliceKey(child, step.id) === child.id).map((child) => child.id);
+      const lists = children.filter((child) => sliceKey(child, step.id) !== child.id).map((child) => `${sliceKey(child, step.id)} is the JSON list ${child.id} runs over`);
+      const shape = [tasks.length > 0 ? `${listing(tasks)} ${tasks.length === 1 ? "gets its" : "each get their"} own task in one or two sentences` : "", ...lists].filter(Boolean).join("; ");
+      contracts[`${step.id}_tasks`] = {
+        format: "json",
+        description: `${step.returns ? `${step.returns.replace(/\.$/, "")}. ` : ""}One key per step it feeds (${keys.join(", ")}): ${shape}.`,
+        required: keys,
+      };
       contractOf.set(step.id, `${step.id}_tasks`);
-    } else if (step.returns || step.format || step.keys) {
-      const format = step.format ?? (step.keys && step.keys.length > 0 ? "json" : "markdown");
+    } else if (step.returns || step.format || step.keys || listKeys.length > 0) {
+      const format = listKeys.length > 0 ? "json" : (step.format ?? (step.keys && step.keys.length > 0 ? "json" : "markdown"));
+      const required = step.keys && step.keys.length > 0 ? step.keys : [...new Set(listKeys.filter(Boolean))];
+      const listDescription =
+        required.length > 0
+          ? `A JSON object whose ${listing(required)} ${required.length === 1 ? "is the list" : "are the lists"} the steps after it run over, one entry per item.`
+          : "A JSON array, one entry per item the step after it runs over.";
       contracts[`${step.id}_output`] = {
         format,
-        description: step.returns ?? `The output of ${step.label ?? labelFor(step.id)}.`,
-        ...(format === "json" && step.keys && step.keys.length > 0 ? { required: step.keys } : {}),
+        description: step.returns ?? (listKeys.length > 0 ? listDescription : `The output of ${step.label ?? labelFor(step.id)}.`),
+        ...(format === "json" && required.length > 0 ? { required } : {}),
       };
       contractOf.set(step.id, `${step.id}_output`);
     }
@@ -204,24 +299,62 @@ export function draftGraph(args: Record<string, unknown>): DraftResult | { error
       if (node.onFail === "retry") node.maxRetries = 1;
     } else if (step.onFail) node.onFail = step.onFail;
     if (step.format === "text" || (step.format === "json" && !contractOf.has(step.id))) node.outputFormat = step.format;
+    const list = listOf(step);
+    if (list) {
+      node.foreach = step.foreach;
+      node.maxItems = step.maxItems ?? DRAFT_MAX_ITEMS;
+      if (step.maxItems === undefined) notes.push(`${step.id}: fans out over at most ${DRAFT_MAX_ITEMS} items, then stops and asks; set max_items to change that.`);
+    }
+    if (step.probe) node.probe = step.probe;
 
     // The prompt names every input with a reference, so the compiled step knows where each one is.
     const sections = [step.task];
     if (step.returns && !contractOf.has(step.id)) sections.push(`Return ${step.returns.replace(/^return\s+/i, "")}`);
+    // The work a verifier checks reaches later steps only through what the verifier returns.
+    if (verifier && childCount(step.id) > 0 && !step.returns) sections.push(PASS_ON);
     const readsRequest = parents(step).includes(DRAFT_INPUT_ID);
     if (readsRequest || verifier) sections.push(`The request:\n{{goal}}`);
     for (const from of parents(step)) {
       if (from === DRAFT_INPUT_ID) continue;
       const parent = byId.get(from) as DraftStep;
-      sections.push(splits(parent) ? `Your task:\n{{${from}.${step.id}}}` : `${parent.label ?? labelFor(from)}:\n{{${from}}}`);
+      const parentLabel = parent.label ?? labelFor(from);
+      if (list?.from === from) sections.push(`Your item, one entry of ${list.key ? `${list.key} from` : "the list from"} ${parentLabel}:\n{{item}}`);
+      else sections.push(splitting.has(from) ? `Your task:\n{{${from}.${step.id}}}` : `${parentLabel}:\n{{${from}}}`);
     }
     node.prompt = sections.join("\n\n");
     nodes.push(node);
   }
 
+  for (const id of splitting) {
+    notes.push(`${id}: hands ${listing(childrenOf(id).map((child) => child.id))} each its own task (JSON keyed by step id). If they should all read the same data instead, give ${id} keys or returns, or set split: false.`);
+  }
+  // A step that reads only verifiers sees the work they checked only as far as they hand it on.
+  for (const step of steps) {
+    if (step.type === "code" || step.type === "approval") continue;
+    const sources = parents(step).filter((id) => id !== DRAFT_INPUT_ID && byId.get(id)?.type !== "approval");
+    const verifiers = sources.map((id) => byId.get(id) as DraftStep).filter((parent) => parent.type === "verifier");
+    if (sources.length === 0 || verifiers.length < sources.length) continue;
+    const work = [...new Set(verifiers.flatMap((parent) => parents(parent)))].filter((id) => id !== DRAFT_INPUT_ID && !sources.includes(id) && byId.get(id)?.type !== "approval");
+    if (work.length === 0) continue;
+    const told = verifiers.every((parent) => !parent.returns);
+    const names = listing(verifiers.map((parent) => parent.id));
+    notes.push(
+      `${step.id}: reads only ${names}, so ${listing(work)} reach${work.length === 1 ? "es" : ""} it only through what ${names} return${verifiers.length === 1 ? "s" : ""}${told ? " (a drafted verifier is told to hand the checked work on)" : "; make sure that includes what it needs"}. If ${step.id} needs ${work.length === 1 ? "that work" : "their work"} as it is, add ${work.length === 1 ? "it" : "them"} to its after.`
+    );
+  }
+
   if (readOnlySteps.length > 0) {
     notes.unshift(`${readOnlySteps.join(", ")}: no tools were given, so ${readOnlySteps.length === 1 ? "it gets" : "they get"} ${DEFAULT_TOOLS.join(", ")} (read-only). Add what a step needs, e.g. WebSearch, Edit or Bash.`);
   }
-  const graph: SkillGraph = { name, description, nodes, edges, contracts, preamble: "# Node Prompts & Edge Contracts", extraFrontmatter: {} };
+  const graph: SkillGraph = {
+    name,
+    description,
+    nodes,
+    edges,
+    contracts,
+    ...(handoff ? { handoff: handoff as HandoffMode } : {}),
+    preamble: "# Node Prompts & Edge Contracts",
+    extraFrontmatter: {},
+  };
   return { source: serializeGraphSkill(graph), notes };
 }

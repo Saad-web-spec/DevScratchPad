@@ -848,6 +848,16 @@ All AI agents operating in this repository MUST follow this 5-step loop:
 - **Gotcha — YAML anchors**: `stringifyYaml` aliased shared arrays (`tools: &a1`) in fan-out blueprints; `aliasDuplicateObjects: false` now.
 - **Status**: ✅ Complete (262 graph tests, browser check, validate-presets, lint, typecheck, build).
 
+### Session: 2026-10-21 — Skill Graph: connector review round 2
+- **Agent**: Claude Code (Opus 5.5)
+- **Source**: a second real Claude test (candidate-scoring panel): draft_graph wrote judges reading `{{parse_candidates.judge_correctness}}` while the contract described a candidates array, the checker said 0 warnings, and the dry run said "every handoff lines up" while the final step got only the auditor's notes.
+- **Decision — an orchestrator with keys or returns is data, not a splitter**: split only when the outline says nothing about its output, or `split: true`. Splitting is right for blueprint-style planners but silently wrong for parsers.
+- **Decision — verifiers pass the work on (the recommended default; the user said "go" without picking)**: drafted verifiers that feed later steps are told to hand on the checked work with their notes, matching the blueprints ("Reject unverified claims"), instead of auto-wiring extra edges.
+- **Gotcha — a structural "reads only a verifier" rule fires on 8 of 10 blueprints**, and a "keyed ref without required" rule on all 10 splitters. `reads-only-review` is therefore gated on the verifier prompt lacking pass-on words (`PASS_ON_WORDS` in graphSkill.ts) and on no contract on its edge; the keyed-key gap is closed at run time in `contractChecks` instead of with a warning.
+- **Gotcha — the checker cannot read prose**: a contract description that contradicts the keys is undetectable unless `required` is set; the dry run's Sees lines are the honest backstop, and the tool docs now say so.
+- **MCP probe (same day)**: the endpoint held up against protocol edge cases and heavy inputs; the gaps were an uncaught throw answering as a Next.js HTML 500 (now `isError` tool result / JSON-RPC -32603), the body read before the size check (now a Content-Length precheck), and tool results too large for Claude: clients cut results past ~100k characters silently, and a 200-step kit was 287k. `compile_graph` now sends whole files up to 80k and names the rest with the download link. Typical kits (8–20 steps) are 16–33k and unaffected.
+- **Status**: ✅ Complete (286 graph tests, 1252 total, validate-presets, lint 0 errors, typecheck, build, live MCP curl).
+
 ### Session: 2026-10-21 — Skill Graph: landing page, /graph/studio, kit download page
 - **Agent**: Claude Code (Opus 5.5)
 - **Decision — landing first** (user: opening straight into the editor "not professional"): `/graph` = landing, `/graph/studio` = editor, `/graph/download` = kit page for connector links. Share links stay hash-based, so old `/graph#g=` links are forwarded client-side by an inline script in `graph/page.tsx`.

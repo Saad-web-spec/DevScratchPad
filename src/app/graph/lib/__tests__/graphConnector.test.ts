@@ -1,5 +1,5 @@
-import { describe, expect, it } from "vitest";
-import { CONNECTOR_TOOLS, callConnectorTool } from "../graphConnector";
+import { describe, expect, it, vi } from "vitest";
+import { CONNECTOR_TOOLS, MAX_COMPILE_RESULT_CHARS, callConnectorTool } from "../graphConnector";
 import { buildExportKit } from "../graphExport";
 import { INVALID_PARAMS, METHOD_NOT_FOUND, SUPPORTED_PROTOCOL_VERSIONS, handleBody, handleMessage } from "../mcpProtocol";
 import { decodeShareHash, encodeLegacyShareHash } from "../graphShare";
@@ -146,5 +146,52 @@ describe("MCP protocol", () => {
     const prompt = rpc("prompts/get", { name: "design_workflow", arguments: { project: "A Next.js app with Stripe billing" } });
     expect(JSON.stringify(prompt)).toContain("A Next.js app with Stripe billing");
     expect(rpc("prompts/get", { name: "other" })).toMatchObject({ error: { code: INVALID_PARAMS } });
+  });
+
+  it("answers a tool that throws as a tool error Claude can read, logging only the tool's name", () => {
+    const errors: string[] = [];
+    const spy = vi.spyOn(console, "error").mockImplementation((message: string) => errors.push(message));
+    try {
+      // No context: the first studio link the tool builds throws a TypeError.
+      const broken = null as unknown as typeof context;
+      const response = handleMessage({ jsonrpc: "2.0", id: 9, method: "tools/call", params: { name: "draft_graph", arguments: { name: "x", description: "Does x.", steps: [{ id: "a", type: "worker", task: "Do the thing and return a list." }] } } }, broken);
+      expect(response).toMatchObject({ id: 9, result: { isError: true } });
+      expect(JSON.stringify(response)).toContain("draft_graph could not process this input");
+      expect(errors).toEqual(["[skill-graph-mcp] draft_graph failed (TypeError)"]);
+    } finally {
+      spy.mockRestore();
+    }
+  });
+});
+
+describe("compile_graph on a large graph", () => {
+  function chain(steps: number): string {
+    const nodes = ["    - {id: goal, type: input, label: GOAL}"];
+    const edges: string[] = [];
+    const prompts: string[] = [];
+    for (let index = 0; index < steps; index++) {
+      const from = index === 0 ? "goal" : `n${index - 1}`;
+      nodes.push(`    - {id: n${index}, type: worker, label: N${index}, model: sonnet, tools: [Read]}`);
+      edges.push(`    - {from: ${from}, to: n${index}}`);
+      prompts.push(`## @node: n${index}\nDo step ${index} and return a list of findings.\n\n{{${from}}}`);
+    }
+    return `---\nname: big\ndescription: big\ntopology:\n  nodes:\n${nodes.join("\n")}\n  edges:\n${edges.join("\n")}\n---\n${prompts.join("\n\n")}\n`;
+  }
+
+  it("sends whole files up to the budget and names the rest with the download link", () => {
+    const result = call("compile_graph", { source: chain(199) });
+    const sentChars = result.blocks.slice(1).reduce((sum, block) => sum + block.text.length, 0);
+    expect(sentChars).toBeLessThanOrEqual(MAX_COMPILE_RESULT_CHARS + 2_000);
+    expect(result.blocks[1].text).toContain("File: .claude/skills/big/SKILL.md");
+    expect(result.text).toMatch(/This answer holds the first \d+ files? in full; the other \d+ files \(.*\.claude\/agents\/big-n198\.md.*\) would not fit in one tool result/);
+    // Every path is still listed, so nothing is silently missing.
+    for (let index = 0; index < 199; index++) expect(result.text).toContain(`.claude/agents/big-n${index}.md`);
+  });
+
+  it("sends a normal kit whole", () => {
+    const result = call("compile_graph", { source: chain(20) });
+    expect(result.text).not.toContain("would not fit");
+    // Intro, then SKILL.md, graph.skill.md, one subagent per step, the Cursor rule and the README.
+    expect(result.blocks).toHaveLength(1 + 20 + 4);
   });
 });

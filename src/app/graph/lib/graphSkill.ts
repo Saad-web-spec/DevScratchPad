@@ -1213,7 +1213,55 @@ function validateContractKeys(graph: SkillGraph): GraphIssue[] {
       }
     }
   }
+
+  // A source that hands each step its own key, under a contract requiring keys no step reads, is
+  // described as one payload and compiled as another: its agent is told both and must pick.
+  for (const source of graph.nodes) {
+    if (!isKeyedJson(graph, source)) continue;
+    const consumers = [...new Set(successorsOf(graph, source.id))].map((id) => byId.get(id)).filter((n): n is GraphNode => n !== undefined);
+    if (consumers.some((consumer) => jsonKeysFor(graph, source, consumer) === null)) continue;
+    const read = jsonOutputKeys(graph, source);
+    for (const name of new Set(graph.edges.filter((edge) => edge.from === source.id && edge.contract).map((edge) => edge.contract as string))) {
+      const unread = (getContract(graph, name)?.required ?? []).filter((key) => !read.includes(key));
+      if (unread.length === 0) continue;
+      issues.push({
+        severity: "warning",
+        code: "keyed-contract-conflict",
+        nodeId: source.id,
+        message: `"${source.id}" hands each step its own key (${read.map((key) => `"${key}"`).join(", ")}), but the contract "${name}" requires ${unread.map((key) => `"${key}"`).join(", ")}, which no step reads. The contract describes a different payload: if the steps should all read that data, have them read {{${source.id}}} whole; otherwise drop those keys from required.`,
+      });
+    }
+  }
   return issues;
+}
+
+/** Words that tell a verifier to hand on the work it checked, not only its verdict or notes. */
+const PASS_ON_WORDS =
+  /\b(hands?\s+(\w+\s+)?on|pass(es)?\s+(\w+\s+)?on|forward|keeps?|kept|rejects?|drops?|removes?|strikes?|corrected|approved|verified|vetted|surviv\w*|along with|together with|that pass(es)?)\b/i;
+
+/**
+ * A step whose only model inputs are verifiers sees the work they checked only as far as they repeat
+ * it. A verifier told to write notes hands on notes, and the step after it never gets the work.
+ */
+function readsOnlyReview(graph: SkillGraph, node: GraphNode, byId: Map<string, GraphNode>): GraphIssue | null {
+  const sources = [...new Set(predecessorsOf(graph, node.id))].map((id) => byId.get(id)).filter((n): n is GraphNode => n !== undefined && n.type !== "input" && n.type !== "approval");
+  if (sources.length === 0 || sources.some((source) => source.type !== "verifier")) return null;
+  // A contract on the verifier's edge says what it returns, and a reference past it fetches the work itself.
+  if (sources.some((source) => graph.edges.some((edge) => edge.from === source.id && edge.contract))) return null;
+  if (sources.some((source) => PASS_ON_WORDS.test(source.prompt.replace(TEMPLATE_PATTERN, " ")))) return null;
+  const read = new Set(nodeRefs(node).map((ref) => ref.head));
+  const work = [...new Set(sources.flatMap((source) => predecessorsOf(graph, source.id)))].filter((id) => {
+    const step = byId.get(id);
+    return step !== undefined && !runsWithoutSubagent(step.type) && !read.has(id) && !sources.some((source) => source.id === id);
+  });
+  if (work.length === 0) return null;
+  const names = sources.map((source) => `"${source.id}"`).join(", ");
+  return {
+    severity: "warning",
+    code: "reads-only-review",
+    nodeId: node.id,
+    message: `"${node.id}" reads only what ${names} return${sources.length === 1 ? "s" : ""}, and ${sources.length === 1 ? "its prompt never says" : "their prompts never say"} to hand on the work checked (${work.map((id) => `"${id}"`).join(", ")}), so "${node.id}" may get notes instead of that work. Add edges from ${work.length === 1 ? "that step" : "those steps"} to "${node.id}", or tell the verifier to return the checked work along with its notes.`,
+  };
 }
 
 /** Words that tell a step what to hand back. */
@@ -1284,6 +1332,8 @@ function validatePrompts(graph: SkillGraph): GraphIssue[] {
         message: `"${node.id}" never names what it receives, so its prompt cannot say how to use it. Put ${names.join(", ")} where the step should use ${preds.length === 1 ? "it" : "each"}.`,
       });
     }
+    const review = readsOnlyReview(graph, node, byId);
+    if (review) issues.push(review);
   }
   return issues;
 }

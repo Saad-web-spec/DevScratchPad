@@ -17,6 +17,7 @@ import {
   foreachSource,
   handoffOf,
   isItemRef,
+  isKeyedJson,
   jsonKeysFor,
   jsonOutputKeys,
   predecessorsOf,
@@ -43,6 +44,8 @@ export interface ContextPreview {
   /** The task message the orchestrator hands over: the incoming payloads the prompt does not already embed. */
   user: string;
   sources: ContextSource[];
+  /** Model steps: the prompt alone with its references as ⟨placeholders⟩, without the appended instructions. */
+  prompt?: string;
 }
 
 export interface PlanStage {
@@ -116,11 +119,13 @@ export function contractChecks(graph: SkillGraph, node: GraphNode): ContractChec
   if (node.type === "input" || node.type === "approval") return [];
   const names = [...new Set(graph.edges.filter((edge) => edge.from === node.id && edge.contract).map((edge) => edge.contract as string))];
   const path = payloadPath(graph, node.id);
+  // A JSON output keyed by step must hold every key its steps read, whatever the contract lists.
+  const keyed = isKeyedJson(graph, node) ? jsonOutputKeys(graph, node) : [];
   return names.flatMap((name) => {
     const contract = getContract(graph, name);
     if (!contract) return [];
     const commands: string[] = [];
-    const keys = (contract.required ?? []).filter((key) => CONTRACT_KEY_PATTERN.test(key));
+    const keys = [...new Set([...(contract.required ?? []), ...(contract.format === "json" ? keyed : [])])].filter((key) => CONTRACT_KEY_PATTERN.test(key));
     if (contract.format === "json" && keys.length > 0) commands.push(requiredKeysCommand(keys, path));
     if (contract.check) commands.push(contract.check.replace(/\{\{\s*payload\s*\}\}/g, path));
     return commands.length > 0 ? [{ contract: name, commands, path }] : [];
@@ -350,5 +355,6 @@ export function previewNodeContext(graph: SkillGraph, node: GraphNode): ContextP
     system: instructions.length > 0 ? `${prompt.trim()}\n\n${instructions.join("\n")}` : prompt.trim(),
     user: blocks.length > 0 ? blocks.join("\n\n") : "Proceed with your instructions.",
     sources: [...sources.entries()].map(([id, direct]) => ({ id, direct })),
+    prompt: prompt.trim(),
   };
 }

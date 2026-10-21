@@ -31,11 +31,12 @@ const TOOLS: { name: string; does: string }[] = [
   { name: "get_graph_format", does: "Reads the graph skill format: node types, fields, contracts, references, the checker's rules and a full example." },
   { name: "list_graph_templates", does: `Lists the starter graphs (${BLUEPRINTS.map((blueprint) => blueprint.title).join(", ")}).` },
   { name: "get_graph_template", does: "Gets one starter graph's source, to build on." },
-  { name: "draft_graph", does: "Writes a graph from a plain outline of the steps (what each does and what it reads), so Claude does not have to write the format by hand." },
-  { name: "validate_graph", does: "Checks a graph: errors, warnings with how to fix them (weak prompts and vague gates included), and the stages that will run." },
-  { name: "dry_run_graph", does: "Walks the plan with a sample request, without running a model: what each step receives, returns and is checked by, and where a problem would hit." },
+  { name: "draft_graph", does: "Writes a graph from a plain outline of the steps (what each does and what it reads, plus fan-out, probing or file handoffs), so Claude does not have to write the format by hand. Lists what each step will receive." },
+  { name: "validate_graph", does: "Checks a graph: errors, warnings with how to fix them (weak prompts, vague gates and steps that never get the work a verifier checked included), and the stages that will run." },
+  { name: "dry_run_graph", does: "Walks the plan with a sample request, without running a model: each step's prompt with its inputs filled in, what it returns and is checked by, and where a problem would hit." },
   { name: "compile_graph", does: "Turns a valid graph into files: the Claude Code kit (orchestrating SKILL.md plus one subagent per step), a single SKILL.md, or a Cursor rule." },
   { name: "open_graph_in_studio", does: "Makes a link that opens the graph in the studio, to see it, walk through the plan, edit and export it." },
+  { name: "read_studio_link", does: "Turns a studio link back into the graph's source, so you can pick a graph up again in a later chat. The link is the saved copy; nothing is stored." },
 ];
 
 const PROMPTS: string[] = [
@@ -206,8 +207,8 @@ export default function GraphConnectorPage() {
             <li>A graph can have up to {MAX_NODES} steps and {MAX_SOURCE_LENGTH.toLocaleString("en-US")} characters.</li>
             <li>Links longer than about {SHARE_URL_SOFT_LIMIT.toLocaleString("en-US")} characters can be cut off by some chat apps; open them directly in a browser. A graph too large for a link comes back as files instead.</li>
             <li>
-              Nothing is saved on our side. Keep the link or the files. Opening a link in the studio keeps the graph you had in that browser under <b>Recent graphs</b> (the
-              clock above the Markdown), so nothing is lost.
+              Nothing is saved on our side. Keep the link or the files: paste the link into a later chat and Claude reads the graph back from it. Opening a link in the studio
+              keeps the graph you had in that browser under <b>Recent graphs</b> (the clock above the Markdown), so nothing is lost.
             </li>
             <li>Skill Graph designs and compiles workflows; it does not run them. Your agent runs the files you install.</li>
             <li>On claude.ai, Claude shows the compiled files for you to copy. Only Claude Code can write them into your project.</li>
