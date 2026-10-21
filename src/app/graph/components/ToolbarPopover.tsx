@@ -29,6 +29,11 @@ export function ToolbarPopover({ label, ariaLabel, align = "left", variant = "de
   /** Horizontal nudge that keeps the open panel inside the window (a narrow pane can push it past an edge). */
   const [shift, setShift] = useState(0);
   const shiftRef = useRef(0);
+  /**
+   * Height left below the trigger. A panel taller than the window (the blueprint list on a short or
+   * zoomed window) would otherwise stretch the page, scroll it and slide the studio under its header.
+   */
+  const [maxHeight, setMaxHeight] = useState<number | null>(null);
 
   useLayoutEffect(() => {
     if (!open) return;
@@ -43,6 +48,7 @@ export function ToolbarPopover({ label, ariaLabel, align = "left", variant = "de
       const next = left < margin ? margin - left : right > window.innerWidth - margin ? Math.max(margin - left, window.innerWidth - margin - right) : 0;
       shiftRef.current = next;
       setShift(next);
+      setMaxHeight(Math.max(160, Math.floor(window.innerHeight - rect.top - margin)));
     };
     fit();
     window.addEventListener("resize", fit);
@@ -95,9 +101,9 @@ export function ToolbarPopover({ label, ariaLabel, align = "left", variant = "de
         <div
           id={panelId}
           ref={panelRef}
-          style={shift ? { transform: `translateX(${shift}px)` } : undefined}
+          style={{ ...(shift ? { transform: `translateX(${shift}px)` } : {}), ...(maxHeight !== null ? { maxHeight } : {}) }}
           className={cn(
-            "absolute top-full z-50 mt-1.5 max-w-[calc(100vw-1rem)] rounded-lg border border-zinc-200 bg-white p-1 shadow-lg",
+            "absolute top-full z-50 mt-1.5 max-w-[calc(100vw-1rem)] overflow-y-auto overscroll-contain rounded-lg border border-zinc-200 bg-white p-1 shadow-lg",
             align === "right" ? "right-0" : "left-0",
             panelClassName
           )}

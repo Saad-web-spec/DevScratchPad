@@ -832,7 +832,8 @@ function GraphWorkspace({ initial, shared }: WorkspaceProps) {
     <div className="flex min-h-screen flex-col bg-zinc-50 font-sans text-zinc-900 antialiased">
       <GraphHeader />
 
-      <div className="flex h-[calc(100dvh-3.5rem)] min-h-[520px] flex-col">
+      {/* The header is 3.5rem plus its 1px border; without the 1px the page is always scrollable by that much. */}
+      <div className="flex h-[calc(100dvh-3.5rem-1px)] min-h-[520px] flex-col">
         {/* Toolbar */}
         <div className="flex flex-wrap items-center gap-2 border-b border-zinc-200 bg-white px-3 py-2 sm:px-6 lg:px-8">
           {shownStage === null ? (
@@ -1356,7 +1357,7 @@ export function GraphClient() {
     return (
       <div className="flex min-h-screen flex-col bg-zinc-50">
         <GraphHeader />
-        <div className="flex h-[calc(100dvh-3.5rem)] min-h-[520px] items-center justify-center text-[13px] text-zinc-400">
+        <div className="flex h-[calc(100dvh-3.5rem-1px)] min-h-[520px] items-center justify-center text-[13px] text-zinc-400">
           <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" /> Loading the graph studio
         </div>
       </div>
