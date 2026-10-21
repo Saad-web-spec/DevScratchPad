@@ -5,8 +5,11 @@ import { AlertCircle, AlertTriangle, ArrowRight, Check, ChevronDown, ChevronRigh
 import { cn } from "@/lib/utils";
 import {
   CONTRACT_FORMATS,
+  DEFAULT_MAX_ITERATIONS,
   DEFAULT_MAX_LESSONS,
   DEFAULT_MAX_PARALLEL,
+  LOOP_ITERATIONS_CAP,
+  LOOP_UNTILS,
   DEFAULT_MAX_RETRIES,
   KNOWN_TOOLS,
   MAX_LESSONS_CAP,
@@ -33,6 +36,7 @@ import {
   type ContractFormat,
   type ExperienceSettings,
   type HandoffMode,
+  type LoopUntil,
   type GraphIssue,
   type GraphNode,
   type NodeType,
@@ -907,6 +911,68 @@ function ProbeSection({ node, onNode }: { node: GraphNode; onNode: InspectorProp
   );
 }
 
+const LOOP_END_LABEL: Record<LoopUntil, string> = {
+  check: "its check passes",
+  gate: "its own gate passes",
+  done: "it says it is done",
+};
+
+/** Loop: run the step again on its own output until its check, its gate or its own word ends it. */
+function LoopSection({ node, onNode }: { node: GraphNode; onNode: InspectorProps["onNode"] }) {
+  const loop = node.loop;
+  return (
+    <>
+      <div className="grid grid-cols-[minmax(0,1fr)_6.5rem] gap-2">
+        <Field label="Repeat until">
+          <select
+            value={loop?.until ?? ""}
+            onChange={(event) =>
+              onNode(node.id, {
+                loop: event.target.value ? { until: event.target.value as LoopUntil, maxIterations: loop?.maxIterations ?? DEFAULT_MAX_ITERATIONS, ledger: loop?.ledger ?? true } : undefined,
+              })
+            }
+            className={FIELD}
+          >
+            <option value="">off (one run)</option>
+            {LOOP_UNTILS.map((until) => (
+              <option key={until} value={until}>
+                {LOOP_END_LABEL[until]}
+              </option>
+            ))}
+          </select>
+        </Field>
+        {loop && (
+          <Field label="At most">
+            <input
+              type="number"
+              min={1}
+              max={LOOP_ITERATIONS_CAP}
+              value={loop.maxIterations}
+              onChange={(event) => onNode(node.id, { loop: { ...loop, maxIterations: Math.max(1, Math.min(LOOP_ITERATIONS_CAP, Math.round(Number(event.target.value) || 1))) } })}
+              className={FIELD}
+            />
+          </Field>
+        )}
+      </div>
+      {loop && (
+        <label className="flex cursor-pointer items-start gap-2.5">
+          <input type="checkbox" checked={loop.ledger} onChange={(event) => onNode(node.id, { loop: { ...loop, ledger: event.target.checked } })} className="mt-0.5 h-4 w-4 accent-orange-600" />
+          <span className="min-w-0 text-xs text-zinc-600">Keep a ledger: each iteration leaves a note, and the next run starts from it.</span>
+        </label>
+      )}
+      <p className={NOTE}>
+        {loop
+          ? loop.until === "check" && !node.check
+            ? "Set a command check above; the loop ends when it exits 0."
+            : loop.until === "gate" && !node.gate
+              ? "Add a gate above; the loop ends when this step's own verdict is PASS."
+              : `Runs again on its own output until ${LOOP_END_LABEL[loop.until]}, at most ${loop.maxIterations} times, then stops the run. Later steps get only the last answer.`
+          : "For work that takes several passes: fixing until the tests pass, or working through a list until nothing is left."}
+      </p>
+    </>
+  );
+}
+
 /* ------------------------------------------------------------------ panel layout */
 
 /** Which sections are open. Kept above the node views, so switching steps keeps the same sections open. */
@@ -1183,6 +1249,10 @@ function NodeInspector({ graph, issues, node, onNode, onRename, onRemoveNode, on
 
           <PanelSection id="probe" title="Probe" summary={node.probe ? `${node.probe} candidates` : "off"}>
             <ProbeSection node={node} onNode={onNode} />
+          </PanelSection>
+
+          <PanelSection id="loop" title="Loop" summary={node.loop ? `until ${node.loop.until} · ≤${node.loop.maxIterations}` : "off"}>
+            <LoopSection node={node} onNode={onNode} />
           </PanelSection>
         </>
       )}

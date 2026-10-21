@@ -184,8 +184,9 @@ topology:
       model: sonnet
       tools: [Read, Grep, Glob, Edit, Write, Bash]
       check: npm test
-      on_fail: retry
-      max_retries: 2
+      loop:
+        until: check
+        max_iterations: 3
       risk: wide
     - id: diff
       type: code

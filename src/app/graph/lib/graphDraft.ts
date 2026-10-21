@@ -5,18 +5,24 @@
  * with references), so a first graph needs no knowledge of the format.
  */
 import {
+  DEFAULT_MAX_ITERATIONS,
+  LOOP_ITERATIONS_CAP,
+  LOOP_UNTILS,
+  MAX_PROBE_HINT_LENGTH,
   MODEL_PATTERN,
   PROBE_MAX,
   PROBE_MIN,
   RISK_LANES,
   TOOL_PATTERN,
   CONTRACT_KEY_PATTERN,
+  DEFAULT_MAX_LESSONS,
   isValidNodeId,
   serializeGraphSkill,
   type Contract,
   type GraphEdge,
   type GraphNode,
   type HandoffMode,
+  type LoopSettings,
   type NodeType,
   type RiskLane,
   type SkillGraph,
@@ -69,6 +75,11 @@ interface DraftStep {
   foreach?: string;
   maxItems?: number;
   probe?: number;
+  probeHints?: string[];
+  check?: string;
+  loop?: LoopSettings;
+  maxRetries?: number;
+  retryTarget?: string;
 }
 
 export interface DraftResult {
@@ -132,6 +143,24 @@ function readStep(raw: unknown, index: number): DraftStep | string {
   if (probe !== undefined && (!Number.isInteger(probe) || (probe as number) < PROBE_MIN || (probe as number) > PROBE_MAX)) return `${where}.probe must be a whole number from ${PROBE_MIN} to ${PROBE_MAX}.`;
   if (probe !== undefined && !modelStep) return `${where}: only model steps can be probed; a ${type} step cannot.`;
   if (probe !== undefined && foreach) return `${where}: a step cannot both fan out and be probed (every item would run ${probe as number} times). Use one or the other.`;
+  const probeHints = strings(raw.probe_hints)?.map((hint) => hint.replace(/\s+/g, " ").slice(0, MAX_PROBE_HINT_LENGTH));
+  if (probeHints && probe === undefined) return `${where}.probe_hints only applies to a probed step; set probe as well.`;
+  if (probeHints && probeHints.length > (probe as number)) return `${where} has ${probeHints.length} probe_hints for ${probe as number} candidates; give at most one per candidate.`;
+  const check = text(raw.check, 400);
+  if (raw.check !== undefined && !check) return `${where}.check must be a shell command, e.g. npm test.`;
+  if (check && !modelStep) return `${where}: a ${type} step has no check; for a code step, its command is the task.`;
+  const loop = readLoop(raw.loop);
+  if (typeof loop === "string") return `${where}.loop ${loop}`;
+  if (loop && !modelStep) return `${where}: only model steps can loop; a ${type} step cannot.`;
+  if (loop?.until === "check" && !check) return `${where}: loops until its check passes, so it needs check (e.g. npm test).`;
+  if (loop?.until === "gate" && !raw.gate && type !== "verifier") return `${where}: loops until its gate passes, so it needs gate: what must be true for the work to pass.`;
+  if (loop && probe !== undefined) return `${where}: a step cannot both loop and be probed (every iteration would run ${probe as number} candidates). Use one or the other.`;
+  if (loop && foreach) return `${where}: a step cannot both fan out and loop. Loop a step after the fan-out instead.`;
+  if (loop && risk === "irreversible") return `${where}: an irreversible step cannot loop; one approval would cover every iteration.`;
+  const maxRetries = raw.max_retries;
+  if (maxRetries !== undefined && (!Number.isInteger(maxRetries) || (maxRetries as number) < 0 || (maxRetries as number) > 3)) return `${where}.max_retries must be a whole number from 0 to 3.`;
+  const retryTarget = text(raw.retry_target, 64);
+  if (raw.retry_target !== undefined && (!retryTarget || !isValidNodeId(retryTarget))) return `${where}.retry_target must be the id of a step before it.`;
   return {
     id,
     type: type as DraftStepType,
@@ -151,7 +180,24 @@ function readStep(raw: unknown, index: number): DraftStep | string {
     foreach,
     maxItems: maxItems as number | undefined,
     probe: probe as number | undefined,
+    probeHints,
+    check,
+    loop,
+    maxRetries: maxRetries as number | undefined,
+    retryTarget,
   };
+}
+
+/** `loop: "check"` or `{until, max_iterations, ledger}`; returns what is wrong as a string. */
+function readLoop(raw: unknown): LoopSettings | undefined | string {
+  if (raw === undefined) return undefined;
+  const until = typeof raw === "string" ? raw : isRecord(raw) ? raw.until : undefined;
+  if (typeof until !== "string" || !(LOOP_UNTILS as readonly string[]).includes(until)) return `must say what ends it: until check, gate or done.`;
+  const entry = isRecord(raw) ? raw : {};
+  const max = entry.max_iterations;
+  if (max !== undefined && (!Number.isInteger(max) || (max as number) < 1 || (max as number) > LOOP_ITERATIONS_CAP)) return `max_iterations must be a whole number from 1 to ${LOOP_ITERATIONS_CAP}.`;
+  if (entry.ledger !== undefined && typeof entry.ledger !== "boolean") return "ledger must be true or false.";
+  return { until: until as LoopSettings["until"], maxIterations: (max as number | undefined) ?? DEFAULT_MAX_ITERATIONS, ledger: entry.ledger !== false };
 }
 
 /** The step and key a fan-out step's `foreach` names. */
@@ -187,7 +233,10 @@ export function draftGraph(args: Record<string, unknown>): DraftResult | { error
   for (const step of steps) {
     const unknown = step.after.filter((id) => id !== DRAFT_INPUT_ID && !ids.has(id));
     if (unknown.length > 0) return { error: `Step "${step.id}" reads from ${unknown.map((id) => `"${id}"`).join(", ")}, which ${unknown.length === 1 ? "is not a step" : "are not steps"}. Use the ids of other steps, or leave after empty to read the request.` };
+    if (step.retryTarget && !ids.has(step.retryTarget)) return { error: `Step "${step.id}" restarts at "${step.retryTarget}", which is not a step. Use the id of a step that runs before it.` };
   }
+  const experience = args.experience;
+  if (experience !== undefined && typeof experience !== "boolean") return { error: "experience must be true (learn from failed checks between runs) or false." };
 
   const notes: string[] = [];
   const readOnlySteps: string[] = [];
@@ -306,6 +355,20 @@ export function draftGraph(args: Record<string, unknown>): DraftResult | { error
       if (step.maxItems === undefined) notes.push(`${step.id}: fans out over at most ${DRAFT_MAX_ITEMS} items, then stops and asks; set max_items to change that.`);
     }
     if (step.probe) node.probe = step.probe;
+    if (step.probeHints && step.probeHints.length > 0) node.probeHints = step.probeHints;
+    if (step.check) {
+      node.check = step.check;
+      if (!step.loop && !node.onFail) notes.push(`${step.id}: has a check but no loop or on_fail, so a failing check stops the run. Set loop: {until: check} to have it fix its own work.`);
+    }
+    if (step.loop) {
+      node.loop = step.loop;
+      if (step.loop.until === "gate" && !node.gate) node.gate = DEFAULT_GATE;
+    }
+    if (step.maxRetries !== undefined && node.onFail === "retry") node.maxRetries = step.maxRetries;
+    if (step.retryTarget) {
+      node.retryTarget = step.retryTarget;
+      if (node.onFail !== "retry") notes.push(`${step.id}: has retry_target but does not retry (no gate or check with on_fail: retry), so it is never used.`);
+    }
 
     // The prompt names every input with a reference, so the compiled step knows where each one is.
     const sections = [step.task];
@@ -353,6 +416,7 @@ export function draftGraph(args: Record<string, unknown>): DraftResult | { error
     edges,
     contracts,
     ...(handoff ? { handoff: handoff as HandoffMode } : {}),
+    ...(experience === true ? { experience: { maxLessons: DEFAULT_MAX_LESSONS } } : {}),
     preamble: "# Node Prompts & Edge Contracts",
     extraFrontmatter: {},
   };

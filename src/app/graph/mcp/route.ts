@@ -2,7 +2,8 @@
  * Skill Graph connector endpoint: https://www.devscratchpad.tech/graph/mcp
  *
  * A stateless MCP server over Streamable HTTP, without sign-in. The only route on this site that
- * receives user content: graphs are checked or compiled in memory and the answer goes straight back.
+ * receives user content: graphs are checked, edited or compiled, and a refereed run's step answers are
+ * checked, in memory, and the answer goes straight back (a run's state travels in the run object).
  * Nothing is stored, and only the names of the tools called are logged (an anonymous usage count).
  */
 import { CONNECTOR_TOOLS } from "../lib/graphConnector";

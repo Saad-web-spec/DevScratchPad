@@ -6,12 +6,29 @@
  * Nothing is stored or logged, so this module has no I/O; the route handler only moves JSON.
  */
 import { DRAFT_INPUT_ID, DRAFT_MAX_ITEMS, DRAFT_STEP_TYPES, MAX_DRAFT_STEPS, draftGraph } from "./graphDraft";
+import { EDIT_OPERATIONS, MAX_EDIT_OPERATIONS, STEP_FIELDS, editGraph } from "./graphEdit";
 import { buildCursorRule, buildExportKit, buildSingleFileSkill, handOff, toSlug } from "./graphExport";
+import { MAX_LESSONS_SOURCE, bakeLesson, isOrphanLesson, parseLessons, serializeLessons } from "./graphLessons";
 import { buildPlan } from "./graphPlan";
 import { graphFormatReference } from "./graphReference";
+import { advanceRun, startRun, type RunAnswer } from "./graphRun";
 import { MAX_HASH_LENGTH, SHARE_URL_SOFT_LIMIT, decodeShareHash, encodeShareHash } from "./graphShare";
 import { dryRunGraph } from "./graphSimulate";
-import { MAX_SOURCE_LENGTH, PROBE_MAX, PROBE_MIN, findOrphanSections, parseGraphSkill, runsWithoutSubagent, validateGraph, type GraphIssue, type SkillGraph } from "./graphSkill";
+import {
+  DEFAULT_MAX_ITERATIONS,
+  LOOP_ITERATIONS_CAP,
+  LOOP_UNTILS,
+  MAX_SOURCE_LENGTH,
+  PROBE_MAX,
+  PROBE_MIN,
+  findOrphanSections,
+  parseGraphSkill,
+  runsWithoutSubagent,
+  serializeGraphSkill,
+  validateGraph,
+  type GraphIssue,
+  type SkillGraph,
+} from "./graphSkill";
 import { BLUEPRINTS } from "./graphTemplates";
 
 export interface ToolAnnotations {
@@ -27,11 +44,15 @@ export interface ConnectorTool {
   title: string;
   description: string;
   inputSchema: { type: "object"; properties: Record<string, unknown>; required?: string[]; additionalProperties?: boolean };
+  /** Shape of `structuredContent` on every result that is not an error (MCP 2025-06-18 and later). */
+  outputSchema?: { type: "object"; properties: Record<string, unknown>; required?: string[] };
   annotations: ToolAnnotations;
 }
 
 export interface ToolResult {
   content: { type: "text"; text: string }[];
+  /** The same answer as data, matching the tool's outputSchema. Clients that predate it read the text. */
+  structuredContent?: Record<string, unknown>;
   isError?: boolean;
 }
 
@@ -62,6 +83,43 @@ type CompileTarget = (typeof COMPILE_TARGETS)[number];
  * up to this budget and the rest are named with the download link, instead of arriving cut mid-file.
  */
 export const MAX_COMPILE_RESULT_CHARS = 80_000;
+
+const ISSUE_SCHEMA = {
+  type: "object",
+  properties: { code: { type: "string" }, step: { type: "string" }, message: { type: "string" } },
+  required: ["code", "message"],
+};
+
+/** What the checker found, as data: shared by validate_graph, draft_graph, edit_graph and bake_lessons. */
+const CHECK_OUTPUT = {
+  valid: { type: "boolean", description: "True when the graph has no errors and can be compiled." },
+  fatal: { type: "string", description: "Set when the file could not be read at all." },
+  errors: { type: "array", items: ISSUE_SCHEMA },
+  warnings: { type: "array", items: ISSUE_SCHEMA },
+  stages: { type: "array", items: { type: "array", items: { type: "string" } }, description: "Step ids per stage, in run order; steps in one stage run in parallel." },
+};
+
+const SOURCE_OUTPUT = {
+  source: { type: "string", description: "The graph.skill.md text." },
+  studio_link: { type: "string", description: "A link that opens the graph in the studio; absent when the graph is too large for a link." },
+};
+
+const RUN_OUTPUT_SCHEMA = {
+  type: "object" as const,
+  properties: {
+    status: { type: "string", enum: ["running", "reflecting", "done", "stopped"] },
+    run: { type: "object", description: "The run object to pass to advance_run; absent once the run is over." },
+    tasks: { type: "array", items: { type: "object", properties: { id: { type: "string" }, step: { type: "string" }, kind: { type: "string" } }, required: ["id", "step", "kind"] } },
+    stop_reason: { type: "string" },
+  },
+  required: ["status", "tasks"],
+};
+
+const EXPERIENCE_PROPERTY = {
+  type: "string",
+  description: "The skill's EXPERIENCE.md (lessons from earlier runs), as written by its reflect step.",
+  maxLength: MAX_LESSONS_SOURCE,
+};
 
 export const CONNECTOR_TOOLS: readonly ConnectorTool[] = [
   {
@@ -146,16 +204,33 @@ export const CONNECTOR_TOOLS: readonly ConnectorTool[] = [
                 maximum: PROBE_MAX,
                 description: `Run ${PROBE_MIN} to ${PROBE_MAX} candidates of this step side by side and let a fresh-context judge keep the best. Only for steps that read (plans, reviews, research), not ones that edit.`,
               },
+              probe_hints: { type: "array", items: { type: "string" }, description: "Probed steps: one approach per candidate, in order, e.g. 'The smallest change that works.'" },
+              check: { type: "string", description: "Model steps: a shell command that must exit 0 once the step is done, e.g. npm test.", maxLength: 400 },
+              loop: {
+                type: "object",
+                description: "Run the step again on its own output until something holds: until check (its check exits 0), gate (its own gate passes) or done (it says it is finished). Each iteration leaves notes in a ledger file the next iteration and the next run read.",
+                properties: {
+                  until: { type: "string", enum: [...LOOP_UNTILS] },
+                  max_iterations: { type: "integer", minimum: 1, maximum: LOOP_ITERATIONS_CAP, description: `Defaults to ${DEFAULT_MAX_ITERATIONS}.` },
+                  ledger: { type: "boolean", description: "Keep the notes file between iterations and runs. Defaults to true." },
+                },
+                required: ["until"],
+                additionalProperties: false,
+              },
+              max_retries: { type: "integer", minimum: 0, maximum: 3, description: "How many times a failed gate or check re-runs the work. Defaults to 1." },
+              retry_target: { type: "string", description: "Where a failed gate or check restarts: the id of a model step before this one." },
             },
             required: ["id", "type", "task"],
             additionalProperties: false,
           },
         },
         handoff: { type: "string", enum: ["inline", "file"], description: "How outputs reach the next steps: inline (pasted into their task, the default) or file (saved to files they read; for large outputs)." },
+        experience: { type: "boolean", description: "Learn from runs: failed checks, gates and loop iterations become lessons in EXPERIENCE.md that later runs hand to each step." },
       },
       required: ["name", "description", "steps"],
       additionalProperties: false,
     },
+    outputSchema: { type: "object", properties: { ...CHECK_OUTPUT, ...SOURCE_OUTPUT, notes: { type: "array", items: { type: "string" } } }, required: ["valid", "errors", "warnings", "stages", "source"] },
     annotations: readOnly("Draft a graph from an outline"),
   },
   {
@@ -164,6 +239,7 @@ export const CONNECTOR_TOOLS: readonly ConnectorTool[] = [
     description:
       "Checks a graph.skill.md with the Skill Graph checker. Returns the errors (which block compiling) and warnings, each with how to fix it, and the stage plan: which steps run in which order and which run in parallel. Besides the wiring, it flags weak prompts: a verifier without a gate, a vague gate, a prompt that never says what to return or never names its inputs, a key a step reads that its source's contract does not require, a contract that describes a different payload than its steps read, and a step that reads only a verifier that never hands on the work it checked. It cannot tell whether a step's task needs data it does not get; dry_run_graph shows what each step sees. Nothing is stored.",
     inputSchema: { type: "object", properties: { source: SOURCE_PROPERTY }, required: ["source"], additionalProperties: false },
+    outputSchema: { type: "object", properties: CHECK_OUTPUT, required: ["valid", "errors", "warnings", "stages"] },
     annotations: readOnly("Check a graph"),
   },
   {
@@ -180,6 +256,11 @@ export const CONNECTOR_TOOLS: readonly ConnectorTool[] = [
       required: ["source"],
       additionalProperties: false,
     },
+    outputSchema: {
+      type: "object",
+      properties: { errors: { type: "integer" }, warnings: { type: "integer" }, subagent_calls: { type: "integer", description: "Subagent calls on a run where every check passes first time." } },
+      required: ["errors", "warnings", "subagent_calls"],
+    },
     annotations: readOnly("Dry-run a graph"),
   },
   {
@@ -195,6 +276,15 @@ export const CONNECTOR_TOOLS: readonly ConnectorTool[] = [
       },
       required: ["source"],
       additionalProperties: false,
+    },
+    outputSchema: {
+      type: "object",
+      properties: {
+        files: { type: "array", items: { type: "object", properties: { path: { type: "string" }, included: { type: "boolean", description: "False when the file did not fit in this answer." } }, required: ["path", "included"] } },
+        download_link: { type: "string" },
+        studio_link: { type: "string" },
+      },
+      required: ["files"],
     },
     annotations: readOnly("Compile a graph into agent files"),
   },
@@ -219,9 +309,145 @@ export const CONNECTOR_TOOLS: readonly ConnectorTool[] = [
     },
     annotations: readOnly("Read a graph from a studio link"),
   },
+  {
+    name: "edit_graph",
+    title: "Edit a graph",
+    description:
+      "Changes a graph.skill.md by operations instead of a rewrite: set_step (set or clear fields on a step, or add one with type and after), remove_step, rename_step (updates every reference), set_prompt, connect and disconnect (with an optional contract), set_contract, remove_contract, and set_skill (name, description, handoff, experience). Operations apply in order, all or nothing. Returns the new source, what each operation did, the checker's result and a studio link. Nothing is stored.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        source: SOURCE_PROPERTY,
+        operations: {
+          type: "array",
+          minItems: 1,
+          maxItems: MAX_EDIT_OPERATIONS,
+          description:
+            'Edits, in order. Examples: {"op":"set_step","id":"implement","fields":{"check":"npm test","loop":{"until":"check","max_iterations":4}}}; {"op":"set_step","id":"lint","fields":{"type":"code","run":"npm run lint"},"after":["implement"]}; {"op":"connect","from":"plan","to":"review","contract":"plan_json"}; {"op":"set_step","id":"review","fields":{"model":null}} clears model.',
+          items: {
+            type: "object",
+            properties: {
+              op: { type: "string", enum: [...EDIT_OPERATIONS] },
+              id: { type: "string", description: "The step (set_step, remove_step, rename_step, set_prompt)." },
+              to: { type: "string", description: "rename_step: the new id. connect, disconnect: the step the edge goes to." },
+              from: { type: "string", description: "connect, disconnect: the step the edge comes from." },
+              fields: { type: "object", description: `set_step: fields to set, in the file's names (${STEP_FIELDS.join(", ")}, prompt); null clears one.` },
+              after: { type: "array", items: { type: "string" }, description: "set_step: steps to connect into this one." },
+              prompt: { type: "string", description: "set_prompt: the step's new prompt." },
+              contract: { type: "string", description: "connect: the contract the edge carries." },
+              name: { type: "string", description: "set_contract, remove_contract: the contract. set_skill: the skill's name." },
+              format: { type: "string", enum: ["json", "markdown", "text"], description: "set_contract." },
+              description: { type: "string", description: "set_contract: a valid payload in one line. set_skill: what the skill does." },
+              required: { type: "array", items: { type: "string" }, description: "set_contract: top-level keys a JSON payload must have." },
+              check: { type: "string", description: "set_contract: a command with {{payload}} that must exit 0." },
+              on: { type: "array", items: { type: "object", properties: { from: { type: "string" }, to: { type: "string" } }, required: ["from", "to"] }, description: "set_contract: edges to put it on." },
+              handoff: { type: "string", enum: ["inline", "file"], description: "set_skill." },
+              experience: { type: "boolean", description: "set_skill: learn from runs (true) or not (false)." },
+            },
+            required: ["op"],
+          },
+        },
+      },
+      required: ["source", "operations"],
+      additionalProperties: false,
+    },
+    outputSchema: { type: "object", properties: { ...CHECK_OUTPUT, ...SOURCE_OUTPUT, applied: { type: "array", items: { type: "string" } } }, required: ["valid", "errors", "warnings", "stages", "source", "applied"] },
+    annotations: readOnly("Edit a graph"),
+  },
+  {
+    name: "review_lessons",
+    title: "Review a skill's lessons",
+    description:
+      "Reads a skill's EXPERIENCE.md (the lessons its reflect step wrote from failed checks, gates and loop iterations) against its graph: each lesson with its step, rule, evidence and how often it was given and helped, plus lessons whose step no longer exists and lessons the next run would prune. Nothing is stored.",
+    inputSchema: { type: "object", properties: { source: SOURCE_PROPERTY, experience: EXPERIENCE_PROPERTY }, required: ["source", "experience"], additionalProperties: false },
+    outputSchema: {
+      type: "object",
+      properties: {
+        lessons: {
+          type: "array",
+          items: {
+            type: "object",
+            properties: { number: { type: "integer" }, step: { type: "string" }, rule: { type: "string" }, evidence: { type: "string" }, seen: { type: "integer" }, helped: { type: "integer" }, status: { type: "string", enum: ["active", "orphan", "pruned_next"] } },
+            required: ["number", "step", "rule", "seen", "helped", "status"],
+          },
+        },
+      },
+      required: ["lessons"],
+    },
+    annotations: readOnly("Review a skill's lessons"),
+  },
+  {
+    name: "bake_lessons",
+    title: "Bake lessons into a graph",
+    description:
+      "Makes chosen lessons permanent: appends each one's rule to its step's prompt in the graph.skill.md (under 'Learned from earlier runs:') and removes it from EXPERIENCE.md. Returns the new source, the trimmed EXPERIENCE.md text, the checker's result and a studio link. Nothing is stored or written.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        source: SOURCE_PROPERTY,
+        experience: EXPERIENCE_PROPERTY,
+        lessons: { type: "array", minItems: 1, items: { type: "integer", minimum: 1 }, description: "The numbers of the lessons to bake in (the n of [Ln])." },
+        discard: { type: "array", items: { type: "integer", minimum: 1 }, description: "Lesson numbers to remove from the file without baking them in." },
+      },
+      required: ["source", "experience", "lessons"],
+      additionalProperties: false,
+    },
+    outputSchema: { type: "object", properties: { ...CHECK_OUTPUT, ...SOURCE_OUTPUT, experience: { type: "string" }, baked: { type: "array", items: { type: "integer" } } }, required: ["valid", "errors", "warnings", "stages", "source", "experience", "baked"] },
+    annotations: readOnly("Bake lessons into a graph"),
+  },
+  {
+    name: "start_run",
+    title: "Start a refereed run",
+    description:
+      "Starts a run of a graph that a referee keeps on the rails: it returns the first tasks (each step's instructions and where each of its inputs is) and a run object. advance_run takes the answers. The referee checks every answer in code (JSON contract keys, GATE verdicts, loop markers, command exit codes), counts retries and loop iterations, expands fan-out lists, keeps the failure log and the loop notes, and stops a run that runs out of tries. It runs no model and no command itself, and stores nothing: the run object carries the state.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        source: SOURCE_PROPERTY,
+        request: { type: "string", description: "The user's request the graph runs on.", maxLength: 20_000 },
+        experience: EXPERIENCE_PROPERTY,
+      },
+      required: ["source", "request"],
+      additionalProperties: false,
+    },
+    outputSchema: RUN_OUTPUT_SCHEMA,
+    annotations: readOnly("Start a refereed run"),
+  },
+  {
+    name: "advance_run",
+    title: "Report answers to a refereed run",
+    description:
+      "Takes the answers to a run's open tasks, checks each one, and returns what happens next: the next tasks, a retry with the reason, the next loop iteration, an approval to ask, or the end of the run with the final answer, the loop notes to append to each ledger file and, with learning on, the new EXPERIENCE.md task. With no outputs, it lists the open tasks again. Nothing is stored.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        run: { type: "object", description: "The run object from the last start_run or advance_run answer, unchanged." },
+        outputs: {
+          type: "array",
+          maxItems: 100,
+          description: "One entry per finished task.",
+          items: {
+            type: "object",
+            properties: {
+              task: { type: "string", description: "The task id." },
+              output: { type: "string", description: "The step's whole answer, unchanged; for commands and checks, their last lines of output." },
+              exit_code: { type: "integer", description: "Commands and checks: the exit code." },
+              approved: { type: "boolean", description: "Approvals: true only on the user's explicit yes." },
+            },
+            required: ["task"],
+            additionalProperties: false,
+          },
+        },
+      },
+      required: ["run"],
+      additionalProperties: false,
+    },
+    outputSchema: RUN_OUTPUT_SCHEMA,
+    annotations: readOnly("Report answers to a refereed run"),
+  },
 ];
 
-/** A prompt the user can pick in Claude to start a workflow from their project. */
+/** Prompts the user can pick in Claude to start from their project. */
 export const CONNECTOR_PROMPTS = [
   {
     name: "design_workflow",
@@ -229,9 +455,30 @@ export const CONNECTOR_PROMPTS = [
     description: "Plan a multi-agent workflow for a project or task, check it, and open it in the Skill Graph studio.",
     arguments: [{ name: "project", description: "What the project or task is, in a sentence or two.", required: true }],
   },
+  {
+    name: "run_workflow",
+    title: "Run a workflow step by step",
+    description: "Run a graph skill on a request with the referee checking every step: contracts, gates, loops and retries.",
+    arguments: [
+      { name: "graph", description: "A Skill Graph studio link, or a starter graph id such as ship-a-change.", required: true },
+      { name: "request", description: "What the workflow should do this time.", required: true },
+    ],
+  },
 ] as const;
 
 export function promptMessage(name: string, args: Record<string, unknown>): string | null {
+  if (name === "run_workflow") {
+    const graph = typeof args.graph === "string" && args.graph.trim() ? args.graph.trim() : "(a studio link or starter graph id)";
+    const request = typeof args.request === "string" && args.request.trim() ? args.request.trim() : "(what to do)";
+    return [
+      "Run this Skill Graph workflow with its referee:",
+      "",
+      `Graph: ${graph}`,
+      `Request: ${request}`,
+      "",
+      "Get the graph's source (read_studio_link for a link, get_graph_template for a starter id), then start_run with it and the request. Do each task the referee gives, as it says, and report every answer with advance_run until the run is done or stopped. Ask me at each approval. At the end, give me the final answer, and the ledger notes and lessons file to save.",
+    ].join("\n");
+  }
   if (name !== "design_workflow") return null;
   const project = typeof args.project === "string" && args.project.trim() ? args.project.trim() : "(describe the project here)";
   return [
@@ -244,7 +491,26 @@ export function promptMessage(name: string, args: Record<string, unknown>): stri
 }
 
 export const SERVER_INSTRUCTIONS =
-  "Skill Graph designs multi-agent workflows as graph skills (graph.skill.md) and compiles them into Claude Code subagents or Cursor rules. A typical session: list_graph_templates and get_graph_template for a starting point, or draft_graph from an outline of the steps (get_graph_format documents the full format); validate_graph until it has no errors; dry_run_graph with a sample request, reading each step's Sees lines to confirm it gets the data its task needs (the checker proves wiring, not that); open_graph_in_studio so the user can review it; and compile_graph for the files to install. read_studio_link turns a studio link back into the source. All tools are read-only and nothing is stored: the studio link and the graph.skill.md file are the saved copies.";
+  "Skill Graph designs multi-agent workflows as graph skills (graph.skill.md), compiles them into Claude Code subagents or Cursor rules, and referees runs of them. Design: list_graph_templates and get_graph_template for a starting point, or draft_graph from an outline of the steps (get_graph_format documents the full format, including loop: for steps that repeat until a check passes); edit_graph changes a graph by operations instead of a rewrite; validate_graph until it has no errors; dry_run_graph with a sample request, reading each step's Sees lines to confirm it gets the data its task needs (the checker proves wiring, not that); open_graph_in_studio for the user to review; compile_graph for the files to install. Run: start_run returns the first tasks and a run object, and advance_run takes each answer, checks it in code (contracts, gate verdicts, loop markers, exit codes) and returns what is next, until the run is done or stopped. Learn: review_lessons and bake_lessons work on the EXPERIENCE.md a skill writes after its runs. read_studio_link turns a studio link back into the source. All tools are read-only and nothing is stored: the studio link, the graph.skill.md file and the run object are the saved copies. The same reference text is also available as resources (skill-graph://format, skill-graph://templates/<id>).";
+
+/** Read-only documents for clients that list resources (Claude Code lets the user @-mention them). */
+export const CONNECTOR_RESOURCES = [
+  { uri: "skill-graph://format", name: "graph-format", title: "Graph skill format", description: "The graph.skill.md format: node types, fields, loops, contracts, references and the checker's rules.", mimeType: "text/markdown" },
+  ...BLUEPRINTS.map((blueprint) => ({
+    uri: `skill-graph://templates/${blueprint.id}`,
+    name: `template-${blueprint.id}`,
+    title: `Starter graph: ${blueprint.title}`,
+    description: `${blueprint.hint}.`,
+    mimeType: "text/markdown",
+  })),
+];
+
+/** The text of a resource, or null for an unknown URI. */
+export function readConnectorResource(uri: string): string | null {
+  if (uri === "skill-graph://format") return graphFormatReference();
+  const match = /^skill-graph:\/\/templates\/([a-z0-9-]+)$/.exec(uri);
+  return match ? (BLUEPRINTS.find((blueprint) => blueprint.id === match[1])?.source ?? null) : null;
+}
 
 /* ------------------------------------------------------------------ helpers */
 
@@ -315,6 +581,25 @@ function markdownLink(url: string, graph: SkillGraph | null): string {
   return `[Open ${name} in Skill Graph](${url})`;
 }
 
+function issueData(issues: GraphIssue[]): Record<string, string>[] {
+  return issues.map((issue) => ({ code: issue.code, ...(issue.nodeId ? { step: issue.nodeId } : {}), message: issue.message }));
+}
+
+/** The checker's result as data, for `structuredContent`. */
+function checkData(result: Checked): Record<string, unknown> {
+  return {
+    valid: result.graph !== null && result.errors.length === 0,
+    ...(result.fatal ? { fatal: result.fatal } : {}),
+    errors: issueData(result.errors),
+    warnings: issueData(result.warnings),
+    stages: result.graph ? buildPlan(result.graph).map((stage) => stage.nodes.map((node) => node.id)) : [],
+  };
+}
+
+function withData(result: ToolResult, data: Record<string, unknown>): ToolResult {
+  return { ...result, structuredContent: data };
+}
+
 function fatalMessage(fatal: string | null): string {
   return `The file could not be read: ${fatal ?? "unknown problem"}. It must start with --- and valid YAML frontmatter, and close it with another ---.`;
 }
@@ -325,7 +610,7 @@ function validateTool(args: Record<string, unknown>): ToolResult {
   const input = readSource(args);
   if ("error" in input) return text(input.error, true);
   const result = check(input.source);
-  if (!result.graph) return text(fatalMessage(result.fatal));
+  if (!result.graph) return withData(text(fatalMessage(result.fatal)), checkData(result));
 
   const { lines, stages, subagents } = planLines(result.graph);
   const counts = `${plural(result.errors.length, "error")}, ${plural(result.warnings.length, "warning")}`;
@@ -333,7 +618,7 @@ function validateTool(args: Record<string, unknown>): ToolResult {
     result.errors.length === 0
       ? `Valid: ${plural(stages, "stage")}, ${plural(subagents, "subagent")} (${counts}). It can be compiled.`
       : `Not valid yet (${counts}). Errors block compiling; fix them and check again.`;
-  return text(
+  return withData(text(
     [
       summary,
       ...(result.errors.length ? ["", "Errors:", ...issueLines(result.errors)] : []),
@@ -342,7 +627,7 @@ function validateTool(args: Record<string, unknown>): ToolResult {
       "Plan (stages run in order; steps in one stage run at the same time):",
       ...(lines.length ? lines : ["(no steps after the input yet)"]),
     ].join("\n")
-  );
+  ), checkData(result));
 }
 
 function compileTool(args: Record<string, unknown>, context: ConnectorContext): ToolResult {
@@ -395,7 +680,14 @@ function compileTool(args: Record<string, unknown>, context: ConnectorContext): 
         ]
       : []),
   ].join("\n");
-  return { content: [{ type: "text", text: intro }, ...sent.map((file) => ({ type: "text" as const, text: `File: ${file.path}\n\n${file.content}` }))] };
+  return {
+    content: [{ type: "text", text: intro }, ...sent.map((file) => ({ type: "text" as const, text: `File: ${file.path}\n\n${file.content}` }))],
+    structuredContent: {
+      files: files.map((file, index) => ({ path: file.path, included: index < sent.length })),
+      ...(zip ? { download_link: zip } : {}),
+      ...(url ? { studio_link: url } : {}),
+    },
+  };
 }
 
 function openTool(args: Record<string, unknown>, context: ConnectorContext): ToolResult {
@@ -431,7 +723,8 @@ function draftTool(args: Record<string, unknown>, context: ConnectorContext): To
   const { lines, stages, subagents } = planLines(result.graph);
   const url = studioLink(draft.source, context);
   const counts = `${plural(result.errors.length, "error")}, ${plural(result.warnings.length, "warning")}`;
-  return text(
+  const data = { ...checkData(result), source: draft.source, notes: draft.notes, ...(url ? { studio_link: url } : {}) };
+  return withData(text(
     [
       result.errors.length === 0
         ? `Drafted "${result.graph.name}": ${plural(stages, "stage")}, ${plural(subagents, "subagent")} (${counts}).`
@@ -451,7 +744,7 @@ function draftTool(args: Record<string, unknown>, context: ConnectorContext): To
       "",
       draft.source,
     ].join("\n")
-  );
+  ), data);
 }
 
 function dryRunTool(args: Record<string, unknown>): ToolResult {
@@ -460,7 +753,141 @@ function dryRunTool(args: Record<string, unknown>): ToolResult {
   const parsed = parseGraphSkill(input.source);
   if (!parsed.graph) return text(fatalMessage(parsed.fatal), true);
   const sample = typeof args.sample === "string" ? args.sample.slice(0, 4000) : "";
-  return text(dryRunGraph(parsed.graph, sample).text);
+  const run = dryRunGraph(parsed.graph, sample);
+  return withData(text(run.text), { errors: run.errors, warnings: run.warnings, subagent_calls: run.subagentCalls });
+}
+
+/** The checker's result and the plan after a change, then the new source: what edit_graph and bake_lessons return. */
+function changedGraphText(head: string[], source: string, context: ConnectorContext): { text: string; data: Record<string, unknown> } {
+  const result = check(source);
+  const url = studioLink(source, context);
+  const counts = `${plural(result.errors.length, "error")}, ${plural(result.warnings.length, "warning")}`;
+  const plan = result.graph ? planLines(result.graph).lines : [];
+  return {
+    text: [
+      ...head,
+      "",
+      !result.graph ? fatalMessage(result.fatal) : result.errors.length === 0 ? `The graph is valid (${counts}).` : `The graph is not valid yet (${counts}).`,
+      ...(result.errors.length ? ["", "Errors:", ...issueLines(result.errors)] : []),
+      ...(result.warnings.length ? ["", "Warnings:", ...issueLines(result.warnings)] : []),
+      ...(plan.length ? ["", "Plan:", ...plan] : []),
+      ...(url ? ["", `Studio link: ${markdownLink(url, result.graph)}`] : []),
+      "",
+      "Source (graph.skill.md):",
+      "",
+      source,
+    ].join("\n"),
+    data: { ...checkData(result), source, ...(url ? { studio_link: url } : {}) },
+  };
+}
+
+function editTool(args: Record<string, unknown>, context: ConnectorContext): ToolResult {
+  const input = readSource(args);
+  if ("error" in input) return text(input.error, true);
+  const edited = editGraph(input.source, args.operations);
+  if ("error" in edited) return text(edited.error, true);
+  const answer = changedGraphText([`Applied ${plural(edited.applied.length, "operation")}:`, ...edited.applied.map((line) => `- ${line}`)], edited.source, context);
+  return withData(text(answer.text), { ...answer.data, applied: edited.applied });
+}
+
+/** Reads the `experience` argument and the graph it belongs to. */
+function readLessonsInput(args: Record<string, unknown>): { graph: SkillGraph; source: string; experience: string } | { error: string } {
+  const input = readSource(args);
+  if ("error" in input) return input;
+  const experience = args.experience;
+  if (typeof experience !== "string" || experience.trim() === "") return { error: "experience is required: the skill's EXPERIENCE.md text." };
+  if (experience.length > MAX_LESSONS_SOURCE) return { error: `experience is too large to be a lessons file (over ${MAX_LESSONS_SOURCE.toLocaleString("en-US")} characters).` };
+  const parsed = parseGraphSkill(input.source);
+  if (!parsed.graph) return { error: fatalMessage(parsed.fatal) };
+  return { graph: parsed.graph, source: input.source, experience };
+}
+
+function reviewLessonsTool(args: Record<string, unknown>): ToolResult {
+  const input = readLessonsInput(args);
+  if ("error" in input) return text(input.error, true);
+  const lessons = parseLessons(input.experience);
+  if (lessons.length === 0) return withData(text("No lessons in this file. Lessons look like `- [L3] implement: <rule>` with an `evidence:` line under them."), { lessons: [] });
+  const status = (lesson: (typeof lessons)[number]) => (isOrphanLesson(input.graph, lesson) ? "orphan" : lesson.seen >= 5 && lesson.helped === 0 ? "pruned_next" : "active");
+  const byStep = new Map<string, typeof lessons>();
+  for (const lesson of lessons) byStep.set(lesson.step, [...(byStep.get(lesson.step) ?? []), lesson]);
+  const lines = [`${plural(lessons.length, "lesson")} for "${input.graph.name}":`];
+  for (const [step, list] of byStep) {
+    lines.push("", `${step}${isOrphanLesson(input.graph, list[0]) ? " (no longer a model step of the graph; the next run drops these)" : ""}:`);
+    for (const lesson of list) {
+      const note = status(lesson) === "pruned_next" ? " · given 5+ times without helping; the next run removes it" : "";
+      lines.push(`- [L${lesson.number}] ${lesson.rule}`, `  evidence: ${lesson.evidence || "-"} · seen ${lesson.seen} · helped ${lesson.helped}${note}`);
+    }
+  }
+  lines.push("", "bake_lessons makes a lesson permanent: its rule goes into the step's prompt, and it leaves the file.");
+  return withData(text(lines.join("\n")), {
+    lessons: lessons.map((lesson) => ({ number: lesson.number, step: lesson.step, rule: lesson.rule, evidence: lesson.evidence, seen: lesson.seen, helped: lesson.helped, status: status(lesson) })),
+  });
+}
+
+function bakeLessonsTool(args: Record<string, unknown>, context: ConnectorContext): ToolResult {
+  const input = readLessonsInput(args);
+  if ("error" in input) return text(input.error, true);
+  const numbers = (value: unknown) => (Array.isArray(value) ? value.filter((n): n is number => typeof n === "number" && Number.isInteger(n)) : []);
+  const bake = numbers(args.lessons);
+  const discard = numbers(args.discard);
+  if (bake.length === 0) return text("lessons is required: the numbers of the lessons to bake in (the n of [Ln]).", true);
+  const lessons = parseLessons(input.experience);
+  const unknown = [...bake, ...discard].filter((n) => !lessons.some((lesson) => lesson.number === n));
+  if (unknown.length > 0) return text(`No lesson ${unknown.map((n) => `L${n}`).join(", ")} in this file. review_lessons lists them.`, true);
+  let graph = input.graph;
+  const baked: number[] = [];
+  const skipped: string[] = [];
+  for (const lesson of lessons.filter((item) => bake.includes(item.number))) {
+    if (isOrphanLesson(graph, lesson)) {
+      skipped.push(`L${lesson.number} (its step ${lesson.step} is not a model step of the graph)`);
+      continue;
+    }
+    graph = bakeLesson(graph, lesson);
+    baked.push(lesson.number);
+  }
+  const removed = new Set([...baked, ...discard]);
+  const trimmed = serializeLessons(graph, lessons.filter((lesson) => !removed.has(lesson.number)));
+  const source = serializeGraphSkill(graph);
+  const answer = changedGraphText(
+    [
+      baked.length > 0 ? `Baked ${baked.map((n) => `L${n}`).join(", ")} into the prompts of their steps.` : "Nothing was baked in.",
+      ...(discard.length > 0 ? [`Discarded ${discard.map((n) => `L${n}`).join(", ")}.`] : []),
+      ...(skipped.length > 0 ? [`Skipped ${skipped.join("; ")}.`] : []),
+      "",
+      `Replace EXPERIENCE.md with this (${plural(lessons.length - removed.size, "lesson")} left):`,
+      "",
+      "```md",
+      trimmed.trimEnd(),
+      "```",
+    ],
+    source,
+    context
+  );
+  return withData(text(answer.text), { ...answer.data, experience: trimmed, baked });
+}
+
+function runResult(result: RunAnswer | { error: string }): ToolResult {
+  if ("error" in result) return text(result.error, true);
+  const over = result.state.status === "done" || result.state.status === "stopped";
+  return withData(text(result.text), {
+    status: result.state.status,
+    ...(over ? {} : { run: result.state }),
+    tasks: result.tasks,
+    ...(result.state.stopReason ? { stop_reason: result.state.stopReason } : {}),
+  });
+}
+
+function startRunTool(args: Record<string, unknown>): ToolResult {
+  const input = readSource(args);
+  if ("error" in input) return text(input.error, true);
+  const request = typeof args.request === "string" ? args.request.slice(0, 20_000) : "";
+  if (request.trim() === "") return text("request is required: what the user wants the workflow to do this time.", true);
+  const experience = typeof args.experience === "string" ? args.experience.slice(0, MAX_LESSONS_SOURCE) : undefined;
+  return runResult(startRun(input.source, request, experience));
+}
+
+function advanceRunTool(args: Record<string, unknown>): ToolResult {
+  return runResult(advanceRun(args.run, args.outputs ?? []));
 }
 
 function readLinkTool(args: Record<string, unknown>): ToolResult {
@@ -512,6 +939,16 @@ export function callConnectorTool(name: string, rawArgs: unknown, context: Conne
       return openTool(args, context);
     case "read_studio_link":
       return readLinkTool(args);
+    case "edit_graph":
+      return editTool(args, context);
+    case "review_lessons":
+      return reviewLessonsTool(args);
+    case "bake_lessons":
+      return bakeLessonsTool(args, context);
+    case "start_run":
+      return startRunTool(args);
+    case "advance_run":
+      return advanceRunTool(args);
     default:
       return null;
   }

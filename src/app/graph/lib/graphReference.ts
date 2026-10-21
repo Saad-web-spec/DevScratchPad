@@ -37,6 +37,11 @@ export const NODE_FIELD_DOCS: { field: string; meaning: string }[] = [
   { field: "probe", meaning: "2 to 4: run that many candidates of a read-only step side by side, and let a fresh-context judge keep the best." },
   { field: "probe_hints", meaning: "One approach per candidate, in order, e.g. [The smallest change that works., Reuse existing helpers.]. A candidate without one uses its own." },
   { field: "handoff", meaning: "inline or file: how this step's output reaches the next steps. Unset follows the skill's handoff." },
+  {
+    field: "loop",
+    meaning:
+      "The step runs again on its own output until a condition holds: `until: check` (its check exits 0), `gate` (its own gate passes) or `done` (it ends with LOOP: DONE). `max_iterations` caps it (default 3); `ledger: false` drops the notes file.",
+  },
 ];
 
 export const REFERENCE_DOCS: { ref: string; meaning: string }[] = [
@@ -45,6 +50,9 @@ export const REFERENCE_DOCS: { ref: string; meaning: string }[] = [
   { ref: "{{splitter.worker_research}}", meaning: "One key of a JSON output: here the worker_research value of splitter's JSON." },
   { ref: "{{workers.output}}", meaning: "A group: the outputs of the nodes of that type that feed this step (workers, verifiers, codes and so on), or the ones upstream of it when none connect directly." },
   { ref: "{{inputs}}", meaning: "Everything arriving on this node's incoming edges." },
+  { ref: "{{loop.iteration}}", meaning: "Loop steps only: which iteration this is." },
+  { ref: "{{loop.ledger}}", meaning: "Loop steps only: the notes earlier iterations (and runs) left in the ledger file." },
+  { ref: "{{loop.last_output}}", meaning: "Loop steps only: the last check output (until check), or the previous answer." },
 ];
 
 /** The whole format as one Markdown document, for an agent that writes graph skills. */
@@ -58,7 +66,7 @@ export function graphFormatReference(): string {
     "",
     "- Frontmatter keys: `name` (lowercase, hyphenated), `description` (what the skill does and when to use it; agents pick skills by it), `spec` (`skill-graph/1`, or `skill-graph/2` once a step uses `foreach` or `handoff`), `topology` with `nodes` and `edges`, and `contracts`. Optional: `handoff: file` (hand outputs on as files) and `experience: true` (learn from failed checks between runs).",
     "- Body: an optional heading, then one `## @node: <id>` section per model step. The text under it is that step's prompt. Input, code and approval nodes need no section.",
-    `- Limits: at most ${MAX_NODES} nodes. The graph runs front to back and must have no cycles; loops are expressed with \`on_fail: retry\`.`,
+    `- Limits: at most ${MAX_NODES} nodes. The graph runs front to back and must have no cycles. A step that repeats until it succeeds uses \`loop:\`; a later check or gate that sends work back uses \`on_fail: retry\`.`,
     "",
     "## Node types",
     "",
@@ -86,7 +94,13 @@ export function graphFormatReference(): string {
     "| --- | --- |",
     ...REFERENCE_DOCS.map((item) => `| ${item.ref} | ${item.meaning} |`),
     "",
-    "A reference may only read from nodes that run before this one. `{{item}}` exists only in a fan-out step (one with `foreach`).",
+    "A reference may only read from nodes that run before this one. `{{item}}` exists only in a fan-out step (one with `foreach`), and `{{loop.*}}` only in a loop step.",
+    "",
+    "## Loops",
+    "",
+    "- `loop: {until: check, max_iterations: 4}` on a model step runs it again on its own output until its `check` command exits 0. `until: gate` ends when its own gate passes (a self-judged loop; for a fresh-context judge use a separate verifier with `on_fail: retry`). `until: done` ends when the step ends its answer with `LOOP: DONE`.",
+    "- Each iteration ends with a `## Loop note` (what it did, what is open, what to do next). The orchestrator appends it to the ledger `.skill-graph/<skill>/<step>.loop.md`, which the next iteration and the next run read. The note never reaches later steps.",
+    "- After `max_iterations` without success the run stops and shows the ledger. A downstream gate that retries a loop step restarts its loop with the ledger kept.",
     "",
     "## Rules the checker enforces",
     "",
@@ -94,6 +108,7 @@ export function graphFormatReference(): string {
     "- References must name upstream nodes; a step with `isolated_context: true` should read only what its own edges carry.",
     "- `code` nodes need `run:`. A step with `risk: irreversible` needs an `approval` node upstream and `on_fail: stop`. A `risk: wide` step should have a `check`.",
     "- `foreach` must name a connected step that returns JSON. Probed steps (`probe`) may only read; they cannot edit files or run unrestricted shell commands.",
+    "- A `loop` needs its end condition (`until: check` needs `check:`, `until: gate` needs `gate:`), only model steps loop, and a loop cannot be combined with `probe`, `foreach` or `risk: irreversible`. More than 10 iterations is flagged.",
     "- Tools are Claude Code tool names (Read, Grep, Glob, Edit, Write, Bash, WebSearch, WebFetch, or scoped such as `Bash(npm test:*)`, or MCP tools `mcp__server__tool`). An empty list `[]` means every tool, so list what the step needs or leave the key out.",
     "- Models are haiku, sonnet, opus, fable or a full model id.",
     "- A step that reads `{{source.key}}` needs `source` to return JSON, and a `required` list on that edge's contract must include the key. When a source hands each step its own key, the compiled skill checks those keys on every run, and a `required` key no step reads is flagged: the contract then describes a different payload.",
@@ -105,7 +120,7 @@ export function graphFormatReference(): string {
     "- Split independent work into parallel workers; give each its own part of a JSON plan with `{{splitter.<worker_id>}}`.",
     "- Judge work in a fresh context: a verifier with `isolated_context: true`, a `gate` and `on_fail: retry`. Tell it to hand on the checked work with its notes, or connect the work straight to the steps that need it.",
     "- Least privilege: readers and reviewers get [Read, Grep, Glob]; only implementers get Edit, Write or Bash.",
-    "- Let a program decide where it can: `check: npm test` beats a written gate.",
+    "- Let a program decide where it can: `check: npm test` beats a written gate, and `loop: {until: check}` lets the step fix its own failures.",
     "- Put an `approval` step right before anything hard to undo (publishing, migrations, deletions).",
     "",
     "## A complete example",

@@ -87,14 +87,14 @@ export default function GraphPrivacyPage() {
         <Section title="The Claude connector">
           <P>
             When you add the connector to Claude and Claude uses one of its tools, Claude sends us that tool&apos;s input. Depending on the tool, that is the text of a graph
-            skill, the id of a starter graph, or the kind of files to compile. Claude decides what goes into a call, based on your conversation, so don&apos;t put secrets
+            skill, the id of a starter graph, the kind of files to compile, a skill&apos;s lessons file, or, during a refereed run, the run object and each step&apos;s answer. Claude decides what goes into a call, based on your conversation, so don&apos;t put secrets
             (keys, passwords, private data) in a graph.
           </P>
           <List
             items={[
-              <><b className="text-zinc-900">What we use it for:</b> only to answer that one request: check the graph, compile it, or build a studio or download link.</>,
+              <><b className="text-zinc-900">What we use it for:</b> only to answer that one request: check, edit or compile the graph, build a studio or download link, or check a step&apos;s answer and say what runs next. A run&apos;s state travels in the run object Claude passes back on each call; we keep none of it.</>,
               <><b className="text-zinc-900">Storage:</b> the input is processed in memory and discarded once the answer is sent. It is not written to a database, a file or our logs.</>,
-              <><b className="text-zinc-900">What we log:</b> the name of the tool called (for example validate_graph), to count usage. Not the graph, not its contents.</>,
+              <><b className="text-zinc-900">What we log:</b> the name of the tool called (for example validate_graph), to count usage. Not the graph, its contents or any step&apos;s answer.</>,
               <><b className="text-zinc-900">What we never receive:</b> your Claude conversation, chat history, memory, account details, name, email or files. The connector has no sign-in and no accounts.</>,
             ]}
           />

@@ -136,7 +136,7 @@ describe("MCP protocol", () => {
   });
 
   it("returns protocol errors for unknown methods and tools", () => {
-    expect(rpc("resources/list")).toMatchObject({ error: { code: METHOD_NOT_FOUND } });
+    expect(rpc("sampling/createMessage")).toMatchObject({ error: { code: METHOD_NOT_FOUND } });
     expect(rpc("tools/call", { name: "delete_everything", arguments: {} })).toMatchObject({ error: { code: INVALID_PARAMS } });
     expect(handleMessage({ id: 1, method: "ping" }, context)).toMatchObject({ error: { code: -32600 } });
   });

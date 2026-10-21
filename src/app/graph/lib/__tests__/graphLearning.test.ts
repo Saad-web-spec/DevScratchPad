@@ -157,9 +157,12 @@ describe("experience file", () => {
   it("ships the ignore file that keeps the lessons and drops the payloads", () => {
     const kit = buildExportKit(ship);
     expect(kit.find((file) => file.path === ".skill-graph/.gitignore")?.content).toBe(SKILL_GRAPH_GITIGNORE);
-    expect(SKILL_GRAPH_GITIGNORE).toContain("/*/*\n!/*/EXPERIENCE.md");
+    expect(SKILL_GRAPH_GITIGNORE).toContain("/*/*\n!/*/EXPERIENCE.md\n!/*/*.loop.md");
     expect(kit.find((file) => file.path === "README.md")?.content).toContain("## Learning from runs");
-    expect(buildExportKit(plain).some((file) => file.path.startsWith(".skill-graph/"))).toBe(false);
+    // The implement loop keeps a ledger, so even without learning the kit writes under .skill-graph/.
+    expect(buildExportKit(plain).some((file) => file.path === ".skill-graph/.gitignore")).toBe(true);
+    const noLedger = updateNode(plain, "implement", { loop: undefined });
+    expect(buildExportKit(noLedger).some((file) => file.path.startsWith(".skill-graph/"))).toBe(false);
   });
 
   it("tells each step about its lessons and shows them in the preview", () => {

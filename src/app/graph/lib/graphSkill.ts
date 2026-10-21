@@ -61,6 +61,34 @@ export const DEFAULT_MAX_RETRIES = 1;
 /** Past about three attempts the plan, not the work, is usually what is wrong. */
 export const RETRY_CAP = 3;
 
+/**
+ * What ends a step's loop: its `check` command exiting 0, its own gate passing, or the step ending
+ * its answer with the done marker (open-ended work it judges itself).
+ */
+export type LoopUntil = "check" | "gate" | "done";
+export const LOOP_UNTILS: readonly LoopUntil[] = ["check", "gate", "done"];
+
+/**
+ * A step that runs again on its own output until a condition holds. Unlike a retry (someone else's
+ * verdict re-runs a path), a loop is the step's own control flow, with a cap and a ledger: notes each
+ * iteration leaves for the next, kept in a file that also survives between runs.
+ */
+export interface LoopSettings {
+  until: LoopUntil;
+  maxIterations: number;
+  /** Keep `.skill-graph/<slug>/<id>.loop.md` between iterations and runs (default true). */
+  ledger: boolean;
+}
+
+export const DEFAULT_MAX_ITERATIONS = 3;
+/** Past this many iterations the task, not the work, is usually what is wrong. */
+export const LOOP_ITERATIONS_WARN = 10;
+export const LOOP_ITERATIONS_CAP = 50;
+/** The line a `done` loop ends its answer with when the work is complete. */
+export const LOOP_DONE_MARKER = "LOOP: DONE";
+/** The heading under which a loop step leaves notes for its next iteration. */
+export const LOOP_NOTE_HEADING = "## Loop note";
+
 export interface GraphNode {
   id: string;
   type: NodeType;
@@ -99,6 +127,8 @@ export interface GraphNode {
   probe?: number;
   /** One approach hint per candidate, in order; candidates without one use their own approach. */
   probeHints?: string[];
+  /** The step runs again on its own output until a condition holds (`loop:`). */
+  loop?: LoopSettings;
   /** The node's prompt template (the body of its `## @node:` section). */
   prompt: string;
 }
@@ -215,6 +245,13 @@ export function isValidNodeId(id: string): boolean {
   return NODE_ID_PATTERN.test(id);
 }
 
+/** Names of `Object.prototype` members: as plain-object keys they read as inherited functions, so no step may be called that. */
+const RESERVED_IDS = new Set(Object.getOwnPropertyNames(Object.prototype));
+
+export function isReservedNodeId(id: string): boolean {
+  return RESERVED_IDS.has(id);
+}
+
 /** Lowercase, hyphenated slug (Claude Code skill and agent names allow only letters, digits and hyphens). */
 export function toSlug(value: string, fallback = "skill-graph"): string {
   const slug = value
@@ -325,6 +362,76 @@ function asProbeHints(value: unknown): string[] | undefined {
   return hints.length > 0 ? hints : undefined;
 }
 
+/**
+ * `loop: check` (or `gate`, `done`), `loop: true` (until done) or a mapping with `until`,
+ * `max_iterations` and `ledger`. Anything else means no loop.
+ */
+function parseLoop(raw: unknown): LoopSettings | undefined {
+  const isUntil = (value: unknown): value is LoopUntil => typeof value === "string" && (LOOP_UNTILS as readonly string[]).includes(value);
+  if (raw === true) return { until: "done", maxIterations: DEFAULT_MAX_ITERATIONS, ledger: true };
+  if (isUntil(raw)) return { until: raw, maxIterations: DEFAULT_MAX_ITERATIONS, ledger: true };
+  if (!isRecord(raw) || !isUntil(raw.until)) return undefined;
+  return { until: raw.until, maxIterations: asCount(raw.max_iterations, LOOP_ITERATIONS_CAP) ?? DEFAULT_MAX_ITERATIONS, ledger: raw.ledger !== false };
+}
+
+/**
+ * A node from its frontmatter entry (`{id, type, label, tools, …}` in the file's snake_case keys).
+ * Shared by the parser and by edits that arrive as entries, so both normalize a value the same way.
+ */
+export function nodeFromEntry(raw: Record<string, unknown>, prompt: string): GraphNode {
+  const id = typeof raw.id === "string" ? raw.id : "";
+  const outputFormat = raw.output_format === "json" || raw.output_format === "text" ? raw.output_format : undefined;
+  const tools = asStringList(raw.tools).map((tool) => tool.trim()).filter(Boolean);
+  return {
+    id,
+    type: asNodeType(raw.type),
+    label: typeof raw.label === "string" && raw.label.trim() ? raw.label : id,
+    isolatedContext: raw.isolated_context === true,
+    model: typeof raw.model === "string" && raw.model.trim() ? raw.model.trim() : undefined,
+    tools: Array.isArray(raw.tools) || typeof raw.tools === "string" ? tools : undefined,
+    outputFormat,
+    gate: typeof raw.gate === "string" && raw.gate.trim() ? raw.gate.trim() : undefined,
+    onFail: raw.on_fail === "retry" || raw.on_fail === "stop" ? raw.on_fail : undefined,
+    maxRetries: typeof raw.max_retries === "number" && Number.isInteger(raw.max_retries) && raw.max_retries >= 0 ? raw.max_retries : undefined,
+    retryTarget: typeof raw.retry_target === "string" && raw.retry_target.trim() ? raw.retry_target.trim() : undefined,
+    run: typeof raw.run === "string" && raw.run.trim() ? raw.run.trim() : undefined,
+    check: typeof raw.check === "string" && raw.check.trim() ? raw.check.trim() : undefined,
+    risk: typeof raw.risk === "string" && (RISK_LANES as readonly string[]).includes(raw.risk) ? (raw.risk as RiskLane) : undefined,
+    handoff: asHandoff(raw.handoff),
+    foreach: typeof raw.foreach === "string" && raw.foreach.trim() ? raw.foreach.trim() : undefined,
+    maxParallel: asCount(raw.max_parallel, MAX_PARALLEL_CAP),
+    maxItems: asCount(raw.max_items),
+    probe: asProbe(raw.probe),
+    probeHints: asProbeHints(raw.probe_hints),
+    loop: parseLoop(raw.loop),
+    prompt,
+  };
+}
+
+/** A node's frontmatter entry, as the file writes it (the prompt lives in its section, not here). */
+export function nodeToEntry(node: GraphNode): Record<string, unknown> {
+  const entry: Record<string, unknown> = { id: node.id, type: node.type, label: node.label };
+  if (node.isolatedContext) entry.isolated_context = true;
+  if (node.model) entry.model = node.model;
+  if (node.tools) entry.tools = node.tools;
+  if (node.outputFormat) entry.output_format = node.outputFormat;
+  if (node.gate) entry.gate = node.gate;
+  if (node.onFail) entry.on_fail = node.onFail;
+  if (node.maxRetries !== undefined) entry.max_retries = node.maxRetries;
+  if (node.retryTarget) entry.retry_target = node.retryTarget;
+  if (node.run) entry.run = node.run;
+  if (node.check) entry.check = node.check;
+  if (node.risk) entry.risk = node.risk;
+  if (node.handoff) entry.handoff = node.handoff;
+  if (node.foreach) entry.foreach = node.foreach;
+  if (node.maxParallel !== undefined) entry.max_parallel = node.maxParallel;
+  if (node.maxItems !== undefined) entry.max_items = node.maxItems;
+  if (node.probe !== undefined) entry.probe = node.probe;
+  if (node.probeHints && node.probeHints.length > 0) entry.probe_hints = node.probeHints;
+  if (node.loop) entry.loop = { until: node.loop.until, max_iterations: node.loop.maxIterations, ...(node.loop.ledger ? {} : { ledger: false }) };
+  return entry;
+}
+
 /** Parses a Graph SKILL.md. Structural problems are reported by `validateGraph`, not thrown. */
 export function parseGraphSkill(source: string): ParseResult {
   if (source.length > MAX_SOURCE_LENGTH) return { graph: null, fatal: `The file is too large (over ${MAX_SOURCE_LENGTH.toLocaleString("en-US")} characters).` };
@@ -349,32 +456,7 @@ export function parseGraphSkill(source: string): ParseResult {
   if (rawNodes.length > MAX_NODES) return { graph: null, fatal: `The graph has more than ${MAX_NODES} nodes.` };
   for (const raw of rawNodes) {
     if (!isRecord(raw) || typeof raw.id !== "string") continue;
-    const id = raw.id;
-    const outputFormat = raw.output_format === "json" || raw.output_format === "text" ? raw.output_format : undefined;
-    const tools = asStringList(raw.tools).map((tool) => tool.trim()).filter(Boolean);
-    nodes.push({
-      id,
-      type: asNodeType(raw.type),
-      label: typeof raw.label === "string" && raw.label.trim() ? raw.label : id,
-      isolatedContext: raw.isolated_context === true,
-      model: typeof raw.model === "string" && raw.model.trim() ? raw.model.trim() : undefined,
-      tools: Array.isArray(raw.tools) || typeof raw.tools === "string" ? tools : undefined,
-      outputFormat,
-      gate: typeof raw.gate === "string" && raw.gate.trim() ? raw.gate.trim() : undefined,
-      onFail: raw.on_fail === "retry" || raw.on_fail === "stop" ? raw.on_fail : undefined,
-      maxRetries: typeof raw.max_retries === "number" && Number.isInteger(raw.max_retries) && raw.max_retries >= 0 ? raw.max_retries : undefined,
-      retryTarget: typeof raw.retry_target === "string" && raw.retry_target.trim() ? raw.retry_target.trim() : undefined,
-      run: typeof raw.run === "string" && raw.run.trim() ? raw.run.trim() : undefined,
-      check: typeof raw.check === "string" && raw.check.trim() ? raw.check.trim() : undefined,
-      risk: typeof raw.risk === "string" && (RISK_LANES as readonly string[]).includes(raw.risk) ? (raw.risk as RiskLane) : undefined,
-      handoff: asHandoff(raw.handoff),
-      foreach: typeof raw.foreach === "string" && raw.foreach.trim() ? raw.foreach.trim() : undefined,
-      maxParallel: asCount(raw.max_parallel, MAX_PARALLEL_CAP),
-      maxItems: asCount(raw.max_items),
-      probe: asProbe(raw.probe),
-      probeHints: asProbeHints(raw.probe_hints),
-      prompt: sections.get(id) ?? "",
-    });
+    nodes.push(nodeFromEntry(raw, sections.get(raw.id) ?? ""));
   }
 
   const edges: GraphEdge[] = [];
@@ -495,27 +577,7 @@ export function serializeGraphSkill(graph: SkillGraph): string {
     ...(graph.experience ? { experience: { max_lessons: graph.experience.maxLessons } } : {}),
     ...graph.extraFrontmatter,
     topology: {
-      nodes: graph.nodes.map((node) => {
-        const entry: Record<string, unknown> = { id: node.id, type: node.type, label: node.label };
-        if (node.isolatedContext) entry.isolated_context = true;
-        if (node.model) entry.model = node.model;
-        if (node.tools) entry.tools = node.tools;
-        if (node.outputFormat) entry.output_format = node.outputFormat;
-        if (node.gate) entry.gate = node.gate;
-        if (node.onFail) entry.on_fail = node.onFail;
-        if (node.maxRetries !== undefined) entry.max_retries = node.maxRetries;
-        if (node.retryTarget) entry.retry_target = node.retryTarget;
-        if (node.run) entry.run = node.run;
-        if (node.check) entry.check = node.check;
-        if (node.risk) entry.risk = node.risk;
-        if (node.handoff) entry.handoff = node.handoff;
-        if (node.foreach) entry.foreach = node.foreach;
-        if (node.maxParallel !== undefined) entry.max_parallel = node.maxParallel;
-        if (node.maxItems !== undefined) entry.max_items = node.maxItems;
-        if (node.probe !== undefined) entry.probe = node.probe;
-        if (node.probeHints && node.probeHints.length > 0) entry.probe_hints = node.probeHints;
-        return entry;
-      }),
+      nodes: graph.nodes.map(nodeToEntry),
       edges: groupEdges(graph.edges),
     },
   };
@@ -584,6 +646,19 @@ export function extractTemplateRefs(prompt: string): TemplateRef[] {
 /** In a fan-out step, `{{item}}` is the item the run handles (it shadows a node named `item`). */
 export function isItemRef(node: GraphNode, head: string): boolean {
   return head === "item" && node.foreach !== undefined;
+}
+
+/** What a loop step may read about its own loop: `{{loop.iteration}}`, `{{loop.ledger}}`, `{{loop.last_output}}`. */
+export const LOOP_REF_PATHS: readonly string[] = ["iteration", "ledger", "last_output"];
+
+/** In a loop step, `{{loop.*}}` reads the loop's state (it shadows a node named `loop`). */
+export function isLoopRef(node: GraphNode, head: string): boolean {
+  return head === "loop" && node.loop !== undefined;
+}
+
+/** A reference the step resolves itself, not from another step: its item or its loop state. */
+export function isOwnRef(node: GraphNode, head: string): boolean {
+  return isItemRef(node, head) || isLoopRef(node, head);
 }
 
 /** References a node reads: its prompt plus, for `code` nodes, its command. */
@@ -765,7 +840,7 @@ export function isKeyedJson(graph: SkillGraph, node: GraphNode): boolean {
 export function jsonKeysFor(graph: SkillGraph, source: GraphNode, consumer: GraphNode): string[] | null {
   if (!isKeyedJson(graph, source)) return null;
   const refs = nodeRefs(consumer)
-    .filter((ref) => ref.head === source.id && !isItemRef(consumer, ref.head))
+    .filter((ref) => ref.head === source.id && !isOwnRef(consumer, ref.head))
     .map((ref) => ref.path);
   // A fan-out step reads its list as if its prompt named `{{source.key}}`.
   const list = foreachSource(consumer);
@@ -846,7 +921,7 @@ export function analyzeIsolation(graph: SkillGraph, node: GraphNode): IsolationR
   let total = 0;
 
   for (const ref of nodeRefs(node)) {
-    if (ref.head === "goal" || isItemRef(node, ref.head)) continue;
+    if (ref.head === "goal" || isOwnRef(node, ref.head)) continue;
     if (ref.head === "inputs") {
       total += 1;
       continue;
@@ -883,6 +958,9 @@ export function validateGraph(graph: SkillGraph): GraphIssue[] {
     }
     if (ids.has(node.id)) {
       issues.push({ severity: "error", code: "duplicate-id", nodeId: node.id, message: `Node id "${node.id}" is used more than once.` });
+    }
+    if (isReservedNodeId(node.id)) {
+      issues.push({ severity: "error", code: "reserved-id", nodeId: node.id, message: `"${node.id}" is a name JavaScript objects already have, so tools cannot key by it. Rename the node (e.g. ${node.id}_step).` });
     }
     ids.add(node.id);
   }
@@ -962,13 +1040,22 @@ export function validateGraph(graph: SkillGraph): GraphIssue[] {
 
     const ancestors = ancestorsOf(graph, node.id);
     for (const ref of nodeRefs(node)) {
-      if (ref.head === "goal" || ref.head === "inputs" || isItemRef(node, ref.head)) continue;
+      if (ref.head === "goal" || ref.head === "inputs" || isOwnRef(node, ref.head)) continue;
       if (ref.head === "item" && !ids.has("item")) {
         issues.push({
           severity: "error",
           code: "item-outside-foreach",
           nodeId: node.id,
           message: `{{item}} in "${node.id}" only means something in a fan-out step. Set foreach: on it, or remove the reference.`,
+        });
+        continue;
+      }
+      if (ref.head === "loop" && !ids.has("loop")) {
+        issues.push({
+          severity: "error",
+          code: "loop-ref-outside",
+          nodeId: node.id,
+          message: `{{${ref.raw}}} in "${node.id}" only means something in a loop step. Set loop: on it, or remove the reference.`,
         });
         continue;
       }
@@ -1103,6 +1190,7 @@ export function validateGraph(graph: SkillGraph): GraphIssue[] {
     ...validateExperience(graph),
     ...validateFanOutAndHandoffs(graph),
     ...validateProbing(graph),
+    ...validateLoops(graph),
     ...validateContractKeys(graph),
     ...validatePrompts(graph)
   );
@@ -1166,6 +1254,55 @@ function validateProbing(graph: SkillGraph): GraphIssue[] {
 }
 
 /**
+ * A loop needs something that can end it, a cap, and a step whose repetition is safe: a model step
+ * that is neither irreversible, probed nor fanned out.
+ */
+function validateLoops(graph: SkillGraph): GraphIssue[] {
+  const issues: GraphIssue[] = [];
+  for (const node of graph.nodes) {
+    const loop = node.loop;
+    if (!loop) continue;
+    if (runsWithoutSubagent(node.type)) {
+      issues.push({ severity: "error", code: "loop-not-model", nodeId: node.id, message: `"${node.id}" is a ${node.type} step; only model steps can loop. Remove loop.` });
+      continue;
+    }
+    if (loop.until === "check" && !node.check) {
+      issues.push({ severity: "error", code: "loop-needs-check", nodeId: node.id, message: `"${node.id}" loops until its check passes, but has no check:. Set check (e.g. npm test), or loop until gate or done.` });
+    }
+    if (loop.until === "gate" && !node.gate) {
+      issues.push({ severity: "error", code: "loop-needs-gate", nodeId: node.id, message: `"${node.id}" loops until its gate passes, but has no gate:. Set gate with what must be true, or loop until check or done.` });
+    }
+    if (loop.maxIterations > LOOP_ITERATIONS_WARN) {
+      issues.push({
+        severity: "warning",
+        code: "loop-iterations",
+        nodeId: node.id,
+        message: `"${node.id}" may iterate ${loop.maxIterations} times. Past ${LOOP_ITERATIONS_WARN} iterations the task is usually what is wrong; split it, or stop and report sooner.`,
+      });
+    }
+    if (node.risk === "irreversible") {
+      issues.push({ severity: "error", code: "loop-irreversible", nodeId: node.id, message: `"${node.id}" is irreversible and loops, so one approval would cover any number of hard-to-undo iterations. Remove loop, or move the irreversible work to a step after it.` });
+    }
+    if (node.probe !== undefined) {
+      issues.push({ severity: "error", code: "loop-probe", nodeId: node.id, message: `"${node.id}" is probed and loops, so every iteration would run ${node.probe} candidates. Use one or the other.` });
+    }
+    if (node.foreach !== undefined) {
+      issues.push({ severity: "error", code: "loop-foreach", nodeId: node.id, message: `"${node.id}" fans out and loops. Loop a step after the fan-out, or fan out a step that does not loop.` });
+    }
+    for (const ref of nodeRefs(node)) {
+      if (!isLoopRef(node, ref.head) || LOOP_REF_PATHS.includes(ref.path)) continue;
+      issues.push({
+        severity: "error",
+        code: "loop-ref-unknown",
+        nodeId: node.id,
+        message: `{{${ref.raw}}} in "${node.id}" is not a loop reference. Use ${LOOP_REF_PATHS.map((path) => `{{loop.${path}}}`).join(", ")}.`,
+      });
+    }
+  }
+  return issues;
+}
+
+/**
  * A step that reads `{{source.key}}` needs the source to return JSON with that key. The plan hands it
  * "the `key` value", so a source told to return Markdown, or a contract whose required keys leave it
  * out, breaks the handoff on the first run.
@@ -1177,7 +1314,7 @@ function validateContractKeys(graph: SkillGraph): GraphIssue[] {
     const read = new Map<string, Set<string>>();
     const addKey = (sourceId: string, key: string) => read.set(sourceId, (read.get(sourceId) ?? new Set<string>()).add(key));
     for (const ref of nodeRefs(node)) {
-      if (ref.path === "" || ref.path === "output" || isItemRef(node, ref.head) || !byId.has(ref.head)) continue;
+      if (ref.path === "" || ref.path === "output" || isOwnRef(node, ref.head) || !byId.has(ref.head)) continue;
       addKey(ref.head, ref.path.split(".")[0]);
     }
     const list = foreachSource(node);
@@ -1312,8 +1449,8 @@ function validatePrompts(graph: SkillGraph): GraphIssue[] {
         message: `The prompt of "${node.id}" is only a few words. Say what the step does, with what, and what it returns; its agent sees nothing else.`,
       });
     }
-    // A contract, an output format or a gate already tells the agent the shape of its answer.
-    const shaped = node.gate !== undefined || node.outputFormat !== undefined || node.foreach !== undefined || graph.edges.some((edge) => edge.from === node.id && edge.contract);
+    // A contract, an output format, a gate or a loop's note already tells the agent the shape of its answer.
+    const shaped = node.gate !== undefined || node.outputFormat !== undefined || node.foreach !== undefined || node.loop !== undefined || graph.edges.some((edge) => edge.from === node.id && edge.contract);
     if (!shaped && !OUTPUT_WORDS.test(text)) {
       issues.push({
         severity: "warning",
@@ -1442,7 +1579,7 @@ function readPredecessors(graph: SkillGraph, node: GraphNode): Set<string> | nul
   if (list) read.add(list.node);
   let explicit = false;
   for (const ref of nodeRefs(node)) {
-    if (ref.head === "goal" || isItemRef(node, ref.head)) continue;
+    if (ref.head === "goal" || isOwnRef(node, ref.head)) continue;
     explicit = true;
     if (ref.head === "inputs") preds.forEach((id) => read.add(id));
     else if (graph.nodes.some((n) => n.id === ref.head)) read.add(ref.head);
@@ -1803,6 +1940,11 @@ export interface PromptInput {
 export function promptInputs(graph: SkillGraph, node: GraphNode): PromptInput[] {
   const inputs: PromptInput[] = [];
   if (node.foreach) inputs.push({ ref: "{{item}}", label: "This run's item from the list" });
+  if (node.loop) {
+    inputs.push({ ref: "{{loop.iteration}}", label: "Which iteration of the loop this is" });
+    if (node.loop.ledger) inputs.push({ ref: "{{loop.ledger}}", label: "The ledger: notes from earlier iterations" });
+    inputs.push({ ref: "{{loop.last_output}}", label: node.loop.until === "check" ? "The last check's output" : "The previous iteration's answer" });
+  }
   if (graph.nodes.some((n) => n.type === "input")) inputs.push({ ref: "{{goal}}", label: "The user's goal" });
   const preds = predecessorsOf(graph, node.id)
     .map((id) => graph.nodes.find((n) => n.id === id))

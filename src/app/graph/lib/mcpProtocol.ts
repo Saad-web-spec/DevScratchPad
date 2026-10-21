@@ -5,7 +5,7 @@
  * route handler passes the parsed body here and sends back what this returns. Kept free of Next.js
  * types so it can be unit tested.
  */
-import { CONNECTOR_PROMPTS, CONNECTOR_TOOLS, SERVER_INSTRUCTIONS, callConnectorTool, promptMessage, type ConnectorContext } from "./graphConnector";
+import { CONNECTOR_PROMPTS, CONNECTOR_RESOURCES, CONNECTOR_TOOLS, SERVER_INSTRUCTIONS, callConnectorTool, promptMessage, readConnectorResource, type ConnectorContext } from "./graphConnector";
 
 /** Newest first. A client asking for another version gets the newest, and decides whether it can go on. */
 export const SUPPORTED_PROTOCOL_VERSIONS: readonly string[] = ["2025-11-25", "2025-06-18", "2025-03-26", "2024-11-05"];
@@ -13,7 +13,7 @@ export const SUPPORTED_PROTOCOL_VERSIONS: readonly string[] = ["2025-11-25", "20
 export const SERVER_INFO = {
   name: "skill-graph",
   title: "Skill Graph",
-  version: "1.0.0",
+  version: "1.1.0",
   websiteUrl: "https://www.devscratchpad.tech/graph/connector",
   icons: [{ src: "https://www.devscratchpad.tech/skill-graph-icon.png", mimeType: "image/png", sizes: ["512x512"] }],
 };
@@ -39,6 +39,7 @@ export const INVALID_REQUEST = -32600;
 export const METHOD_NOT_FOUND = -32601;
 export const INVALID_PARAMS = -32602;
 export const INTERNAL_ERROR = -32603;
+export const RESOURCE_NOT_FOUND = -32002;
 
 export function errorResponse(id: JsonRpcId, code: number, message: string): JsonRpcError {
   return { jsonrpc: "2.0", id, error: { code, message } };
@@ -71,7 +72,7 @@ export function handleMessage(message: unknown, context: ConnectorContext): Json
       const requested = typeof params.protocolVersion === "string" ? params.protocolVersion : "";
       return success(id, {
         protocolVersion: SUPPORTED_PROTOCOL_VERSIONS.includes(requested) ? requested : SUPPORTED_PROTOCOL_VERSIONS[0],
-        capabilities: { tools: { listChanged: false }, prompts: { listChanged: false } },
+        capabilities: { tools: { listChanged: false }, prompts: { listChanged: false }, resources: { listChanged: false, subscribe: false } },
         serverInfo: SERVER_INFO,
         instructions: SERVER_INSTRUCTIONS,
       });
@@ -105,6 +106,17 @@ export function handleMessage(message: unknown, context: ConnectorContext): Json
       const body = promptMessage(name, isRecord(params.arguments) ? params.arguments : {});
       if (!prompt || body === null) return errorResponse(id, INVALID_PARAMS, `Unknown prompt: ${name || "(none)"}. Available: ${CONNECTOR_PROMPTS.map((item) => item.name).join(", ")}.`);
       return success(id, { description: prompt.description, messages: [{ role: "user", content: { type: "text", text: body } }] });
+    }
+    case "resources/list":
+      return success(id, { resources: CONNECTOR_RESOURCES });
+    case "resources/templates/list":
+      return success(id, { resourceTemplates: [] });
+    case "resources/read": {
+      const uri = typeof params.uri === "string" ? params.uri : "";
+      const body = readConnectorResource(uri);
+      // -32002 is the protocol's "resource not found".
+      if (body === null) return errorResponse(id, RESOURCE_NOT_FOUND, `Unknown resource: ${uri.slice(0, 200) || "(none)"}. resources/list names the ones there are.`);
+      return success(id, { contents: [{ uri, mimeType: "text/markdown", text: body }] });
     }
     default:
       return errorResponse(id, METHOD_NOT_FOUND, `Method not supported: ${message.method}.`);

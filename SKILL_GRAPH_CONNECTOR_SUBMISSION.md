@@ -19,7 +19,7 @@ Official references: [Submit a connector](https://claude.com/docs/connectors/bui
 
 ## 2. Tools
 
-Nine tools, all `readOnlyHint: true`, `destructiveHint: false`, each with a `title`:
+Fourteen tools, all `readOnlyHint: true`, `destructiveHint: false`, each with a `title`:
 
 | Tool | Title |
 | --- | --- |
@@ -32,8 +32,15 @@ Nine tools, all `readOnlyHint: true`, `destructiveHint: false`, each with a `tit
 | compile_graph | Compile a graph into agent files |
 | open_graph_in_studio | Get a studio link for a graph |
 | read_studio_link | Read a graph from a studio link |
+| edit_graph | Edit a graph |
+| start_run | Start a refereed run |
+| advance_run | Report answers to a refereed run |
+| review_lessons | Review a skill's lessons |
+| bake_lessons | Bake lessons into a graph |
 
-One prompt: `design_workflow` ("Design a workflow for my project").
+`validate_graph`, `draft_graph`, `dry_run_graph`, `compile_graph`, `edit_graph`, the lessons tools and the run tools also declare an `outputSchema` and return `structuredContent`. Resources: `skill-graph://format` and `skill-graph://templates/<id>`.
+
+Two prompts: `design_workflow` ("Design a workflow for my project") and `run_workflow` ("Run a workflow step by step").
 
 ## 3. Listing
 
@@ -43,9 +50,9 @@ One prompt: `design_workflow` ("Design a workflow for my project").
 
   > Skill Graph turns a project description into a multi-agent workflow your agent can run. Tell Claude what you are building or what task you want automated, and it designs the workflow as a graph skill: the steps, which ones run in parallel, what each step hands the next, which steps check the work in a fresh context, and where a test or your approval decides whether work goes on.
   >
-  > Skill Graph checks the graph the way a compiler checks code: cycles, missing inputs, references to steps that have not run yet, steps that can edit files running side by side, irreversible work without an approval. It also flags weak prompts: a verifier without pass criteria, a step that never says what it returns. Claude fixes what it finds until the graph is valid, then dry-runs it with a sample request to see what each step receives and hands on.
+  > Skill Graph checks the graph the way a compiler checks code: cycles, missing inputs, references to steps that have not run yet, steps that can edit files running side by side, irreversible work without an approval. It also flags weak prompts: a verifier without pass criteria, a step that never says what it returns. Claude fixes what it finds until the graph is valid, then dry-runs it with a sample request to see what each step receives and hands on. Steps can loop on their own work until a test passes, with a ledger of notes each pass leaves for the next.
   >
-  > You get back a link that opens the graph in the Skill Graph studio, where you can see it on a canvas, walk through the plan stage by stage, change steps and export. When you are happy with it, Claude compiles it into files: an orchestrating SKILL.md with one Claude Code subagent per step (each with its own tools and model), a single self-orchestrating SKILL.md, or a Cursor rule. In Claude Code, Claude saves them straight into your repository.
+  > You get back a link that opens the graph in the Skill Graph studio, where you can see it on a canvas, walk through the plan stage by stage, change steps and export. When you are happy with it, Claude compiles it into files: an orchestrating SKILL.md with one Claude Code subagent per step (each with its own tools and model), a single self-orchestrating SKILL.md, or a Cursor rule. In Claude Code, Claude saves them straight into your repository. Or run the workflow right in the chat: a referee checks every step's answer in code (contracts, gate verdicts, loop passes, exit codes), sends failed work back with the reason and stops when the tries run out.
   >
   > Start from ten starter graphs (parallel audit, ship a change, review each file, PR review, RFC discovery, bug triage, research report, write an article, analyze a dataset, design an app), from an outline of the steps, or from scratch. No account, no API key: every tool only reads, and nothing you send is stored.
 

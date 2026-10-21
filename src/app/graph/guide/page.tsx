@@ -98,6 +98,7 @@ const TOC: { id: string; title: string; group?: string }[] = [
   { id: "fan-out", title: "Fan-out: one run per item" },
   { id: "file-handoffs", title: "File handoffs" },
   { id: "probing", title: "Probing: try several, keep the best" },
+  { id: "loops", title: "Loops: repeat a step until it is done" },
   { id: "learning", title: "Learning from runs" },
   { id: "models", title: "Models and tools" },
   { id: "file-format", title: "The file format" },
@@ -161,6 +162,11 @@ const ISSUES: { severity: "Error" | "Warning"; message: string; fix: string }[] 
   { severity: "Warning", message: "Approach hints without probe, or more hints than candidates", fix: "Set probe:, or remove the hints that are never used." },
   { severity: "Error", message: "Node name used by the experience file", fix: "With learning on, experience and reflect are taken (EXPERIENCE.md and the reflect step). Rename the node." },
   { severity: "Warning", message: "Learning is on but nothing can fail", fix: "The skill learns only from failed checks, gates and commands. Add a check (e.g. npm test) or a gate." },
+  { severity: "Error", message: "Step id is a JavaScript object property name", fix: "Names such as constructor or toString cannot key a step. Rename it, e.g. constructor_step." },
+  { severity: "Error", message: "Loop without what ends it", fix: "until: check needs a check: command, and until: gate needs a gate:. Set it, or loop until done." },
+  { severity: "Error", message: "Loop on a probed, fanned-out, irreversible or non-model step", fix: "Only model steps loop, and a loop cannot be combined with probe, foreach or risk: irreversible. Loop a step before or after instead." },
+  { severity: "Warning", message: "Loop of more than 10 iterations", fix: "Past 10 tries the task is usually what is wrong. Split the step, or stop and report sooner." },
+  { severity: "Error", message: "{{loop.*}} outside a loop step, or an unknown loop reference", fix: "{{loop.iteration}}, {{loop.ledger}} and {{loop.last_output}} exist only in a step with loop:." },
   { severity: "Warning", message: "Code step re-runs nothing", fix: "on_fail: retry on a code step re-runs the subagent steps before it. With none, it stops instead; set on_fail: stop or connect it after a subagent." },
 ];
 
@@ -436,7 +442,7 @@ export default function GraphGuidePage() {
                 ["Toolbar", <>Walk through plan, the validity status (click it to see issues), <b>+ Node</b>, <b>Share</b> and <b>Export</b>.</>],
                 ["Editor (left)", <>The <C>SKILL.md</C> source. This file is the single source of truth: the canvas is drawn from it, and canvas edits are written back into it. <b>Blueprints</b>, <b>Recent graphs</b>, open file and hide editor sit at its top.</>],
                 ["Canvas (middle)", <>The graph, laid out in stages from left to right (top to bottom when the canvas is taller than wide). Drag a card to put it where you want; the place is saved. Zoom controls, undo/redo, fit-to-view and <b>Tidy layout</b> are at its bottom left.</>],
-                ["Panel (right)", <><b>Inspector</b> edits the selected step or edge, or the skill itself when nothing is selected. Its settings come in sections (Prompt, Agent, Checks, Fan-out, Probe, Inputs, What it receives) that fold away and show what is set on their right, so open only the one you need. <b>Agent plan</b> shows the stages the agent runs: one card per step with what it reads, what it returns, and what is set on it (tools, fresh context, checks, gates, fan-out, probing); click a card to edit the step. <b>Issues</b> lists errors and warnings. Drag the line on its left to make it wider.</>],
+                ["Panel (right)", <><b>Inspector</b> edits the selected step or edge, or the skill itself when nothing is selected. Its settings come in sections (Prompt, Agent, Checks, Fan-out, Probe, Loop, Inputs, What it receives) that fold away and show what is set on their right, so open only the one you need. <b>Agent plan</b> shows the stages the agent runs: one card per step with what it reads, what it returns, and what is set on it (tools, fresh context, checks, gates, fan-out, probing); click a card to edit the step. <b>Issues</b> lists errors and warnings. Drag the line on its left to make it wider.</>],
               ]}
             />
             <P>Drag the dividers between areas to resize them. On a phone, switch between editor, canvas and details with the tabs above the workspace.</P>
@@ -608,6 +614,35 @@ export default function GraphGuidePage() {
             <Note>
               Only steps that read can be probed. Candidates of a step that edits files or runs unrestricted shell commands would overwrite each other in your checkout, and a
               separate git worktree per candidate starts without your uncommitted changes or installed packages. Probe the plan, not the implementation.
+            </Note>
+          </Section>
+
+          <Section id="loops" title="Loops: repeat a step until it is done">
+            <P>
+              Some work takes several passes: fix the code until the tests pass, or work through a list until nothing is left. Open the Inspector&apos;s <b>Loop</b> section
+              (<C>loop:</C> in the file) and the step runs again on its own output until what you chose ends it, up to a limit you set.
+            </P>
+            <ul className="list-disc space-y-2 pl-5 text-[15px] leading-relaxed text-zinc-600">
+              <li>
+                <b className="text-zinc-900">Until its check passes</b> (<C>until: check</C>): the step&apos;s command check (<C>npm test</C>) runs after every pass, and
+                the next pass gets the last 40 lines of its output. A program decides when it is done.
+              </li>
+              <li>
+                <b className="text-zinc-900">Until its gate passes</b> (<C>until: gate</C>): the step judges its own work against its gate. Cheap, but not a fresh
+                pair of eyes; for that, keep a separate verifier with <C>on_fail: retry</C>.
+              </li>
+              <li>
+                <b className="text-zinc-900">Until it says it is done</b> (<C>until: done</C>): the step ends its answer with <C>LOOP: DONE</C> when nothing is left.
+              </li>
+            </ul>
+            <P>
+              Every pass ends with a short <C>## Loop note</C>: what it did, what is open, what to do next. The agent appends it to a ledger,{" "}
+              <C>.skill-graph/&lt;name&gt;/&lt;step&gt;.loop.md</C>, which the next pass reads, and so does the next run, so a step picks up where it left off. The note
+              never reaches later steps; they get only the last answer. Commit the ledger like the lessons file, or delete it to start fresh.
+            </P>
+            <Note>
+              A loop is the step&apos;s own control flow. A retry is someone else&apos;s verdict sending work back. Both work together: when a gate after a loop step
+              fails, the loop starts again with its ledger kept. After the last pass without success, the run stops and shows you the ledger.
             </Note>
           </Section>
 

@@ -4,7 +4,7 @@
  * checker issue is shown at the step it would hit, so a broken handoff shows up before the first real run.
  */
 import { handOff, outputSummary } from "./graphExport";
-import { buildPlan, contractChecks, previewNodeContext, redoableSteps } from "./graphPlan";
+import { buildPlan, contractChecks, ledgerPath, loopEndWords, previewNodeContext, redoableSteps } from "./graphPlan";
 import {
   DEFAULT_MAX_RETRIES,
   foreachListName,
@@ -49,6 +49,7 @@ function stepTitle(node: GraphNode): string {
     node.isolatedContext ? "fresh context" : null,
     node.foreach ? "fans out" : null,
     node.probe ? `${node.probe} candidates` : null,
+    node.loop ? `loops ≤${node.loop.maxIterations}` : null,
     node.risk && node.risk !== "contained" ? `${node.risk} reach` : null,
   ].filter(Boolean);
   return `${node.label.trim() || node.id} (\`${node.id}\`): ${traits.join(", ")}`;
@@ -76,7 +77,16 @@ function checkLines(graph: SkillGraph, node: GraphNode): string[] {
   return lines;
 }
 
+/** How a loop step repeats, and what its later iterations see that the first does not. */
+function loopLine(graph: SkillGraph, node: GraphNode): string | null {
+  if (!node.loop || runsWithoutSubagent(node.type)) return null;
+  const later = [node.loop.ledger ? `the ledger \`${ledgerPath(graph, node.id)}\`` : null, node.loop.until === "check" ? "the last check output" : "its previous answer"].filter(Boolean).join(" and ");
+  return `  - Loops until ${loopEndWords(node)}, at most ${node.loop.maxIterations} iterations. Iteration 1 is shown below; iterations 2 to ${node.loop.maxIterations} also see ${later}. After the last one without success, the run stops.`;
+}
+
 function failureLine(graph: SkillGraph, node: GraphNode): string | null {
+  // A loop that ends on its check or gate handles their failure itself (see its loop line).
+  if (node.loop && ((node.loop.until === "check" && node.check) || (node.loop.until === "gate" && node.gate))) return null;
   const fails = node.gate !== undefined || node.check !== undefined || node.type === "code";
   if (!fails) return null;
   if (!retriesOnFail(node) || node.risk === "irreversible") return "  - If it fails: the run stops and shows the user why.";
@@ -141,6 +151,8 @@ export function dryRunGraph(graph: SkillGraph, sample: string): DryRun {
       const list = foreachSource(node);
       lines.push(`- ${stepTitle(node)}`);
       if (list) lines.push(`  - Runs once per entry of ${foreachListName(list)} from \`${list.node}\`${node.maxItems ? `, at most ${node.maxItems} entries` : ""}.`);
+      const loop = loopLine(graph, node);
+      if (loop) lines.push(loop);
       // The goal is the sample, so name it where the step receives it.
       lines.push(`  - Receives: ${handOff(graph, node).map((part) => (part === "the user's goal" ? `the request ${request}` : part)).join("; ")}.`);
       const through = throughVerifierLine(graph, node);

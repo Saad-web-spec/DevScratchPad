@@ -31,12 +31,17 @@ const TOOLS: { name: string; does: string }[] = [
   { name: "get_graph_format", does: "Reads the graph skill format: node types, fields, contracts, references, the checker's rules and a full example." },
   { name: "list_graph_templates", does: `Lists the starter graphs (${BLUEPRINTS.map((blueprint) => blueprint.title).join(", ")}).` },
   { name: "get_graph_template", does: "Gets one starter graph's source, to build on." },
-  { name: "draft_graph", does: "Writes a graph from a plain outline of the steps (what each does and what it reads, plus fan-out, probing or file handoffs), so Claude does not have to write the format by hand. Lists what each step will receive." },
+  { name: "draft_graph", does: "Writes a graph from a plain outline of the steps (what each does and what it reads, plus checks, loops, retries, fan-out, probing, file handoffs and learning), so Claude does not have to write the format by hand. Lists what each step will receive." },
+  { name: "edit_graph", does: "Changes a graph by operations (set a step's fields, add or remove a step, connect two steps, define a contract) instead of rewriting the file; all or nothing, then checked." },
   { name: "validate_graph", does: "Checks a graph: errors, warnings with how to fix them (weak prompts, vague gates and steps that never get the work a verifier checked included), and the stages that will run." },
   { name: "dry_run_graph", does: "Walks the plan with a sample request, without running a model: each step's prompt with its inputs filled in, what it returns and is checked by, and where a problem would hit." },
   { name: "compile_graph", does: "Turns a valid graph into files: the Claude Code kit (orchestrating SKILL.md plus one subagent per step), a single SKILL.md, or a Cursor rule." },
   { name: "open_graph_in_studio", does: "Makes a link that opens the graph in the studio, to see it, walk through the plan, edit and export it." },
   { name: "read_studio_link", does: "Turns a studio link back into the graph's source, so you can pick a graph up again in a later chat. The link is the saved copy; nothing is stored." },
+  { name: "start_run", does: "Starts a refereed run of a graph on your request: the first tasks, each with its instructions and where its inputs are, and a run object that carries the state." },
+  { name: "advance_run", does: "Takes each step's answer and checks it in code (contract keys, gate verdicts, loop markers, exit codes), counts retries and loop passes, and says what runs next, until the run is done or stopped." },
+  { name: "review_lessons", does: "Reads a skill's EXPERIENCE.md against its graph: each lesson, how often it helped, and which ones the next run will drop." },
+  { name: "bake_lessons", does: "Makes chosen lessons permanent: their rules go into their steps' prompts, and you get the trimmed EXPERIENCE.md back." },
 ];
 
 const PROMPTS: string[] = [
@@ -45,6 +50,8 @@ const PROMPTS: string[] = [
   "Use Skill Graph to build a bug triage workflow: read the stack trace, check recent commits and logs in parallel, then write a minimal repro. Give me the studio link.",
   "Take the Ship a change starter graph, change the test command to pnpm test, check it, and compile it into Claude Code files.",
   "Design a Skill Graph workflow for a receipt scanning app: extract the fields in parallel, check the totals add up, then write the expense entry. Dry-run it with a sample receipt.",
+  "Run the Ship a change starter graph on this request with the Skill Graph referee: add a --verbose flag to the CLI. Loop the implement step until npm test passes.",
+  "Here is my EXPERIENCE.md from the review-each-file skill. Which lessons helped? Bake the ones that did into the graph.",
 ];
 
 function C({ children }: { children: React.ReactNode }) {
@@ -177,6 +184,10 @@ export default function GraphConnectorPage() {
               <b className="text-zinc-900">A download link.</b> &quot;Download the … kit&quot; opens a page that lists the files and what they can run, then saves them as one
               .zip. In Claude Code, Claude can write the files into your repository instead.
             </li>
+            <li>
+              <b className="text-zinc-900">A refereed run.</b> Claude does each step, and the referee checks every answer in code: contract keys, gate verdicts, loop passes and
+              exit codes. It sends failed work back with the reason, stops when the tries run out, and at the end hands you the loop notes and lessons to save.
+            </li>
           </ul>
         </Section>
 
@@ -210,14 +221,18 @@ export default function GraphConnectorPage() {
               Nothing is saved on our side. Keep the link or the files: paste the link into a later chat and Claude reads the graph back from it. Opening a link in the studio
               keeps the graph you had in that browser under <b>Recent graphs</b> (the clock above the Markdown), so nothing is lost.
             </li>
-            <li>Skill Graph designs and compiles workflows; it does not run them. Your agent runs the files you install.</li>
+            <li>
+              The referee runs no model and no command. Claude does each step, in the chat or as subagents in Claude Code, and runs the commands where it has a shell; the
+              referee only checks the answers and decides what is next. A run passes a small run object back and forth, and a run that outgrows a chat stops with a pointer to
+              the compiled kit.
+            </li>
             <li>On claude.ai, Claude shows the compiled files for you to copy. Only Claude Code can write them into your project.</li>
           </ul>
         </Section>
 
         <Section id="privacy" title="Privacy">
           <P>
-            When Claude calls a tool, it sends us that tool&apos;s input: usually the text of a graph. We check or compile it in memory, send the answer back, and keep nothing. We
+            When Claude calls a tool, it sends us that tool&apos;s input: usually the text of a graph, or a step&apos;s answer during a refereed run. We check or compile it in memory, send the answer back, and keep nothing. We
             never see your Claude conversation, your account or your files, and we log only which tool was called, to count usage. Don&apos;t put secrets in a graph.
           </P>
           <P>

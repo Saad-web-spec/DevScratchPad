@@ -23,7 +23,7 @@ describe("spec: code steps, checks, risk and approvals", () => {
 
   it("parses run, check, risk and the new node types", () => {
     expect(nodeOf(ship, "diff")).toMatchObject({ type: "code", run: "git diff --stat && git diff" });
-    expect(nodeOf(ship, "implement")).toMatchObject({ check: "npm test", risk: "wide", onFail: "retry", maxRetries: 2 });
+    expect(nodeOf(ship, "implement")).toMatchObject({ check: "npm test", risk: "wide", loop: { until: "check", maxIterations: 3, ledger: true } });
     expect(nodeOf(ship, "approve").type).toBe("approval");
     expect(nodeOf(ship, "publish").risk).toBe("irreversible");
   });
@@ -158,9 +158,10 @@ describe("compiled plan", () => {
   });
 
   it("loops a step on its command check", () => {
-    expect(skill).toContain("Check: when it returns, run `npm test` with Bash. Exit code 0 passes.");
-    expect(skill).toContain("re-run this step with its previous answer and the last 40 lines of output (at most 2 times)");
-    expect(skill).toContain("Wide reach: nothing after it starts until its check passes.");
+    expect(skill).toContain("(`implement`) → subagent `ship-a-change-implement` · loop until `npm test` exits 0, at most 3 iterations");
+    expect(skill).toContain("The loop ends when `npm test` (run with Bash after each iteration) exits 0. Otherwise start the next iteration.");
+    expect(skill).toContain("If iteration 3 ends without that, stop the run");
+    expect(skill).toContain("Wide reach: nothing after it starts until its loop ends with the check passing.");
   });
 
   it("sends back only the failed steps and never retries irreversible work", () => {

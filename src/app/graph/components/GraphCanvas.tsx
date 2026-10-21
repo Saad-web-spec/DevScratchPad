@@ -167,6 +167,11 @@ function NodeFooter({ node, fileHandoff }: { node: GraphNode; fileHandoff: boole
           ×{node.probe} probe
         </span>
       )}
+      {node.loop && (
+        <span title={`Repeats until ${node.loop.until === "check" ? "its check passes" : node.loop.until === "gate" ? "its gate passes" : "it says it is done"}, at most ${node.loop.maxIterations} times`} className="shrink-0 rounded-md bg-orange-50 px-1.5 py-0.5 font-semibold leading-none text-orange-700">
+          ↻ ≤{node.loop.maxIterations}
+        </span>
+      )}
       {node.model && <span className="shrink-0 rounded-md bg-zinc-100 px-1.5 py-0.5 font-semibold leading-none text-zinc-600">{node.model}</span>}
       {node.tools && node.tools.length > 0 && (
         <span className="flex shrink-0 items-center gap-0.5" title={node.tools.join(", ")}>
