@@ -1,0 +1,128 @@
+[
+  {
+    "graph": "grant-application-check",
+    "step": "compliance_check",
+    "checkable": [
+      "Every budget category total is at or below the cap the call sets for it.",
+      "Each requirement in the list has a quoted passage from the draft that satisfies it.",
+      "The narrative page count is at or below the page limit quoted from the call."
+    ],
+    "partly": [
+      "Every requirement is met and the proposal is likely to impress the review panel.",
+      "The budget is under every cap and spent wisely."
+    ],
+    "not": [
+      "The proposal has a good chance of being funded.",
+      "The science is novel and important.",
+      "The reviewers will find the writing persuasive."
+    ]
+  },
+  {
+    "graph": "allergy-safe-meal-plan",
+    "step": "allergy_check",
+    "checkable": [
+      "No ingredient in any of the seven dinners is a listed allergen.",
+      "The shopping list total is at or below the weekly budget in the request.",
+      "Every packaged item on the shopping list has been checked for a 'may contain' warning naming a listed allergen, and none has one."
+    ],
+    "partly": [
+      "The meals avoid every listed allergen and the family will enjoy them.",
+      "The total is within budget and the recipes are not too hard to cook."
+    ],
+    "not": [
+      "The meal plan is healthy and balanced.",
+      "The children will like the dinners.",
+      "The plan is good value."
+    ]
+  },
+  {
+    "graph": "podcast-show-notes",
+    "step": "notes_check",
+    "checkable": [
+      "Each quote appears in the transcript with exactly the same words and the speaker the transcript gives.",
+      "Every segment start timestamp is within 15 seconds of the moment the topic changes in the transcript.",
+      "The number of segments is between 5 and 10."
+    ],
+    "partly": [
+      "The quotes match the transcript word for word and are the most memorable lines of the episode.",
+      "Timestamps are accurate and the segment titles are catchy."
+    ],
+    "not": [
+      "The show notes will attract new listeners.",
+      "The summaries capture the spirit of the conversation.",
+      "The episode is well represented."
+    ]
+  },
+  {
+    "graph": "apartment-shortlist",
+    "step": "shortlist_check",
+    "checkable": [
+      "The three shortlisted listings have the three highest scores.",
+      "Each shortlisted listing's rent is at or below the budget in the request.",
+      "No shortlisted listing has a must-have field marked unknown."
+    ],
+    "partly": [
+      "The shortlist holds the top three scores and the renter would be happy living in any of them.",
+      "All three are within budget and in nice neighbourhoods."
+    ],
+    "not": [
+      "The shortlisted apartments are good choices.",
+      "The renter will get one of these apartments.",
+      "The scoring reflects what matters most."
+    ]
+  },
+  {
+    "graph": "flaky-test-hunt",
+    "step": "fix_check",
+    "checkable": [
+      "Every test on the flaky list passes in all 30 reruns.",
+      "No test outside the flaky list fails in any of the 30 reruns.",
+      "Each fix's diff touches only test files or the source file named in its cause."
+    ],
+    "partly": [
+      "All flaky tests pass 30 times and the fixes follow best practice.",
+      "The reruns are green and the root causes are convincing."
+    ],
+    "not": [
+      "The test suite is now reliable.",
+      "The fixes are elegant.",
+      "The flakiness will not come back."
+    ]
+  },
+  {
+    "graph": "api-rate-limits",
+    "step": "limits_check",
+    "checkable": [
+      "Every route in the public route list has a proposed limit.",
+      "Each proposed limit is at least twice the p99 requests per minute of its route.",
+      "No proposed limit is below the logged peak of any authenticated client on that route."
+    ],
+    "partly": [
+      "Every route has a limit and the limits are fair to heavy users.",
+      "The limits are above every logged peak and strike the right balance."
+    ],
+    "not": [
+      "The limits will stop abuse.",
+      "Clients will not be annoyed by the limits.",
+      "The configuration is appropriate for the business."
+    ]
+  },
+  {
+    "graph": "tax-receipt-sort",
+    "step": "totals_check",
+    "checkable": [
+      "Every readable receipt appears in exactly one category.",
+      "Each category total equals the sum of the amounts of its receipts.",
+      "No deductible category total is above the cap given for it in the rules."
+    ],
+    "partly": [
+      "The totals add up and the categorisation is defensible to an auditor.",
+      "Every receipt is placed once and in the most sensible category."
+    ],
+    "not": [
+      "The tax return will be accepted.",
+      "The user has claimed everything they are entitled to.",
+      "The categorisation is reasonable."
+    ]
+  }
+]

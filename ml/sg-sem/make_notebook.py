@@ -13,6 +13,7 @@ The Skill Graph semantic checker (see `SKILL_GRAPH_SEMANTIC_MODEL_SPEC.md` in th
 2. runs an open model **on this GPU** (no API) to write outlines, checker answers, plain-word phrases and gates,
 3. assembles the labelled examples, split by graph,
 4. fine-tunes the model and reports dev and test metrics against the 0.9 precision bar.
+5. scores the hand-written **gold set** (`gold/`), which the model never saw: it decides what ships.
 
 **Run it with `QUICK_LOOK = True` first** (about 15 minutes): it writes a few answers per round so their quality can be checked. Then set it to `False` and run all again; finished answers are kept, so nothing is redone.
 
@@ -23,7 +24,7 @@ REPO = "https://github.com/Saad-web-spec/DevScratchPad.git"
 BRANCH = "sg-sem"  # the branch with the sg-sem code
 GENERATOR = "Qwen/Qwen2.5-7B-Instruct"   # writes the text; runs here on the GPU
 BASE = "microsoft/MiniLM-L12-H384-uncased"  # the encoder sg-sem is fine-tuned from
-QUICK_LOOK = True                          # True: a few answers per round, to check quality first
+QUICK_LOOK = False                         # True: a few answers per round, to check quality first (done; the full data is on Drive)
 TRAIN = not QUICK_LOOK                     # training waits for the full data
 RUN = "minilm-1"
 """),
@@ -107,9 +108,30 @@ if TRAIN:
     print(json.dumps({k: report[k] for k in ["test", "rules_baseline_test", "meets_bar_on_test", "minutes"]}, indent=1))
     print(open(f"{RUNS}/{RUN}/errors.md").read()[:6000])
 """),
+md("""
+## 6. Gold set (decides what ships)
+
+Hand-written graphs, checker answers and gates in `ml/sg-sem/gold/`, on topics outside the training topics and never touched by the text model. Scored with the run's own thresholds, so the numbers are what the connector would do. A head ships only at precision >= 0.9 here.
+"""),
+code("""
+import json
+!npx vite-node scripts/semantic/gold.ts
+!cd ml/sg-sem && python -m sgsem.evaluate --run {RUNS}/{RUN} --data gold/examples.jsonl --out {RUNS}/{RUN}/gold
+gold = json.load(open(f"{RUNS}/{RUN}/gold/metrics.json"))
+print(json.dumps({k: gold[k] for k in ["metrics", "rules_baseline", "meets_bar"]}, indent=1))
+print(open(f"{RUNS}/{RUN}/gold/errors.md").read()[:5000])
+"""),
 ]
 
 nb = {"cells": cells, "metadata": {"kernelspec": {"display_name": "Python 3", "name": "python3"}, "language_info": {"name": "python"}, "accelerator": "GPU", "colab": {"provenance": []}}, "nbformat": 4, "nbformat_minor": 5}
 for i, c in enumerate(nb["cells"]): c["id"] = f"cell-{i}"
+# Keep the saved outputs of cells whose source did not change, so a regenerated notebook still shows the last run.
+import os
+if os.path.exists(sys.argv[1]):
+    previous = {"".join(c["source"]): c for c in json.load(open(sys.argv[1], encoding="utf-8"))["cells"] if c["cell_type"] == "code"}
+    for cell in nb["cells"]:
+        before = previous.get("".join(cell["source"])) if cell["cell_type"] == "code" else None
+        if before:
+            cell["outputs"], cell["execution_count"] = before.get("outputs", []), before.get("execution_count")
 json.dump(nb, open(sys.argv[1], "w", encoding="utf-8"), indent=1)
 print("ok", len(cells), "cells")

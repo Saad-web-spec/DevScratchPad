@@ -950,3 +950,10 @@ All AI agents operating in this repository MUST follow this 5-step loop:
 - **Changes**: `train.py` thresholds aim for 0.95 on dev and never go below 0.5. H4 now reports precision at its threshold, and the ship check uses that for every head.
 - **Gotcha — rerunning the training cell with the same RUN re-evaluates without retraining**: `last.pt` holds epoch 4, so the loop is skipped and only the final dev/test pass runs.
 - **Status**: ✅ threshold picker smoke-tested locally. Next: rerun the training cell (re-evaluation), then the gold set (spec §8.2). H3 stays out of v1 unless more seeds fix it.
+
+### Session: 2026-10-23 — sg-sem: gold set built; notebook section 6 scores it
+- **Agent**: Claude Code (Fable 5.1)
+- **Task**: After the first full run passed its own test split (H1, H2, H4 true with the fixed thresholds), build the honest measure: the gold set (spec §8.2).
+- **Changes**: `ml/sg-sem/gold/`: 7 hand-written graphs (`graphs.json`, drafted through `draftGraph`; topics outside the 50 training topics), 42 verifier answers with sentence labels (`h1.json`), 28 cut edges whose task names the data in plain words (`h2.json`), 56 gates by label (`h4.json`); `scripts/semantic/gold.ts` builds `gold/examples.jsonl` (164 examples) with the same serializers and fails loudly when a sentence count or span does not match. `sgsem/evaluate.py` scores a run at its saved thresholds (no refitting). Notebook section 6 runs both; `make_notebook.py` now keeps saved outputs of unchanged cells and defaults to `QUICK_LOOK = False`.
+- **Gotcha — H2 gold positives are built differently from training**: training cut an edge and replaced `{{ref}}` with a phrase; gold removes the step from `after` so the drafted prompt never had the block, and the task names the data in plain words. That is what a real missing edge looks like, so a drop on gold H2 is informative, not a bug.
+- **Status**: ✅ gold builds (164), evaluator smoke-tested on `.data/runs/smoke` (CPU), lint, typecheck. Next: run section 6 on Colab (~1 min, no generation, no training), read `meets_bar`; H3 stays out of v1; then export (§9) for the heads that hold.
