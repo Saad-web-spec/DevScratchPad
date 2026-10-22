@@ -1,0 +1,6 @@
+# sg-sem training and generation. Colab already has torch, numpy and a recent transformers.
+transformers>=4.44,<5
+accelerate>=0.33
+bitsandbytes>=0.43
+sentencepiece>=0.2
+protobuf>=4
