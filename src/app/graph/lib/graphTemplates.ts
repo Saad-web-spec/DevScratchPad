@@ -490,12 +490,445 @@ function fanOutBlueprint(spec: FanOutSpec): string {
   return serializeGraphSkill(graph);
 }
 
+/* ------------------------------------------------------------------ everyday workflows (run in chat) */
+
+/** Research, fact-check with fresh eyes, answer with sources. Web search only, so it runs in a Claude chat as it is. */
+const RESEARCH_AND_FACT_CHECK = `---
+name: research-and-fact-check
+description: Researches a question on the web, fact-checks every claim against its source with fresh eyes, then writes a short answer with sources.
+spec: skill-graph/1
+topology:
+  nodes:
+    - id: question
+      type: input
+      label: WHAT TO RESEARCH
+    - id: research
+      type: worker
+      label: RESEARCH
+      model: sonnet
+      tools: [WebSearch, WebFetch]
+    - id: fact_check
+      type: verifier
+      label: FACT CHECK
+      isolated_context: true
+      model: opus
+      tools: [WebSearch, WebFetch]
+      gate: Every kept claim has a source that says it, and no kept claim is contradicted by a more reliable or more recent source.
+      on_fail: retry
+      max_retries: 1
+    - id: answer
+      type: synthesizer
+      label: ANSWER
+      model: sonnet
+      tools: [WebFetch]
+  edges:
+    - from: question
+      to: [research, fact_check, answer]
+    - from: research
+      to: fact_check
+      contract: claims
+    - from: fact_check
+      to: answer
+      contract: checked_claims
+contracts:
+  claims:
+    format: markdown
+    description: A numbered list of claims, each with its source (title and link) and the source's date.
+  checked_claims:
+    format: markdown
+    description: The claims that held up, each with its source, then the claims that were dropped and why.
+---
+
+# Node Prompts & Edge Contracts
+
+## @node: research
+Research this question on the web:
+
+{{question}}
+
+Find 5 to 10 claims that answer it, from the most reliable sources you can find: official sites, papers and established news. Prefer recent sources.
+
+Return a numbered list of claims. For each one give the claim in one sentence, its source (title and link) and the source's date.
+
+## @node: fact_check
+You are a fact checker. Check these claims as if a stranger wrote them.
+
+The question: {{question}}
+
+The claims:
+{{research}}
+
+Open each source and confirm it says what the claim says. Look for a second source on every claim the answer depends on. Drop claims no source supports, mark claims that are out of date, and correct wrong numbers.
+
+Return the claims that held up, each with its source, then a short list of the claims you dropped and why.
+
+## @node: answer
+Answer the question for someone who is not an expert, using only the checked claims.
+
+The question: {{question}}
+
+The checked claims:
+{{fact_check}}
+
+Return a short answer in Markdown: the answer in two or three sentences first, then the details. Put the source link after each sentence it supports. End with one line on what is still uncertain, if anything.
+`;
+
+/** Score an essay criterion by criterion (repeat for each), check the scores, then write the feedback. */
+const ESSAY_RUBRIC_REVIEW = `---
+name: essay-rubric-review
+description: Reviews an essay against a rubric, one criterion at a time, checks every score against quotes from the essay, then writes the feedback.
+spec: skill-graph/1
+topology:
+  nodes:
+    - id: essay
+      type: input
+      label: ESSAY AND RUBRIC
+    - id: rubric
+      type: orchestrator
+      label: READ THE RUBRIC
+      model: sonnet
+      tools: [WebFetch]
+      output_format: json
+    - id: score_criterion
+      type: worker
+      label: SCORE EACH CRITERION
+      model: sonnet
+      tools: [WebFetch]
+      foreach: rubric.criteria
+      max_items: 12
+    - id: line_edits
+      type: worker
+      label: LINE EDITS
+      model: sonnet
+      tools: [WebFetch]
+    - id: score_check
+      type: verifier
+      label: CHECK THE SCORES
+      isolated_context: true
+      model: opus
+      tools: [WebFetch]
+      gate: Every score quotes the essay, stays within its criterion's points, and no two scores contradict each other.
+      on_fail: retry
+      max_retries: 1
+    - id: feedback
+      type: synthesizer
+      label: FEEDBACK
+      model: sonnet
+      tools: [WebFetch]
+  edges:
+    - from: essay
+      to: [rubric, score_criterion, line_edits, score_check]
+    - from: rubric
+      to: score_criterion
+      contract: criteria_list
+    - from: score_criterion
+      to: score_check
+      contract: criterion_scores
+    - from: line_edits
+      to: score_check
+      contract: edits
+    - from: score_check
+      to: feedback
+      contract: checked_review
+contracts:
+  criteria_list:
+    format: json
+    description: "{ criteria: one entry per rubric criterion, each with name, what good looks like and the points it is worth }"
+    required: [criteria]
+  criterion_scores:
+    format: json
+    description: One entry per criterion, in rubric order; each has the score, the quotes behind it and one fix.
+  edits:
+    format: markdown
+    description: A numbered list of line edits, each quoting the sentence and giving the better version.
+  checked_review:
+    format: markdown
+    description: The checked scores with their quotes and fixes, the line edits worth keeping, and what was corrected.
+---
+
+# Node Prompts & Edge Contracts
+
+## @node: rubric
+Read the essay and rubric below. If no rubric is given, use a standard one for this kind of essay: thesis, structure, evidence, style and mechanics.
+
+{{essay}}
+
+Return JSON: {"criteria": [{"name": "...", "good": "what full marks look like", "points": 10}]}, one entry per criterion, in the rubric's order.
+
+## @node: score_criterion
+Score the essay on this one criterion only:
+
+{{item}}
+
+The essay (with its rubric):
+{{essay}}
+
+Return a JSON object: {"criterion": the name, "score": a number within its points, "quotes": two or three short quotes from the essay that justify the score, "fix": the one change that would raise the score most}.
+
+## @node: line_edits
+Read this essay and pick the ten sentences that would gain most from an edit: unclear, wordy, or wrong.
+
+{{essay}}
+
+Return a numbered list. For each one quote the sentence, give a better version, and say why in a few words.
+
+## @node: score_check
+You are a second marker. You did not write these scores; check them as if a stranger did.
+
+The essay and rubric:
+{{essay}}
+
+The scores, one per criterion:
+{{score_criterion}}
+
+The line edits:
+{{line_edits}}
+
+Check that every quote is really in the essay, that each score fits its quotes and its criterion, and that the line edits do not change the meaning. Correct what is wrong.
+
+Return the checked scores with their quotes and fixes, the line edits worth keeping, and a short list of what you corrected.
+
+## @node: feedback
+Write the feedback for the essay's author from this checked review:
+
+{{score_check}}
+
+Return Markdown: the total score and a one-line verdict, a table of criteria with score and the fix for each, the three changes that matter most, then the line edits.
+`;
+
+/** Shortlist, research each product (repeat for each), check the facts, then a verdict. */
+const COMPARE_PRODUCTS = `---
+name: compare-products
+description: Compares products or options side by side on the same criteria, researches each one on the web, checks every price and spec, then recommends one.
+spec: skill-graph/1
+topology:
+  nodes:
+    - id: wish
+      type: input
+      label: WHAT TO COMPARE
+    - id: shortlist
+      type: orchestrator
+      label: SHORTLIST
+      model: sonnet
+      tools: [WebSearch, WebFetch]
+      output_format: json
+    - id: research_product
+      type: worker
+      label: RESEARCH EACH PRODUCT
+      model: sonnet
+      tools: [WebSearch, WebFetch]
+      foreach: shortlist.products
+      max_items: 6
+    - id: fact_check
+      type: verifier
+      label: CHECK THE FACTS
+      isolated_context: true
+      model: opus
+      tools: [WebSearch, WebFetch]
+      gate: Every price and spec has a source, every product is judged on the same criteria, and nothing is claimed that was not found.
+      on_fail: retry
+      max_retries: 1
+    - id: verdict
+      type: synthesizer
+      label: VERDICT
+      model: sonnet
+      tools: [WebFetch]
+  edges:
+    - from: wish
+      to: [shortlist, fact_check, verdict]
+    - from: shortlist
+      to: research_product
+      contract: shortlist_json
+    - from: research_product
+      to: fact_check
+      contract: product_notes
+    - from: fact_check
+      to: verdict
+      contract: checked_notes
+contracts:
+  shortlist_json:
+    format: json
+    description: "{ products: the 2 to 5 products to compare, criteria: what to compare them on, budget: the budget or null }"
+    required: [products, criteria]
+  product_notes:
+    format: json
+    description: One entry per product, in shortlist order; each has its price and a value for every criterion, each with a source.
+  checked_notes:
+    format: markdown
+    description: The checked facts per product, with sources, and what was corrected or could not be found.
+---
+
+# Node Prompts & Edge Contracts
+
+## @node: shortlist
+Decide what to compare from this request:
+
+{{wish}}
+
+If the request names products, use those. If not, search the web and pick the 3 that fit it best. Choose 4 to 6 criteria that matter for this choice, such as price, quality, size or support, and note the budget if one is given.
+
+Return JSON: {"products": ["..."], "criteria": ["..."], "budget": "the budget, or null"}.
+
+## @node: research_product
+Research this one product:
+
+{{item}}
+
+Criteria to cover: {{shortlist.criteria}}
+
+Find its current price from a shop or the maker, and a value for every criterion from reviews, specs or tests. Note where each fact comes from.
+
+Return a JSON object: {"product": the name, "price": {"value": "...", "source": "link", "date": "..."}, "criteria": {"<criterion>": {"value": "...", "source": "link"}}, "notes": "anything a buyer should know"}.
+
+## @node: fact_check
+You are a fact checker. Check this research as if a stranger wrote it.
+
+What the user wants: {{wish}}
+
+The research, one entry per product:
+{{research_product}}
+
+Open the sources of the prices and of the specs that decide the choice, and confirm them. Make sure every product is judged on the same criteria. Correct what is wrong, and mark what could not be confirmed.
+
+Return the checked facts per product, each with its source, then a short list of what you corrected or could not confirm.
+
+## @node: verdict
+Recommend one option for this request:
+
+{{wish}}
+
+Using only these checked facts:
+{{fact_check}}
+
+Return Markdown: a comparison table (one row per product, one column per criterion, plus price), the pick and why in two sentences, the best choice for a different need if there is one, and what to double-check before buying.
+`;
+
+/** Plan a trip, check the budget with fresh eyes (sending the plan back while it is over), then the final plan. */
+const PLAN_A_TRIP = `---
+name: plan-a-trip
+description: Plans a trip day by day with costs from the web, checks that the costs add up and stay within the budget, then writes the final plan and a booking list.
+spec: skill-graph/1
+topology:
+  nodes:
+    - id: trip
+      type: input
+      label: TRIP DETAILS
+    - id: itinerary
+      type: worker
+      label: PLAN THE DAYS
+      model: sonnet
+      tools: [WebSearch, WebFetch]
+    - id: budget_check
+      type: verifier
+      label: CHECK THE BUDGET
+      isolated_context: true
+      model: opus
+      tools: [WebSearch, WebFetch]
+      gate: The costs add up to the stated total, the total is within the budget, and every price has a source or is marked as an estimate.
+      on_fail: retry
+      max_retries: 2
+    - id: final_plan
+      type: synthesizer
+      label: FINAL PLAN
+      model: sonnet
+      tools: [WebFetch]
+  edges:
+    - from: trip
+      to: [itinerary, budget_check, final_plan]
+    - from: itinerary
+      to: budget_check
+      contract: day_plan
+    - from: budget_check
+      to: final_plan
+      contract: checked_plan
+contracts:
+  day_plan:
+    format: markdown
+    description: A day-by-day plan; every item has a cost with its source or an estimate mark, and the plan ends with the total.
+  checked_plan:
+    format: markdown
+    description: The plan with corrected costs and total, and what was changed to fit the budget.
+---
+
+# Node Prompts & Edge Contracts
+
+## @node: itinerary
+Plan this trip:
+
+{{trip}}
+
+Make a day-by-day plan: where to stay, how to get around, what to see and do, and where to eat. Search the web for current prices. Keep the total within the budget if one is given; if none is given, plan a mid-range trip.
+
+Return the plan in Markdown, one section per day. Give every item a cost with its source link, or mark it "estimate". End with a cost table by category and the total.
+
+## @node: budget_check
+You are checking a trip plan someone else made, as a careful travel agent would.
+
+The trip details: {{trip}}
+
+The plan:
+{{itinerary}}
+
+Add up the costs yourself and compare with the stated total. Check the budget. Open the sources of the three biggest costs and confirm the prices. Check that the days are realistic: travel times, opening days.
+
+Return the plan with corrected costs and total, then a short list of what you changed.
+
+## @node: final_plan
+Write the final trip plan from the checked version:
+
+{{budget_check}}
+
+The traveller's details: {{trip}}
+
+Return Markdown: a one-paragraph summary with the total cost, the day-by-day plan, the budget table, and a booking checklist in the order to book things.
+`;
+
 export interface Blueprint {
   id: string;
   title: string;
   hint: string;
   source: string;
+  /** Runs in a Claude chat as it is (web search only, no commands or file edits): the connector offers it first to people who are not developers. */
+  everyday?: boolean;
+  /** For everyday workflows: what a person types, as an example. */
+  example?: string;
 }
+
+/** The everyday workflows the connector offers for a chat, in the order they are offered. Not in the studio's blueprint menu. */
+export const EVERYDAY_WORKFLOWS: readonly Blueprint[] = [
+  {
+    id: "research-and-fact-check",
+    title: "Research a topic and fact-check it",
+    hint: "Search the web, check every claim against its source with fresh eyes, then a short answer with links",
+    source: RESEARCH_AND_FACT_CHECK,
+    everyday: true,
+    example: "Is intermittent fasting better than calorie counting for weight loss?",
+  },
+  {
+    id: "essay-rubric-review",
+    title: "Review my essay against a rubric",
+    hint: "Score each rubric criterion with quotes, suggest line edits, re-check every score, then the feedback",
+    source: ESSAY_RUBRIC_REVIEW,
+    everyday: true,
+    example: "Here is my essay and the rubric my teacher gave: …",
+  },
+  {
+    id: "compare-products",
+    title: "Compare products",
+    hint: "Shortlist, research each one on the same criteria, check every price and spec, then a pick",
+    source: COMPARE_PRODUCTS,
+    everyday: true,
+    example: "Compare 3 robot vacuums under $400 for a home with pets.",
+  },
+  {
+    id: "plan-a-trip",
+    title: "Plan a trip and check the budget",
+    hint: "Day-by-day plan with prices, a budget check that sends it back while it is over, then a booking list",
+    source: PLAN_A_TRIP,
+    everyday: true,
+    example: "4 days in Lisbon in May for two people, budget 1,500 euros without flights.",
+  },
+];
 
 export const BLUEPRINTS: readonly Blueprint[] = [
   {
@@ -694,3 +1127,9 @@ export const BLUEPRINTS: readonly Blueprint[] = [
     }),
   },
 ];
+
+/**
+ * Every starter the connector offers: the everyday workflows (for people who are not developers; the
+ * studio's blueprint menu does not list them), then the studio's blueprints.
+ */
+export const CONNECTOR_TEMPLATES: readonly Blueprint[] = [...EVERYDAY_WORKFLOWS, ...BLUEPRINTS];

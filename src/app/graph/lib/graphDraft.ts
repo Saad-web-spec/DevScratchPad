@@ -42,8 +42,15 @@ const FOREACH_PATTERN = /^[A-Za-z][A-Za-z0-9_-]*(\.[A-Za-z0-9_-]+)?$/;
 /** Told to a drafted verifier that feeds later steps, since they see only what it returns. */
 const PASS_ON = "The steps after you see only what you return: hand on the checked work itself, corrected where needed, together with your notes.";
 
-/** Read-only tools: a step gets more only when the outline asks for them. */
-const DEFAULT_TOOLS: readonly string[] = ["Read", "Grep", "Glob"];
+/**
+ * Tools a model step gets when the outline names none, by where the workflow runs. Both sets only read;
+ * a step gets more only when the outline asks for them. A chat has no files or shell, but it has web search.
+ */
+export const DRAFT_RUNS_IN = ["chat", "claude_code"] as const;
+const DEFAULT_TOOLS: Record<(typeof DRAFT_RUNS_IN)[number], readonly string[]> = {
+  chat: ["WebSearch", "WebFetch"],
+  claude_code: ["Read", "Grep", "Glob"],
+};
 const DEFAULT_MODEL: Record<DraftStepType, string | undefined> = {
   orchestrator: "sonnet",
   worker: "sonnet",
@@ -237,6 +244,9 @@ export function draftGraph(args: Record<string, unknown>): DraftResult | { error
   }
   const experience = args.experience;
   if (experience !== undefined && typeof experience !== "boolean") return { error: "experience must be true (learn from failed checks between runs) or false." };
+  const runsIn = args.runs_in ?? "chat";
+  if (runsIn !== "chat" && runsIn !== "claude_code") return { error: "runs_in must be chat (the Claude app) or claude_code (a repository)." };
+  const defaultTools = DEFAULT_TOOLS[runsIn];
 
   const notes: string[] = [];
   const readOnlySteps: string[] = [];
@@ -333,7 +343,7 @@ export function draftGraph(args: Record<string, unknown>): DraftResult | { error
     }
 
     node.model = step.model ?? DEFAULT_MODEL[step.type];
-    node.tools = step.tools && step.tools.length > 0 ? step.tools : [...DEFAULT_TOOLS];
+    node.tools = step.tools && step.tools.length > 0 ? step.tools : [...defaultTools];
     if (!step.tools || step.tools.length === 0) readOnlySteps.push(step.id);
     const verifier = step.type === "verifier";
     node.isolatedContext = step.freshContext ?? verifier;
@@ -407,7 +417,7 @@ export function draftGraph(args: Record<string, unknown>): DraftResult | { error
   }
 
   if (readOnlySteps.length > 0) {
-    notes.unshift(`${readOnlySteps.join(", ")}: no tools were given, so ${readOnlySteps.length === 1 ? "it gets" : "they get"} ${DEFAULT_TOOLS.join(", ")} (read-only). Add what a step needs, e.g. WebSearch, Edit or Bash.`);
+    notes.unshift(`${readOnlySteps.join(", ")}: no tools were given, so ${readOnlySteps.length === 1 ? "it gets" : "they get"} ${defaultTools.join(", ")} (${runsIn === "chat" ? "web search, for a chat" : "read-only file tools, for Claude Code"}). Add what a step needs, e.g. ${runsIn === "chat" ? "Read for files shared in the chat" : "WebSearch, Edit or Bash"}.`);
   }
   const graph: SkillGraph = {
     name,

@@ -28,6 +28,11 @@ export const metadata: Metadata = {
 };
 
 const TOOLS: { name: string; does: string }[] = [
+  {
+    name: "run_graph",
+    does: "Runs a workflow on your request with every step checked, in one or two calls: Claude does the steps, the checks run on every answer, and a step that fails is sent back with the reason. You see the progress as it goes, and get the final answer.",
+  },
+  { name: "save_workflow", does: "Names a workflow (\"Weekly report checker\") and gives you its link, a prompt that runs it again in any chat, and a line for a Claude Project's instructions." },
   { name: "get_graph_format", does: "Reads the graph skill format: node types, fields, contracts, references, the checker's rules and a full example." },
   { name: "list_graph_templates", does: `Lists the starter graphs (${BLUEPRINTS.map((blueprint) => blueprint.title).join(", ")}).` },
   { name: "get_graph_template", does: "Gets one starter graph's source, to build on." },
@@ -42,6 +47,13 @@ const TOOLS: { name: string; does: string }[] = [
   { name: "advance_run", does: "Takes each step's answer and checks it in code (contract keys, gate verdicts, loop markers, exit codes), counts retries and loop passes, and says what runs next, until the run is done or stopped." },
   { name: "review_lessons", does: "Reads a skill's EXPERIENCE.md against its graph: each lesson, how often it helped, and which ones the next run will drop." },
   { name: "bake_lessons", does: "Makes chosen lessons permanent: their rules go into their steps' prompts, and you get the trimmed EXPERIENCE.md back." },
+];
+
+const EVERYDAY_PROMPTS: string[] = [
+  "Use Skill Graph to research and fact-check this: is intermittent fasting better than calorie counting for weight loss?",
+  "Review my essay against this rubric with Skill Graph. (Paste the essay and the rubric.)",
+  "Compare 3 robot vacuums under $400 for a home with pets, with Skill Graph.",
+  "Plan 4 days in Lisbon in May for two, 1,500 euros without flights, and check the budget with Skill Graph. Then save it as \"Trip planner\".",
 ];
 
 const PROMPTS: string[] = [
@@ -153,6 +165,25 @@ export default function GraphConnectorPage() {
           </P>
         </Section>
 
+        <Section id="everyday" title="Everyday use: run a checked workflow in a chat">
+          <P>
+            You do not need to build anything. Ask Claude for one of these, or pick it from the connector&apos;s prompts (<b>+ → Skill Graph</b>). Claude does the work
+            step by step, a Checker looks at it with fresh eyes, and anything that fails is sent back with the reason before you see the answer.
+          </P>
+          <ul className="space-y-2.5">
+            {EVERYDAY_PROMPTS.map((prompt) => (
+              <li key={prompt} className="rounded-lg border border-zinc-200 bg-white px-4 py-3 text-sm leading-relaxed text-zinc-700">
+                {prompt}
+              </li>
+            ))}
+          </ul>
+          <P>
+            Steps use what the chat has: web search, files you share in the chat, and apps you have connected such as Google Drive or Sheets. To keep a workflow, ask Claude
+            to save it under a name. You get a link and a short prompt that runs it again in any chat, plus a line to paste into a Claude Project&apos;s instructions so
+            &quot;run my trip planner on …&quot; works there every time.
+          </P>
+        </Section>
+
         <Section id="prompts" title="Try these prompts">
           <ul className="space-y-2.5">
             {PROMPTS.map((prompt) => (
@@ -185,7 +216,11 @@ export default function GraphConnectorPage() {
               .zip. In Claude Code, Claude can write the files into your repository instead.
             </li>
             <li>
-              <b className="text-zinc-900">A refereed run.</b> Claude does each step, and the referee checks every answer in code: contract keys, gate verdicts, loop passes and
+              <b className="text-zinc-900">A checked run, with progress.</b> In a chat, a run takes one or two calls: a short readout (&quot;Step 2 of 3: Fact check,
+              checking&quot;), a plain note on why a step was sent back, and the final answer.
+            </li>
+            <li>
+              <b className="text-zinc-900">A refereed run, step by step.</b> Claude does each step, and the referee checks every answer in code: contract keys, gate verdicts, loop passes and
               exit codes. It sends failed work back with the reason, stops when the tries run out, and at the end hands you the loop notes and lessons to save.
             </li>
           </ul>

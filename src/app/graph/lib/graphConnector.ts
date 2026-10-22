@@ -11,7 +11,10 @@ import { buildCursorRule, buildExportKit, buildSingleFileSkill, handOff, toSlug 
 import { MAX_LESSONS_SOURCE, bakeLesson, isOrphanLesson, parseLessons, serializeLessons } from "./graphLessons";
 import { buildPlan } from "./graphPlan";
 import { graphFormatReference } from "./graphReference";
+import { runGraph } from "./graphChatRun";
+import { PLAIN_TYPE, plainStepName } from "./graphPlainLabels";
 import { advanceRun, startRun, type RunAnswer } from "./graphRun";
+import { resolveWorkflow, workflowPrompt } from "./graphWorkflow";
 import { MAX_HASH_LENGTH, SHARE_URL_SOFT_LIMIT, decodeShareHash, encodeShareHash } from "./graphShare";
 import { dryRunGraph } from "./graphSimulate";
 import {
@@ -29,7 +32,7 @@ import {
   type GraphIssue,
   type SkillGraph,
 } from "./graphSkill";
-import { BLUEPRINTS } from "./graphTemplates";
+import { BLUEPRINTS, CONNECTOR_TEMPLATES, EVERYDAY_WORKFLOWS } from "./graphTemplates";
 
 export interface ToolAnnotations {
   title: string;
@@ -115,6 +118,37 @@ const RUN_OUTPUT_SCHEMA = {
   required: ["status", "tasks"],
 };
 
+const WORKFLOW_PROPERTY = {
+  type: "string",
+  description: "The workflow: a starter id such as research-and-fact-check (list_graph_templates lists them), a Skill Graph link (a studio link or one from save_workflow), or the graph.skill.md text.",
+  maxLength: MAX_SOURCE_LENGTH,
+};
+
+const CHAT_RUN_OUTPUT_SCHEMA = {
+  type: "object" as const,
+  properties: {
+    status: { type: "string", enum: ["running", "reflecting", "done", "stopped"] },
+    progress: {
+      type: "array",
+      description: "Every step in run order with its plain-English name and role, and done, now, redo (sent back to fix), repeat (a loop's next try), waiting or stopped; note says why.",
+      items: {
+        type: "object",
+        properties: { step: { type: "string" }, name: { type: "string" }, role: { type: "string" }, state: { type: "string", enum: ["done", "now", "redo", "repeat", "waiting", "stopped"] }, note: { type: "string" } },
+        required: ["step", "name", "role", "state"],
+      },
+    },
+    tasks: {
+      type: "array",
+      items: { type: "object", properties: { id: { type: "string" }, step: { type: "string" }, kind: { type: "string" }, answer_key: { type: "string" } }, required: ["id", "step", "kind", "answer_key"] },
+    },
+    run: { type: "object", description: "The run object for the next run_graph call; absent once the run is over." },
+    final_answer: { type: "string" },
+    stop_reason: { type: "string" },
+    unused_answers: { type: "array", items: { type: "string" } },
+  },
+  required: ["status", "progress", "tasks"],
+};
+
 const EXPERIENCE_PROPERTY = {
   type: "string",
   description: "The skill's EXPERIENCE.md (lessons from earlier runs), as written by its reflect step.",
@@ -133,7 +167,8 @@ export const CONNECTOR_TOOLS: readonly ConnectorTool[] = [
   {
     name: "list_graph_templates",
     title: "List starter graphs",
-    description: "Lists the starter graphs (blueprints) in Skill Graph, each with an id, a title and a one-line summary. Use it to find a starting point close to the workflow the user wants.",
+    description:
+      "Lists the starter graphs in Skill Graph, each with an id, a title and a one-line summary: first the everyday workflows that run in a chat as they are (research and fact-check, essay review against a rubric, product comparison, trip plan with a budget check), then the ones for code and Claude Code. Use it to find a starting point close to what the user wants.",
     inputSchema: { type: "object", properties: {}, additionalProperties: false },
     annotations: readOnly("List starter graphs"),
   },
@@ -143,11 +178,57 @@ export const CONNECTOR_TOOLS: readonly ConnectorTool[] = [
     description: "Returns the full graph.skill.md source of one starter graph, by the id that list_graph_templates gives.",
     inputSchema: {
       type: "object",
-      properties: { id: { type: "string", description: "The starter graph's id, e.g. ship-a-change.", enum: BLUEPRINTS.map((blueprint) => blueprint.id) } },
+      properties: { id: { type: "string", description: "The starter graph's id, e.g. ship-a-change.", enum: CONNECTOR_TEMPLATES.map((blueprint) => blueprint.id) } },
       required: ["id"],
       additionalProperties: false,
     },
     annotations: readOnly("Get a starter graph"),
+  },
+  {
+    name: "run_graph",
+    title: "Run a workflow",
+    description:
+      "Runs a workflow on a request with every step checked, in one or two calls. The first call (workflow and request) returns a progress readout, every step's instructions in order, each step's answer key, and a run object. The next call (run and answers: each step's whole answer under its key) checks the answers in order: formats, the Checker's PASS/FAIL verdicts, repeat-for-each lists, retries. When every check passes it returns the final answer; when one fails it returns which steps to redo and why, and the progress. Answers can also be given with workflow and request in a single call. Steps use what the chat has: web search, files shared in the chat and connected apps. Runs no model and no command itself, and stores nothing: the run object carries the state.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        workflow: WORKFLOW_PROPERTY,
+        request: { type: "string", description: "What the user wants this run to do, in their words, with anything they pasted (an essay, a rubric, trip details).", maxLength: 20_000 },
+        answers: {
+          type: "object",
+          description:
+            'Each step\'s whole answer, keyed by the answer key the run gives (usually the step id), e.g. {"research": "1. …", "fact_check": "… GATE: PASS", "answer": "…"}. A step that returns JSON may be given the JSON itself. A repeat-for-each step takes a list, one answer per entry, in order. An approval takes true only on the user\'s explicit yes. A command or check takes {"exit_code": 0, "output": "…"}.',
+        },
+        run: { type: "object", description: "The run object from the last run_graph answer, unchanged. Leave it out on the first call; when it is given, workflow and request are ignored." },
+        experience: { ...EXPERIENCE_PROPERTY, description: "Workflows that learn from runs: the lessons text a previous run's reflect task returned, so each step gets its lessons. First call only." },
+      },
+      additionalProperties: false,
+    },
+    outputSchema: CHAT_RUN_OUTPUT_SCHEMA,
+    annotations: readOnly("Run a workflow"),
+  },
+  {
+    name: "save_workflow",
+    title: "Save a workflow under a name",
+    description:
+      "Gives a workflow a name (\"Weekly report checker\") and returns it as a link that run_graph takes as the workflow, a prompt that runs it again in any chat, a line for a Claude Project's instructions, its steps in plain words, and the source. The whole workflow is inside the link, after the #; nothing is stored on a server.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        workflow: WORKFLOW_PROPERTY,
+        name: { type: "string", description: "The name the user knows it by, e.g. Weekly report checker.", maxLength: 64 },
+        description: { type: "string", description: "What it does, in a sentence. Defaults to the workflow's own description.", maxLength: 600 },
+        input_hint: { type: "string", description: "What to hand it each time, e.g. THIS WEEK'S REPORT. Becomes the label of its input.", maxLength: 80 },
+      },
+      required: ["workflow", "name"],
+      additionalProperties: false,
+    },
+    outputSchema: {
+      type: "object",
+      properties: { name: { type: "string" }, link: { type: "string", description: "The saved copy: run_graph takes it as the workflow, and it opens in the studio." }, prompt: { type: "string" }, source: { type: "string" } },
+      required: ["name", "link", "prompt", "source"],
+    },
+    annotations: readOnly("Save a workflow under a name"),
   },
   {
     name: "draft_graph",
@@ -183,7 +264,12 @@ export const CONNECTOR_TOOLS: readonly ConnectorTool[] = [
               keys: { type: "array", items: { type: "string" }, description: "JSON only: top-level keys a valid output must have; a command checks them on every run." },
               gate: { type: "string", description: "Verifiers: what must be true for the work to pass, e.g. 'every total equals the sum of its items'.", maxLength: 600 },
               on_fail: { type: "string", enum: ["retry", "stop"], description: "When the gate or command fails: re-run the work before it, or stop. Verifiers default to retry once." },
-              tools: { type: "array", items: { type: "string" }, description: "Claude Code tools the step may use, e.g. Read, Grep, WebSearch, WebFetch, Edit, Bash. Defaults to Read, Grep, Glob." },
+              tools: {
+                type: "array",
+                items: { type: "string" },
+                description:
+                  "Tools the step may use, by their Claude Code names, e.g. WebSearch, WebFetch, Read, Grep, Edit, Bash. In a chat, WebSearch and WebFetch are Claude's web search, Read means files shared in the chat, and any step may use the user's connected apps (Drive, Sheets…) when its task says so. Defaults: WebSearch, WebFetch when runs_in is chat; Read, Grep, Glob for claude_code.",
+              },
               model: { type: "string", description: "haiku, sonnet, opus or fable. Defaults: verifier opus, other model steps sonnet." },
               fresh_context: { type: "boolean", description: "Run in a fresh context that sees only its inputs. Defaults to true for verifiers." },
               risk: { type: "string", enum: ["contained", "wide", "irreversible"], description: "Blast radius. Irreversible steps need an approval step before them." },
@@ -226,6 +312,11 @@ export const CONNECTOR_TOOLS: readonly ConnectorTool[] = [
         },
         handoff: { type: "string", enum: ["inline", "file"], description: "How outputs reach the next steps: inline (pasted into their task, the default) or file (saved to files they read; for large outputs)." },
         experience: { type: "boolean", description: "Learn from runs: failed checks, gates and loop iterations become lessons in EXPERIENCE.md that later runs hand to each step." },
+        runs_in: {
+          type: "string",
+          enum: ["chat", "claude_code"],
+          description: "Where the workflow will run: chat (the Claude app, with run_graph; the default) gives steps web search by default; claude_code (a repository) gives them read-only file tools.",
+        },
       },
       required: ["name", "description", "steps"],
       additionalProperties: false,
@@ -399,7 +490,7 @@ export const CONNECTOR_TOOLS: readonly ConnectorTool[] = [
     name: "start_run",
     title: "Start a refereed run",
     description:
-      "Starts a run of a graph that a referee keeps on the rails: it returns the first tasks (each step's instructions and where each of its inputs is) and a run object. advance_run takes the answers. The referee checks every answer in code (JSON contract keys, GATE verdicts, loop markers, command exit codes), counts retries and loop iterations, expands fan-out lists, keeps the failure log and the loop notes, and stops a run that runs out of tries. It runs no model and no command itself, and stores nothing: the run object carries the state.",
+      "Starts a step-by-step run of a graph that a referee keeps on the rails, worded for Claude Code (subagents, Bash for commands): it returns the first tasks (each step's instructions and where each of its inputs is) and a run object, and advance_run takes the answers one stage at a time. run_graph does the same with every step at once, worded for a chat. The referee checks every answer in code (JSON contract keys, GATE verdicts, loop markers, command exit codes), counts retries and loop iterations, expands fan-out lists, keeps the failure log and the loop notes, and stops a run that runs out of tries. It runs no model and no command itself, and stores nothing: the run object carries the state.",
     inputSchema: {
       type: "object",
       properties: {
@@ -447,8 +538,21 @@ export const CONNECTOR_TOOLS: readonly ConnectorTool[] = [
   },
 ];
 
-/** Prompts the user can pick in Claude to start from their project. */
+const EVERYDAY = EVERYDAY_WORKFLOWS;
+
+/** A menu prompt's name for an everyday workflow: research-and-fact-check → research_and_fact_check. */
+function everydayPromptName(id: string): string {
+  return id.replace(/-/g, "_");
+}
+
+/** Prompts the user can pick in Claude: the everyday workflows first, then designing and running their own. */
 export const CONNECTOR_PROMPTS = [
+  ...EVERYDAY.map((blueprint) => ({
+    name: everydayPromptName(blueprint.id),
+    title: blueprint.title,
+    description: `${blueprint.hint}. Runs in this chat, every step checked.`,
+    arguments: [{ name: "request", description: `What to work on, e.g. ${blueprint.example ?? "your request"}`, required: true }],
+  })),
   {
     name: "design_workflow",
     title: "Design a workflow for my project",
@@ -464,9 +568,20 @@ export const CONNECTOR_PROMPTS = [
       { name: "request", description: "What the workflow should do this time.", required: true },
     ],
   },
-] as const;
+];
 
 export function promptMessage(name: string, args: Record<string, unknown>): string | null {
+  const everyday = EVERYDAY.find((blueprint) => everydayPromptName(blueprint.id) === name);
+  if (everyday) {
+    const request = typeof args.request === "string" && args.request.trim() ? args.request.trim() : "(what to work on)";
+    return [
+      `Run the Skill Graph workflow "${everyday.id}" (${everyday.title}) with run_graph on this:`,
+      "",
+      request,
+      "",
+      "Show me the progress lines as the run goes, and tell me in a sentence when a step is sent back and why. At the end, give me the final answer, and offer to save the workflow under a name so I can run it again.",
+    ].join("\n");
+  }
   if (name === "run_workflow") {
     const graph = typeof args.graph === "string" && args.graph.trim() ? args.graph.trim() : "(a studio link or starter graph id)";
     const request = typeof args.request === "string" && args.request.trim() ? args.request.trim() : "(what to do)";
@@ -491,12 +606,12 @@ export function promptMessage(name: string, args: Record<string, unknown>): stri
 }
 
 export const SERVER_INSTRUCTIONS =
-  "Skill Graph designs multi-agent workflows as graph skills (graph.skill.md), compiles them into Claude Code subagents or Cursor rules, and referees runs of them. Design: list_graph_templates and get_graph_template for a starting point, or draft_graph from an outline of the steps (get_graph_format documents the full format, including loop: for steps that repeat until a check passes); edit_graph changes a graph by operations instead of a rewrite; validate_graph until it has no errors; dry_run_graph with a sample request, reading each step's Sees lines to confirm it gets the data its task needs (the checker proves wiring, not that); open_graph_in_studio for the user to review; compile_graph for the files to install. Run: start_run returns the first tasks and a run object, and advance_run takes each answer, checks it in code (contracts, gate verdicts, loop markers, exit codes) and returns what is next, until the run is done or stopped. Learn: review_lessons and bake_lessons work on the EXPERIENCE.md a skill writes after its runs. read_studio_link turns a studio link back into the source. All tools are read-only and nothing is stored: the studio link, the graph.skill.md file and the run object are the saved copies. The same reference text is also available as resources (skill-graph://format, skill-graph://templates/<id>).";
+  "Skill Graph designs multi-agent workflows as graph skills (graph.skill.md), compiles them into Claude Code subagents or Cursor rules, and referees runs of them. Everyday use in a chat: run_graph runs a workflow on a request with every step checked, in one or two calls: a starter id (research-and-fact-check, essay-rubric-review, compare-products, plan-a-trip), a link, or a drafted graph; save_workflow names a workflow and returns its link and a prompt that run it again. Design: list_graph_templates and get_graph_template for a starting point, or draft_graph from an outline of the steps (get_graph_format documents the full format, including loop: for steps that repeat until a check passes); edit_graph changes a graph by operations instead of a rewrite; validate_graph until it has no errors; dry_run_graph with a sample request, reading each step's Sees lines to confirm it gets the data its task needs (the checker proves wiring, not that); open_graph_in_studio for the user to review; compile_graph for the files to install. Run: start_run returns the first tasks and a run object, and advance_run takes each answer, checks it in code (contracts, gate verdicts, loop markers, exit codes) and returns what is next, until the run is done or stopped. Learn: review_lessons and bake_lessons work on the EXPERIENCE.md a skill writes after its runs. read_studio_link turns a studio link back into the source. All tools are read-only and nothing is stored: the studio link, the graph.skill.md file and the run object are the saved copies. The same reference text is also available as resources (skill-graph://format, skill-graph://templates/<id>).";
 
 /** Read-only documents for clients that list resources (Claude Code lets the user @-mention them). */
 export const CONNECTOR_RESOURCES = [
   { uri: "skill-graph://format", name: "graph-format", title: "Graph skill format", description: "The graph.skill.md format: node types, fields, loops, contracts, references and the checker's rules.", mimeType: "text/markdown" },
-  ...BLUEPRINTS.map((blueprint) => ({
+  ...CONNECTOR_TEMPLATES.map((blueprint) => ({
     uri: `skill-graph://templates/${blueprint.id}`,
     name: `template-${blueprint.id}`,
     title: `Starter graph: ${blueprint.title}`,
@@ -509,7 +624,7 @@ export const CONNECTOR_RESOURCES = [
 export function readConnectorResource(uri: string): string | null {
   if (uri === "skill-graph://format") return graphFormatReference();
   const match = /^skill-graph:\/\/templates\/([a-z0-9-]+)$/.exec(uri);
-  return match ? (BLUEPRINTS.find((blueprint) => blueprint.id === match[1])?.source ?? null) : null;
+  return match ? (CONNECTOR_TEMPLATES.find((blueprint) => blueprint.id === match[1])?.source ?? null) : null;
 }
 
 /* ------------------------------------------------------------------ helpers */
@@ -556,7 +671,8 @@ function planLines(graph: SkillGraph): { lines: string[]; stages: number; subage
   const plan = buildPlan(graph);
   const subagents = plan.reduce((sum, stage) => sum + stage.nodes.filter((node) => !runsWithoutSubagent(node.type)).length, 0);
   const lines = plan.map((stage) => {
-    const steps = stage.nodes.map((node) => `${node.id} (${[node.type, node.model].filter(Boolean).join(", ")})`).join(", ");
+    // The plain role first (Checker), so the plan can be read out to someone who never saw the format.
+    const steps = stage.nodes.map((node) => `${node.id} (${[`${PLAIN_TYPE[node.type]}: ${node.type}`, node.model].filter(Boolean).join(", ")})`).join(", ");
     return `${stage.number}. ${steps}${stage.nodes.length > 1 ? " — in parallel" : ""}`;
   });
   return { lines, stages: plan.length, subagents };
@@ -738,6 +854,11 @@ function draftTool(args: Record<string, unknown>, context: ConnectorContext): To
       "",
       "Check before installing: each step gets only this. Confirm it is what its task needs (e.g. a step that totals scores must receive the scores), and that every {{step}} or {{step.key}} in a prompt is something that step returns. Then dry_run_graph with a realistic sample.",
       ...buildPlan(result.graph).flatMap((stage) => stage.nodes.map((node) => `- ${node.id}: ${handOff(result.graph as SkillGraph, node).join("; ")}`)),
+      "",
+      `In plain words: ${buildPlan(result.graph).flatMap((stage) => stage.nodes).map((node) => `${plainStepName(node)} (${PLAIN_TYPE[node.type]})`).join(" → ")}.`,
+      ...(result.errors.length === 0
+        ? [`To use it now in this chat, run_graph takes this source${url ? " or the studio link" : ""} as the workflow; save_workflow keeps it under a name.`]
+        : []),
       ...(url ? ["", `Studio link: ${markdownLink(url, result.graph)}`] : []),
       "",
       "Source (graph.skill.md):",
@@ -890,6 +1011,56 @@ function advanceRunTool(args: Record<string, unknown>): ToolResult {
   return runResult(advanceRun(args.run, args.outputs ?? []));
 }
 
+function runGraphTool(args: Record<string, unknown>): ToolResult {
+  const result = runGraph(args);
+  if ("error" in result) return text(result.error, true);
+  return withData(text(result.text), result.data);
+}
+
+function saveWorkflowTool(args: Record<string, unknown>, context: ConnectorContext): ToolResult {
+  const workflow = resolveWorkflow(args.workflow);
+  if ("error" in workflow) return text(workflow.error, true);
+  const name = typeof args.name === "string" ? args.name.replace(/\s+/g, " ").trim().slice(0, 64) : "";
+  if (name === "") return text("name is required: what the user calls this workflow, e.g. Weekly report checker.", true);
+  const parsed = parseGraphSkill(workflow.source);
+  if (!parsed.graph) return text(fatalMessage(parsed.fatal), true);
+  const graph = parsed.graph;
+  graph.name = name;
+  if (typeof args.description === "string" && args.description.trim()) graph.description = args.description.replace(/\s+/g, " ").trim().slice(0, 600);
+  const input = graph.nodes.find((node) => node.type === "input");
+  if (input && typeof args.input_hint === "string" && args.input_hint.trim()) input.label = args.input_hint.replace(/\s+/g, " ").trim().slice(0, 80);
+  const source = serializeGraphSkill(graph);
+  const errors = check(source).errors;
+  if (errors.length > 0) return text([`The workflow has ${plural(errors.length, "error")}, so it cannot be run yet:`, ...issueLines(errors)].join("\n"), true);
+  const link = studioLink(source, context);
+  if (!link) return text("This workflow is too large to fit in a link. Save the source as graph.skill.md instead; run_graph also takes the source itself.", true);
+  const prompt = workflowPrompt(name, link);
+  const steps = buildPlan(graph).flatMap((stage) => stage.nodes).filter((node) => node.type !== "input");
+  return withData(
+    text(
+      [
+        `Saved "${name}" as a link. The whole workflow is inside it, after the #; nothing is stored on a server.`,
+        "",
+        `[Open "${name.replace(/[[\]]/g, "")}"](${link})`,
+        "",
+        `Its steps: ${steps.map((node) => `${plainStepName(node)} (${PLAIN_TYPE[node.type]})`).join(" → ")}.`,
+        "",
+        "Ways to run it again (run_graph takes the link as the workflow):",
+        "- In any chat with Skill Graph on, this prompt runs it; the user adds the input on the last line:",
+        "",
+        "```",
+        prompt,
+        "```",
+        "",
+        `- In a Claude Project, one line in the project's instructions makes it a habit: When I say "run ${name} on …", run the Skill Graph workflow ${link} with run_graph on what follows.`,
+        "- With Claude's memory on, the user can ask Claude to remember the link under this name.",
+        "- The same link opens it in the Skill Graph studio, to see or change its steps.",
+      ].join("\n")
+    ),
+    { name, link, prompt, source }
+  );
+}
+
 function readLinkTool(args: Record<string, unknown>): ToolResult {
   const link = args.link;
   if (typeof link !== "string" || link.trim() === "") return text("link is required: a Skill Graph studio link, or the part from # on.", true);
@@ -912,19 +1083,24 @@ export function callConnectorTool(name: string, rawArgs: unknown, context: Conne
   switch (name) {
     case "get_graph_format":
       return text(graphFormatReference());
-    case "list_graph_templates":
+    case "list_graph_templates": {
+      const line = (blueprint: (typeof CONNECTOR_TEMPLATES)[number]) => {
+        const steps = (parseGraphSkill(blueprint.source).graph?.nodes.length ?? 1) - 1;
+        return `- ${blueprint.id}: ${blueprint.title}, ${plural(steps, "step")}. ${blueprint.hint}.${blueprint.example ? ` E.g. "${blueprint.example}"` : ""}`;
+      };
       return text(
         [
-          "Starter graphs (pass the id to get_graph_template):",
-          ...BLUEPRINTS.map((blueprint) => {
-            const steps = parseGraphSkill(blueprint.source).graph?.nodes.length ?? 0;
-            return `- ${blueprint.id}: ${blueprint.title}, ${plural(steps, "step")}. ${blueprint.hint}.`;
-          }),
+          "Everyday workflows: they run in this chat as they are (pass the id to run_graph as workflow):",
+          ...EVERYDAY.map(line),
+          "",
+          "For code and Claude Code (pass the id to get_graph_template to build on one, or compile it into a kit):",
+          ...BLUEPRINTS.map(line),
         ].join("\n")
       );
+    }
     case "get_graph_template": {
-      const blueprint = BLUEPRINTS.find((item) => item.id === args.id);
-      if (!blueprint) return text(`Unknown starter graph id. Use one of: ${BLUEPRINTS.map((item) => item.id).join(", ")}.`, true);
+      const blueprint = CONNECTOR_TEMPLATES.find((item) => item.id === args.id);
+      if (!blueprint) return text(`Unknown starter graph id. Use one of: ${CONNECTOR_TEMPLATES.map((item) => item.id).join(", ")}.`, true);
       return text(`${blueprint.title}: ${blueprint.hint}.\n\n${blueprint.source}`);
     }
     case "draft_graph":
@@ -945,6 +1121,10 @@ export function callConnectorTool(name: string, rawArgs: unknown, context: Conne
       return reviewLessonsTool(args);
     case "bake_lessons":
       return bakeLessonsTool(args, context);
+    case "run_graph":
+      return runGraphTool(args);
+    case "save_workflow":
+      return saveWorkflowTool(args, context);
     case "start_run":
       return startRunTool(args);
     case "advance_run":

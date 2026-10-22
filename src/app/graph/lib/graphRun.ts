@@ -14,6 +14,7 @@ import { agentName, compiledPrompt, judgeAgentName, judgePrompt, probeCandidates
 import { parseLessons } from "./graphLessons";
 import { LESSONS_HEADING, LOOP_HEADING, compileRun, contractChecks, experiencePath, ledgerPath, loopEndWords, payloadFiles, payloadPath, redoableSteps } from "./graphPlan";
 import { MAX_HASH_LENGTH, decodeShareHash, encodeShareHash } from "./graphShare";
+import { CONNECTOR_TEMPLATES } from "./graphTemplates";
 import {
   CONTRACT_KEY_PATTERN,
   DEFAULT_MAX_RETRIES,
@@ -262,8 +263,8 @@ function readTask(raw: unknown): RunTask | null {
 
 /** Reads a run object Claude passed back. Every field is re-checked: the object is client data. */
 export function readRunState(raw: unknown): RunState | { error: string } {
-  if (!isRecord(raw)) return { error: "run must be the run object from the last start_run or advance_run answer." };
-  if (raw.v !== RUN_VERSION) return { error: `This run object is from another version (v ${String(raw.v)}). Start the run again with start_run.` };
+  if (!isRecord(raw)) return { error: "run must be the run object from the last answer (start_run, advance_run or run_graph), as an object." };
+  if (raw.v !== RUN_VERSION) return { error: `This run object is from another version (v ${String(raw.v)}). Start the run again.` };
   if (typeof raw.graph !== "string" || raw.graph.length > MAX_HASH_LENGTH) return { error: "The run object has no graph. Pass the run object exactly as the last answer gave it." };
   const status = raw.status === "running" || raw.status === "reflecting" || raw.status === "done" || raw.status === "stopped" ? raw.status : null;
   if (!status) return { error: "The run object has no valid status. Pass it exactly as the last answer gave it." };
@@ -292,9 +293,37 @@ export function readRunState(raw: unknown): RunState | { error: string } {
   };
 }
 
+/**
+ * A run of a starter graph names it (`t:<id>:<fingerprint>`) instead of carrying its hash, so the run
+ * object stays short to retype. The fingerprint catches a starter that changed since the run started.
+ */
+const STARTER_PREFIX = "t:";
+
+/** FNV-1a of the starter's text, in base 36: enough to tell two versions of one starter apart. */
+function fingerprint(source: string): string {
+  let hash = 0x811c9dc5;
+  for (let i = 0; i < source.length; i += 1) {
+    hash ^= source.charCodeAt(i);
+    hash = Math.imul(hash, 0x01000193) >>> 0;
+  }
+  return hash.toString(36);
+}
+
+function starterRef(id: string, source: string): string {
+  return `${STARTER_PREFIX}${id}:${fingerprint(source)}`;
+}
+
 function loadGraph(hash: string): { graph: SkillGraph } | { error: string } {
+  if (hash.startsWith(STARTER_PREFIX)) {
+    const id = hash.slice(STARTER_PREFIX.length).split(":")[0];
+    const starter = CONNECTOR_TEMPLATES.find((blueprint) => blueprint.id === id);
+    if (!starter) return { error: "The run's starter workflow no longer exists. Start the run again." };
+    if (starterRef(starter.id, starter.source) !== hash) return { error: "The run's starter workflow has changed since the run started. Start the run again." };
+    const parsed = parseGraphSkill(starter.source);
+    return parsed.graph ? { graph: parsed.graph } : { error: "The run's starter workflow could not be read. Start the run again." };
+  }
   const shared = decodeShareHash(hash.startsWith("#") ? hash : `#${hash}`);
-  if (!shared) return { error: "The run's graph could not be read; the run object may have been cut or changed. Start the run again with start_run." };
+  if (!shared) return { error: "The run's graph could not be read; the run object may have been cut or changed. Start the run again." };
   const parsed = parseGraphSkill(shared.source);
   if (!parsed.graph) return { error: `The run's graph could not be read: ${parsed.fatal ?? "unknown problem"}.` };
   return { graph: parsed.graph };
@@ -941,8 +970,14 @@ function context(graph: SkillGraph, state: RunState): Ctx {
   return { graph, byId: new Map(graph.nodes.map((node) => [node.id, node])), state, events: [], issued: [] };
 }
 
-/** start_run: checks the graph, sets up the run, and returns the first tasks. */
-export function startRun(source: string, request: string, experience?: string): RunAnswer | { error: string } {
+/** A run being worked on: the graph, its state, and what happened and was issued in this call. */
+export type RunContext = Ctx;
+
+/**
+ * Checks the graph and sets up a run with its first tasks issued. Shared by start_run and run_graph.
+ * `starterId` names the starter graph `source` is, unchanged, so the run object refers to it by id.
+ */
+export function createRun(source: string, request: string, experience?: string, starterId?: string): RunContext | { error: string } {
   const parsed = parseGraphSkill(source);
   if (!parsed.graph) return { error: `The graph could not be read: ${parsed.fatal ?? "unknown problem"}.` };
   const graph = parsed.graph;
@@ -953,7 +988,7 @@ export function startRun(source: string, request: string, experience?: string): 
   if (hash.length > MAX_HASH_LENGTH) return { error: "This graph is too large to referee in a chat. Compile it with compile_graph and run the kit in Claude Code." };
   const state: RunState = {
     v: RUN_VERSION,
-    graph: hash.slice(1),
+    graph: starterId && CONNECTOR_TEMPLATES.some((blueprint) => blueprint.id === starterId && blueprint.source === source) ? starterRef(starterId, source) : hash.slice(1),
     goal: cap((request.split(/\r?\n/).find((line) => line.trim()) ?? "").trim(), MAX_GOAL),
     status: "running",
     done: [],
@@ -982,25 +1017,23 @@ export function startRun(source: string, request: string, experience?: string): 
   }
   const ctx = context(graph, state);
   schedule(ctx);
-  const result = answer(ctx, false);
-  const intro = [
-    `Started a refereed run of "${graph.name}". The referee holds no outputs: each task names, by task id, where its inputs are. It checks every answer you report (contracts, gate verdicts, loop markers, exit codes) and decides what runs next, so follow its tasks rather than the plan in SKILL.md.`,
-    "",
-  ].join("\n");
-  return { ...result, text: `${intro}\n${result.text}` };
+  return ctx;
 }
 
-/** advance_run: takes the answers to open tasks, and returns what happens next. */
-export function advanceRun(rawRun: unknown, rawOutputs: unknown): RunAnswer | { error: string } {
+/** Reads a run object passed back and its graph. */
+export function loadRun(rawRun: unknown): RunContext | { error: string } {
   const state = readRunState(rawRun);
   if ("error" in state) return state;
   const loaded = loadGraph(state.graph);
   if ("error" in loaded) return loaded;
-  const ctx = context(loaded.graph, state);
+  return context(loaded.graph, state);
+}
+
+/** Takes answers to open tasks, in order, then issues whatever became ready. Answers to tasks that are not open are noted and ignored. */
+export function feedRun(ctx: RunContext, rawOutputs: unknown): void {
+  const { state } = ctx;
+  if (state.status === "done" || state.status === "stopped") return;
   const outputs = Array.isArray(rawOutputs) ? rawOutputs.slice(0, MAX_OUTPUTS_PER_CALL) : [];
-  if (state.status === "done" || state.status === "stopped") {
-    return answer(ctx, true);
-  }
   for (const raw of outputs) {
     if (!isRecord(raw) || typeof raw.task !== "string") {
       ctx.events.push("An output without a task id was ignored.");
@@ -1025,7 +1058,40 @@ export function advanceRun(rawRun: unknown, rawOutputs: unknown): RunAnswer | { 
     if (state.status !== "running" && state.status !== "reflecting") break;
   }
   if (state.status === "running") schedule(ctx);
-  if (JSON.stringify(state).length > MAX_RUN_STATE_CHARS) {
+}
+
+/** True when the run object has grown past what a chat can pass back and forth. */
+export function runTooLarge(state: RunState): boolean {
+  return JSON.stringify(state).length > MAX_RUN_STATE_CHARS;
+}
+
+/** A task's instructions as start_run and advance_run write them (Claude Code wording). */
+export function renderRunTask(ctx: RunContext, task: RunTask): string {
+  return renderTask(ctx, task);
+}
+
+/** start_run: checks the graph, sets up the run, and returns the first tasks. */
+export function startRun(source: string, request: string, experience?: string): RunAnswer | { error: string } {
+  const ctx = createRun(source, request, experience);
+  if ("error" in ctx) return ctx;
+  const result = answer(ctx, false);
+  const intro = [
+    `Started a refereed run of "${ctx.graph.name}". The referee holds no outputs: each task names, by task id, where its inputs are. It checks every answer you report (contracts, gate verdicts, loop markers, exit codes) and decides what runs next, so follow its tasks rather than the plan in SKILL.md.`,
+    "",
+  ].join("\n");
+  return { ...result, text: `${intro}\n${result.text}` };
+}
+
+/** advance_run: takes the answers to open tasks, and returns what happens next. */
+export function advanceRun(rawRun: unknown, rawOutputs: unknown): RunAnswer | { error: string } {
+  const ctx = loadRun(rawRun);
+  if ("error" in ctx) return ctx;
+  const outputs = Array.isArray(rawOutputs) ? rawOutputs : [];
+  if (ctx.state.status === "done" || ctx.state.status === "stopped") {
+    return answer(ctx, true);
+  }
+  feedRun(ctx, outputs);
+  if (runTooLarge(ctx.state)) {
     return { error: "This run has grown too large to pass back and forth in a chat. Compile the graph with compile_graph and run the kit in Claude Code." };
   }
   // When nothing new starts, show the open tasks again, so the answer always says what to do next.

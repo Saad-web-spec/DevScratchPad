@@ -45,7 +45,7 @@ describe("validate_graph", () => {
     const result = call("validate_graph", { source: DEFAULT_GRAPH_SKILL });
     expect(result.isError).toBe(false);
     expect(result.text).toMatch(/^Valid: 4 stages, 7 subagents/);
-    expect(result.text).toContain("worker_research (worker, haiku), worker_compare (worker, haiku)");
+    expect(result.text).toContain("worker_research (Worker: worker, haiku), worker_compare (Worker: worker, haiku)");
     expect(result.text).toContain("in parallel");
   });
 

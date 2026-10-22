@@ -19,10 +19,12 @@ Official references: [Submit a connector](https://claude.com/docs/connectors/bui
 
 ## 2. Tools
 
-Fourteen tools, all `readOnlyHint: true`, `destructiveHint: false`, each with a `title`:
+Sixteen tools, all `readOnlyHint: true`, `destructiveHint: false`, each with a `title`:
 
 | Tool | Title |
 | --- | --- |
+| run_graph | Run a workflow |
+| save_workflow | Save a workflow under a name |
 | get_graph_format | Get the graph skill format |
 | list_graph_templates | List starter graphs |
 | get_graph_template | Get a starter graph |
@@ -38,9 +40,9 @@ Fourteen tools, all `readOnlyHint: true`, `destructiveHint: false`, each with a 
 | review_lessons | Review a skill's lessons |
 | bake_lessons | Bake lessons into a graph |
 
-`validate_graph`, `draft_graph`, `dry_run_graph`, `compile_graph`, `edit_graph`, the lessons tools and the run tools also declare an `outputSchema` and return `structuredContent`. Resources: `skill-graph://format` and `skill-graph://templates/<id>`.
+`validate_graph`, `draft_graph`, `dry_run_graph`, `compile_graph`, `edit_graph`, the lessons tools, the run tools and `save_workflow` also declare an `outputSchema` and return `structuredContent`. Resources: `skill-graph://format` and `skill-graph://templates/<id>`.
 
-Two prompts: `design_workflow` ("Design a workflow for my project") and `run_workflow` ("Run a workflow step by step").
+Six prompts: one per everyday workflow (`research_and_fact_check`, `essay_rubric_review`, `compare_products`, `plan_a_trip`, each taking a `request`), `design_workflow` ("Design a workflow for my project") and `run_workflow` ("Run a workflow step by step").
 
 ## 3. Listing
 
@@ -54,7 +56,9 @@ Two prompts: `design_workflow` ("Design a workflow for my project") and `run_wor
   >
   > You get back a link that opens the graph in the Skill Graph studio, where you can see it on a canvas, walk through the plan stage by stage, change steps and export. When you are happy with it, Claude compiles it into files: an orchestrating SKILL.md with one Claude Code subagent per step (each with its own tools and model), a single self-orchestrating SKILL.md, or a Cursor rule. In Claude Code, Claude saves them straight into your repository. Or run the workflow right in the chat: a referee checks every step's answer in code (contracts, gate verdicts, loop passes, exit codes), sends failed work back with the reason and stops when the tries run out.
   >
-  > Start from ten starter graphs (parallel audit, ship a change, review each file, PR review, RFC discovery, bug triage, research report, write an article, analyze a dataset, design an app), from an outline of the steps, or from scratch. No account, no API key: every tool only reads, and nothing you send is stored.
+  > You do not have to build anything to use it: four everyday workflows run in the chat as they are (research a topic and fact-check it, review an essay against a rubric, compare products, plan a trip and check the budget). Claude does the steps with web search and your connected apps, a Checker reviews the work with fresh eyes, and you see the progress and why anything was sent back. Save a workflow under a name and run it again with new input from its link.
+  >
+  > Start from fourteen starter graphs (the four everyday ones, plus parallel audit, ship a change, review each file, PR review, RFC discovery, bug triage, research report, write an article, analyze a dataset, design an app), from an outline of the steps, or from scratch. No account, no API key: every tool only reads, and nothing you send is stored.
 
 - **Categories** (1–5): Developer tools, Productivity (choose the closest names the portal offers)
 - **Documentation URL**: https://www.devscratchpad.tech/graph/connector

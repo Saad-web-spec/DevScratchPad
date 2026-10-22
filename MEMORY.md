@@ -892,3 +892,19 @@ All AI agents operating in this repository MUST follow this 5-step loop:
 - **Gotcha — per-item bookkeeping needs per-item keys**: `contractRetries` and `retries` for fan-out items are keyed `step/itemN`, never by step alone.
 - **Gotcha — `isValidNodeId` allows `constructor`/`toString`**: `reserved-id` is now a checker error, and every id-keyed map in a run object is `Object.create(null)`.
 - **Status**: ✅ Built and validated (1295 tests, validate-presets, typecheck, lint 0 errors, build, MCP Inspector against the dev server, live start_run → advance_run, studio screenshot). Not done: deploy, submission, real-Claude test of a refereed run, loop script export.
+
+### Session: 2026-10-22 — Skill Graph connector: everyday use in the Claude app
+- **Agent**: Claude Code (Opus 5.5)
+- **Ask**: make the connector useful to common users in the Claude app: run-it-all tool, chat-native tools, saved workflows, plain-language templates, visible progress, plain labels.
+- **Decision — connector only**: the user rejected the first pass, which also relabelled the studio (Checker on cards, Repeat for each sections), grouped the blueprint menu, edited the guide and landing page and added a `/graph/run` "My workflows" page. All reverted; everything lives in `src/app/graph/lib/` and the connector's own docs page.
+- **Decision — run_graph keys answers by step id**: Claude writes every step's answer inside one tool call; the chat runner matches them to the referee's pending tasks (exact task id, then `step`, `step/check`, `step/itemN`, list entries) and feeds round after round, each answer at most once per call. A run where every check passes takes 2 calls (1 if answers come with the workflow).
+- **Decision — saved workflows without storage**: `save_workflow` returns the studio link (run_graph accepts it), a rerun prompt and a Claude Project instruction line. No server storage (ADR-001), and the browser-side list went with the reverted page.
+- **Decision — everyday starters are connector-only**: `EVERYDAY_WORKFLOWS` + `CONNECTOR_TEMPLATES` in graphTemplates.ts; the studio imports `BLUEPRINTS`, which is unchanged.
+- **Gotcha — check/contract tasks carry the answer ref in `feedback`**: only work/item/candidate/command tasks with feedback are "sent back".
+- **Gotcha — the referee's 40k run-object cap fires before a reply gets huge** when many entries are sent back with long reasons; each pending task stores its reason.
+- **Gotcha — shell heredocs and `python -c` mangle backslashes and backticks** in this Bash tool; edit TS with the Edit tool or a Python script written to a file.
+- **Gotcha — a deleted route leaves `.next/dev/types/app/<route>`** from a running dev server, which fails `npm run build`'s type check; delete those generated files.
+- **Gotcha — tasks that are not graph steps**: `reflect` has no node, so any loop over open tasks that starts with `byId.get(task.step)` silently drops it; handle `task.kind === "reflect"` first. The judge and reflect wording in `renderTask` is Claude Code wording (subagents, Read/Grep); the chat runner writes its own judge text.
+- **Gotcha — a loop's next try carries feedback too** ("Iteration N did not end the loop"), so "has feedback" does not mean "sent back"; the chat runner reports it as `repeat`.
+- **Validation pattern that worked**: a generic driver (`%TEMP%/sg-scratch/all-starters.test.ts`) answers whatever run_graph asks, shaped by the graph (`wantsJsonOutput`, `jsonOutputKeys`, contract `required`, foreach lists, `GATE: PASS`, loop notes, exit codes), and asserts every starter reaches `done` under 80k characters. Two fresh-context review rounds found 7 bugs my own tests had missed; keep doing both for the referee.
+- **Status**: ✅ Complete and validated (1332 tests, validate-presets, typecheck, lint 0 errors, build, MCP Inspector, live MCP). Not done: deploy, real-Claude test.

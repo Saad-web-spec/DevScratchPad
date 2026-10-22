@@ -639,7 +639,7 @@ describe("protocol: structured results and resources", () => {
 
   it("lists and reads resources, and advertises them", () => {
     expect(rpc("initialize", { protocolVersion: "2025-06-18" })).toMatchObject({ result: { capabilities: { resources: { listChanged: false } }, serverInfo: { version: SERVER_INFO.version } } });
-    expect(SERVER_INFO.version).toBe("1.1.0");
+    expect(SERVER_INFO.version).toBe("1.2.0");
     expect(rpc("resources/list")).toMatchObject({ result: { resources: CONNECTOR_RESOURCES } });
     expect(rpc("resources/read", { uri: "skill-graph://format" })).toMatchObject({ result: { contents: [{ uri: "skill-graph://format", mimeType: "text/markdown", text: expect.stringContaining("## Loops") }] } });
     expect(rpc("resources/read", { uri: "skill-graph://templates/ship-a-change" })).toMatchObject({ result: { contents: [{ text: SHIP_CHANGE_GRAPH_SKILL }] } });

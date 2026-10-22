@@ -13,7 +13,7 @@ export const SUPPORTED_PROTOCOL_VERSIONS: readonly string[] = ["2025-11-25", "20
 export const SERVER_INFO = {
   name: "skill-graph",
   title: "Skill Graph",
-  version: "1.1.0",
+  version: "1.2.0",
   websiteUrl: "https://www.devscratchpad.tech/graph/connector",
   icons: [{ src: "https://www.devscratchpad.tech/skill-graph-icon.png", mimeType: "image/png", sizes: ["512x512"] }],
 };

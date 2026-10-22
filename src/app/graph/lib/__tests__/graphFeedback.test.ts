@@ -199,8 +199,17 @@ describe("draft_graph", () => {
     expect(validateGraph(graph)).toEqual([]);
     expect(graph.nodes.find((node) => node.id === "header")?.prompt).toContain("{{plan.header}}");
     expect(graph.contracts.header_output).toMatchObject({ format: "json", required: ["merchant", "date", "total"] });
-    expect(graph.nodes.find((node) => node.id === "verify")).toMatchObject({ isolatedContext: true, onFail: "retry", tools: ["Read", "Grep", "Glob"] });
+    // A draft runs in a chat unless it says otherwise: web search, not file tools.
+    expect(graph.nodes.find((node) => node.id === "verify")).toMatchObject({ isolatedContext: true, onFail: "retry", tools: ["WebSearch", "WebFetch"] });
     expect(draft.notes[0]).toContain("plan, header, items, verify: no tools were given");
+    expect(draft.notes[0]).toContain("web search, for a chat");
+  });
+
+  it("gives read-only file tools to a workflow that runs in Claude Code", () => {
+    const draft = draftGraph({ ...RECEIPT_OUTLINE, runs_in: "claude_code" });
+    if ("error" in draft) throw new Error(draft.error);
+    expect(load(draft.source).nodes.find((node) => node.id === "verify")?.tools).toEqual(["Read", "Grep", "Glob"]);
+    expect(draftGraph({ ...RECEIPT_OUTLINE, runs_in: "phone" })).toMatchObject({ error: expect.stringContaining("runs_in") });
   });
 
   it("explains what is wrong with an outline", () => {
