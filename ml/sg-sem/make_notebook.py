@@ -101,6 +101,7 @@ else:
     print("QUICK_LOOK is on: training waits for the full data.")
 """),
 code("""
+import json
 if TRAIN:
     report = json.load(open(f"{RUNS}/{RUN}/metrics.json"))
     print(json.dumps({k: report[k] for k in ["test", "rules_baseline_test", "meets_bar_on_test", "minutes"]}, indent=1))
