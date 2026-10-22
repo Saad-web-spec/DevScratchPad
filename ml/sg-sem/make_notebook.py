@@ -26,7 +26,7 @@ GENERATOR = "Qwen/Qwen2.5-7B-Instruct"   # writes the text; runs here on the GPU
 BASE = "microsoft/MiniLM-L12-H384-uncased"  # the encoder sg-sem is fine-tuned from
 QUICK_LOOK = False                         # True: a few answers per round, to check quality first (done; the full data is on Drive)
 TRAIN = not QUICK_LOOK                     # training waits for the full data
-RUN = "minilm-2"  # minilm-1: first full run (gold: H4 held, H1 missed buried problems, H2 at chance); see MEMORY.md
+RUN = "minilm-3"  # minilm-1: H1 missed buried problems, H2 at chance. minilm-2: H1 flagged honest number ledgers, H2 starved (68 positives). See MEMORY.md
 """),
 md("## 1. Storage and setup"),
 code("""
@@ -106,7 +106,8 @@ import json
 if TRAIN:
     report = json.load(open(f"{RUNS}/{RUN}/metrics.json"))
     print(json.dumps({k: report[k] for k in ["test", "rules_baseline_test", "meets_bar_on_test", "minutes"]}, indent=1))
-    print(open(f"{RUNS}/{RUN}/errors.md").read()[:6000])
+    for section in open(f"{RUNS}/{RUN}/errors.md").read().split("\n## ")[1:]:  # the worst dev examples, per head
+        print("## " + section[:2500])
 """),
 md("""
 ## 6. Gold set (decides what ships)
@@ -119,7 +120,8 @@ import json
 !cd ml/sg-sem && python -m sgsem.evaluate --run {RUNS}/{RUN} --data gold/examples.jsonl --out {RUNS}/{RUN}/gold
 gold = json.load(open(f"{RUNS}/{RUN}/gold/metrics.json"))
 print(json.dumps({k: gold[k] for k in ["metrics", "rules_baseline", "meets_bar"]}, indent=1))
-print(open(f"{RUNS}/{RUN}/gold/errors.md").read()[:5000])
+for section in open(f"{RUNS}/{RUN}/gold/errors.md").read().split("\n## ")[1:]:  # the worst gold examples, per head
+    print("## " + section[:3500])
 """),
 ]
 

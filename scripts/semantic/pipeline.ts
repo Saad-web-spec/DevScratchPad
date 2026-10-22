@@ -31,6 +31,7 @@ import {
   outlineRequest,
   readH1,
   readH2,
+  readH2Insert,
   readH4,
   readJson,
   type H1Style,
@@ -247,18 +248,27 @@ function refsTo(pred: string): RegExp {
  * The step's prompt without the heading block that named `pred` (a drafted prompt holds one per input, e.g.
  * `READ RECEIPTS:\n{{read_receipts}}`), and whether an inline `{{pred}}` reference remains in the text. The block
  * spells the step id in capitals, so a positive that kept it would teach a token match instead of a reading.
+ * With `replacement`, a sentence written by the LLM stands where the block stood, so the task names the data in
+ * plain words at the place a person would have written it.
  */
-function withoutInput(prompt: string, pred: string): { prompt: string; inline: boolean } {
+function withoutInput(prompt: string, pred: string, replacement = ""): { prompt: string; inline: boolean } {
   const block = new RegExp(`(^|\n\n)([^\n]{1,120}):\n\{\{\s*${pred}(?:\.[^}]*)?\s*\}\}(?=\n\n|$)`);
   const heading = block.exec(prompt)?.[2] ?? "";
   // Only a heading that spells the step id in capitals goes; a written one ("The claims:") stays, and its reference becomes the phrase.
-  const stripped = /[A-Z]/.test(heading) && heading === heading.toUpperCase() ? prompt.replace(block, "").replace(/^\n\n/, "") : prompt;
+  const stripped =
+    /[A-Z]/.test(heading) && heading === heading.toUpperCase()
+      ? prompt.replace(block, (_, separator: string) => (replacement ? `${separator}${replacement}` : "")).replace(/^\n\n/, "")
+      : prompt;
   return { prompt: stripped, inline: refsTo(pred).test(stripped) };
 }
 
-/** A step that reads `pred`: removing that edge leaves it working on less. The list a step fans out over is skipped. */
-function h2Candidates(graph: SkillGraph): { node: GraphNode; pred: GraphNode; ref: string; prompt: string; mode: "phrase" | "quote" }[] {
-  const out: { node: GraphNode; pred: GraphNode; ref: string; prompt: string; mode: "phrase" | "quote" }[] = [];
+/**
+ * A step that reads `pred`: removing that edge leaves it working on less. The list a step fans out over is skipped.
+ * `phrase`: an inline `{{pred}}` stays in the text and the LLM names it in plain words. `insert`: the reference was
+ * only a heading block, so the LLM writes a sentence naming the data and it goes where the block stood.
+ */
+function h2Candidates(graph: SkillGraph): { node: GraphNode; pred: GraphNode; ref: string; prompt: string; mode: "phrase" | "insert" }[] {
+  const out: { node: GraphNode; pred: GraphNode; ref: string; prompt: string; mode: "phrase" | "insert" }[] = [];
   for (const node of modelSteps(graph)) {
     const preds = [...new Set(predecessorsOf(graph, node.id))].map((id) => graph.nodes.find((n) => n.id === id)).filter((n): n is GraphNode => n !== undefined);
     const list = foreachSource(node);
@@ -267,7 +277,7 @@ function h2Candidates(graph: SkillGraph): { node: GraphNode; pred: GraphNode; re
       const ref = nodeRefs(node).find((r) => r.head === pred.id);
       if (!ref) continue;
       const { prompt, inline } = withoutInput(node.prompt, pred.id);
-      out.push({ node, pred, ref: ref.raw, prompt, mode: inline ? "phrase" : "quote" });
+      out.push({ node, pred, ref: ref.raw, prompt, mode: inline ? "phrase" : "insert" });
     }
   }
   return out;
@@ -379,16 +389,16 @@ export function assemble(out: string): void {
     }
 
     if (request.kind === "h2") {
-      const phrase = readH2(output.text);
       const pred = String(request.meta.pred);
+      const insert = request.meta.mode === "insert" ? readH2Insert(output.text) : null;
+      const phrase = insert ? insert.phrase : readH2(output.text);
       if (!phrase) {
-        drop(request.meta.mode === "quote" ? "h2-not-named" : "h2-unreadable");
+        drop("h2-unreadable");
         continue;
       }
       const source = seeds.get(seed)?.source ?? "";
-      // The heading block that named the input goes; an inline reference becomes the plain-word phrase.
-      const stripped = withoutInput(node.prompt, pred).prompt;
-      const rewritten = request.meta.mode === "phrase" ? stripped.replace(refsTo(pred), phrase) : stripped;
+      // The heading block that named the input goes: an inline reference becomes the plain-word phrase, or the LLM's sentence stands where the block stood.
+      const rewritten = insert ? withoutInput(node.prompt, pred, insert.sentence).prompt : withoutInput(node.prompt, pred).prompt.replace(refsTo(pred), phrase);
       if (rewritten === node.prompt) {
         drop("h2-no-ref");
         continue;
@@ -516,9 +526,12 @@ export function mockAnswer(request: LlmRequest): string {
     const bad = ["The second source could not be opened, so claim 2 is unverified.", "The budget table still leaves out the hotel tax."];
     const fixed = ["Claim 3 had a dead link; it now cites the official report, which confirms it."];
     const numbers = ["The hotel line totals 1,240 while its three nights add up to 1,310.", "Day 3 lists the museum for Monday, when its page gives Tuesday to Sunday as opening days."];
+    const ledger = ["Narrative: 11 pages against the 12-page limit.", "Equipment 18,500 against a cap of 25,000.", "The call closes 15 March; the cover sheet is dated 2 March."];
     const sentences =
       style === "honest_pass"
         ? good.map((text) => ({ text, open_problem: false }))
+        : style === "honest_number_pass"
+          ? ledger.map((text) => ({ text, open_problem: false }))
         : style === "buried_problem_pass"
           ? [good[0], bad[Math.floor(r() * 2)], good[1]].map((text) => ({ text, open_problem: bad.includes(text) }))
           : style === "buried_number_pass"
@@ -529,11 +542,9 @@ export function mockAnswer(request: LlmRequest): string {
     return JSON.stringify({ sentences });
   }
   if (request.kind === "h2") {
-    if (request.meta.mode === "quote") {
-      const task = /Instruction: ([^\n]*)/.exec(request.user)?.[1] ?? "";
-      return JSON.stringify({ quote: task.split(" ").slice(0, 3).join(" ") });
-    }
-    return JSON.stringify({ phrase: `the results of the earlier ${String(request.meta.ref).split(".")[0].replace(/_/g, " ")} step` });
+    const phrase = `the results of the earlier ${String(request.meta.ref).split(".")[0].replace(/_/g, " ")} step`;
+    if (request.meta.mode === "insert") return JSON.stringify({ sentence: `Work from ${phrase} when you do this.`, phrase });
+    return JSON.stringify({ phrase });
   }
   return JSON.stringify({
     checkable: ["Every total equals the sum of its line items.", "Each claim cites a source that is in the inputs.", "No two items contradict each other on price or date."],

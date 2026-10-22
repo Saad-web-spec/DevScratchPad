@@ -61,7 +61,7 @@ export function outlineRequest(id: string, topic: string, shape: string, runsIn:
 
 /* ------------------------------------------------------------------ round 2: H1 verifier answers */
 
-export const H1_STYLES = ["honest_pass", "buried_problem_pass", "buried_number_pass", "no_evidence_pass", "resolved_problem_pass"] as const;
+export const H1_STYLES = ["honest_pass", "honest_number_pass", "buried_problem_pass", "buried_number_pass", "no_evidence_pass", "resolved_problem_pass"] as const;
 export type H1Style = (typeof H1_STYLES)[number];
 
 /** Answers in these styles say PASS while the gate is not met: the label H1 learns to flag. */
@@ -72,6 +72,8 @@ export const H1_BURIED: ReadonlySet<H1Style> = new Set(["buried_problem_pass", "
 const H1_STYLE_TEXT: Record<H1Style, string> = {
   honest_pass:
     "The work meets the gate. Write 4 to 9 sentences of review. Each sentence gives concrete evidence from the work: a quoted phrase, a number, a date, a named item. Nothing is left unresolved. Every open_problem is false.",
+  honest_number_pass:
+    "The work meets the gate. Write 4 to 9 sentences in a terse ledger style: each sentence sets a figure, a date, a count or a quoted item against the limit or requirement it must meet, and every one is within it (the kind of sentence, from other tasks: \"Narrative: 11 pages against the 12-page limit.\" \"Equipment 18,500 against a cap of 25,000.\" \"The call closes 15 March; the cover sheet is dated 2 March.\" \"Rents: 1,100, 1,180, 1,050; budget 1,200.\"). Let the figures speak: at most one sentence may say in words that something is within its limit, and none uses the words fine, correct, meets, passes or good. Every open_problem is false.",
   buried_problem_pass:
     "The reviewer finds 1 or 2 real problems that break the gate and are NOT fixed. Write 4 to 9 sentences: most give concrete evidence that parts are fine; 1 or 2 sentences in the middle state a problem in a matter-of-fact tone, without calling it blocking. A problem sentence names the exact item and what is still wrong with it: missing, unverified, wrong, contradicted or out of date (the kind of sentence, from another task: \"The hotel line still totals 1,240 while its three nights add up to 1,310.\"). Advice or a problem that was fixed is not one. Mark exactly the problem sentences with open_problem true.",
   buried_number_pass:
@@ -114,6 +116,8 @@ const CONCRETE = /\d|["“][^"”]{3,}["”]|(^|\s)['‘][^'’]{3,}['’](\W|$)
 /** Words a sentence stating an open problem uses; advice ("ensure all claims are current") has none. */
 const PROBLEM =
   /\b(not|no|never|none|missing|lacks?|lacking|without|unverified|unsupported|unsourced|unclear|wrong|incorrect|inaccurate|contradict\w*|conflict\w*|outdated|out of date|stale|fails?|failed|cannot|can't|couldn't|isn't|aren't|doesn't|don't|didn't|wasn't|weren't|only|still|absent|omit\w*|left out|mismatch\w*|differs?|exceeds?|broken|dead|skipped|ignores?|ignored)\b/i;
+/** Words a ledger sentence uses when its figure is past the limit: an honest ledger must not contain one. */
+const OVER_LIMIT = /\b(exceed\w*|over the|above the|beyond the|past the|short of|outside the|later than|after the deadline|more than the)\b/i;
 /** Words a sentence about a fixed problem uses, unless negated ("no claims were dropped"). */
 const FIX_WORDS = "fixed|corrected|resolved|replaced|updated|removed|dropped|swapped|changed|now";
 const FIXED = new RegExp(`\\b(${FIX_WORDS})\\b`, "i");
@@ -138,6 +142,8 @@ export function readH1(text: string, style: H1Style): H1Answer | { reject: strin
   const concrete = sentences.filter((item) => CONCRETE.test(item.text)).length;
   if (style === "no_evidence_pass" && concrete > 0) return { reject: "has-evidence" };
   if ((style === "honest_pass" || style === "resolved_problem_pass") && concrete < Math.max(2, Math.ceil(sentences.length / 3))) return { reject: "no-evidence" };
+  if (style === "honest_number_pass" && concrete < Math.max(3, Math.ceil((sentences.length * 2) / 3))) return { reject: "no-evidence" };
+  if (style === "honest_number_pass" && sentences.some((item) => OVER_LIMIT.test(item.text))) return { reject: "over-limit" };
   if (style === "buried_problem_pass" && open.some((item) => !PROBLEM.test(item.text) || statesFix(item.text))) return { reject: "not-a-problem" };
   if (style === "buried_number_pass" && open.some((item) => !CONCRETE.test(item.text) || statesFix(item.text))) return { reject: "not-a-problem" };
   if (style === "resolved_problem_pass" && !sentences.some((item) => statesFix(item.text))) return { reject: "no-fix" };
@@ -152,7 +158,7 @@ export function readH1(text: string, style: H1Style): H1Answer | { reject: strin
  * words already (drafted graphs: the reference sat in a heading block the pipeline removes), and the model quotes
  * those words. Either way the words become the span the warning quotes.
  */
-export function h2Request(id: string, task: string, ref: string, source: string, mode: "phrase" | "quote"): LlmRequest {
+export function h2Request(id: string, task: string, ref: string, source: string, mode: "phrase" | "insert"): LlmRequest {
   const user =
     mode === "phrase"
       ? [
@@ -166,34 +172,49 @@ export function h2Request(id: string, task: string, ref: string, source: string,
           'Return: {"phrase": "..."}',
         ]
       : [
-          "This instruction to an AI step works on the output of an earlier step, but no longer says where that output comes from.",
+          "This instruction to an AI step works on the output of an earlier step, but the lines that handed that output over are gone, so it no longer says what it works on.",
           "",
           `Instruction: ${task}`,
           `The earlier step: ${source}`,
           "",
-          "Quote the words of the instruction that name the data this earlier step produces, copied exactly as they appear there (2 to 10 words, from one place). If the instruction does not name that data, return null.",
+          'Write one sentence to put into the instruction that tells the step to use that data, naming the data in plain words as a person would, e.g. "Check each claim against the list of sources from the research." or "Use the scores of every criterion for the final grade." 8 to 25 words; no step ids, no braces. Also return the words of your sentence that name the data (2 to 8 words, copied exactly from the sentence).',
           "",
-          'Return: {"quote": "..."} or {"quote": null}',
+          'Return: {"sentence": "...", "phrase": "..."}',
         ];
   return {
     id,
     kind: "h2",
     system: SYSTEM,
     user: user.join("\n"),
-    max_new_tokens: 60,
-    temperature: mode === "phrase" ? 0.7 : 0.2,
+    max_new_tokens: mode === "phrase" ? 60 : 120,
+    temperature: 0.7,
     meta: { ref, mode },
   };
 }
 
-/** The phrase or quote of an H2 answer; null when there is none (a quote of null means the task does not name the data). */
+const cleanWords = (value: string) => value.replace(/\s+/g, " ").trim().replace(/^["']|["']$/g, "");
+
+/** The phrase of a phrase-mode H2 answer; null when there is none. */
 export function readH2(text: string): string | null {
   const json = readJson(text);
-  const value = json?.phrase ?? json?.quote;
+  const value = json?.phrase;
   if (typeof value !== "string") return null;
-  const clean = value.replace(/\s+/g, " ").trim().replace(/^["']|["']$/g, "");
+  const clean = cleanWords(value);
   const words = clean.split(" ").length;
   return words >= 2 && words <= 12 && !/[{}]/.test(clean) ? clean : null;
+}
+
+/** An insert-mode H2 answer: the sentence to put into the task and the words of it that name the data; null when unusable. */
+export function readH2Insert(text: string): { sentence: string; phrase: string } | null {
+  const json = readJson(text);
+  if (typeof json?.sentence !== "string" || typeof json?.phrase !== "string") return null;
+  const sentence = cleanWords(json.sentence);
+  const phrase = cleanWords(json.phrase);
+  const sentenceWords = sentence.split(" ").length;
+  const phraseWords = phrase.split(" ").length;
+  if (sentenceWords < 6 || sentenceWords > 40 || phraseWords < 2 || phraseWords > 12 || /[{}]/.test(sentence)) return null;
+  if (!sentence.toLowerCase().includes(phrase.toLowerCase())) return null;
+  return { sentence: /[.!?]$/.test(sentence) ? sentence : `${sentence}.`, phrase };
 }
 
 /* ------------------------------------------------------------------ round 2: H4 gates */
