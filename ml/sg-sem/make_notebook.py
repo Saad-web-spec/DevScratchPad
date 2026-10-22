@@ -106,7 +106,7 @@ import json
 if TRAIN:
     report = json.load(open(f"{RUNS}/{RUN}/metrics.json"))
     print(json.dumps({k: report[k] for k in ["test", "rules_baseline_test", "meets_bar_on_test", "minutes"]}, indent=1))
-    for section in open(f"{RUNS}/{RUN}/errors.md").read().split("\n## ")[1:]:  # the worst dev examples, per head
+    for section in open(f"{RUNS}/{RUN}/errors.md").read().split("\\n## ")[1:]:  # the worst dev examples, per head
         print("## " + section[:2500])
 """),
 md("""
@@ -120,8 +120,12 @@ import json
 !cd ml/sg-sem && python -m sgsem.evaluate --run {RUNS}/{RUN} --data gold/examples.jsonl --out {RUNS}/{RUN}/gold
 gold = json.load(open(f"{RUNS}/{RUN}/gold/metrics.json"))
 print(json.dumps({k: gold[k] for k in ["metrics", "rules_baseline", "meets_bar"]}, indent=1))
-for section in open(f"{RUNS}/{RUN}/gold/errors.md").read().split("\n## ")[1:]:  # the worst gold examples, per head
+for section in open(f"{RUNS}/{RUN}/gold/errors.md").read().split("\\n## ")[1:]:  # the worst gold examples, per head
     print("## " + section[:3500])
+"""),
+code("""
+# Which cue does H2 read? Every gold cut positive is scored as is and with one thing changed; the column whose p(cut) moves is the cue.
+!cd ml/sg-sem && python -m sgsem.probe --run {RUNS}/{RUN} --data gold/examples.jsonl
 """),
 ]
 
