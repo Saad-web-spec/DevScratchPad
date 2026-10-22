@@ -158,7 +158,7 @@ It runs our TypeScript library (vite-node, like the tests) on seed graphs and wr
 
 | Mutation | Produces |
 | --- | --- |
-| `disconnect` an edge into a step, and rewrite the prompt's `{{ref}}` of it into plain words (by the LLM, §7.2) | H2 positive; span = the rewritten words |
+| `disconnect` an edge into a step and remove the heading block that named it; an inline `{{ref}}` becomes plain words written by the LLM, otherwise the LLM quotes the words of the task that name the data (§7.2) | H2 positive; span = those words. Hard negative: the same prompt with the edge kept |
 | `set_contract` with a description taken from another contract | H3 positive |
 | change a JSON producer's keys while its readers keep theirs, `required` left empty | H3 positive |
 | `set_step` gate ← a gate from the "not checkable" pool | H4 negative |

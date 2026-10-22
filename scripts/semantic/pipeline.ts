@@ -21,6 +21,7 @@ import { parseGraphSkill, predecessorsOf, runsWithoutSubagent, validateGraph, fo
 import { CONNECTOR_TEMPLATES } from "../../src/app/graph/lib/graphTemplates";
 import { SEMANTIC_INPUT_VERSION, TASK_PREFIX, contractInput, gateInput, missingInputInput, taskText, verdictInput } from "../../src/app/graph/lib/semanticInput";
 import {
+  H1_BURIED,
   H1_INCONSISTENT,
   H1_STYLES,
   H4_LABELS,
@@ -237,17 +238,36 @@ function seedsFrom(out: string): { seeds: Seed[]; drafted: number; rejected: Rec
   return { seeds, drafted, rejected, reasons };
 }
 
-/** A step whose prompt reads `pred` and has another input too: removing that edge leaves it working on less. */
-function h2Candidates(graph: SkillGraph): { node: GraphNode; pred: GraphNode; ref: string }[] {
-  const out: { node: GraphNode; pred: GraphNode; ref: string }[] = [];
+/** Matches every `{{pred}}` or `{{pred.key}}` reference. */
+function refsTo(pred: string): RegExp {
+  return new RegExp(`\{\{\s*${pred}(?:\.[^}]*)?\s*\}\}`, "g");
+}
+
+/**
+ * The step's prompt without the heading block that named `pred` (a drafted prompt holds one per input, e.g.
+ * `READ RECEIPTS:\n{{read_receipts}}`), and whether an inline `{{pred}}` reference remains in the text. The block
+ * spells the step id in capitals, so a positive that kept it would teach a token match instead of a reading.
+ */
+function withoutInput(prompt: string, pred: string): { prompt: string; inline: boolean } {
+  const block = new RegExp(`(^|\n\n)([^\n]{1,120}):\n\{\{\s*${pred}(?:\.[^}]*)?\s*\}\}(?=\n\n|$)`);
+  const heading = block.exec(prompt)?.[2] ?? "";
+  // Only a heading that spells the step id in capitals goes; a written one ("The claims:") stays, and its reference becomes the phrase.
+  const stripped = /[A-Z]/.test(heading) && heading === heading.toUpperCase() ? prompt.replace(block, "").replace(/^\n\n/, "") : prompt;
+  return { prompt: stripped, inline: refsTo(pred).test(stripped) };
+}
+
+/** A step that reads `pred`: removing that edge leaves it working on less. The list a step fans out over is skipped. */
+function h2Candidates(graph: SkillGraph): { node: GraphNode; pred: GraphNode; ref: string; prompt: string; mode: "phrase" | "quote" }[] {
+  const out: { node: GraphNode; pred: GraphNode; ref: string; prompt: string; mode: "phrase" | "quote" }[] = [];
   for (const node of modelSteps(graph)) {
     const preds = [...new Set(predecessorsOf(graph, node.id))].map((id) => graph.nodes.find((n) => n.id === id)).filter((n): n is GraphNode => n !== undefined);
-    if (preds.length < 2) continue;
     const list = foreachSource(node);
     for (const pred of preds) {
       if (pred.type === "input" || runsWithoutSubagent(pred.type) || list?.node === pred.id) continue;
       const ref = nodeRefs(node).find((r) => r.head === pred.id);
-      if (ref) out.push({ node, pred, ref: ref.raw });
+      if (!ref) continue;
+      const { prompt, inline } = withoutInput(node.prompt, pred.id);
+      out.push({ node, pred, ref: ref.raw, prompt, mode: inline ? "phrase" : "quote" });
     }
   }
   return out;
@@ -273,8 +293,8 @@ export function round2(out: string, h1Samples: number): void {
       const gates = h4Request(`${seed.seed}::h4::${node.id}`, task, inputs);
       requests.push(keyedByPrompt({ ...gates, meta: { seed: seed.seed, node: node.id } }));
     }
-    for (const { node, pred, ref } of h2Candidates(graph).slice(0, 4)) {
-      const request = h2Request(`${seed.seed}::h2::${node.id}::${pred.id}`, taskText(node).slice(0, 900), ref, describeStep(graph, pred));
+    for (const { node, pred, ref, prompt, mode } of h2Candidates(graph).slice(0, 6)) {
+      const request = h2Request(`${seed.seed}::h2::${node.id}::${pred.id}`, taskText({ ...node, prompt }).slice(0, 900), ref, describeStep(graph, pred), mode);
       requests.push(keyedByPrompt({ ...request, meta: { ...request.meta, seed: seed.seed, node: node.id, pred: pred.id } }));
     }
   }
@@ -350,7 +370,7 @@ export function assemble(out: string): void {
         const piece = normal(sentence);
         return flagged.some((flag) => flag.length > 0 && (piece.includes(flag) || flag.includes(piece))) ? 1 : 0;
       });
-      if (style === "buried_problem_pass" && !sentences.includes(1)) {
+      if (H1_BURIED.has(style) && !sentences.includes(1)) {
         drop("h1-flag-lost");
         continue;
       }
@@ -362,20 +382,25 @@ export function assemble(out: string): void {
       const phrase = readH2(output.text);
       const pred = String(request.meta.pred);
       if (!phrase) {
-        drop("h2-unreadable");
+        drop(request.meta.mode === "quote" ? "h2-not-named" : "h2-unreadable");
         continue;
       }
       const source = seeds.get(seed)?.source ?? "";
-      const pattern = new RegExp(`\\{\\{\\s*${pred}(?:\\.[^}]*)?\\s*\\}\\}`, "g");
-      const rewritten = node.prompt.replace(pattern, phrase);
+      // The heading block that named the input goes; an inline reference becomes the plain-word phrase.
+      const stripped = withoutInput(node.prompt, pred).prompt;
+      const rewritten = request.meta.mode === "phrase" ? stripped.replace(refsTo(pred), phrase) : stripped;
       if (rewritten === node.prompt) {
         drop("h2-no-ref");
         continue;
       }
       const kept = editGraph(source, [{ op: "set_prompt", id: node.id, prompt: rewritten }]);
+      // A step left with no input reads the request, like a first step; its task still names the data it lost.
+      const remaining = [...new Set(predecessorsOf(graph, node.id))].filter((id) => id !== pred);
+      const input = graph.nodes.find((n) => n.type === "input");
       const cut = editGraph(source, [
         { op: "set_prompt", id: node.id, prompt: rewritten },
         { op: "disconnect", from: pred, to: node.id },
+        ...(remaining.length === 0 && input ? [{ op: "connect" as const, from: input.id, to: node.id }] : []),
       ]);
       if ("error" in kept || "error" in cut || errorsOf(kept.source) > 0 || errorsOf(cut.source) > 0) {
         drop("h2-checker-error");
@@ -386,7 +411,7 @@ export function assemble(out: string): void {
       const keptNode = keptGraph.nodes.find((n) => n.id === node.id) as GraphNode;
       const cutNode = cutGraph.nodes.find((n) => n.id === node.id) as GraphNode;
       const positive = missingInputInput(cutGraph, cutNode);
-      const at = positive.textA.indexOf(phrase, TASK_PREFIX.length);
+      const at = positive.textA.toLowerCase().indexOf(phrase.toLowerCase(), TASK_PREFIX.length);
       if (at === -1) {
         drop("h2-span-cut");
         continue;
@@ -490,17 +515,26 @@ export function mockAnswer(request: LlmRequest): string {
     const good = ["The first claim matches the cited page, which states 5 hours.", "All 7 items list a price with a link.", "The totals add up to 1,240 as stated."];
     const bad = ["The second source could not be opened, so claim 2 is unverified.", "The budget table still leaves out the hotel tax."];
     const fixed = ["Claim 3 had a dead link; it now cites the official report, which confirms it."];
+    const numbers = ["The hotel line totals 1,240 while its three nights add up to 1,310.", "Day 3 lists the museum for Monday, when its page gives Tuesday to Sunday as opening days."];
     const sentences =
       style === "honest_pass"
         ? good.map((text) => ({ text, open_problem: false }))
         : style === "buried_problem_pass"
           ? [good[0], bad[Math.floor(r() * 2)], good[1]].map((text) => ({ text, open_problem: bad.includes(text) }))
-          : style === "no_evidence_pass"
+          : style === "buried_number_pass"
+            ? [good[0], numbers[Math.floor(r() * 2)], good[2]].map((text) => ({ text, open_problem: numbers.includes(text) }))
+            : style === "no_evidence_pass"
             ? [{ text: "Everything looks thorough and well organised.", open_problem: false }, { text: "The work meets the requirements.", open_problem: false }]
             : [good[0], fixed[0], good[2]].map((text) => ({ text, open_problem: false }));
     return JSON.stringify({ sentences });
   }
-  if (request.kind === "h2") return JSON.stringify({ phrase: `the results of the earlier ${String(request.meta.ref).split(".")[0].replace(/_/g, " ")} step` });
+  if (request.kind === "h2") {
+    if (request.meta.mode === "quote") {
+      const task = /Instruction: ([^\n]*)/.exec(request.user)?.[1] ?? "";
+      return JSON.stringify({ quote: task.split(" ").slice(0, 3).join(" ") });
+    }
+    return JSON.stringify({ phrase: `the results of the earlier ${String(request.meta.ref).split(".")[0].replace(/_/g, " ")} step` });
+  }
   return JSON.stringify({
     checkable: ["Every total equals the sum of its line items.", "Each claim cites a source that is in the inputs.", "No two items contradict each other on price or date."],
     partly: ["Every item has a price and the plan feels balanced.", "All dates are listed and the tone is friendly."],

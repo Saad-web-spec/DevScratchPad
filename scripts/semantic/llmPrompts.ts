@@ -61,17 +61,21 @@ export function outlineRequest(id: string, topic: string, shape: string, runsIn:
 
 /* ------------------------------------------------------------------ round 2: H1 verifier answers */
 
-export const H1_STYLES = ["honest_pass", "buried_problem_pass", "no_evidence_pass", "resolved_problem_pass"] as const;
+export const H1_STYLES = ["honest_pass", "buried_problem_pass", "buried_number_pass", "no_evidence_pass", "resolved_problem_pass"] as const;
 export type H1Style = (typeof H1_STYLES)[number];
 
 /** Answers in these styles say PASS while the gate is not met: the label H1 learns to flag. */
-export const H1_INCONSISTENT: ReadonlySet<H1Style> = new Set(["buried_problem_pass", "no_evidence_pass"]);
+export const H1_INCONSISTENT: ReadonlySet<H1Style> = new Set(["buried_problem_pass", "buried_number_pass", "no_evidence_pass"]);
+/** Answers that bury 1 to 3 open problems among sentences saying parts are fine. */
+export const H1_BURIED: ReadonlySet<H1Style> = new Set(["buried_problem_pass", "buried_number_pass"]);
 
 const H1_STYLE_TEXT: Record<H1Style, string> = {
   honest_pass:
     "The work meets the gate. Write 4 to 9 sentences of review. Each sentence gives concrete evidence from the work: a quoted phrase, a number, a date, a named item. Nothing is left unresolved. Every open_problem is false.",
   buried_problem_pass:
     "The reviewer finds 1 or 2 real problems that break the gate and are NOT fixed. Write 4 to 9 sentences: most give concrete evidence that parts are fine; 1 or 2 sentences in the middle state a problem in a matter-of-fact tone, without calling it blocking. A problem sentence names the exact item and what is still wrong with it: missing, unverified, wrong, contradicted or out of date (the kind of sentence, from another task: \"The hotel line still totals 1,240 while its three nights add up to 1,310.\"). Advice or a problem that was fixed is not one. Mark exactly the problem sentences with open_problem true.",
+  buried_number_pass:
+    "The reviewer finds 1 or 2 real problems that break the gate and are NOT fixed, but states each one only through a number, a date, a quoted phrase or a comparison, in the same matter-of-fact tone as the other sentences (the kind of sentence, from other tasks: \"Equipment totals 27,300 against a cap of 25,000.\" or \"Day 3 lists the museum for Monday, when its page gives Tuesday to Sunday as opening days.\"). A problem sentence uses none of the words not, no, missing, wrong, fails, still, only, unverified or unclear. Write 4 to 9 sentences; the others give concrete evidence that parts are fine. Mark exactly the problem sentences with open_problem true.",
   no_evidence_pass:
     "The reviewer gives no concrete evidence at all: exactly 3 generic, approving sentences, each its own entry in the list (e.g. that it looks thorough, that it is well organised, that it follows the instructions). No digits, no quotes, no named items, no examples. Every open_problem is false.",
   resolved_problem_pass:
@@ -130,42 +134,64 @@ export function readH1(text: string, style: H1Style): H1Answer | { reject: strin
     .filter((item) => item.text.length > 3 && !/GATE:\s*(PASS|FAIL)/i.test(item.text));
   if (sentences.length < 2 || sentences.length > 14) return { reject: "length" };
   const open = sentences.filter((item) => item.open);
-  if (style === "buried_problem_pass" ? open.length < 1 || open.length > 3 : open.length > 0) return { reject: "open-count" };
+  if (H1_BURIED.has(style) ? open.length < 1 || open.length > 3 : open.length > 0) return { reject: "open-count" };
   const concrete = sentences.filter((item) => CONCRETE.test(item.text)).length;
   if (style === "no_evidence_pass" && concrete > 0) return { reject: "has-evidence" };
   if ((style === "honest_pass" || style === "resolved_problem_pass") && concrete < Math.max(2, Math.ceil(sentences.length / 3))) return { reject: "no-evidence" };
   if (style === "buried_problem_pass" && open.some((item) => !PROBLEM.test(item.text) || statesFix(item.text))) return { reject: "not-a-problem" };
+  if (style === "buried_number_pass" && open.some((item) => !CONCRETE.test(item.text) || statesFix(item.text))) return { reject: "not-a-problem" };
   if (style === "resolved_problem_pass" && !sentences.some((item) => statesFix(item.text))) return { reject: "no-fix" };
   return { sentences };
 }
 
 /* ------------------------------------------------------------------ round 2: H2 plain-word inputs */
 
-export function h2Request(id: string, task: string, ref: string, source: string): LlmRequest {
+/**
+ * H2 text job, in one of two modes. `phrase`: the step's task holds an inline `{{ref}}` to the earlier step (the
+ * starters do), and the model writes the plain-word phrase that replaces it. `quote`: the task names that data in
+ * words already (drafted graphs: the reference sat in a heading block the pipeline removes), and the model quotes
+ * those words. Either way the words become the span the warning quotes.
+ */
+export function h2Request(id: string, task: string, ref: string, source: string, mode: "phrase" | "quote"): LlmRequest {
+  const user =
+    mode === "phrase"
+      ? [
+          `This instruction to an AI step contains the placeholder {{${ref}}}: it is filled in with the output of an earlier step.`,
+          "",
+          `Instruction: ${task}`,
+          `The earlier step: ${source}`,
+          "",
+          `Write a short noun phrase (2 to 8 words) that names the data {{${ref}}} stands for, as a person would write it in the instruction instead of the placeholder, e.g. "the list of claims with their sources". No braces, no step ids.`,
+          "",
+          'Return: {"phrase": "..."}',
+        ]
+      : [
+          "This instruction to an AI step works on the output of an earlier step, but no longer says where that output comes from.",
+          "",
+          `Instruction: ${task}`,
+          `The earlier step: ${source}`,
+          "",
+          "Quote the words of the instruction that name the data this earlier step produces, copied exactly as they appear there (2 to 10 words, from one place). If the instruction does not name that data, return null.",
+          "",
+          'Return: {"quote": "..."} or {"quote": null}',
+        ];
   return {
     id,
     kind: "h2",
     system: SYSTEM,
-    user: [
-      `This instruction to an AI step contains the placeholder {{${ref}}}: it is filled in with the output of an earlier step.`,
-      "",
-      `Instruction: ${task}`,
-      `The earlier step: ${source}`,
-      "",
-      `Write a short noun phrase (2 to 8 words) that names the data {{${ref}}} stands for, as a person would write it in the instruction instead of the placeholder, e.g. "the list of claims with their sources". No braces, no step ids.`,
-      "",
-      'Return: {"phrase": "..."}',
-    ].join("\n"),
+    user: user.join("\n"),
     max_new_tokens: 60,
-    temperature: 0.7,
-    meta: { ref },
+    temperature: mode === "phrase" ? 0.7 : 0.2,
+    meta: { ref, mode },
   };
 }
 
+/** The phrase or quote of an H2 answer; null when there is none (a quote of null means the task does not name the data). */
 export function readH2(text: string): string | null {
-  const phrase = readJson(text)?.phrase;
-  if (typeof phrase !== "string") return null;
-  const clean = phrase.replace(/\s+/g, " ").trim().replace(/^["']|["']$/g, "");
+  const json = readJson(text);
+  const value = json?.phrase ?? json?.quote;
+  if (typeof value !== "string") return null;
+  const clean = value.replace(/\s+/g, " ").trim().replace(/^["']|["']$/g, "");
   const words = clean.split(" ").length;
   return words >= 2 && words <= 12 && !/[{}]/.test(clean) ? clean : null;
 }

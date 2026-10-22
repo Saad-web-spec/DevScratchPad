@@ -26,7 +26,7 @@ GENERATOR = "Qwen/Qwen2.5-7B-Instruct"   # writes the text; runs here on the GPU
 BASE = "microsoft/MiniLM-L12-H384-uncased"  # the encoder sg-sem is fine-tuned from
 QUICK_LOOK = False                         # True: a few answers per round, to check quality first (done; the full data is on Drive)
 TRAIN = not QUICK_LOOK                     # training waits for the full data
-RUN = "minilm-1"
+RUN = "minilm-2"  # minilm-1: first full run (gold: H4 held, H1 missed buried problems, H2 at chance); see MEMORY.md
 """),
 md("## 1. Storage and setup"),
 code("""
