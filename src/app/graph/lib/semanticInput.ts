@@ -70,9 +70,14 @@ function capMiddle(text: string, max: number): string {
   return `${text.slice(0, half).trimEnd()} … ${text.slice(text.length - half).trimStart()}`;
 }
 
+/** A period that ends a title, an abbreviation or an initial, not a sentence ("Dr. Smith", "J. Smith", "e.g. the"). */
+const NO_BREAK = /(?<!\b(?:Dr|Mr|Mrs|Ms|Prof|St|Jr|Sr|vs|etc|No|Inc|Ltd|Co|e\.g|i\.e|[A-Z])\.)/;
+const SENTENCE_BREAK = new RegExp(`(?<=[.!?])${NO_BREAK.source}\\s+(?=["'(\\[]?[A-Z0-9])`);
+
 /**
  * Splits an answer into sentences: one per line or list item, and lines into sentences at ". " before a
- * capital, digit or quote. Markdown markers (bullets, numbers, headings, bold) are dropped.
+ * capital, digit or quote, except after a title or an initial. Markdown markers (bullets, numbers, headings,
+ * bold) are dropped.
  */
 export function splitSentences(text: string): string[] {
   const out: string[] = [];
@@ -82,7 +87,7 @@ export function splitSentences(text: string): string[] {
       .replace(/\*\*/g, "")
       .trim();
     if (line === "" || /^[-=*_|:\s]+$/.test(line)) continue;
-    for (const part of line.split(/(?<=[.!?])\s+(?=["'(\[]?[A-Z0-9])/)) {
+    for (const part of line.split(SENTENCE_BREAK)) {
       const sentence = flat(part);
       if (sentence.length > 1) out.push(sentence);
     }

@@ -22,6 +22,7 @@ describe("semanticInput: the text and numbers sg-sem reads", () => {
   it("splits answers into sentences, one per list item and per sentence", () => {
     expect(splitSentences("- First point holds. Second one too!\n2. **Third** item\n\n---\n# Heading")).toEqual(["First point holds.", "Second one too!", "Third item", "Heading"]);
     expect(splitSentences("Costs add up to 1,240. The tax is 3.5% of it.")).toEqual(["Costs add up to 1,240.", "The tax is 3.5% of it."]);
+    expect(splitSentences("Claim 5 quotes Dr. Smith and J. Lee, e.g. Their talk. Claim 6 is from Plan B.")).toEqual(["Claim 5 quotes Dr. Smith and J. Lee, e.g. Their talk.", "Claim 6 is from Plan B."]);
   });
 
   it("writes H1 from a verifier answer: gate, sentences, verdict", () => {

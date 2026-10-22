@@ -73,7 +73,7 @@ const H1_STYLE_TEXT: Record<H1Style, string> = {
   buried_problem_pass:
     "The reviewer finds 1 or 2 real problems that break the gate and are NOT fixed. Write 4 to 9 sentences: most give concrete evidence that parts are fine; 1 or 2 sentences in the middle state a problem in a matter-of-fact tone, without calling it blocking. A problem sentence names the exact item and what is still wrong with it: missing, unverified, wrong, contradicted or out of date (the kind of sentence, from another task: \"The hotel line still totals 1,240 while its three nights add up to 1,310.\"). Advice or a problem that was fixed is not one. Mark exactly the problem sentences with open_problem true.",
   no_evidence_pass:
-    "The reviewer gives no concrete evidence at all: 2 to 5 generic, approving sentences (e.g. that it looks thorough and well organised). No digits, no quotes, no named items, no examples. Every open_problem is false.",
+    "The reviewer gives no concrete evidence at all: exactly 3 generic, approving sentences, each its own entry in the list (e.g. that it looks thorough, that it is well organised, that it follows the instructions). No digits, no quotes, no named items, no examples. Every open_problem is false.",
   resolved_problem_pass:
     "The reviewer found 1 or 2 problems, and each one is already fixed, with the evidence of the fix (the kind of sentence, from another task: \"Day 2 first listed a museum that is closed on Mondays; it was replaced with the 10:00 harbour tour, which is open.\"). The other sentences give concrete evidence: a quoted phrase, a number, a date, a named item. Write 4 to 9 sentences. Every open_problem is false, because nothing is left open.",
 };
