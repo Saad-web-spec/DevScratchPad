@@ -89,6 +89,14 @@ function rng(key: string): () => number {
   };
 }
 
+/**
+ * The request with a short hash of its prompt added to its id. Answers are kept by id across runs, so when a
+ * prompt changes, its requests get new ids and are asked again instead of reusing answers to the old prompt.
+ */
+function keyedByPrompt(request: LlmRequest): LlmRequest {
+  return { ...request, id: `${request.id}@${hash(`${request.system}\n${request.user}`).toString(36)}` };
+}
+
 /** Every example of one seed graph lands in the same split, so the test never holds a graph seen in training. */
 export function splitOf(seed: string): "train" | "dev" | "test" {
   const bucket = hash(`split:${seed}`) % 10;
@@ -116,13 +124,20 @@ function reasonOf(message: string): string {
 /**
  * Drops the optional fields a text model copies from the template with no value ("foreach": "",
  * "keys": [], "gate": null): the drafter reads those as wrong values and rejects the whole outline.
+ * A step that fans out over an earlier step's list also gets that step in its after, which the model forgets.
  */
 export function cleanOutline(outline: Record<string, unknown>): Record<string, unknown> {
   if (!Array.isArray(outline.steps)) return outline;
   const empty = (value: unknown) => value === null || (typeof value === "string" && !value.trim()) || (Array.isArray(value) && value.length === 0);
-  const steps = outline.steps.map((step: unknown) =>
-    typeof step === "object" && step !== null && !Array.isArray(step) ? Object.fromEntries(Object.entries(step).filter(([key, value]) => key === "after" || !empty(value))) : step
-  );
+  const earlier = new Set<string>();
+  const steps = outline.steps.map((step: unknown) => {
+    if (typeof step !== "object" || step === null || Array.isArray(step)) return step;
+    const clean: Record<string, unknown> = Object.fromEntries(Object.entries(step).filter(([key, value]) => key === "after" || !empty(value)));
+    const from = typeof clean.foreach === "string" ? clean.foreach.split(".")[0] : "";
+    if (earlier.has(from) && Array.isArray(clean.after) && !clean.after.includes(from)) clean.after = [...clean.after, from];
+    if (typeof clean.id === "string") earlier.add(clean.id);
+    return clean;
+  });
   return { ...outline, steps };
 }
 
@@ -252,15 +267,15 @@ export function round2(out: string, h1Samples: number): void {
       for (const style of H1_STYLES) {
         for (let sample = 0; sample < h1Samples; sample += 1) {
           const request = h1Request(`${seed.seed}::h1::${node.id}::${style}::${sample}`, style, node.gate, task, inputs);
-          requests.push({ ...request, meta: { ...request.meta, seed: seed.seed, node: node.id } });
+          requests.push(keyedByPrompt({ ...request, meta: { ...request.meta, seed: seed.seed, node: node.id } }));
         }
       }
       const gates = h4Request(`${seed.seed}::h4::${node.id}`, task, inputs);
-      requests.push({ ...gates, meta: { seed: seed.seed, node: node.id } });
+      requests.push(keyedByPrompt({ ...gates, meta: { seed: seed.seed, node: node.id } }));
     }
     for (const { node, pred, ref } of h2Candidates(graph).slice(0, 4)) {
       const request = h2Request(`${seed.seed}::h2::${node.id}::${pred.id}`, taskText(node).slice(0, 900), ref, describeStep(graph, pred));
-      requests.push({ ...request, meta: { ...request.meta, seed: seed.seed, node: node.id, pred: pred.id } });
+      requests.push(keyedByPrompt({ ...request, meta: { ...request.meta, seed: seed.seed, node: node.id, pred: pred.id } }));
     }
   }
   writeJsonl(join(out, "round2.requests.jsonl"), requests);
@@ -321,8 +336,8 @@ export function assemble(out: string): void {
     if (request.kind === "h1") {
       const style = request.meta.style as H1Style;
       const answer = readH1(output.text, style);
-      if (!answer) {
-        drop(`h1-unreadable-${style}`);
+      if ("reject" in answer) {
+        drop(`h1-${style}-${answer.reject}`);
         continue;
       }
       const pair = verdictInput(graph, node, formatAnswer(answer.sentences.map((s) => s.text), output.id));
@@ -487,16 +502,9 @@ export function mockAnswer(request: LlmRequest): string {
   }
   if (request.kind === "h2") return JSON.stringify({ phrase: `the results of the earlier ${String(request.meta.ref).split(".")[0].replace(/_/g, " ")} step` });
   return JSON.stringify({
-    gates: [
-      { text: "Every total equals the sum of its line items.", label: "checkable" },
-      { text: "Each claim cites a source that is in the inputs.", label: "checkable" },
-      { text: "No two items contradict each other on price or date.", label: "checkable" },
-      { text: "Every item has a price and the plan feels balanced.", label: "partly" },
-      { text: "All dates are listed and the tone is friendly.", label: "partly" },
-      { text: "The result is excellent.", label: "not" },
-      { text: "The user will be happy with it.", label: "not" },
-      { text: "It is better than what competitors would do next year.", label: "not" },
-    ],
+    checkable: ["Every total equals the sum of its line items.", "Each claim cites a source that is in the inputs.", "No two items contradict each other on price or date."],
+    partly: ["Every item has a price and the plan feels balanced.", "All dates are listed and the tone is friendly."],
+    not: ["The result is excellent.", "The user will be happy with it.", "It is better than what competitors would do next year."],
   });
 }
 
@@ -516,7 +524,7 @@ if (isMain) {
   const out = flags.out ?? "ml/sg-sem/.data";
   mkdirSync(out, { recursive: true });
   if (command === "round1") round1(out, Number(flags["per-topic"] ?? 4));
-  else if (command === "round2") round2(out, Number(flags["h1-samples"] ?? 2));
+  else if (command === "round2") round2(out, Number(flags["h1-samples"] ?? 3));
   else if (command === "assemble") assemble(out);
   else if (command === "mock") mock(flags.in ?? "", flags.output ?? "");
   else {

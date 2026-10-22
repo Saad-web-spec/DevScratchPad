@@ -14,7 +14,7 @@ The Skill Graph semantic checker (see `SKILL_GRAPH_SEMANTIC_MODEL_SPEC.md` in th
 3. assembles the labelled examples, split by graph,
 4. fine-tunes the model and reports dev and test metrics against the 0.9 precision bar.
 
-**Run it with `QUICK_LOOK = True` first** (about 10 minutes): it writes a few answers per round so their quality can be checked. Then set it to `False` and run all again; finished answers are kept, so nothing is redone.
+**Run it with `QUICK_LOOK = True` first** (about 15 minutes): it writes a few answers per round so their quality can be checked. Then set it to `False` and run all again; finished answers are kept, so nothing is redone.
 
 Save the notebook when it finishes: its outputs are what gets reviewed.
 """),
@@ -59,7 +59,7 @@ if not node.startswith(("v20", "v22", "v24")):
 !npm ci --ignore-scripts --no-audit --no-fund --loglevel=error
 !pip install -q -r ml/sg-sem/requirements.txt
 PIPE = "npx vite-node scripts/semantic/pipeline.ts"
-LIMIT = "--limit 24" if QUICK_LOOK else ""
+LIMIT = "--limit 48" if QUICK_LOOK else ""
 """),
 md("## 2. Round 1: workflow outlines → seed graphs"),
 code("""
@@ -77,18 +77,21 @@ code("""
 print(open(f"{DATA}/stats.json").read())
 """),
 code("""
-# For review: raw answers of the text model, two per kind, and the assembled samples.
+# For review: raw answers of the text model, two per kind and style (newest first), and the assembled samples.
 import json, collections
 requests = {json.loads(l)["id"]: json.loads(l) for l in open(f"{DATA}/round2.requests.jsonl")}
 shown = collections.Counter()
-for line in open(f"{DATA}/round2.outputs.jsonl"):
-    row = json.loads(line); kind = requests[row["id"]]["kind"]
+for line in reversed(open(f"{DATA}/round2.outputs.jsonl").readlines()):
+    row = json.loads(line); request = requests.get(row["id"])
+    if request is None:  # an answer to an older prompt
+        continue
+    kind = (request["kind"], request["meta"].get("style", ""))
     if shown[kind] < 2:
         shown[kind] += 1
-        print(f"--- {kind} {requests[row['id']]['meta']}")
+        print(f"--- {' '.join(filter(None, kind))} {request['meta']}")
         print(row["text"][:1200])
         print()
-print(open(f"{DATA}/samples.md").read()[:8000])
+print(open(f"{DATA}/samples.md").read()[:12000])
 """),
 md("## 5. Train (runs when `QUICK_LOOK = False`)"),
 code("""

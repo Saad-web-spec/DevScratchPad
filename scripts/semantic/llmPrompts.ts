@@ -69,13 +69,13 @@ export const H1_INCONSISTENT: ReadonlySet<H1Style> = new Set(["buried_problem_pa
 
 const H1_STYLE_TEXT: Record<H1Style, string> = {
   honest_pass:
-    "The work meets the gate. Write 4 to 9 sentences of review. Each sentence gives concrete evidence from the work: a quote, a number, a source, a named item, a line. Nothing is left unresolved. Every open_problem is false.",
+    "The work meets the gate. Write 4 to 9 sentences of review. Each sentence gives concrete evidence from the work: a quoted phrase, a number, a date, a named item. Nothing is left unresolved. Every open_problem is false.",
   buried_problem_pass:
-    "The reviewer finds 1 or 2 real problems that break the gate and are NOT fixed (something missing, unverified, wrong, contradicted, out of date). Mention them in a matter-of-fact tone in the middle of otherwise positive sentences, without calling them blocking. Write 4 to 9 sentences. Mark exactly the sentences that state an unresolved problem with open_problem true.",
+    "The reviewer finds 1 or 2 real problems that break the gate and are NOT fixed. Write 4 to 9 sentences: most give concrete evidence that parts are fine; 1 or 2 sentences in the middle state a problem in a matter-of-fact tone, without calling it blocking. A problem sentence names the exact item and what is still wrong with it: missing, unverified, wrong, contradicted or out of date (the kind of sentence, from another task: \"The hotel line still totals 1,240 while its three nights add up to 1,310.\"). Advice or a problem that was fixed is not one. Mark exactly the problem sentences with open_problem true.",
   no_evidence_pass:
-    "The reviewer gives no concrete evidence at all: 2 to 5 generic, approving sentences with no quotes, numbers, sources or named items (e.g. that it looks thorough and well organised). Every open_problem is false.",
+    "The reviewer gives no concrete evidence at all: 2 to 5 generic, approving sentences (e.g. that it looks thorough and well organised). No digits, no quotes, no named items, no examples. Every open_problem is false.",
   resolved_problem_pass:
-    "The reviewer found 1 or 2 problems, and each one is already fixed or shown not to matter, with the evidence of the fix. Write 4 to 9 sentences. Every open_problem is false, because nothing is left open.",
+    "The reviewer found 1 or 2 problems, and each one is already fixed, with the evidence of the fix (the kind of sentence, from another task: \"Day 2 first listed a museum that is closed on Mondays; it was replaced with the 10:00 harbour tour, which is open.\"). The other sentences give concrete evidence: a quoted phrase, a number, a date, a named item. Write 4 to 9 sentences. Every open_problem is false, because nothing is left open.",
 };
 
 export function h1Request(id: string, style: H1Style, gate: string, task: string, inputs: string): LlmRequest {
@@ -105,17 +105,37 @@ export interface H1Answer {
   sentences: { text: string; open: boolean }[];
 }
 
-/** Reads an H1 answer, and drops one whose sentence labels contradict the style asked for. */
-export function readH1(text: string, style: H1Style): H1Answer | null {
+/** A sentence with something checkable in it: a digit or a quoted phrase. */
+const CONCRETE = /\d|["“][^"”]{3,}["”]|(^|\s)['‘][^'’]{3,}['’](\W|$)/;
+/** Words a sentence stating an open problem uses; advice ("ensure all claims are current") has none. */
+const PROBLEM =
+  /\b(not|no|never|none|missing|lacks?|lacking|without|unverified|unsupported|unsourced|unclear|wrong|incorrect|inaccurate|contradict\w*|conflict\w*|outdated|out of date|stale|fails?|failed|cannot|can't|couldn't|isn't|aren't|doesn't|don't|didn't|wasn't|weren't|only|still|absent|omit\w*|left out|mismatch\w*|differs?|exceeds?|broken|dead|skipped|ignores?|ignored)\b/i;
+/** Words a sentence about a fixed problem uses, unless negated ("no claims were dropped"). */
+const FIX_WORDS = "fixed|corrected|resolved|replaced|updated|removed|dropped|swapped|changed|now";
+const FIXED = new RegExp(`\\b(${FIX_WORDS})\\b`, "i");
+const NOT_FIXED = new RegExp(`\\b(no|not|nothing|never|none|without)\\b(\\s+\\S+){0,4}?\\s+(${FIX_WORDS})\\b`, "i");
+const statesFix = (text: string) => FIXED.test(text) && !NOT_FIXED.test(text);
+
+/**
+ * Reads an H1 answer. One whose sentences contradict the style asked for is rejected with the reason, so the
+ * label always matches the text: a pass "with evidence" has concrete sentences, one "without evidence" has
+ * none, a buried problem is stated as a problem (not as advice or a fix), and a resolved problem shows the fix.
+ */
+export function readH1(text: string, style: H1Style): H1Answer | { reject: string } {
   const json = readJson(text);
-  if (!json || !Array.isArray(json.sentences)) return null;
+  if (!json || !Array.isArray(json.sentences)) return { reject: "json" };
   const sentences = json.sentences
     .filter((item): item is { text: string; open_problem?: unknown } => typeof item === "object" && item !== null && typeof (item as { text?: unknown }).text === "string")
     .map((item) => ({ text: item.text.replace(/\s+/g, " ").trim(), open: item.open_problem === true }))
     .filter((item) => item.text.length > 3 && !/GATE:\s*(PASS|FAIL)/i.test(item.text));
-  if (sentences.length < 2 || sentences.length > 14) return null;
-  const open = sentences.filter((item) => item.open).length;
-  if (style === "buried_problem_pass" ? open < 1 || open > 3 : open > 0) return null;
+  if (sentences.length < 2 || sentences.length > 14) return { reject: "length" };
+  const open = sentences.filter((item) => item.open);
+  if (style === "buried_problem_pass" ? open.length < 1 || open.length > 3 : open.length > 0) return { reject: "open-count" };
+  const concrete = sentences.filter((item) => CONCRETE.test(item.text)).length;
+  if (style === "no_evidence_pass" && concrete > 0) return { reject: "has-evidence" };
+  if ((style === "honest_pass" || style === "resolved_problem_pass") && concrete < Math.max(2, Math.ceil(sentences.length / 3))) return { reject: "no-evidence" };
+  if (style === "buried_problem_pass" && open.some((item) => !PROBLEM.test(item.text) || statesFix(item.text))) return { reject: "not-a-problem" };
+  if (style === "resolved_problem_pass" && !sentences.some((item) => statesFix(item.text))) return { reject: "no-fix" };
   return { sentences };
 }
 
@@ -166,13 +186,13 @@ export function h4Request(id: string, task: string, inputs: string): LlmRequest 
       `The checker's task: ${task}`,
       `What it receives: ${inputs}`,
       "",
-      "Write 8 different gates for this checker:",
-      '- 3 "checkable": concrete and decidable from what it receives (what to compare, count, match or confirm).',
-      '- 2 "partly": one concrete part plus a subjective or unverifiable part.',
-      '- 3 "not": subjective, vague, about feelings, quality or the future, or needing information it does not receive.',
-      "Vary the length from 3 to 30 words, and do not label them inside the text.",
+      "Write 8 different gates for this checker. A gate is a statement of what must be true to pass, not a question (e.g. \"Every total equals the sum of its line items.\"):",
+      '- 3 in "checkable": concrete and decidable from what it receives (what to compare, count, match or confirm).',
+      '- 2 in "partly": one concrete part joined to a subjective or unverifiable part.',
+      '- 3 in "not": only subjective or vague (about feelings, quality or the future), or needing information it does not receive.',
+      "Vary the length from 3 to 30 words.",
       "",
-      'Return: {"gates": [{"text": "...", "label": "checkable|partly|not"}]}',
+      'Return: {"checkable": ["...", "...", "..."], "partly": ["...", "..."], "not": ["...", "...", "..."]}',
     ].join("\n"),
     max_new_tokens: 500,
     temperature: 0.9,
@@ -180,11 +200,16 @@ export function h4Request(id: string, task: string, inputs: string): LlmRequest 
   };
 }
 
+/** Reads the gates of an H4 answer: the list a gate is in is its label, so the text was written for that label. */
 export function readH4(text: string): { text: string; label: H4Label }[] {
-  const gates = readJson(text)?.gates;
-  if (!Array.isArray(gates)) return [];
-  return gates
-    .filter((item): item is { text: string; label: string } => typeof item === "object" && item !== null && typeof (item as { text?: unknown }).text === "string" && typeof (item as { label?: unknown }).label === "string")
-    .map((item) => ({ text: item.text.replace(/\s+/g, " ").trim(), label: item.label.toLowerCase().trim() as H4Label }))
-    .filter((item) => (H4_LABELS as readonly string[]).includes(item.label) && item.text.length >= 8 && item.text.length <= 400);
+  const json = readJson(text);
+  if (!json) return [];
+  const seen = new Set<string>();
+  return H4_LABELS.flatMap((label) => {
+    const list = json[label];
+    return (Array.isArray(list) ? list : [])
+      .filter((item): item is string => typeof item === "string")
+      .map((item) => ({ text: item.replace(/\s+/g, " ").trim(), label }))
+      .filter((item) => item.text.length >= 8 && item.text.length <= 400 && !item.text.endsWith("?") && !seen.has(item.text.toLowerCase()) && seen.add(item.text.toLowerCase()));
+  });
 }

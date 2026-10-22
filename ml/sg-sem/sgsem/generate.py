@@ -13,6 +13,7 @@ import json
 import os
 import time
 from collections import defaultdict
+from itertools import zip_longest
 
 DEFAULT_MODEL = "Qwen/Qwen2.5-7B-Instruct"
 
@@ -50,10 +51,24 @@ def run(requests_path: str, outputs_path: str, model_name: str = DEFAULT_MODEL, 
 
     if not os.path.exists(requests_path):
         raise SystemExit(f"{requests_path} does not exist: the pipeline step that writes it did not run.")
-    done = {row["id"] for row in read_jsonl(outputs_path)}
-    todo = [row for row in read_jsonl(requests_path) if row["id"] not in done]
+    requests = read_jsonl(requests_path)
+    # Answers to a changed prompt have an old id (the pipeline adds a prompt hash), so they are not counted.
+    done = {row["id"] for row in read_jsonl(outputs_path)} & {row["id"] for row in requests}
+    todo = [row for row in requests if row["id"] not in done]
     if limit is not None:
-        todo = todo[:limit]
+        # A quick look takes turns across kinds and styles, and within each across graphs, so every kind gets
+        # answers to review, not just the first graph's checker answers.
+        def take_turns(rows: list[dict], key) -> list[dict]:
+            groups: dict = defaultdict(list)
+            for row in rows:
+                groups[key(row)].append(row)
+            return [row for turn in zip_longest(*groups.values()) for row in turn if row is not None]
+
+        queues: dict[tuple, list[dict]] = defaultdict(list)
+        for row in todo:
+            queues[(row["kind"], row["meta"].get("style", ""))].append(row)
+        spread = [take_turns(rows, lambda row: row["meta"].get("seed") or row["meta"].get("topic") or row["id"]) for rows in queues.values()]
+        todo = [row for turn in zip_longest(*spread) for row in turn if row is not None][:limit]
     print(f"{len(done)} already answered, {len(todo)} to go")
     if not todo:
         return
