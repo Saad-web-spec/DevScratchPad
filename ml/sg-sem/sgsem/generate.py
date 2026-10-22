@@ -48,6 +48,8 @@ def load_model(name: str):
 def run(requests_path: str, outputs_path: str, model_name: str = DEFAULT_MODEL, batch_size: int = 16, limit: int | None = None) -> None:
     import torch
 
+    if not os.path.exists(requests_path):
+        raise SystemExit(f"{requests_path} does not exist: the pipeline step that writes it did not run.")
     done = {row["id"] for row in read_jsonl(outputs_path)}
     todo = [row for row in read_jsonl(requests_path) if row["id"] not in done]
     if limit is not None:

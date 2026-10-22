@@ -52,8 +52,11 @@ function args(): { command: string; flags: Record<string, string> } {
   return { command, flags };
 }
 
-function readJsonl<T>(path: string): T[] {
-  if (!existsSync(path)) return [];
+function readJsonl<T>(path: string, required = false): T[] {
+  if (!existsSync(path)) {
+    if (required) throw new Error(`${path} does not exist: run the step before this one first.`);
+    return [];
+  }
   return readFileSync(path, "utf8")
     .split(/\r?\n/)
     .filter((line) => line.trim())
@@ -160,11 +163,11 @@ export function round1(out: string, perPair: number): void {
 
 function seedsFrom(out: string): { seeds: Seed[]; drafted: number; rejected: Record<string, number> } {
   const seeds: Seed[] = CONNECTOR_TEMPLATES.map((template) => ({ seed: template.id, origin: "starter", source: template.source }));
-  const requests = new Map(readJsonl<LlmRequest>(join(out, "round1.requests.jsonl")).map((request) => [request.id, request]));
+  const requests = new Map(readJsonl<LlmRequest>(join(out, "round1.requests.jsonl"), true).map((request) => [request.id, request]));
   const rejected: Record<string, number> = { json: 0, draft: 0, errors: 0, duplicate: 0 };
   let drafted = 0;
   const names = new Set(seeds.map((seed) => seed.seed));
-  for (const output of readJsonl<LlmOutput>(join(out, "round1.outputs.jsonl"))) {
+  for (const output of readJsonl<LlmOutput>(join(out, "round1.outputs.jsonl"), true)) {
     const outline = readJson(output.text);
     const request = requests.get(output.id);
     if (!outline || !request) {
@@ -263,8 +266,8 @@ function jaccard(a: string, b: string): number {
 }
 
 export function assemble(out: string): void {
-  const seeds = new Map(readJsonl<Seed>(join(out, "seeds.jsonl")).map((seed) => [seed.seed, seed]));
-  const requests = new Map(readJsonl<LlmRequest>(join(out, "round2.requests.jsonl")).map((request) => [request.id, request]));
+  const seeds = new Map(readJsonl<Seed>(join(out, "seeds.jsonl"), true).map((seed) => [seed.seed, seed]));
+  const requests = new Map(readJsonl<LlmRequest>(join(out, "round2.requests.jsonl"), true).map((request) => [request.id, request]));
   const examples: Example[] = [];
   const dropped: Record<string, number> = {};
   const drop = (why: string) => (dropped[why] = (dropped[why] ?? 0) + 1);
@@ -277,7 +280,7 @@ export function assemble(out: string): void {
     return graphs.get(seed);
   };
 
-  for (const output of readJsonl<LlmOutput>(join(out, "round2.outputs.jsonl"))) {
+  for (const output of readJsonl<LlmOutput>(join(out, "round2.outputs.jsonl"), true)) {
     const request = requests.get(output.id);
     if (!request) continue;
     const seed = String(request.meta.seed);
@@ -467,15 +470,16 @@ export function mockAnswer(request: LlmRequest): string {
 }
 
 export function mock(input: string, output: string): void {
-  const requests = readJsonl<LlmRequest>(input);
+  const requests = readJsonl<LlmRequest>(input, true);
   writeJsonl(output, requests.map((request) => ({ id: request.id, text: mockAnswer(request) })));
   console.log(`mock: ${requests.length} answers → ${output}`);
 }
 
 /* ------------------------------------------------------------------ entry */
 
-// vite-node drops the script path from argv (argv[1] is vite-node itself); a test that imports this file runs under vitest instead.
-const isMain = process.argv[1] !== undefined && /(?:vite-node\.mjs|pipeline\.ts)$/.test(process.argv[1]);
+// Run as a command unless a test imports this file. (vite-node drops the script path from argv, and argv[1]
+// is vite-node's own path, which differs by system: `vite-node.mjs` on Windows, `.bin/vite-node` on Linux.)
+const isMain = !process.env.VITEST;
 if (isMain) {
   const { command, flags } = args();
   const out = flags.out ?? "ml/sg-sem/.data";
