@@ -3,8 +3,11 @@
 Every gold positive is scored as written and with one thing changed at a time:
 
   no heading blocks   the other inputs' `NAME: {{ref}}` blocks are removed from the task text
+  no references       every block goes, "The request: {{goal}}" too: the shape of a generated single-input cut
   B = request only    the input list is replaced by the step's request line, as a first step reads
   mention removed     the plain-word phrase naming the cut data (the gold span) becomes "the data"
+  insert sentence     a sentence in the generated insert style ("Use the ... for this step.") is appended
+  features zeroed     the 16 graph facts are all 0, the text as is
   as-written control  the same step with the edge still in place (the gold negative), for reference
 
 The column whose mean p(cut) moves is the cue. The run's temperature is applied; the 16 graph facts stay
@@ -23,8 +26,9 @@ import re
 from .data import load_examples
 
 HEADING_BLOCK = re.compile(r" [A-Z][A-Z0-9 _'/-]*: \{\{[^}]+\}\}")  # an all-caps heading naming an input
+ANY_BLOCK = re.compile(r" [A-Za-z][^.:{}]{0,60}: \{\{[^}]+\}\}")  # any heading block, "The request: {{goal}}" too
 INPUT_LINE = re.compile(r"\[INPUT\] [^\[]*")
-COLUMNS = ["as is", "no heading blocks", "B = request only", "mention removed", "as-written control"]
+COLUMNS = ["as is", "no heading blocks", "no references", "B = request only", "mention removed", "insert sentence", "features zeroed", "as-written control"]
 
 
 def input_lines(text_b: str) -> list[str]:
@@ -54,15 +58,37 @@ def as_written_of(rows: list[dict], positive: dict) -> dict | None:
     return None
 
 
-def variants(rows: list[dict], positive: dict) -> dict[str, tuple[str, str]]:
-    a, b = positive["text_a"], positive["text_b"]
-    out = {"as is": (a, b), "no heading blocks": (HEADING_BLOCK.sub("", a), b), "B = request only": (a, request_line_of(rows, positive["seed"]))}
+def insert_sentence(positive: dict, control: dict | None) -> str | None:
+    """A sentence in the shape of the generated insert-mode positives, naming the cut input by its description."""
+    if not control:
+        return None
+    extra = [line for line in input_lines(control["text_b"]) if line not in set(input_lines(positive["text_b"]))]
+    if len(extra) != 1:
+        return None
+    parts = extra[0].split(" · ")
+    what = (parts[2] if len(parts) > 2 else parts[-1]).rstrip(".")
+    what = what[0].lower() + what[1:] if what[:2].upper() != what[:2] else what
+    return f"Use {what} for this step."
+
+
+def variants(rows: list[dict], positive: dict) -> dict[str, dict]:
+    a, b, features = positive["text_a"], positive["text_b"], positive["features"]
+    control = as_written_of(rows, positive)
+    out = {
+        "as is": {"text_a": a, "text_b": b},
+        "no heading blocks": {"text_a": HEADING_BLOCK.sub("", a), "text_b": b},
+        "no references": {"text_a": ANY_BLOCK.sub("", a), "text_b": b},
+        "B = request only": {"text_a": a, "text_b": request_line_of(rows, positive["seed"])},
+    }
     if positive.get("span"):
         start, end = positive["span"]
-        out["mention removed"] = (re.sub(r" {2,}", " ", a[:start] + "the data" + a[end:]), b)
-    control = as_written_of(rows, positive)
+        out["mention removed"] = {"text_a": re.sub(r" {2,}", " ", a[:start] + "the data" + a[end:]), "text_b": b}
+    sentence = insert_sentence(positive, control)
+    if sentence:
+        out["insert sentence"] = {"text_a": f"{a} {sentence}", "text_b": b}
+    out["features zeroed"] = {"text_a": a, "text_b": b, "features": [0.0] * len(features)}
     if control:
-        out["as-written control"] = (control["text_a"], control["text_b"])
+        out["as-written control"] = {"text_a": control["text_a"], "text_b": control["text_b"]}
     return out
 
 
@@ -82,12 +108,12 @@ def main() -> None:
 
     probes: list[dict] = []  # one scored example per (positive, column)
     for index, positive in enumerate(positives):
-        for column, (text_a, text_b) in variants(rows, positive).items():
-            probes.append({**{k: positive[k] for k in ("head", "seed", "features")}, "label": 1, "text_a": text_a, "text_b": text_b, "positive": index, "column": column, "note": positive.get("note", "")})
+        for column, variant in variants(rows, positive).items():
+            probes.append({**{k: positive[k] for k in ("head", "seed", "features")}, "label": 1, **variant, "positive": index, "column": column, "note": positive.get("note", "")})
 
     if args.dry_run:
         for probe in probes[: len(COLUMNS) * 2]:
-            print(f"--- #{probe['positive']} {probe['note']} · {probe['column']}\n  A: {probe['text_a']}\n  B: {probe['text_b']}")
+            print(f"--- #{probe['positive']} {probe['note']} · {probe['column']}\n  A: {probe['text_a']}\n  B: {probe['text_b']}\n  features: {probe['features']}")
         missing = {column: sum(1 for p in positives if column not in variants(rows, p)) for column in COLUMNS}
         print("positives without a variant:", {k: v for k, v in missing.items() if v})
         return

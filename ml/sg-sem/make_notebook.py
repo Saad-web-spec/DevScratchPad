@@ -127,6 +127,10 @@ code("""
 # Which cue does H2 read? Every gold cut positive is scored as is and with one thing changed; the column whose p(cut) moves is the cue.
 !cd ml/sg-sem && python -m sgsem.probe --run {RUNS}/{RUN} --data gold/examples.jsonl
 """),
+code("""
+# Does one side alone give the H2 label away on the generated rows? Classifiers on text A only, text B only, the 16 facts only; test AUROC per negative kind.
+!cd ml/sg-sem && python -m sgsem.leak --data {DATA}/examples.jsonl
+"""),
 ]
 
 nb = {"cells": cells, "metadata": {"kernelspec": {"display_name": "Python 3", "name": "python3"}, "language_info": {"name": "python"}, "accelerator": "GPU", "colab": {"provenance": []}}, "nbformat": 4, "nbformat_minor": 5}
