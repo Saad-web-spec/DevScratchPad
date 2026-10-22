@@ -49,7 +49,7 @@ It is "ours" in three ways that matter, and not in one way that would not:
 
 | Part | Choice | Size |
 | --- | --- | --- |
-| Encoder | **`nreimers/MiniLM-L12-H384-uncased`** (default); bake-off against `microsoft/deberta-v3-xsmall` in phase 3 | ~33M params vs ~71M (most of DeBERTa's is a 128k-word vocabulary) |
+| Encoder | **`microsoft/MiniLM-L12-H384-uncased`** (default); bake-off against `microsoft/deberta-v3-xsmall` in phase 3 | ~33M params vs ~71M (most of DeBERTa's is a 128k-word vocabulary) |
 | Feature projection | 16 → 64, GELU | ~1k |
 | Each doc head | Linear(384+64 → 128) → GELU → Linear(128 → k) | ~65k each |
 | H1 sentence head | Linear(384 → 1) on each `[SEN]` marker token | ~400 |

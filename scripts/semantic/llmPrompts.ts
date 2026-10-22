@@ -51,7 +51,7 @@ export function outlineRequest(id: string, topic: string, shape: string, runsIn:
       '  {"id": "snake_case_id", "type": "orchestrator|worker|verifier|synthesizer", "task": "2 to 4 sentences of concrete instructions to the agent doing this step, naming what it works from and what it returns", "after": ["ids of earlier steps it reads; empty for the first step"], "returns": "what it hands back, in one sentence", "keys": ["only if it returns JSON: top-level keys"], "gate": "verifiers only: what must be true to pass, concrete and checkable", "foreach": "only for a step that repeats: <step id>.<key> of a JSON list it reads"}',
       "]}",
       "",
-      "Rules: ids are unique; every id in after is an earlier step; at least one verifier with a concrete gate; tasks are specific to the topic, not generic.",
+      "Rules: ids are unique; every id in after is an earlier step; at least one verifier with a concrete gate; at least one later step reads from two or more earlier steps (its after lists both); tasks are specific to the topic, not generic.",
     ].join("\n"),
     max_new_tokens: 1_100,
     temperature: 0.9,

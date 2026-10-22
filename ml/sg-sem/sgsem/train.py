@@ -28,7 +28,7 @@ from .data import IGNORE, HeadDataset, balance, by_head_and_split, collate, load
 from .model import SgSem
 
 PRECISION_BAR = 0.9
-DEFAULT_BASE = "nreimers/MiniLM-L12-H384-uncased"
+DEFAULT_BASE = "microsoft/MiniLM-L12-H384-uncased"
 
 
 def set_seed(seed: int) -> None:

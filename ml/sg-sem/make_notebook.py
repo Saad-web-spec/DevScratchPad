@@ -22,7 +22,7 @@ code("""
 REPO = "https://github.com/Saad-web-spec/DevScratchPad.git"
 BRANCH = "sg-sem"  # the branch with the sg-sem code
 GENERATOR = "Qwen/Qwen2.5-7B-Instruct"   # writes the text; runs here on the GPU
-BASE = "nreimers/MiniLM-L12-H384-uncased"  # the encoder sg-sem is fine-tuned from
+BASE = "microsoft/MiniLM-L12-H384-uncased"  # the encoder sg-sem is fine-tuned from
 QUICK_LOOK = True                          # True: a few answers per round, to check quality first
 TRAIN = not QUICK_LOOK                     # training waits for the full data
 RUN = "minilm-1"

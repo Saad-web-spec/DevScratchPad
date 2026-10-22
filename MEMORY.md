@@ -933,3 +933,11 @@ All AI agents operating in this repository MUST follow this 5-step loop:
 - **Changes**: `semanticInput.ts`: `splitSentences` does not break after titles, common abbreviations or single-letter initials (test added). `llmPrompts.ts`: `no_evidence_pass` asks for exactly 3 sentences, each its own list entry (changes only those request ids).
 - **Watch**: real drafted graphs give few H2 requests (68 for 69 seeds; the mock gives 211 for 64), so H2 positives will be scarce next to its ~300 negatives.
 - **Status**: ✅ semanticInput tests (9), validate-presets, lint 0 errors, typecheck, build. Next: the full run (`QUICK_LOOK = False`).
+
+### Session: 2026-10-22 — sg-sem: pipeline validated before the full run
+- **Agent**: Claude Code (Fable 5.1)
+- **Task**: Check every step the quick looks did not exercise, so the full run is not wasted
+- **Findings**: The base model id `nreimers/MiniLM-L12-H384-uncased` is no longer public on Hugging Face (401): training would have crashed after ~3 h of generation. The real quick-look answers, run through `readH1` locally, reproduce Colab's drop reasons exactly. Drafted graphs give few H2 requests because Qwen's outlines are linear chains (an H2 request needs a step with two or more predecessors).
+- **Changes**: base model → `microsoft/MiniLM-L12-H384-uncased` (same weights; train.py, notebook, make_notebook.py, spec). Outline prompt asks for at least one step that reads from two earlier steps. Training smoke-tested locally on CPU on the full-size mock data (7679 examples, 12 steps): writes metrics.json, errors.md, sgsem.json, best.pt, last.pt.
+- **Gotcha — a changed base model id also lives in `sg_sem.ipynb`** (cell 1), not only in train.py's default; the notebook passes `--base` explicitly.
+- **Status**: ✅ semanticInput tests (9), validate-presets, lint 0 errors, typecheck, build, training smoke test. Next: the full run (`QUICK_LOOK = False`), ~3–3.5 h on an L4, nearly all of it round 2.
