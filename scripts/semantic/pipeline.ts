@@ -262,6 +262,32 @@ function withoutInput(prompt: string, pred: string, replacement = ""): { prompt:
   return { prompt: stripped, inline: refsTo(pred).test(stripped) };
 }
 
+/** One readable H2 answer: the plain-word phrase naming `pred`, and in insert mode the sentence that carries it. */
+interface H2Answer {
+  pred: string;
+  phrase: string;
+  insert: { sentence: string; phrase: string } | null;
+}
+
+/** `prompt` with `pred` named in plain words: the LLM's sentence where the heading block stood, or the phrase in place of the inline reference. */
+function namedIn(prompt: string, answer: H2Answer): string {
+  return answer.insert ? withoutInput(prompt, answer.pred, answer.insert.sentence).prompt : withoutInput(prompt, answer.pred).prompt.replace(refsTo(answer.pred), answer.phrase);
+}
+
+/** The step with `pred` disconnected and `prompt` set; a step left with no input reads the request. Null when the checker rejects the edit. */
+function cutStep(source: string, graph: SkillGraph, node: GraphNode, pred: string, prompt: string): ReturnType<typeof missingInputInput> | null {
+  const remaining = [...new Set(predecessorsOf(graph, node.id))].filter((id) => id !== pred);
+  const input = graph.nodes.find((n) => n.type === "input");
+  const cut = editGraph(source, [
+    { op: "set_prompt", id: node.id, prompt },
+    { op: "disconnect", from: pred, to: node.id },
+    ...(remaining.length === 0 && input ? [{ op: "connect" as const, from: input.id, to: node.id }] : []),
+  ]);
+  if ("error" in cut || errorsOf(cut.source) > 0) return null;
+  const cutGraph = load(cut.source) as SkillGraph;
+  return missingInputInput(cutGraph, cutGraph.nodes.find((n) => n.id === node.id) as GraphNode);
+}
+
 /**
  * A step that reads `pred`: removing that edge leaves it working on less. The list a step fans out over is skipped.
  * `phrase`: an inline `{{pred}}` stays in the text and the LLM names it in plain words. `insert`: the reference was
@@ -353,6 +379,7 @@ export function assemble(out: string): void {
     }
     return graphs.get(seed);
   };
+  const h2Answers = new Map<string, H2Answer[]>(); // per `seed::node`: the answers that made a cut positive
 
   for (const output of readJsonl<LlmOutput>(join(out, "round2.outputs.jsonl"), true)) {
     const request = requests.get(output.id);
@@ -397,30 +424,22 @@ export function assemble(out: string): void {
         continue;
       }
       const source = seeds.get(seed)?.source ?? "";
+      const answer: H2Answer = { pred, phrase, insert };
       // The heading block that named the input goes: an inline reference becomes the plain-word phrase, or the LLM's sentence stands where the block stood.
-      const rewritten = insert ? withoutInput(node.prompt, pred, insert.sentence).prompt : withoutInput(node.prompt, pred).prompt.replace(refsTo(pred), phrase);
+      const rewritten = namedIn(node.prompt, answer);
       if (rewritten === node.prompt) {
         drop("h2-no-ref");
         continue;
       }
       const kept = editGraph(source, [{ op: "set_prompt", id: node.id, prompt: rewritten }]);
       // A step left with no input reads the request, like a first step; its task still names the data it lost.
-      const remaining = [...new Set(predecessorsOf(graph, node.id))].filter((id) => id !== pred);
-      const input = graph.nodes.find((n) => n.type === "input");
-      const cut = editGraph(source, [
-        { op: "set_prompt", id: node.id, prompt: rewritten },
-        { op: "disconnect", from: pred, to: node.id },
-        ...(remaining.length === 0 && input ? [{ op: "connect" as const, from: input.id, to: node.id }] : []),
-      ]);
-      if ("error" in kept || "error" in cut || errorsOf(kept.source) > 0 || errorsOf(cut.source) > 0) {
+      const positive = cutStep(source, graph, node, pred, rewritten);
+      if ("error" in kept || errorsOf(kept.source) > 0 || !positive) {
         drop("h2-checker-error");
         continue;
       }
       const keptGraph = load(kept.source) as SkillGraph;
-      const cutGraph = load(cut.source) as SkillGraph;
       const keptNode = keptGraph.nodes.find((n) => n.id === node.id) as GraphNode;
-      const cutNode = cutGraph.nodes.find((n) => n.id === node.id) as GraphNode;
-      const positive = missingInputInput(cutGraph, cutNode);
       const at = positive.textA.toLowerCase().indexOf(phrase.toLowerCase(), TASK_PREFIX.length);
       if (at === -1) {
         drop("h2-span-cut");
@@ -429,6 +448,8 @@ export function assemble(out: string): void {
       const negative = missingInputInput(keptGraph, keptNode);
       examples.push({ head: "h2", ...base, text_a: positive.textA, text_b: positive.textB, features: positive.features, label: 1, span: [at, at + phrase.length], source: "mutation", note: `cut ${pred}` });
       examples.push({ head: "h2", ...base, text_a: negative.textA, text_b: negative.textB, features: negative.features, label: 0, source: "mutation", note: `kept ${pred}` });
+      const key = `${seed}::${node.id}`;
+      h2Answers.set(key, [...(h2Answers.get(key) ?? []), answer]);
       continue;
     }
 
@@ -439,6 +460,37 @@ export function assemble(out: string): void {
         const pair = gateInput(graph, { ...node, gate: gate.text });
         if (!pair) continue;
         examples.push({ head: "h4", ...base, text_a: pair.textA, text_b: pair.textB, features: pair.features, label: H4_LABELS.indexOf(gate.label), source: "llm", note: gate.label });
+      }
+    }
+  }
+
+  /*
+   * H2 negatives that share the cut positive's input list and graph facts, so neither side alone gives the label away
+   * (minilm-3 read "a generated sentence and a short input list" and never compared the two; see MEMORY.md):
+   *   dropped  the input is cut and its heading block goes with nothing in its place: the task no longer asks for it
+   *   swapped  the input is cut and, where its block stood, stands the sentence naming another input the step still
+   *            reads (that input's heading block stays): the positive and this differ only in which data the sentence names
+   * Both need the cut input to be a heading block only (insert mode): removing an inline reference would leave a hole.
+   */
+  for (const [key, answers] of h2Answers) {
+    const [seed, nodeId] = key.split("::");
+    const graph = graphOf(seed);
+    const node = graph?.nodes.find((n) => n.id === nodeId);
+    const source = seeds.get(seed)?.source ?? "";
+    if (!graph || !node) continue;
+    const base = { seed, split: splitOf(seed) };
+    for (const cut of answers.filter((a) => a.insert)) {
+      const { prompt: without, inline } = withoutInput(node.prompt, cut.pred);
+      if (inline || without === node.prompt) continue;
+      const dropped = cutStep(source, graph, node, cut.pred, without);
+      if (dropped) examples.push({ head: "h2", ...base, text_a: dropped.textA, text_b: dropped.textB, features: dropped.features, label: 0, source: "mutation", note: `dropped ${cut.pred}` });
+      else drop("h2-dropped-checker-error");
+      for (const other of answers.filter((a) => a.pred !== cut.pred && a.insert)) {
+        const prompt = withoutInput(node.prompt, cut.pred, other.insert?.sentence).prompt;
+        if (prompt === without) continue;
+        const swapped = cutStep(source, graph, node, cut.pred, prompt);
+        if (swapped) examples.push({ head: "h2", ...base, text_a: swapped.textA, text_b: swapped.textB, features: swapped.features, label: 0, source: "mutation", note: `swapped ${cut.pred} for ${other.pred}` });
+        else drop("h2-swapped-checker-error");
       }
     }
   }

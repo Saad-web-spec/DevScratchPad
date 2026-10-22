@@ -4,8 +4,9 @@ A sound H2 head has to compare the task text (A) with the input list (B). If A a
 graph facts alone predict the label, the model can pass the generated test without ever comparing them,
 and fails on hand-written graphs where that cue is absent (what the gold set showed for minilm-3).
 
-Prints, per label and row kind (cut = positive, kept = the hard negative with the same A, as written = every
-step unchanged): the count, the share of task texts with no {{reference}} at all, the mean number of heading
+Prints, per label and row kind (cut = positive; kept = the same A with the input still there; dropped = the same
+input list with the mention gone; swapped = the same input list, the sentence naming another input; as written =
+every step unchanged): the count, the share of task texts with no {{reference}} at all, the mean number of heading
 blocks in A and of input lines in B. Then, when scikit-learn is installed, fits a bag-of-words classifier
 on the train split from each side alone and reports the test AUROC of positives against each negative kind.
 
@@ -30,8 +31,9 @@ def kind_of(row: dict) -> str:
     note = row.get("note", "")
     if note.startswith("cut "):
         return "cut"
-    if note.startswith("kept "):
-        return "kept"
+    for kind in ("kept", "dropped", "swapped"):
+        if note.startswith(kind + " "):
+            return kind
     return "as written" if note.startswith("as written") else note or "other"
 
 
@@ -75,8 +77,11 @@ def classify(train: list[dict], test: list[dict]) -> None:
         "text B only": lambda rows: [r["text_b"] for r in rows],
         "facts only": None,
     }
+    test_labels = np.array([r["label"] for r in test])
+    kinds = np.array([kind_of(r) for r in test])
+    negatives = [k for k in ("kept", "dropped", "swapped", "as written") if ((kinds == k) & (test_labels == 0)).any()]
     print(f"\ntest AUROC of a train-split classifier that sees one side only (0.5 = the side carries nothing, near 1 = the label is in that side alone):")
-    print(f"{'side':<14}{'vs kept':>10}{'vs as written':>15}{'vs all':>8}")
+    print(f"{'side':<14}" + "".join(f"{'vs ' + k:>15}" for k in negatives) + f"{'vs all':>15}")
     for name, pick in sides.items():
         if pick is None:
             model = LogisticRegression(max_iter=2000, class_weight="balanced").fit(np.array([r["features"] for r in train]), labels)
@@ -85,14 +90,12 @@ def classify(train: list[dict], test: list[dict]) -> None:
             vectorizer = TfidfVectorizer(ngram_range=(1, 2), min_df=2, sublinear_tf=True)
             model = LogisticRegression(max_iter=2000, class_weight="balanced").fit(vectorizer.fit_transform(pick(train)), labels)
             scores = model.predict_proba(vectorizer.transform(pick(test)))[:, 1]
-        test_labels = np.array([r["label"] for r in test])
-        kinds = np.array([kind_of(r) for r in test])
         cells = []
-        for negative in ("kept", "as written"):
+        for negative in negatives:
             keep = (test_labels == 1) | (kinds == negative)
             cells.append(auroc(scores[keep], test_labels[keep]))
         cells.append(auroc(scores, test_labels))
-        print(f"{name:<14}" + "".join(f"{c:>10.2f}" if i == 0 else f"{c:>15.2f}" if i == 1 else f"{c:>8.2f}" for i, c in enumerate(cells)))
+        print(f"{name:<14}" + "".join(f"{c:>15.2f}" for c in cells))
 
 
 def main() -> None:
