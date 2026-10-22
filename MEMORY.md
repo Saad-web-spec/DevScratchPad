@@ -908,3 +908,12 @@ All AI agents operating in this repository MUST follow this 5-step loop:
 - **Gotcha — a loop's next try carries feedback too** ("Iteration N did not end the loop"), so "has feedback" does not mean "sent back"; the chat runner reports it as `repeat`.
 - **Validation pattern that worked**: a generic driver (`%TEMP%/sg-scratch/all-starters.test.ts`) answers whatever run_graph asks, shaped by the graph (`wantsJsonOutput`, `jsonOutputKeys`, contract `required`, foreach lists, `GATE: PASS`, loop notes, exit codes), and asserts every starter reaches `done` under 80k characters. Two fresh-context review rounds found 7 bugs my own tests had missed; keep doing both for the referee.
 - **Status**: ✅ Complete and validated (1332 tests, validate-presets, typecheck, lint 0 errors, build, MCP Inspector, live MCP). Not done: deploy, real-Claude test.
+
+### Session: 2026-10-22 — sg-sem: quick-look review, outline rejections fixed
+- **Agent**: Claude Code (Opus 5.5)
+- **Task**: Review the Colab quick-look run of `ml/sg-sem/sg_sem.ipynb` (`QUICK_LOOK = True`, so no training ran yet)
+- **Findings**: 22 of 24 round-1 outlines were rejected by `draftGraph`, leaving 16 seeds (14 starters + 2 drafts), too few for a per-graph split. One H1 buried-problem answer marked the wrong sentence; one H4 answer was broken JSON.
+- **Changes**: `scripts/semantic/pipeline.ts`: `cleanOutline` drops empty optional step fields before drafting; round2 prints the top rejection reasons; assemble counts `h4-unreadable`.
+- **Gotcha — Qwen copies every template field, empty**: `"foreach": ""` or `null` fails `readStep`'s foreach check and rejects the whole outline. Clean outlines in the pipeline; keep the connector's drafter strict.
+- **Gotcha — the notebook's outputs live in the Colab commit on `origin/sg-sem`**, not the local file; the data lives on the user's Google Drive (`MyDrive/sg-sem`), which is not synced to this machine.
+- **Status**: ✅ Fix verified with draftGraph probes and a mock end-to-end run (64 seeds, 2023 examples); validate-presets, lint 0 errors, build pass. Next: another quick look, then the full run with training.

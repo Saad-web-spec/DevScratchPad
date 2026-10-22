@@ -100,8 +100,30 @@ function load(source: string): SkillGraph | null {
 }
 
 function errorsOf(source: string): number {
+  return errorMessages(source).length;
+}
+
+function errorMessages(source: string): string[] {
   const graph = load(source);
-  return graph ? validateGraph(graph).filter((issue) => issue.severity === "error").length : 1;
+  return graph ? validateGraph(graph).filter((issue) => issue.severity === "error").map((issue) => issue.message) : ["does not parse"];
+}
+
+/** An error message with its ids and numbers taken out, so the same mistake counts as one reason. */
+function reasonOf(message: string): string {
+  return message.replace(/"[^"]*"/g, "…").replace(/\d+/g, "N").slice(0, 120);
+}
+
+/**
+ * Drops the optional fields a text model copies from the template with no value ("foreach": "",
+ * "keys": [], "gate": null): the drafter reads those as wrong values and rejects the whole outline.
+ */
+export function cleanOutline(outline: Record<string, unknown>): Record<string, unknown> {
+  if (!Array.isArray(outline.steps)) return outline;
+  const empty = (value: unknown) => value === null || (typeof value === "string" && !value.trim()) || (Array.isArray(value) && value.length === 0);
+  const steps = outline.steps.map((step: unknown) =>
+    typeof step === "object" && step !== null && !Array.isArray(step) ? Object.fromEntries(Object.entries(step).filter(([key, value]) => key === "after" || !empty(value))) : step
+  );
+  return { ...outline, steps };
 }
 
 /** Model steps: the ones with a prompt an agent follows. */
@@ -161,10 +183,12 @@ export function round1(out: string, perPair: number): void {
 
 /* ------------------------------------------------------------------ round 2 */
 
-function seedsFrom(out: string): { seeds: Seed[]; drafted: number; rejected: Record<string, number> } {
+function seedsFrom(out: string): { seeds: Seed[]; drafted: number; rejected: Record<string, number>; reasons: Record<string, number> } {
   const seeds: Seed[] = CONNECTOR_TEMPLATES.map((template) => ({ seed: template.id, origin: "starter", source: template.source }));
   const requests = new Map(readJsonl<LlmRequest>(join(out, "round1.requests.jsonl"), true).map((request) => [request.id, request]));
   const rejected: Record<string, number> = { json: 0, draft: 0, errors: 0, duplicate: 0 };
+  const reasons: Record<string, number> = {};
+  const because = (message: string) => (reasons[reasonOf(message)] = (reasons[reasonOf(message)] ?? 0) + 1);
   let drafted = 0;
   const names = new Set(seeds.map((seed) => seed.seed));
   for (const output of readJsonl<LlmOutput>(join(out, "round1.outputs.jsonl"), true)) {
@@ -174,13 +198,16 @@ function seedsFrom(out: string): { seeds: Seed[]; drafted: number; rejected: Rec
       rejected.json += 1;
       continue;
     }
-    const draft = draftGraph({ ...outline, runs_in: request.meta.runs_in });
+    const draft = draftGraph({ ...cleanOutline(outline), runs_in: request.meta.runs_in });
     if ("error" in draft) {
       rejected.draft += 1;
+      because(draft.error);
       continue;
     }
-    if (errorsOf(draft.source) > 0) {
+    const errors = errorMessages(draft.source);
+    if (errors.length > 0) {
       rejected.errors += 1;
+      because(errors[0]);
       continue;
     }
     const name = `draft-${output.id}`;
@@ -192,7 +219,7 @@ function seedsFrom(out: string): { seeds: Seed[]; drafted: number; rejected: Rec
     seeds.push({ seed: name, origin: "draft", source: draft.source });
     drafted += 1;
   }
-  return { seeds, drafted, rejected };
+  return { seeds, drafted, rejected, reasons };
 }
 
 /** A step whose prompt reads `pred` and has another input too: removing that edge leaves it working on less. */
@@ -212,7 +239,7 @@ function h2Candidates(graph: SkillGraph): { node: GraphNode; pred: GraphNode; re
 }
 
 export function round2(out: string, h1Samples: number): void {
-  const { seeds, drafted, rejected } = seedsFrom(out);
+  const { seeds, drafted, rejected, reasons } = seedsFrom(out);
   writeJsonl(join(out, "seeds.jsonl"), seeds);
   const requests: LlmRequest[] = [];
   for (const seed of seeds) {
@@ -239,6 +266,8 @@ export function round2(out: string, h1Samples: number): void {
   writeJsonl(join(out, "round2.requests.jsonl"), requests);
   const kinds = requests.reduce<Record<string, number>>((acc, r) => ({ ...acc, [r.kind]: (acc[r.kind] ?? 0) + 1 }), {});
   console.log(`round2: ${seeds.length} seeds (${drafted} drafted; rejected ${JSON.stringify(rejected)}), ${requests.length} requests ${JSON.stringify(kinds)}`);
+  const top = Object.entries(reasons).sort((a, b) => b[1] - a[1]).slice(0, 8);
+  if (top.length > 0) console.log(`why outlines were rejected:\n${top.map(([reason, count]) => `  ${count} × ${reason}`).join("\n")}`);
 }
 
 /* ------------------------------------------------------------------ assemble */
@@ -354,7 +383,9 @@ export function assemble(out: string): void {
     }
 
     if (request.kind === "h4") {
-      for (const gate of readH4(output.text)) {
+      const gates = readH4(output.text);
+      if (gates.length === 0) drop("h4-unreadable");
+      for (const gate of gates) {
         const pair = gateInput(graph, { ...node, gate: gate.text });
         if (!pair) continue;
         examples.push({ head: "h4", ...base, text_a: pair.textA, text_b: pair.textB, features: pair.features, label: H4_LABELS.indexOf(gate.label), source: "llm", note: gate.label });
