@@ -28,6 +28,10 @@ from .data import IGNORE, HeadDataset, balance, by_head_and_split, collate, load
 from .model import SgSem
 
 PRECISION_BAR = 0.9
+# Dev splits are small (H2 has ~30 positives), so the threshold aims above the bar there to hold it on test,
+# and never goes below 0.5: a calibrated flag should at least mean "more likely than not".
+DEV_MARGIN = 0.05
+THRESHOLD_FLOOR = 0.5
 DEFAULT_BASE = "microsoft/MiniLM-L12-H384-uncased"
 
 
@@ -99,10 +103,12 @@ def fit_temperature(logits: np.ndarray, labels: np.ndarray) -> float:
     return best
 
 
-def threshold_for_precision(scores: np.ndarray, labels: np.ndarray, bar: float = PRECISION_BAR) -> tuple[float | None, float]:
-    """The lowest threshold whose flags are right at least `bar` of the time; None when no threshold is."""
+def threshold_for_precision(scores: np.ndarray, labels: np.ndarray, bar: float = PRECISION_BAR + DEV_MARGIN) -> tuple[float | None, float]:
+    """The lowest threshold (at least THRESHOLD_FLOOR) whose flags are right at least `bar` of the time; None when no threshold is."""
     best: tuple[float | None, float] = (None, 0.0)
-    for threshold in sorted(set(np.round(scores, 4).tolist())):
+    for threshold in sorted(set(np.round(scores, 4).tolist()) | {THRESHOLD_FLOOR}):
+        if threshold < THRESHOLD_FLOOR:
+            continue
         predicted = (scores >= threshold).astype(int)
         precision, recall, _ = prf(predicted, labels)
         if predicted.sum() >= 5 and precision >= bar and recall > best[1]:
@@ -168,6 +174,9 @@ def head_metrics(head: str, result: dict, temperature: float | None = None, thre
         if threshold is None:
             threshold, _ = threshold_for_precision(probs[:, not_class], (labels == not_class).astype(int))
         metrics["threshold"] = threshold
+        if threshold is not None:
+            precision, recall, _ = prf((probs[:, not_class] >= threshold).astype(int), (labels == not_class).astype(int))
+            metrics.update(precision_at_threshold=precision, recall_at_threshold=recall)
         metrics["score"] = float(np.mean(f1s))
     if "sentence_scores" in result:
         metrics["sentence_f1"] = prf((result["sentence_scores"] >= 0.5).astype(int), result["sentence_labels"].astype(int))[2]
@@ -329,7 +338,7 @@ def main() -> None:
     temperatures = {head: m["temperature"] for head, m in dev_metrics.items()}
     thresholds = {head: m["threshold"] for head, m in dev_metrics.items()}
     test_metrics = {head: head_metrics(head, predict(model, test[head], device), temperatures[head], thresholds[head]) for head in test if head in temperatures}
-    shipping = {head: (m.get("threshold") is not None and m.get("precision_at_threshold", m.get("not_precision", 0)) >= PRECISION_BAR) for head, m in test_metrics.items()}
+    shipping = {head: (m.get("threshold") is not None and m.get("precision_at_threshold", 0) >= PRECISION_BAR) for head, m in test_metrics.items()}
     report = {
         "base": args.base,
         "max_len": args.max_len,
@@ -346,7 +355,7 @@ def main() -> None:
         json.dump({"base": args.base, "vocab_size": len(tokenizer), "max_len": args.max_len, "temperatures": temperatures, "thresholds": thresholds, "heads": HEADS}, handle, indent=2)
     write_errors(os.path.join(args.out, "errors.md"), {head: dev_rows[head] for head in dev}, dev_results, temperatures)
     print("test:", json.dumps({h: {k: (round(v, 3) if isinstance(v, float) else v) for k, v in m.items()} for h, m in test_metrics.items()}))
-    print("meets the 0.9 precision bar on test:", shipping)
+    print("meets the 0.9 precision bar on the generated test split (the gold set decides what ships):", shipping)
 
 
 if __name__ == "__main__":

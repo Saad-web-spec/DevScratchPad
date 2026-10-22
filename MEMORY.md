@@ -941,3 +941,12 @@ All AI agents operating in this repository MUST follow this 5-step loop:
 - **Changes**: base model → `microsoft/MiniLM-L12-H384-uncased` (same weights; train.py, notebook, make_notebook.py, spec). Outline prompt asks for at least one step that reads from two earlier steps. Training smoke-tested locally on CPU on the full-size mock data (7679 examples, 12 steps): writes metrics.json, errors.md, sgsem.json, best.pt, last.pt.
 - **Gotcha — a changed base model id also lives in `sg_sem.ipynb`** (cell 1), not only in train.py's default; the notebook passes `--base` explicitly.
 - **Status**: ✅ semanticInput tests (9), validate-presets, lint 0 errors, typecheck, build, training smoke test. Next: the full run (`QUICK_LOOK = False`), ~3–3.5 h on an L4, nearly all of it round 2.
+
+### Session: 2026-10-23 — sg-sem: first full run (minilm-1) read; thresholds fixed
+- **Agent**: Claude Code (Opus 5.5)
+- **Task**: Read the full Colab run's results and take the next step
+- **Results (generated test split)**: 171 seeds, 7659 examples (H1 1497 / H2 928 / H3 733 / H4 2792 train after balancing, far under the spec's targets). 4 epochs, 1.1 min. H1 precision 0.98 at 0.5, AUROC 1.0; H2 precision 1.0 / recall 0.90 at 0.5, AUROC 1.0; H3 precision 0.64 / AUROC 0.74; H4 macro-F1 0.87 vs gate-vague 0.22, "not" precision 0.91.
+- **Findings**: H2 "missed" the bar only because the threshold picker took the lowest dev threshold with precision ≥ 0.9 (0.044 for H2, 0.016 for H1). On ~30 dev positives that sits on the edge and test fell to 0.875. H3 does not learn (loss ~0.6, dev predictions the same from epoch 1): a description swap changes none of the 16 features, and 733 examples are too few to learn the text comparison. AUROC 1.0 on H1/H2 is generated-data easy, so only the gold set can show real precision. Some of the "worst errors" in errors.md for H1 are generator label noise (e.g. a `resolved_problem_pass` that still reports 3 of 5 courses).
+- **Changes**: `train.py` thresholds aim for 0.95 on dev and never go below 0.5. H4 now reports precision at its threshold, and the ship check uses that for every head.
+- **Gotcha — rerunning the training cell with the same RUN re-evaluates without retraining**: `last.pt` holds epoch 4, so the loop is skipped and only the final dev/test pass runs.
+- **Status**: ✅ threshold picker smoke-tested locally. Next: rerun the training cell (re-evaluation), then the gold set (spec §8.2). H3 stays out of v1 unless more seeds fix it.
