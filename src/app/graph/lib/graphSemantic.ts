@@ -92,6 +92,15 @@ function runtime(): Promise<Runtime | null> {
   return loading;
 }
 
+/**
+ * Starts loading the model without waiting for it. The route calls this on `initialize` and `tools/list`, which
+ * Claude sends before any tool call, so the load (a few seconds on a fresh instance) overlaps with them and the
+ * first check finds the model ready.
+ */
+export function warmGateModel(): void {
+  void runtime();
+}
+
 function softmax(logits: Float32Array, temperature: number): number[] {
   const scaled = Array.from(logits, (value) => value / temperature);
   const max = Math.max(...scaled);
@@ -125,10 +134,17 @@ async function scoreGate(rt: Runtime, graph: SkillGraph, node: SkillGraph["nodes
  * The gate verdicts for the graphs in `sources`, one gate at a time (a batch pads every gate to the longest and
  * is slower), within `budgetMs`. Null when the model is not available or not loaded in time; a graph that does
  * not parse, or a step without a gate, contributes nothing. Gates scored before the budget ran out are returned.
+ *
+ * On an instance where nothing has started the load yet (no `initialize` reached it), the call waits only
+ * `coldWaitMs`, by default not at all: it starts the load for the next call and answers without the model, rather
+ * than make Claude wait out the budget and still get no verdict (5.8 s against 2.4 s on the first preview test).
  */
-export async function gateVerdicts(sources: readonly string[], budgetMs = SEMANTIC_BUDGET_MS): Promise<GateVerdict[] | null> {
+export async function gateVerdicts(sources: readonly string[], budgetMs = SEMANTIC_BUDGET_MS, coldWaitMs = 0): Promise<GateVerdict[] | null> {
   const started = Date.now();
-  const rt = await Promise.race([runtime(), new Promise<null>((resolve) => setTimeout(resolve, budgetMs, null))]);
+  const wait = loading === undefined ? Math.min(coldWaitMs, budgetMs) : budgetMs;
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const rt = await Promise.race([runtime(), new Promise<null>((resolve) => (timer = setTimeout(resolve, wait, null)))]);
+  clearTimeout(timer);
   if (!rt) return null;
   const verdicts: GateVerdict[] = [];
   const seen = new Set<string>();

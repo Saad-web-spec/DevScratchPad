@@ -3,7 +3,7 @@
  * These are the gates the model was shown to read right before it shipped (MEMORY.md, msmarco-6): a judgement
  * of how someone will feel is flagged; a starter's own gate and a short checkable one are not.
  */
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { callConnectorTool, checkedSource } from "../graphConnector";
 import { gateVerdicts, type GateVerdict } from "../graphSemantic";
 import { handleBodyWithChecks } from "../mcpProtocol";
@@ -29,7 +29,7 @@ function warnings(result: ReturnType<typeof callConnectorTool>): string[] {
 
 describe("gate verdicts from the model", () => {
   it("flags a gate that judges how someone will feel, and not a starter's gate or a short checkable one", async () => {
-    const verdicts = await gateVerdicts([withGate(VAGUE), SHIP_CHANGE_GRAPH_SKILL, withGate(SHORT_BUT_CHECKABLE)], 20_000);
+    const verdicts = await gateVerdicts([withGate(VAGUE), SHIP_CHANGE_GRAPH_SKILL, withGate(SHORT_BUT_CHECKABLE)], 20_000, 20_000);
     expect(verdicts).not.toBeNull();
     const byGate = new Map((verdicts as GateVerdict[]).map((verdict) => [verdict.gate, verdict]));
     expect(byGate.get(VAGUE)).toMatchObject({ step: "gate", label: "not", flagged: true });
@@ -41,6 +41,21 @@ describe("gate verdicts from the model", () => {
   it("gives up within the budget rather than hold a tool call", async () => {
     expect(await gateVerdicts([SHIP_CHANGE_GRAPH_SKILL], 0)).toSatisfy((value: GateVerdict[] | null) => value === null || value.length === 0);
   });
+
+  it("on a cold instance answers at once without the model, and has it for the next call; initialize warms it first", async () => {
+    vi.resetModules();
+    const cold = await import("../graphSemantic");
+    const started = Date.now();
+    expect(await cold.gateVerdicts([withGate(VAGUE)])).toBeNull();
+    expect(Date.now() - started).toBeLessThan(500);
+    expect(await cold.gateVerdicts([withGate(VAGUE)], 20_000)).toMatchObject([{ flagged: true }]);
+
+    vi.resetModules();
+    const protocol = await import("../mcpProtocol");
+    const semantic = await import("../graphSemantic");
+    await protocol.handleBodyWithChecks({ jsonrpc: "2.0", id: 1, method: "initialize", params: {} }, context);
+    expect(await semantic.gateVerdicts([withGate(VAGUE)], 20_000)).toMatchObject([{ flagged: true }]);
+  }, 60_000);
 
   it("names the graph each tool checks: as given, drafted, edited or decoded from a link", () => {
     expect(checkedSource("validate_graph", { source: SHIP_CHANGE_GRAPH_SKILL })).toBe(SHIP_CHANGE_GRAPH_SKILL);
