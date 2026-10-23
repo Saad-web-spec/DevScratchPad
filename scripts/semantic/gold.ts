@@ -14,7 +14,7 @@ import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { draftGraph } from "../../src/app/graph/lib/graphDraft";
 import { parseGraphSkill, validateGraph, type GraphNode, type SkillGraph } from "../../src/app/graph/lib/graphSkill";
-import { TASK_PREFIX, gateInput, missingInputInput, verdictInput } from "../../src/app/graph/lib/semanticInput";
+import { TASK_PREFIX, edgeCandidates, gateInput, missingInputInput, verdictInput } from "../../src/app/graph/lib/semanticInput";
 import { H4_LABELS } from "./llmPrompts";
 import type { Example } from "./pipeline";
 
@@ -74,12 +74,16 @@ function main(): void {
     }
   }
 
-  // H2 negatives: every model step as written. Positives: one edge cut, the task naming the data in plain words.
+  // H2, one row per candidate step (the pair names the step that might be missing). Negatives: every model step as
+  // written, against every step it could read and does not. Positives: one edge cut, the task naming that data in plain
+  // words; the cut step's row is label 1, the step's other candidates stay negatives. A step is flagged when any row is.
   for (const [name, graph] of graphs) {
     for (const node of graph.nodes) {
       if (node.type === "input" || node.type === "code" || node.type === "approval") continue;
-      const pair = missingInputInput(graph, node);
-      examples.push({ head: "h2", ...base(name), text_a: pair.textA, text_b: pair.textB, features: pair.features, label: 0, note: `as written ${node.id}` });
+      for (const candidate of edgeCandidates(graph, node)) {
+        const pair = missingInputInput(graph, node, candidate);
+        examples.push({ head: "h2", ...base(name), text_a: pair.textA, text_b: pair.textB, features: pair.features, label: 0, note: `as written ${node.id}`, node: node.id, candidate: candidate.id, group: `${node.id}: as written` });
+      }
     }
   }
   for (const cut of readJson<{ cuts: { graph: string; step: string; cut: string; phrase: string }[] }>("h2.json").cuts) {
@@ -89,10 +93,20 @@ function main(): void {
     if (!step || !step.after.includes(cut.cut)) throw new Error(`h2 ${cut.graph}/${cut.step}: "${cut.cut}" is not one of its inputs`);
     const variant: Outline = { ...outline, steps: outline.steps.map((s) => (s.id === cut.step ? { ...s, after: s.after.filter((id) => id !== cut.cut) } : s)) };
     const graph = graphOf(variant, `h2 ${cut.graph}/${cut.step} without ${cut.cut}`);
-    const pair = missingInputInput(graph, nodeOf(graph, cut.step, `h2 ${cut.graph}`));
-    const at = pair.textA.indexOf(cut.phrase, TASK_PREFIX.length);
-    if (at === -1) throw new Error(`h2 ${cut.graph}/${cut.step}: the task does not contain "${cut.phrase}":\n  ${pair.textA}`);
-    examples.push({ head: "h2", ...base(cut.graph), text_a: pair.textA, text_b: pair.textB, features: pair.features, label: 1, span: [at, at + cut.phrase.length], note: `cut ${cut.cut}` });
+    const node = nodeOf(graph, cut.step, `h2 ${cut.graph}`);
+    const candidates = edgeCandidates(graph, node);
+    if (!candidates.some((candidate) => candidate.id === cut.cut)) throw new Error(`h2 ${cut.graph}/${cut.step}: "${cut.cut}" is not a candidate once cut`);
+    for (const candidate of candidates) {
+      const pair = missingInputInput(graph, node, candidate);
+      const row: GoldExample = { head: "h2", ...base(cut.graph), text_a: pair.textA, text_b: pair.textB, features: pair.features, label: 0, note: `other (cut ${cut.cut}): ${candidate.id}`, node: node.id, candidate: candidate.id, group: `${node.id}: cut ${cut.cut}` };
+      if (candidate.id === cut.cut) {
+        const at = pair.textA.indexOf(cut.phrase, TASK_PREFIX.length);
+        if (at === -1) throw new Error(`h2 ${cut.graph}/${cut.step}: the task does not contain "${cut.phrase}":
+  ${pair.textA}`);
+        Object.assign(row, { label: 1, span: [at, at + cut.phrase.length], note: `cut ${cut.cut}` });
+      }
+      examples.push(row);
+    }
   }
 
   // H4: the gold verifiers' own gates (checkable) and hand-written gates by label.

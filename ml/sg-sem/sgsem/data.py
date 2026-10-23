@@ -122,8 +122,9 @@ def balance(examples: list[dict], seed: int, max_ratio: float = 3.0) -> list[dic
     for rows in by_label.values():
         rows = rows[:]
         rng.shuffle(rows)
-        # Steps as written are the easy negatives: they go first, so the built hard negatives (kept, drafted, dropped) stay.
-        rows.sort(key=lambda example: str(example.get("note", "")).startswith("as written"))
+        # Steps as written are the easy negatives and go first; a cut's dropped twin (the same pair, the mention gone)
+        # is the hardest and stays first, then the other built ones (kept, drafted, the other candidates).
+        rows.sort(key=lambda example: 0 if str(example.get("note", "")).startswith("dropped ") else 2 if str(example.get("note", "")).startswith("as written") else 1)
         out.extend(rows[: int(smallest * max_ratio)])
     rng.shuffle(out)
     return out

@@ -17,7 +17,7 @@
 | Head | Name in the plan | Question it answers |
 | - | - | - |
 | H1 | M1 verdict consistency | A verifier answered `GATE: PASS`. Does its own text still report an open problem? Which sentences? |
-| H2 | M2 missing input | Does this step's task need information that none of its inputs carries? Which words of the task name it? |
+| H2 | M2 missing input | Does this step's task need what another step returns, one it does not read and none of its inputs carries? Which words of the task name it? (Asked once per such step.) |
 | H3 | M3 contract mismatch | Does a contract's description agree with what the steps after it read? |
 | H4 | M4 gate checkability | Can a checker decide this gate from the inputs it gets? |
 
@@ -76,7 +76,7 @@ It is "ours" in three ways that matter, and not in one way that would not:
 All four are written by **one TypeScript module, `lib/semanticInput.ts`**, used both by the data export script (training) and by the connector (inference). That one rule removes the most common way small models fail in production: training text and live text differing in small ways.
 
 Special tokens added to the vocabulary (their embeddings are learned in fine-tuning):
-`[H1] [H2] [H3] [H4]` (which question), `[GATE] [TASK] [INPUT] [CONTRACT] [READS] [VERDICT] [SEN]`.
+`[H1] [H2] [H3] [H4]` (which question), `[GATE] [TASK] [INPUT] [CONTRACT] [READS] [VERDICT] [SEN] [CANDIDATE]` (`[CANDIDATE]` from input version 2).
 
 **H1 — verdict consistency.** Built from `parseVerdict` (graphRun.ts): the work above the verdict line, and the lines after it.
 
@@ -87,15 +87,16 @@ Special tokens added to the vocabulary (their embeddings are learned in fine-tun
 
 The body is split into sentences (and list items); each gets a `[SEN]` marker. Labels: document = consistent / inconsistent; each `[SEN]` = "reports an open problem" or not. Above, sentence 2 is an open problem, so a PASS is inconsistent. The marked sentence becomes the quote in the referee's question (§6).
 
-**H2 — missing input.** Built from the node, its predecessors, `jsonKeysFor` and the contract descriptions: the same facts `handOff()` uses for the "Sees" lines.
+**H2 — missing input.** One pair per *candidate*: every other step with an output that the step does not read and that does not run after it (`edgeCandidates`; the request is none, every step can quote it). Built from the node, the candidate, its predecessors, `jsonKeysFor` and the contract descriptions: the same facts `handOff()` uses for the "Sees" lines. The candidate's line says what it returns the same way whether or not a step reads it (its contract's description, else the `Return …` paragraph of its task), so a cut input, often left with no reader, does not look different.
 
 ```
 [H2] [TASK] Add up the scores of every criterion and give the essay a final grade out of 100.
-[SEP] [INPUT] essay · Your request · the user's essay and rubric
+[SEP] [CANDIDATE] score · Worker · One score per criterion, with the quotes behind it.
+[INPUT] essay · Your request · the user's essay and rubric
 [INPUT] line_edits · Worker · A numbered list of line edits, each quoting the sentence and giving the better version.
 ```
 
-Labels: document = needs something no input carries / fine; span = the words of the task that name the missing thing ("the scores of every criterion"). The span is what the warning quotes.
+Labels: pair = the task needs what the candidate returns and no input carries it / not; span = the words of the task that name it ("the scores of every criterion"). A step is flagged when any of its pairs is; the warning quotes the span and names the candidate. Through input version 1 the pair was the task against the inputs alone: the model had to notice data that appears nowhere in its input, and after five data fixes it still caught 1 of 28 gold cuts at its threshold (msmarco-3, gold AUROC 0.74). With the candidate written out it compares two texts it can see, the judgement its MS MARCO pre-training is for.
 
 **H3 — contract vs readers.** Built from the contract, the edges that carry it and `nodeRefs` of the steps after them.
 
@@ -139,7 +140,7 @@ Each head ends in a probability, calibrated per head by temperature scaling on t
 | Head | Above the threshold | Message (example) |
 | --- | --- | --- |
 | H1 | the referee asks once for the verdict again, quoting the flagged sentences; the run is not failed on the model's word | "Check the facts said PASS, but it also wrote: 'Claim 2 cites a blog post from 2014 that I could not open.' Confirm the verdict (PASS or FAIL) with that in mind." |
-| H2 | warning `semantic-missing-input` | "step `grade`: its task needs 'the scores of every criterion', and none of its inputs (essay, line_edits) seems to carry it (0.94). Add an edge from the step that scores, or say where it comes from." |
+| H2 | warning `semantic-missing-input` | "step `grade`: its task needs 'the scores of every criterion', which `score` returns and none of its inputs (essay, line_edits) carries (0.94). Add an edge from `score`, or say where it comes from." |
 | H3 | warning `semantic-contract-mismatch` | "contract `candidates_json` describes an array of candidates, but `judge_correctness` and `judge_clarity` read keys of an object (0.91)." |
 | H4 | warning `semantic-gate-uncheckable` (replaces `gate-vague` when the model is loaded) | "The gate of `budget_check` cannot be decided from its inputs: it judges how the user will feel (0.88). Say what must be true, e.g. 'the total is within the budget'." |
 
@@ -158,7 +159,7 @@ It runs our TypeScript library (vite-node, like the tests) on seed graphs and wr
 
 | Mutation | Produces |
 | --- | --- |
-| `disconnect` an edge into a step. A starter's inline `{{ref}}` becomes plain words written by the LLM, and the heading block goes. A drafted step's outline task is rewritten by the LLM to name every input in plain words inside its sentences (*weave*, §7.2; the words naming the cut input marked in square brackets), and the outline is drafted again without the edge, the way the gold cuts are built | H2 positive; span = the words naming the cut input. Hard negatives: the same prompt with the edge kept (*kept*: same text A); the woven task drafted with every input and heading block (*drafted*: how a gold negative is built); the rewrite without that mention, the edge cut (*dropped*: same input list and graph facts), so neither side alone carries the label. A second positive per answer puts an unrelated step of the same outline in the cut input's place (*replaced*: as many inputs and facts as the drafted twin, and the task still names data no input carries), so the length of the list carries no label either. minilm-3 read the input list and facts alone; minilm-4, trained on a sentence appended for the purpose, missed every mention woven into a hand-written task; minilm-5 asked for the mention as a separate field and 9 in 10 answers were unusable; msmarco-1, with every full-list row a negative, read the length of the list. From msmarco-3 every input of every step is woven (no per-graph cap), and a second batch of outlines in shapes where steps read two or three inputs (over the round-1 topics and 30 more, none a gold topic) is asked only H2 jobs, so the other heads' data is unchanged |
+| `disconnect` an edge into a step. A starter's inline `{{ref}}` becomes plain words written by the LLM, and the heading block goes. A drafted step's outline task is rewritten by the LLM to name every input in plain words inside its sentences (*weave*, §7.2; the words naming the cut input marked in square brackets), and the outline is drafted again without the edge, the way the gold cuts are built | H2 positive; span = the words naming the cut input. Hard negatives: the same prompt with the edge kept (*kept*: same text A); the woven task drafted with every input and heading block (*drafted*: how a gold negative is built); the rewrite without that mention, the edge cut (*dropped*: same input list and graph facts), so neither side alone carries the label. A second positive per answer puts an unrelated step of the same outline in the cut input's place (*replaced*: as many inputs and facts as the drafted twin, and the task still names data no input carries), so the length of the list carries no label either. minilm-3 read the input list and facts alone; minilm-4, trained on a sentence appended for the purpose, missed every mention woven into a hand-written task; minilm-5 asked for the mention as a separate field and 9 in 10 answers were unusable; msmarco-1, with every full-list row a negative, read the length of the list. From msmarco-3 every input of every step is woven (no per-graph cap), and a second batch of outlines in shapes where steps read two or three inputs (over the round-1 topics and 30 more, none a gold topic) is asked only H2 jobs, so the other heads' data is unchanged. From msmarco-4 (input version 2) every version of a step is written as one pair per candidate step: the cut input's pair is the positive, the step's other candidates are negatives (*other*), the dropped twin is the cut's very pair with the mention gone, and kept / drafted versions, which still read the input, have only negative pairs; the same text-model answers, no new calls |
 | `set_contract` with a description taken from another contract | H3 positive |
 | change a JSON producer's keys while its readers keep theirs, `required` left empty | H3 positive |
 | `set_step` gate ← a gate from the "not checkable" pool | H4 negative |
@@ -215,7 +216,7 @@ Target sizes: H1 12k, H2 8k, H3 5k, H4 6k (train), plus 10% dev and 10% test, al
 | Head | Metric | Ship when, on the gold set |
 | --- | --- | --- |
 | H1 | precision / recall of "inconsistent PASS"; sentence-level F1 of the quoted sentences | precision ≥ 0.90, and recall above the rules' baseline (which is 0: no rule exists) |
-| H2 | precision / recall; span overlap (token F1) | precision ≥ 0.90; span F1 ≥ 0.6 so the quote makes sense |
+| H2 | precision / recall per step (a step is flagged when any of its candidate pairs is); span overlap (token F1); share of caught steps whose top pair is the right step | precision ≥ 0.90; span F1 ≥ 0.6 so the quote makes sense |
 | H3 | precision / recall | precision ≥ 0.90 |
 | H4 | precision of "not checkable"; macro-F1 over 3 classes | beats `gate-vague` (word count) on macro-F1, precision ≥ 0.90 on "not checkable" |
 

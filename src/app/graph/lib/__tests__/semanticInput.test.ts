@@ -6,7 +6,7 @@ import { readH2Weave } from "../../../../../scripts/semantic/llmPrompts";
 import { assemble, mock, round1, round2, splitOf, type Example } from "../../../../../scripts/semantic/pipeline";
 import { parseGraphSkill, type SkillGraph } from "../graphSkill";
 import { CONNECTOR_TEMPLATES } from "../graphTemplates";
-import { FEATURE_COUNT, SEMANTIC_INPUT_VERSION, contractInput, featuresFor, gateInput, missingInputInput, splitSentences, verdictInput } from "../semanticInput";
+import { FEATURE_COUNT, SEMANTIC_INPUT_VERSION, contractInput, edgeCandidates, featuresFor, gateInput, missingInputInput, splitSentences, verdictInput } from "../semanticInput";
 
 function starter(id: string): SkillGraph {
   return parseGraphSkill(CONNECTOR_TEMPLATES.find((template) => template.id === id)!.source).graph!;
@@ -16,8 +16,8 @@ const research = starter("research-and-fact-check");
 const node = (graph: SkillGraph, id: string) => graph.nodes.find((n) => n.id === id)!;
 
 describe("semanticInput: the text and numbers sg-sem reads", () => {
-  it("is version 1; changing any output below means retraining the model", () => {
-    expect(SEMANTIC_INPUT_VERSION).toBe(1);
+  it("is version 2; changing any output below means retraining the model", () => {
+    expect(SEMANTIC_INPUT_VERSION).toBe(2);
   });
 
   it("splits answers into sentences, one per list item and per sentence", () => {
@@ -45,11 +45,15 @@ describe("semanticInput: the text and numbers sg-sem reads", () => {
     expect(pair.textB.length).toBeLessThan(1_800);
   });
 
-  it("writes H2 as the task and one line per input", () => {
-    const pair = missingInputInput(research, node(research, "answer"));
+  it("writes H2 as the task against one step it could read and does not, then its own inputs", () => {
+    // answer reads the request and fact_check; research runs before it and is not read: the one candidate.
+    expect(edgeCandidates(research, node(research, "answer")).map((n) => n.id)).toEqual(["research"]);
+    // fact_check already reads research and answer runs after it: no candidate.
+    expect(edgeCandidates(research, node(research, "fact_check"))).toEqual([]);
+    const pair = missingInputInput(research, node(research, "answer"), node(research, "research"));
     expect(pair.textA.startsWith("[H2] [TASK] Answer the question for someone who is not an expert")).toBe(true);
     expect(pair.textB).toBe(
-      "[INPUT] question · Your request · WHAT TO RESEARCH [INPUT] fact_check · Checker · The claims that held up, each with its source, then the claims that were dropped and why."
+      "[CANDIDATE] research · Worker · A numbered list of claims, each with its source (title and link) and the source's date. [INPUT] question · Your request · WHAT TO RESEARCH [INPUT] fact_check · Checker · The claims that held up, each with its source, then the claims that were dropped and why."
     );
   });
 
@@ -130,40 +134,48 @@ describe("sg-sem data pipeline, on the mock text model", () => {
         expect(example.text_a.slice(start, end)).toMatch(/^the results of the earlier /);
       }
     }
-    // Every cut H2 has its negative twin: the same task text, with the input still connected.
-    const positives = examples.filter((e) => e.head === "h2" && e.label === 1 && !e.note.startsWith("replaced "));
-    for (const positive of positives.slice(0, 50)) expect(examples.some((e) => e.head === "h2" && e.label === 0 && e.text_a === positive.text_a && e.text_b.length > positive.text_b.length)).toBe(true);
-    // A dropped negative has its positive's input list and graph facts; only the task's words differ (and with them fact 7, the prompt length).
-    const dropped = examples.filter((e) => e.head === "h2" && e.note.startsWith("dropped "));
+    // H2 rows are pairs: one per candidate step, grouped per version of a step; a positive group has one positive row,
+    // the cut input as candidate, and the group's other rows are other candidates.
+    const h2 = examples.filter((e) => e.head === "h2");
+    for (const row of h2) {
+      expect(row.group, row.note).toBeDefined();
+      expect(row.text_b.startsWith(`[CANDIDATE] ${row.candidate} · `)).toBe(true);
+    }
+    const positives = h2.filter((e) => e.label === 1 && !e.note.startsWith("replaced "));
+    expect(positives.length).toBeGreaterThan(0);
+    for (const positive of positives) {
+      expect(positive.candidate).toBe(positive.note.slice("cut ".length));
+      expect(h2.filter((e) => e.seed === positive.seed && e.group === positive.group && e.label === 1)).toHaveLength(1);
+    }
+    // A dropped negative is its cut's very pair (candidate, inputs, graph facts); only the task's words differ (and with them fact 7, the prompt length).
+    const dropped = h2.filter((e) => e.note.startsWith("dropped "));
     expect(dropped.length).toBeGreaterThan(0);
     for (const negative of dropped.slice(0, 50)) {
       const twin = positives.find((p) => p.seed === negative.seed && p.node === negative.node && p.note === negative.note.replace("dropped", "cut") && p.text_b === negative.text_b);
       expect(twin, negative.note).toBeDefined();
+      expect(negative.label).toBe(0);
       expect(negative.features.filter((_, i) => i !== 7)).toEqual(twin!.features.filter((_, i) => i !== 7));
       expect(negative.text_a).not.toBe(twin!.text_a);
     }
-    // A drafted negative is the woven task with every input: the positive's task words, one input more.
-    const drafted = examples.filter((e) => e.head === "h2" && e.note.startsWith("drafted "));
+    // Drafted and kept versions still read the cut input: it is never their candidate, and every row is a negative.
+    const drafted = h2.filter((e) => e.note.startsWith("drafted "));
     expect(drafted.length).toBeGreaterThan(0);
-    for (const negative of drafted.slice(0, 50)) {
-      const twin = positives.find((p) => p.seed === negative.seed && p.node === negative.node && p.note === negative.note.replace("drafted", "cut"));
-      expect(twin, negative.note).toBeDefined();
-      expect((negative.text_b.match(/\[INPUT\]/g) ?? []).length).toBeGreaterThanOrEqual((twin!.text_b.match(/\[INPUT\]/g) ?? []).length);
-      expect(negative.text_a).toContain(twin!.text_a.slice(twin!.span![0], twin!.span![1]));
+    for (const negative of [...drafted, ...h2.filter((e) => e.note.startsWith("kept "))]) {
+      expect(negative.label).toBe(0);
+      expect(negative.candidate).not.toBe(negative.note.split(" ")[1]);
     }
-    // A replaced positive has as many inputs as its drafted twin, none of them the cut one, and the cut's span words.
-    const replaced = examples.filter((e) => e.head === "h2" && e.note.startsWith("replaced "));
+    // A replaced positive names the cut input as candidate, does not read it, and has the cut's span words.
+    const replaced = h2.filter((e) => e.note.startsWith("replaced "));
     expect(replaced.length).toBeGreaterThan(0);
     for (const positive of replaced.slice(0, 50)) {
       const pred = positive.note.slice("replaced ".length);
       const cut = positives.find((p) => p.seed === positive.seed && p.node === positive.node && p.note === `cut ${pred}`);
-      const twin = drafted.find((n) => n.seed === positive.seed && n.node === positive.node && n.note === `drafted ${pred}`);
       expect(cut, positive.note).toBeDefined();
-      expect(twin, positive.note).toBeDefined();
       expect(positive.label).toBe(1);
-      expect((positive.text_b.match(/\[INPUT\]/g) ?? []).length).toBe((twin!.text_b.match(/\[INPUT\]/g) ?? []).length);
+      expect(positive.candidate).toBe(pred);
       expect(positive.text_b).not.toContain(`[INPUT] ${pred} `);
-      expect(positive.features[8]).toBe(twin!.features[8]);
+      // The stand-in takes the cut input's place; a cut that left no input reads the request instead, so never fewer.
+      expect((positive.text_b.match(/\[INPUT\]/g) ?? []).length).toBeGreaterThanOrEqual((cut!.text_b.match(/\[INPUT\]/g) ?? []).length);
       expect(positive.text_a.slice(positive.span![0], positive.span![1])).toBe(cut!.text_a.slice(cut!.span![0], cut!.span![1]));
     }
     // An H2-only seed (drafted from an H2-only outline) gets no H1 or H4 jobs and writes nothing but H2 rows.

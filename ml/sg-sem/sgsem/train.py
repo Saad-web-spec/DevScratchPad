@@ -154,13 +154,36 @@ def predict(model: SgSem, loader: DataLoader, device: torch.device) -> dict:
     return out
 
 
-def head_metrics(head: str, result: dict, temperature: float | None = None, threshold: float | None = None) -> dict:
+def groups_of(rows: list[dict]) -> list[str]:
+    """H2: the step version each row belongs to (seed and group); a row without a group is its own."""
+    return [f"{row['seed']}|{row['group']}" if row.get("group") else f"row {index}" for index, row in enumerate(rows)]
+
+
+def by_step(scores: np.ndarray, labels: np.ndarray, groups: list[str]) -> tuple[np.ndarray, np.ndarray, float]:
+    """H2 has one row per candidate step (spec §8.2): a step is flagged when any of its rows is, and is a positive when
+    any row is. Returns the per-step top score and label, and the share of positive steps whose top row is the right step."""
+    rows: dict[str, list[int]] = {}
+    for index, group in enumerate(groups):
+        rows.setdefault(group, []).append(index)
+    members = [np.array(indices) for indices in rows.values()]
+    step_scores = np.array([scores[m].max() for m in members])
+    step_labels = np.array([labels[m].max() for m in members])
+    right = [labels[m][scores[m].argmax()] == 1 for m in members if labels[m].max() == 1]
+    return step_scores, step_labels, float(np.mean(right)) if right else float("nan")
+
+
+def head_metrics(head: str, result: dict, temperature: float | None = None, threshold: float | None = None, groups: list[str] | None = None) -> dict:
     logits, labels = result["logits"], result["labels"]
     temperature = temperature if temperature is not None else fit_temperature(logits, labels)
     probs = torch.softmax(torch.tensor(logits / temperature), -1).numpy()
     metrics: dict = {"n": int(len(labels)), "temperature": temperature}
     if HEAD_CLASSES[head] == 2:
         scores = probs[:, 1]
+        if head == "h2" and groups is not None and len(groups) == len(labels):
+            # Precision, recall and the threshold are per step, as the warning fires; AUROC per pair is kept beside them.
+            metrics.update(pairs=int(len(labels)), pair_auroc=auroc(scores, labels))
+            scores, labels, right = by_step(scores, labels, groups)
+            metrics.update(n=int(len(labels)), right_candidate=right)
         precision, recall, f1 = prf((scores >= 0.5).astype(int), labels)
         metrics.update(precision_at_05=precision, recall_at_05=recall, f1_at_05=f1, auroc=auroc(scores, labels))
         if threshold is None:
@@ -344,7 +367,7 @@ def main() -> None:
                 print(f"epoch {epoch + 1} step {step}/{total_steps} loss {means} · {(time.time() - started) / 60:.1f} min", flush=True)
 
         results = {head: predict(model, dev[head], device) for head in dev}
-        metrics = {head: head_metrics(head, result) for head, result in results.items()}
+        metrics = {head: head_metrics(head, result, groups=groups_of(dev_rows[head])) for head, result in results.items()}
         score = float(np.mean([m["score"] for m in metrics.values()])) if metrics else 0.0
         print(f"epoch {epoch + 1} dev:", json.dumps({h: {k: (round(v, 3) if isinstance(v, float) else v) for k, v in m.items()} for h, m in metrics.items()}), flush=True)
         if score > best_score:
@@ -358,10 +381,10 @@ def main() -> None:
     # Final: the best epoch, calibrated and thresholded on dev, then measured once on test.
     model.load_state_dict(torch.load(os.path.join(args.out, "best.pt"), map_location=device, weights_only=True))
     dev_results = {head: predict(model, dev[head], device) for head in dev}
-    dev_metrics = {head: head_metrics(head, result) for head, result in dev_results.items()}
+    dev_metrics = {head: head_metrics(head, result, groups=groups_of(dev_rows[head])) for head, result in dev_results.items()}
     temperatures = {head: m["temperature"] for head, m in dev_metrics.items()}
     thresholds = {head: m["threshold"] for head, m in dev_metrics.items()}
-    test_metrics = {head: head_metrics(head, predict(model, test[head], device), temperatures[head], thresholds[head]) for head in test if head in temperatures}
+    test_metrics = {head: head_metrics(head, predict(model, test[head], device), temperatures[head], thresholds[head], groups_of(grouped[head]["test"])) for head in test if head in temperatures}
     baseline = rules_baseline([e for e in examples if e["split"] == "test"])
     shipping = {head: meets_bar(head, m, baseline) for head, m in test_metrics.items()}
     report = {

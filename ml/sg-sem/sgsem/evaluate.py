@@ -23,7 +23,7 @@ from torch.utils.data import DataLoader
 from . import HEADS
 from .data import HeadDataset, by_head_and_split, collate, load_examples
 from .model import SgSem
-from .train import MIN_RECALL, MIN_SPAN_F1, PRECISION_BAR, head_metrics, meets_bar, predict, rules_baseline, write_errors
+from .train import MIN_RECALL, MIN_SPAN_F1, PRECISION_BAR, groups_of, head_metrics, meets_bar, predict, rules_baseline, write_errors
 
 
 def main() -> None:
@@ -55,7 +55,7 @@ def main() -> None:
         results[head] = predict(model, loader, device)
         temperature = settings["temperatures"].get(head, 1.0)
         threshold = settings["thresholds"].get(head)
-        metrics[head] = head_metrics(head, results[head], temperature, threshold)
+        metrics[head] = head_metrics(head, results[head], temperature, threshold, groups_of(head_rows))
         if threshold is None:
             metrics[head]["note"] = "the run set no threshold for this head (it did not reach the bar on dev)"
     baseline = rules_baseline(examples)

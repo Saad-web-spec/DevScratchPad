@@ -32,7 +32,7 @@ INPUT_LINE = re.compile(r"\[INPUT\] ")
 
 def kind_of(row: dict) -> str:
     note = row.get("note", "")
-    for kind in ("cut", "replaced", "kept", "drafted", "dropped"):
+    for kind in ("cut", "replaced", "kept", "drafted", "dropped", "other"):
         if note.startswith(kind + " "):
             return kind
     return "as written" if note.startswith("as written") else note or "other"

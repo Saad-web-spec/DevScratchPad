@@ -11,6 +11,7 @@ import { PLAIN_TYPE } from "./graphPlainLabels";
 import { parseVerdict } from "./graphRun";
 import {
   NODE_TYPES,
+  descendantsOf,
   foreachSource,
   getContract,
   jsonKeysFor,
@@ -22,10 +23,10 @@ import {
 } from "./graphSkill";
 
 /** Bump when the serialized text or features change; the model manifest records the version it was trained on. */
-export const SEMANTIC_INPUT_VERSION = 1;
+export const SEMANTIC_INPUT_VERSION = 2;
 
 /** Tokens added to the encoder's vocabulary; their embeddings are learned in fine-tuning. */
-export const SEM_SPECIAL_TOKENS = ["[H1]", "[H2]", "[H3]", "[H4]", "[GATE]", "[TASK]", "[INPUT]", "[CONTRACT]", "[READS]", "[VERDICT]", "[SEN]"] as const;
+export const SEM_SPECIAL_TOKENS = ["[H1]", "[H2]", "[H3]", "[H4]", "[GATE]", "[TASK]", "[INPUT]", "[CONTRACT]", "[READS]", "[VERDICT]", "[SEN]", "[CANDIDATE]"] as const;
 
 export const FEATURE_COUNT = 16;
 
@@ -39,6 +40,7 @@ const MAX_SENTENCES = 40;
 const MAX_CONTRACT = 500;
 const MAX_READS = 600;
 const MAX_PRODUCER_TASK = 500;
+const MAX_CANDIDATE_TASK = 200;
 
 export interface SemanticPair {
   textA: string;
@@ -167,7 +169,8 @@ function inputLine(graph: SkillGraph, source: GraphNode, consumer: GraphNode): s
   return cap(`[INPUT] ${source.id} · ${PLAIN_TYPE[source.type]} · ${what}${keys ? ` · keys read: ${keys.join(", ")}` : ""}${list}`, MAX_INPUT_LINE);
 }
 
-function inputsText(graph: SkillGraph, node: GraphNode): string {
+/** What each input of a step carries, one `[INPUT]` line per input; `[INPUT] none` for a step without one. */
+export function inputsText(graph: SkillGraph, node: GraphNode): string {
   const lines = uniquePreds(graph, node).slice(0, MAX_INPUTS).map((pred) => inputLine(graph, pred, node));
   return lines.length > 0 ? lines.join(" ") : "[INPUT] none";
 }
@@ -209,9 +212,41 @@ export function taskText(node: GraphNode): string {
   return capMiddle(flat(node.prompt), MAX_TASK);
 }
 
-/** H2: a step's task, and what each of its inputs carries. */
-export function missingInputInput(graph: SkillGraph, node: GraphNode): SemanticPair {
-  return { textA: `${TASK_PREFIX}${taskText(node)}`, textB: inputsText(graph, node), features: featuresFor(graph, node) };
+/**
+ * The steps that could be missing as an input of `node`: every other step with an output, that the step does
+ * not read already and that does not run after it (an edge from it would make a cycle). The request is not one:
+ * every step can quote it with `{{goal}}`.
+ */
+export function edgeCandidates(graph: SkillGraph, node: GraphNode): GraphNode[] {
+  const reads = new Set(predecessorsOf(graph, node.id));
+  const after = descendantsOf(graph, node.id);
+  return graph.nodes.filter((other) => other.id !== node.id && other.type !== "input" && other.type !== "approval" && !reads.has(other.id) && !after.has(other.id));
+}
+
+/**
+ * What a candidate step would hand over, in one line: `[CANDIDATE] id · Role · what it returns`. Written the same
+ * whether or not a step reads it, or the line itself would tell a cut input (often left with no reader, so no
+ * contract) from the rest: the output contract's description; for a step without one, the `Return …` paragraph
+ * the drafter ends its task with; else its label and the first paragraph of its task.
+ */
+function candidateLine(graph: SkillGraph, candidate: GraphNode): string {
+  const edge = graph.edges.find((e) => e.from === candidate.id && e.contract);
+  const contract = edge?.contract ? getContract(graph, edge.contract) : undefined;
+  const described = contract?.description && !/^The output of /.test(contract.description) ? contract.description : undefined;
+  const returned = /(?:^|\n)Return ([^\n]+)/.exec(candidate.prompt)?.[1];
+  const what = described ?? returned ?? `${flat(candidate.label) || candidate.id}: ${cap(flat(candidate.prompt.split(/\n\s*\n/)[0] ?? ""), MAX_CANDIDATE_TASK)}`;
+  return cap(`[CANDIDATE] ${candidate.id} · ${PLAIN_TYPE[candidate.type]} · ${flat(what)}`, MAX_INPUT_LINE);
+}
+
+/**
+ * H2: does the step's task need what `candidate` returns, which none of its inputs carries? One pair per
+ * candidate (`edgeCandidates`): the task, then the candidate's line, then the step's own inputs. Through
+ * msmarco-3 the pair was the task against the inputs alone, so the model had to notice data that appears
+ * nowhere in its input; it never called more than 6 of the 28 gold cuts (see MEMORY.md). With the candidate
+ * written out, it compares two texts it can see, and the warning can name the step to connect.
+ */
+export function missingInputInput(graph: SkillGraph, node: GraphNode, candidate: GraphNode): SemanticPair {
+  return { textA: `${TASK_PREFIX}${taskText(node)}`, textB: `${candidateLine(graph, candidate)} ${inputsText(graph, node)}`, features: featuresFor(graph, node) };
 }
 
 /**

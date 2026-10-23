@@ -4,7 +4,8 @@ Every gold positive is scored as written and with one thing changed at a time:
 
   no heading blocks   the other inputs' `NAME: {{ref}}` blocks are removed from the task text
   no references       every block goes, "The request: {{goal}}" too: the shape of a generated single-input cut
-  B = request only    the input list is replaced by the step's request line, as a first step reads
+  B = request only    the input list is replaced by the step's request line, as a first step reads (the candidate stays)
+  other candidate     the candidate is another step the same step could read and does not (a gold negative pair)
   mention removed     the plain-word phrase naming the cut data (the gold span) becomes "the data"
   insert sentence     a sentence in the generated insert style ("Use the ... for this step.") is appended
   features zeroed     the 16 graph facts are all 0, the text as is
@@ -28,7 +29,22 @@ from .data import load_examples
 HEADING_BLOCK = re.compile(r" [A-Z][A-Z0-9 _'/-]*: \{\{[^}]+\}\}")  # an all-caps heading naming an input
 ANY_BLOCK = re.compile(r" [A-Za-z][^.:{}]{0,60}: \{\{[^}]+\}\}")  # any heading block, "The request: {{goal}}" too
 INPUT_LINE = re.compile(r"\[INPUT\] [^\[]*")
-COLUMNS = ["as is", "no heading blocks", "no references", "B = request only", "mention removed", "insert sentence", "features zeroed", "as-written control"]
+CANDIDATE_LINE = re.compile(r"\[CANDIDATE\] [^\[]*")
+COLUMNS = ["as is", "no heading blocks", "no references", "B = request only", "other candidate", "mention removed", "insert sentence", "features zeroed", "as-written control"]
+
+
+def candidate_of(text_b: str) -> str:
+    """The `[CANDIDATE] …` line (from msmarco-4), with its trailing space; empty for older rows."""
+    found = CANDIDATE_LINE.search(text_b)
+    return found.group(0) if found else ""
+
+
+def other_candidate(rows: list[dict], positive: dict) -> dict | None:
+    """A negative pair of the same step version: same task and inputs, another step as the candidate."""
+    for row in rows:
+        if row["seed"] == positive["seed"] and row.get("group") and row.get("group") == positive.get("group") and row["label"] == 0:
+            return row
+    return None
 
 
 def input_lines(text_b: str) -> list[str]:
@@ -78,8 +94,11 @@ def variants(rows: list[dict], positive: dict) -> dict[str, dict]:
         "as is": {"text_a": a, "text_b": b},
         "no heading blocks": {"text_a": HEADING_BLOCK.sub("", a), "text_b": b},
         "no references": {"text_a": ANY_BLOCK.sub("", a), "text_b": b},
-        "B = request only": {"text_a": a, "text_b": request_line_of(rows, positive["seed"])},
+        "B = request only": {"text_a": a, "text_b": candidate_of(b) + request_line_of(rows, positive["seed"])},
     }
+    other = other_candidate(rows, positive)
+    if other:
+        out["other candidate"] = {"text_a": a, "text_b": other["text_b"]}
     if positive.get("span"):
         start, end = positive["span"]
         out["mention removed"] = {"text_a": re.sub(r" {2,}", " ", a[:start] + "the data" + a[end:]), "text_b": b}

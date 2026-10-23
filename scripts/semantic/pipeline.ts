@@ -19,7 +19,7 @@ import { draftGraph } from "../../src/app/graph/lib/graphDraft";
 import { editGraph } from "../../src/app/graph/lib/graphEdit";
 import { parseGraphSkill, predecessorsOf, descendantsOf, runsWithoutSubagent, validateGraph, foreachSource, nodeRefs, getContract, type GraphNode, type SkillGraph } from "../../src/app/graph/lib/graphSkill";
 import { CONNECTOR_TEMPLATES } from "../../src/app/graph/lib/graphTemplates";
-import { SEMANTIC_INPUT_VERSION, TASK_PREFIX, contractInput, gateInput, missingInputInput, taskText, verdictInput } from "../../src/app/graph/lib/semanticInput";
+import { SEMANTIC_INPUT_VERSION, TASK_PREFIX, contractInput, edgeCandidates, gateInput, inputsText, missingInputInput, taskText, verdictInput } from "../../src/app/graph/lib/semanticInput";
 import {
   H1_BURIED,
   H1_INCONSISTENT,
@@ -151,7 +151,7 @@ function modelSteps(graph: SkillGraph): GraphNode[] {
 
 /** The inputs line of a step, without the model's markers, for a text-model prompt. */
 function inputsForPrompt(graph: SkillGraph, node: GraphNode): string {
-  return missingInputInput(graph, node).textB.replace(/\[INPUT\]\s*/g, "\n- ").trim();
+  return inputsText(graph, node).replace(/\[INPUT\]\s*/g, "\n- ").trim();
 }
 
 function describeStep(graph: SkillGraph, node: GraphNode): string {
@@ -189,6 +189,45 @@ export interface Example {
   note: string;
   /** The step the row is about (text-model rows), so a built H2 twin can be matched by seed, step and note. */
   node?: string;
+  /** H2: the step the pair asks about (`[CANDIDATE]` in text_b). */
+  candidate?: string;
+  /** H2: the rows of one version of one step, one per candidate; the step is flagged when any of them is (spec §8.2). */
+  group?: string;
+}
+
+/**
+ * H2 rows of one version of a step, one per candidate (`edgeCandidates`). `pred` is the input the version is about;
+ * when it is a candidate (cut, replaced, dropped) its row gets `label`, and the span of `phrase` when that is 1, and
+ * the other candidates are negatives noted `other`. When the step still reads it (kept, drafted) every row is a
+ * negative noted `<kind> <pred>`. Null when a positive's phrase is not in its task text.
+ */
+function h2Rows(
+  graph: SkillGraph,
+  node: GraphNode,
+  base: { seed: string; split: Example["split"] },
+  source: Example["source"],
+  kind: string,
+  pred: string | null,
+  label = 0,
+  phrase = ""
+): Example[] | null {
+  const candidates = edgeCandidates(graph, node);
+  const named = pred ? `${kind} ${pred}` : kind;
+  const predIsCandidate = candidates.some((candidate) => candidate.id === pred);
+  const rows: Example[] = [];
+  for (const candidate of candidates) {
+    const pair = missingInputInput(graph, node, candidate);
+    const row: Example = { head: "h2", ...base, text_a: pair.textA, text_b: pair.textB, features: pair.features, label: 0, source, note: named, node: node.id, candidate: candidate.id, group: `${node.id}: ${named}` };
+    if (candidate.id === pred) {
+      if (label === 1) {
+        const at = pair.textA.toLowerCase().indexOf(phrase.toLowerCase(), TASK_PREFIX.length);
+        if (!phrase || at === -1) return null;
+        Object.assign(row, { label: 1, span: [at, at + phrase.length] });
+      }
+    } else if (predIsCandidate) row.note = `other (${named}): ${candidate.id}`;
+    rows.push(row);
+  }
+  return rows;
 }
 
 /* ------------------------------------------------------------------ round 1 */
@@ -322,7 +361,7 @@ function substituteFor(seed: Seed, graph: SkillGraph, id: string, pred: string, 
 }
 
 /** The step with `pred` disconnected and `prompt` set; a step left with no input reads the request. Null when the checker rejects the edit. */
-function cutStep(source: string, graph: SkillGraph, node: GraphNode, pred: string, prompt: string): ReturnType<typeof missingInputInput> | null {
+function cutStep(source: string, graph: SkillGraph, node: GraphNode, pred: string, prompt: string): { graph: SkillGraph; node: GraphNode } | null {
   const remaining = [...new Set(predecessorsOf(graph, node.id))].filter((id) => id !== pred);
   const input = graph.nodes.find((n) => n.type === "input");
   const cut = editGraph(source, [
@@ -332,7 +371,7 @@ function cutStep(source: string, graph: SkillGraph, node: GraphNode, pred: strin
   ]);
   if ("error" in cut || errorsOf(cut.source) > 0) return null;
   const cutGraph = load(cut.source) as SkillGraph;
-  return missingInputInput(cutGraph, cutGraph.nodes.find((n) => n.id === node.id) as GraphNode);
+  return { graph: cutGraph, node: cutGraph.nodes.find((n) => n.id === node.id) as GraphNode };
 }
 
 /**
@@ -473,18 +512,15 @@ export function assemble(out: string): void {
 
     if (request.kind === "h2" && request.meta.mode === "weave") {
       /*
-       * Four rows per answer, built like the gold cuts (the outline drafted again):
-       *   cut      the woven task, the input gone from after: the task names data the step no longer gets (label 1)
-       *   kept     the same prompt with the input still connected: identical text A, so only the list tells them apart
-       *   drafted  the woven task drafted with all its inputs, heading blocks and all: the gold negative of a gold cut,
-       *            which no generated row looked like through minilm-5
-       *   dropped  the task without that mention, the input gone: identical input list and graph facts, so only the
-       *            words of the task tell them apart (minilm-3 read the list and facts alone; see MEMORY.md)
+       * Five versions of the step per answer, built like the gold cuts (the outline drafted again), each written as
+       * one row per candidate step (h2Rows; from msmarco-4 a pair names the step that might be missing):
+       *   cut      the woven task, the input gone from after: its row says the task needs that step (label 1)
+       *   kept     the same prompt with the input still connected: the input is no candidate, every row a negative
+       *   drafted  the woven task drafted with all its inputs, heading blocks and all: the gold negative of a gold cut
+       *   dropped  the task without that mention, the input gone: the cut's very pairs, only the task's words differ
        *   replaced the woven task with the cut input's place taken by an unrelated step of the same outline (label 1):
-       *            as many inputs, heading blocks and graph facts as the drafted twin, and the task still names data
-       *            no input carries. Through msmarco-1 every full-list row was a negative, so the model read the
-       *            length of the list (B only vs drafted 0.85, facts only 0.91) and called every gold cut, made on a
-       *            step that keeps its other inputs, "kept" (see MEMORY.md)
+       *            as many inputs as the drafted twin, so the length of the list carries no label (msmarco-1 read it)
+       * In every version the other candidates are negatives: the task names data of one step, not of any step left out.
        */
       const pred = String(request.meta.pred);
       const seedRow = seeds.get(seed);
@@ -502,33 +538,25 @@ export function assemble(out: string): void {
         drop("h2-checker-error");
         continue;
       }
-      const positive = missingInputInput(cut.graph, cut.node);
-      const at = positive.textA.toLowerCase().indexOf(answer.phrase.toLowerCase(), TASK_PREFIX.length);
-      if (at === -1) {
+      const positives = h2Rows(cut.graph, cut.node, base, "llm", "cut", pred, 1, answer.phrase);
+      if (!positives) {
         drop("h2-span-cut");
         continue;
       }
       const keptGraph = load(kept.source) as SkillGraph;
-      const negative = missingInputInput(keptGraph, keptGraph.nodes.find((n) => n.id === node.id) as GraphNode);
-      examples.push({ head: "h2", ...base, text_a: positive.textA, text_b: positive.textB, features: positive.features, label: 1, span: [at, at + answer.phrase.length], source: "llm", note: `cut ${pred}` });
-      examples.push({ head: "h2", ...base, text_a: negative.textA, text_b: negative.textB, features: negative.features, label: 0, source: "llm", note: `kept ${pred}` });
+      examples.push(...positives, ...(h2Rows(keptGraph, keptGraph.nodes.find((n) => n.id === node.id) as GraphNode, base, "llm", "kept", pred) ?? []));
       const whole = redraft(seedRow, node.id, answer.task, step.after);
-      if (whole) {
-        const drafted = missingInputInput(whole.graph, whole.node);
-        examples.push({ head: "h2", ...base, text_a: drafted.textA, text_b: drafted.textB, features: drafted.features, label: 0, source: "llm", note: `drafted ${pred}` });
-      } else drop("h2-drafted-checker-error");
+      if (whole) examples.push(...(h2Rows(whole.graph, whole.node, base, "llm", "drafted", pred) ?? []));
+      else drop("h2-drafted-checker-error");
       const without = redraft(seedRow, node.id, answer.without, after);
-      if (without) {
-        const dropped = missingInputInput(without.graph, without.node);
-        examples.push({ head: "h2", ...base, text_a: dropped.textA, text_b: dropped.textB, features: dropped.features, label: 0, source: "llm", note: `dropped ${pred}` });
-      } else drop("h2-dropped-checker-error");
+      if (without) examples.push(...(h2Rows(without.graph, without.node, base, "llm", "dropped", pred) ?? []));
+      else drop("h2-dropped-checker-error");
       const substitute = substituteFor(seedRow, graph, node.id, pred, step.after);
       const replaced = substitute ? redraft(seedRow, node.id, answer.task, [...after, substitute]) : null;
       if (replaced) {
-        const input = missingInputInput(replaced.graph, replaced.node);
-        const where = input.textA.toLowerCase().indexOf(answer.phrase.toLowerCase(), TASK_PREFIX.length);
-        if (where === -1) drop("h2-span-replaced");
-        else examples.push({ head: "h2", ...base, text_a: input.textA, text_b: input.textB, features: input.features, label: 1, span: [where, where + answer.phrase.length], source: "llm", note: `replaced ${pred}` });
+        const rows = h2Rows(replaced.graph, replaced.node, base, "llm", "replaced", pred, 1, answer.phrase);
+        if (rows) examples.push(...rows);
+        else drop("h2-span-replaced");
       } else drop(substitute ? "h2-replaced-checker-error" : "h2-replaced-none");
       continue;
     }
@@ -549,21 +577,18 @@ export function assemble(out: string): void {
       }
       const kept = editGraph(source, [{ op: "set_prompt", id: node.id, prompt: rewritten }]);
       // A step left with no input reads the request, like a first step; its task still names the data it lost.
-      const positive = cutStep(source, graph, node, pred, rewritten);
-      if ("error" in kept || errorsOf(kept.source) > 0 || !positive) {
+      const cut = cutStep(source, graph, node, pred, rewritten);
+      if ("error" in kept || errorsOf(kept.source) > 0 || !cut) {
         drop("h2-checker-error");
         continue;
       }
-      const keptGraph = load(kept.source) as SkillGraph;
-      const keptNode = keptGraph.nodes.find((n) => n.id === node.id) as GraphNode;
-      const at = positive.textA.toLowerCase().indexOf(phrase.toLowerCase(), TASK_PREFIX.length);
-      if (at === -1) {
+      const positives = h2Rows(cut.graph, cut.node, base, "mutation", "cut", pred, 1, phrase);
+      if (!positives) {
         drop("h2-span-cut");
         continue;
       }
-      const negative = missingInputInput(keptGraph, keptNode);
-      examples.push({ head: "h2", ...base, text_a: positive.textA, text_b: positive.textB, features: positive.features, label: 1, span: [at, at + phrase.length], source: "mutation", note: `cut ${pred}` });
-      examples.push({ head: "h2", ...base, text_a: negative.textA, text_b: negative.textB, features: negative.features, label: 0, source: "mutation", note: `kept ${pred}` });
+      const keptGraph = load(kept.source) as SkillGraph;
+      examples.push(...positives, ...(h2Rows(keptGraph, keptGraph.nodes.find((n) => n.id === node.id) as GraphNode, base, "mutation", "kept", pred) ?? []));
       continue;
     }
 
@@ -583,10 +608,7 @@ export function assemble(out: string): void {
     const graph = graphOf(seed.seed);
     if (!graph) continue;
     const base = { seed: seed.seed, split: splitOf(seed.seed) };
-    for (const node of modelSteps(graph)) {
-      const pair = missingInputInput(graph, node);
-      examples.push({ head: "h2", ...base, text_a: pair.textA, text_b: pair.textB, features: pair.features, label: 0, source: seed.origin === "starter" ? "starter" : "mutation", note: "as written" });
-    }
+    for (const node of modelSteps(graph)) examples.push(...(h2Rows(graph, node, base, seed.origin === "starter" ? "starter" : "mutation", "as written", null) ?? []));
     // An H2-only seed adds H2 rows and nothing else, so the other heads train on the same data as before.
     if (seed.h2Only) continue;
     for (const node of modelSteps(graph)) {
