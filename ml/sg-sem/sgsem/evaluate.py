@@ -1,7 +1,8 @@
 """Scores a trained sg-sem run on a labelled file it never trained on: the gold set (spec §8.2). Writes to --out:
 
   metrics.json     per head: precision and recall at the run's thresholds (what the connector would do),
-                   at 0.5, AUROC, sentence / span F1, the rules baseline, and whether the 0.9 bar holds
+                   at 0.5, AUROC, sentence / span F1, the rules baseline, and whether the spec §8.3 bar holds
+                   (precision >= 0.9 with recall >= 0.3; H2 also span F1 >= 0.6; H4 also beats the rule)
   errors.md        the examples the model gets most wrong, per head
 
     python -m sgsem.evaluate --run runs/minilm-1 --data gold/examples.jsonl --out runs/minilm-1/gold
@@ -22,7 +23,7 @@ from torch.utils.data import DataLoader
 from . import HEADS
 from .data import HeadDataset, by_head_and_split, collate, load_examples
 from .model import SgSem
-from .train import PRECISION_BAR, head_metrics, predict, rules_baseline, write_errors
+from .train import MIN_RECALL, MIN_SPAN_F1, PRECISION_BAR, head_metrics, meets_bar, predict, rules_baseline, write_errors
 
 
 def main() -> None:
@@ -57,14 +58,15 @@ def main() -> None:
         metrics[head] = head_metrics(head, results[head], temperature, threshold)
         if threshold is None:
             metrics[head]["note"] = "the run set no threshold for this head (it did not reach the bar on dev)"
-    shipping = {head: (m.get("threshold") is not None and m.get("precision_at_threshold", 0) >= PRECISION_BAR) for head, m in metrics.items()}
-    report = {"run": args.run, "data": args.data, "metrics": metrics, "rules_baseline": rules_baseline(examples), "meets_bar": shipping}
+    baseline = rules_baseline(examples)
+    shipping = {head: meets_bar(head, m, baseline) for head, m in metrics.items()}
+    report = {"run": args.run, "data": args.data, "metrics": metrics, "rules_baseline": baseline, "meets_bar": shipping}
     with open(os.path.join(args.out, "metrics.json"), "w", encoding="utf-8") as handle:
         json.dump(report, handle, indent=2)
     write_errors(os.path.join(args.out, "errors.md"), rows, results, {head: settings["temperatures"].get(head, 1.0) for head in rows})
     for head, m in metrics.items():
         print(head, json.dumps({k: (round(v, 3) if isinstance(v, float) else v) for k, v in m.items()}))
-    print("meets the 0.9 precision bar on this data:", shipping)
+    print(f"meets the bar (precision >= {PRECISION_BAR}, recall >= {MIN_RECALL}, H2 span F1 >= {MIN_SPAN_F1}) on this data:", shipping)
     print("rules baseline:", json.dumps(report["rules_baseline"]))
 
 

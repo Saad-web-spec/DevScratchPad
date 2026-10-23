@@ -28,6 +28,11 @@ from .data import IGNORE, HeadDataset, balance, by_head_and_split, collate, load
 from .model import SgSem
 
 PRECISION_BAR = 0.9
+# A head that is right when it flags but flags almost nothing is not a pass: msmarco-2 caught 1 of 28 gold H2 cuts
+# at precision 1.0 and the old check printed "True". The flagged share of real problems must reach this too.
+MIN_RECALL = 0.3
+# Spec §8.3: H2's quoted words must overlap the right ones, or the warning names the wrong data.
+MIN_SPAN_F1 = 0.6
 # Dev splits are small (H2 has ~30 positives), so the threshold aims above the bar there to hold it on test,
 # and never goes below 0.5: a calibrated flag should at least mean "more likely than not".
 DEV_MARGIN = 0.05
@@ -185,6 +190,21 @@ def head_metrics(head: str, result: dict, temperature: float | None = None, thre
     return metrics
 
 
+def meets_bar(head: str, metrics: dict, baseline: dict | None = None) -> bool:
+    """Spec §8.3 at the run's own threshold: precision >= 0.9 and recall >= MIN_RECALL; H2 also span F1 >= 0.6;
+    H4 also beats the word-count rule on macro-F1 when its baseline is given."""
+    if metrics.get("threshold") is None:
+        return False
+    if metrics.get("precision_at_threshold", 0) < PRECISION_BAR or metrics.get("recall_at_threshold", 0) < MIN_RECALL:
+        return False
+    if head == "h2" and metrics.get("span_f1", 0) < MIN_SPAN_F1:
+        return False
+    rule = (baseline or {}).get("h4")
+    if head == "h4" and isinstance(rule, dict) and metrics.get("macro_f1", 0) <= rule.get("macro_f1", 0):
+        return False
+    return True
+
+
 def rules_baseline(examples: list[dict]) -> dict:
     """What the checker's rules do today: H4 only (gate-vague = fewer than 4 words); H1-H3 have no rule."""
     h4 = [e for e in examples if e["head"] == "h4"]
@@ -230,6 +250,7 @@ def main() -> None:
     parser.add_argument("--seed", type=int, default=13)
     parser.add_argument("--max-steps", type=int, default=None, help="stop early (a smoke test)")
     parser.add_argument("--no-features", action="store_true", help="ablation: zero the graph facts")
+    parser.add_argument("--h2-feature-dropout", type=float, default=0.3, help="share of H2 training rows whose graph facts are zeroed, so the head must read the text (msmarco-1: facts alone told cut from drafted at 0.91)")
     args = parser.parse_args()
 
     os.makedirs(args.out, exist_ok=True)
@@ -303,6 +324,9 @@ def main() -> None:
                 iterators[head] = iter(train[head])
                 batch = next(iterators[head])
             batch = to_device(batch, device)
+            if head == "h2" and args.h2_feature_dropout > 0:
+                drop = torch.rand(batch["features"].shape[0], 1, device=device) < args.h2_feature_dropout
+                batch["features"] = batch["features"].masked_fill(drop, 0.0)
             with torch.autocast(device_type=device.type, dtype=torch.float16, enabled=device.type == "cuda"):
                 outputs = run_model(model, batch)
             loss = batch_loss(outputs, batch, class_weights)
@@ -338,14 +362,16 @@ def main() -> None:
     temperatures = {head: m["temperature"] for head, m in dev_metrics.items()}
     thresholds = {head: m["threshold"] for head, m in dev_metrics.items()}
     test_metrics = {head: head_metrics(head, predict(model, test[head], device), temperatures[head], thresholds[head]) for head in test if head in temperatures}
-    shipping = {head: (m.get("threshold") is not None and m.get("precision_at_threshold", 0) >= PRECISION_BAR) for head, m in test_metrics.items()}
+    baseline = rules_baseline([e for e in examples if e["split"] == "test"])
+    shipping = {head: meets_bar(head, m, baseline) for head, m in test_metrics.items()}
     report = {
         "base": args.base,
         "max_len": args.max_len,
         "no_features": args.no_features,
+        "h2_feature_dropout": args.h2_feature_dropout,
         "dev": dev_metrics,
         "test": test_metrics,
-        "rules_baseline_test": rules_baseline([e for e in examples if e["split"] == "test"]),
+        "rules_baseline_test": baseline,
         "meets_bar_on_test": shipping,
         "minutes": round((time.time() - started) / 60, 1),
     }
@@ -355,7 +381,7 @@ def main() -> None:
         json.dump({"base": args.base, "vocab_size": len(tokenizer), "max_len": args.max_len, "temperatures": temperatures, "thresholds": thresholds, "heads": HEADS}, handle, indent=2)
     write_errors(os.path.join(args.out, "errors.md"), {head: dev_rows[head] for head in dev}, dev_results, temperatures)
     print("test:", json.dumps({h: {k: (round(v, 3) if isinstance(v, float) else v) for k, v in m.items()} for h, m in test_metrics.items()}))
-    print("meets the 0.9 precision bar on the generated test split (the gold set decides what ships):", shipping)
+    print(f"meets the bar (precision >= {PRECISION_BAR}, recall >= {MIN_RECALL}, H2 span F1 >= {MIN_SPAN_F1}) on the generated test split (the gold set decides what ships):", shipping)
 
 
 if __name__ == "__main__":

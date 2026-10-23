@@ -107,7 +107,7 @@ describe("sg-sem data pipeline, on the mock text model", () => {
   afterAll(() => rmSync(dir, { recursive: true, force: true }));
 
   it("builds labelled examples for all four heads, split by seed", () => {
-    round1(dir, 1);
+    round1(dir, 1, 1);
     mock(join(dir, "round1.requests.jsonl"), join(dir, "round1.outputs.jsonl"));
     round2(dir, 1);
     mock(join(dir, "round2.requests.jsonl"), join(dir, "round2.outputs.jsonl"));
@@ -166,6 +166,13 @@ describe("sg-sem data pipeline, on the mock text model", () => {
       expect(positive.features[8]).toBe(twin!.features[8]);
       expect(positive.text_a.slice(positive.span![0], positive.span![1])).toBe(cut!.text_a.slice(cut!.span![0], cut!.span![1]));
     }
+    // An H2-only seed (drafted from an H2-only outline) gets no H1 or H4 jobs and writes nothing but H2 rows.
+    const h2Only = new Set(readFileSync(join(dir, "seeds.jsonl"), "utf8").trim().split("\n").map((line) => JSON.parse(line) as { seed: string; h2Only?: boolean }).filter((seed) => seed.h2Only).map((seed) => seed.seed));
+    expect(h2Only.size).toBeGreaterThan(0);
+    expect(examples.filter((e) => h2Only.has(e.seed)).every((e) => e.head === "h2")).toBe(true);
+    expect(examples.some((e) => h2Only.has(e.seed) && e.label === 1)).toBe(true);
+    const jobs = readFileSync(join(dir, "round2.requests.jsonl"), "utf8").trim().split("\n").map((line) => JSON.parse(line) as { kind: string; meta: { seed: string } });
+    expect(jobs.filter((job) => h2Only.has(job.meta.seed)).every((job) => job.kind === "h2")).toBe(true);
     // No seed graph is in two splits.
     const splits = new Map<string, Set<string>>();
     for (const example of examples) splits.set(example.seed, (splits.get(example.seed) ?? new Set()).add(example.split));

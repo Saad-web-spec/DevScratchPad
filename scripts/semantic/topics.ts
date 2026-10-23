@@ -59,6 +59,52 @@ export const CODE_TOPICS: readonly string[] = [
 ];
 
 /** How each outline request varies, so outlines differ in shape and not only in topic. */
+/**
+ * More topics for the H2-only outlines (msmarco-3), so missing-input examples come from more kinds of work than the
+ * 50 topics above. Kept clear of the gold set's topics (grant applications, allergy-safe meals, podcast notes,
+ * apartment hunting, flaky tests, API rate limits, tax receipts) so the gold score stays an outside measure.
+ */
+export const H2_TOPICS: readonly string[] = [
+  "plan a community garden's planting calendar from soil tests and member requests",
+  "choose a wedding venue from quotes, guest numbers and travel times",
+  "compare electricity tariffs from a year of meter readings",
+  "plan a school field trip with permission slips, transport and a risk check",
+  "review a lease renewal offer against market prices and the current contract",
+  "write a museum exhibit label set from curator notes and object records",
+  "plan a volunteer rota from availability forms and shift needs",
+  "compare home insurance quotes against an inventory of belongings",
+  "build a reading list for a book club from member votes and library stock",
+  "plan a road trip with charging stops for an electric car",
+  "check a conference talk proposal against the call for papers",
+  "prepare a used bike listing from photos, specs and recent sale prices",
+  "plan a kitchen renovation from measurements, quotes and a budget",
+  "compare childcare options from fees, hours and inspection reports",
+  "write a newsletter from team updates and event dates",
+  "plan a hiking route from trail reports, weather and fitness levels",
+  "translate a product manual and check terminology against a glossary",
+  "audit a website's cookie banner against the privacy policy",
+  "review a translation memory export for inconsistent terms",
+  "triage support tickets by urgency and product area",
+  "write a changelog for a mobile app release from merged tickets",
+  "check a Terraform plan against the team's tagging and cost rules",
+  "review a Dockerfile for image size and security problems",
+  "map a legacy cron schedule to a new job scheduler",
+  "check a data warehouse model against the metric definitions",
+  "review feature-flag usage and list flags safe to remove",
+  "write load-test scenarios from production traffic summaries",
+  "check an OpenAPI spec against the server's route handlers",
+  "plan the rollout of a database index across shards",
+  "review log retention settings against the compliance policy",
+];
+
+/** Shapes for the H2-only outlines: steps that read two or three earlier steps, where a cut input leaves others behind. */
+export const H2_OUTLINE_SHAPES: readonly string[] = [
+  "a planner, 3 parallel workers that each produce a different piece, a checker that reads all three, then a writer that reads the checker and two of the workers",
+  "5 to 6 steps where every step after the first two reads two or three earlier steps",
+  "2 independent gathering steps, a step that combines them, a checker that reads all three, then a writer",
+  "a worker that returns a JSON object with named keys, two steps that each read it and a second earlier step, then a step that reads both",
+];
+
 export const OUTLINE_SHAPES: readonly string[] = [
   "3 to 4 steps in a line, ending with a checker and a writer",
   "a planner that splits the work into 3 parallel workers, then a checker, then a writer",

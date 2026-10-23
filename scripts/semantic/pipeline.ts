@@ -39,7 +39,7 @@ import {
   type LlmOutput,
   type LlmRequest,
 } from "./llmPrompts";
-import { CODE_TOPICS, EVERYDAY_TOPICS, OUTLINE_SHAPES } from "./topics";
+import { CODE_TOPICS, EVERYDAY_TOPICS, H2_OUTLINE_SHAPES, H2_TOPICS, OUTLINE_SHAPES } from "./topics";
 
 /* ------------------------------------------------------------------ small helpers */
 
@@ -168,6 +168,8 @@ export interface Seed {
   source: string;
   /** Drafted seeds: the cleaned outline `source` was drafted from, so a step can be drafted again with other text or inputs. */
   outline?: Record<string, unknown>;
+  /** Drafted from an H2-only outline: round 2 asks only H2 jobs of it, and assemble writes only H2 rows. */
+  h2Only?: boolean;
 }
 
 export interface Example {
@@ -191,13 +193,27 @@ export interface Example {
 
 /* ------------------------------------------------------------------ round 1 */
 
-export function round1(out: string, perPair: number): void {
+export function round1(out: string, perPair: number, h2PerTopic: number): void {
   const requests: LlmRequest[] = [];
   const topics = [...EVERYDAY_TOPICS.map((t) => [t, "chat"] as const), ...CODE_TOPICS.map((t) => [t, "claude_code"] as const)];
   for (const [topicIndex, [topic, runsIn]] of topics.entries()) {
     const random = rng(`shapes:${topic}`);
     const shapes = [...OUTLINE_SHAPES].sort(() => random() - 0.5).slice(0, perPair);
     shapes.forEach((shape, index) => requests.push(outlineRequest(`outline-${topicIndex}-${index}`, topic, shape, runsIn)));
+  }
+  /*
+   * H2-only outlines (msmarco-3): through msmarco-2, H2 had 391 train positives against the spec's 8k, because the
+   * outlines above mostly give a step one input. These shapes give steps two or three, over the topics above and
+   * H2_TOPICS; round 2 asks only H2 jobs of them, so H1 / H3 / H4 data stays as it was.
+   */
+  const h2Topics = [...topics, ...H2_TOPICS.map((t, i) => [t, i < 18 ? "chat" : "claude_code"] as const)];
+  for (const [topicIndex, [topic, runsIn]] of h2Topics.entries()) {
+    const random = rng(`h2-shapes:${topic}`);
+    const shapes = [...H2_OUTLINE_SHAPES].sort(() => random() - 0.5).slice(0, h2PerTopic);
+    shapes.forEach((shape, index) => {
+      const request = outlineRequest(`h2-outline-${topicIndex}-${index}`, topic, shape, runsIn);
+      requests.push({ ...request, meta: { ...request.meta, h2_only: 1 } });
+    });
   }
   writeJsonl(join(out, "round1.requests.jsonl"), requests);
   console.log(`round1: ${requests.length} outline requests → ${join(out, "round1.requests.jsonl")}`);
@@ -239,7 +255,7 @@ function seedsFrom(out: string): { seeds: Seed[]; drafted: number; rejected: Rec
       continue;
     }
     names.add(name);
-    seeds.push({ seed: name, origin: "draft", source: draft.source, outline: args });
+    seeds.push({ seed: name, origin: "draft", source: draft.source, outline: args, ...(request.meta.h2_only ? { h2Only: true } : {}) });
     drafted += 1;
   }
   return { seeds, drafted, rejected, reasons };
@@ -340,8 +356,8 @@ function h2Candidates(graph: SkillGraph): { node: GraphNode; pred: GraphNode; re
   return out;
 }
 
-/** H2 text jobs per seed graph: 6 through minilm-4; the weave jobs make nearly all positives now. */
-const H2_PER_SEED = 8;
+/** H2 text jobs per seed graph: 6 through minilm-4, 8 through msmarco-2; now every input of every step is woven. */
+const H2_PER_SEED = 32;
 
 export function round2(out: string, h1Samples: number): void {
   const { seeds, drafted, rejected, reasons } = seedsFrom(out);
@@ -351,7 +367,7 @@ export function round2(out: string, h1Samples: number): void {
     const graph = load(seed.source);
     if (!graph) continue;
     for (const node of modelSteps(graph)) {
-      if (!node.gate) continue;
+      if (!node.gate || seed.h2Only) continue;
       const task = taskText(node).slice(0, 700);
       const inputs = inputsForPrompt(graph, node);
       for (const style of H1_STYLES) {
@@ -570,6 +586,10 @@ export function assemble(out: string): void {
     for (const node of modelSteps(graph)) {
       const pair = missingInputInput(graph, node);
       examples.push({ head: "h2", ...base, text_a: pair.textA, text_b: pair.textB, features: pair.features, label: 0, source: seed.origin === "starter" ? "starter" : "mutation", note: "as written" });
+    }
+    // An H2-only seed adds H2 rows and nothing else, so the other heads train on the same data as before.
+    if (seed.h2Only) continue;
+    for (const node of modelSteps(graph)) {
       if (seed.origin === "starter" && node.gate) {
         const gate = gateInput(graph, node);
         if (gate) examples.push({ head: "h4", ...base, text_a: gate.textA, text_b: gate.textB, features: gate.features, label: 0, source: "starter", note: "starter gate" });
@@ -691,7 +711,7 @@ if (isMain) {
   const { command, flags } = args();
   const out = flags.out ?? "ml/sg-sem/.data";
   mkdirSync(out, { recursive: true });
-  if (command === "round1") round1(out, Number(flags["per-topic"] ?? 4));
+  if (command === "round1") round1(out, Number(flags["per-topic"] ?? 4), Number(flags["h2-per-topic"] ?? 4));
   else if (command === "round2") round2(out, Number(flags["h1-samples"] ?? 3));
   else if (command === "assemble") assemble(out);
   else if (command === "mock") mock(flags.in ?? "", flags.output ?? "");

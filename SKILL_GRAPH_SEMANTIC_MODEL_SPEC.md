@@ -158,7 +158,7 @@ It runs our TypeScript library (vite-node, like the tests) on seed graphs and wr
 
 | Mutation | Produces |
 | --- | --- |
-| `disconnect` an edge into a step. A starter's inline `{{ref}}` becomes plain words written by the LLM, and the heading block goes. A drafted step's outline task is rewritten by the LLM to name every input in plain words inside its sentences (*weave*, §7.2; the words naming the cut input marked in square brackets), and the outline is drafted again without the edge, the way the gold cuts are built | H2 positive; span = the words naming the cut input. Hard negatives: the same prompt with the edge kept (*kept*: same text A); the woven task drafted with every input and heading block (*drafted*: how a gold negative is built); the rewrite without that mention, the edge cut (*dropped*: same input list and graph facts), so neither side alone carries the label. A second positive per answer puts an unrelated step of the same outline in the cut input's place (*replaced*: as many inputs and facts as the drafted twin, and the task still names data no input carries), so the length of the list carries no label either. minilm-3 read the input list and facts alone; minilm-4, trained on a sentence appended for the purpose, missed every mention woven into a hand-written task; minilm-5 asked for the mention as a separate field and 9 in 10 answers were unusable; msmarco-1, with every full-list row a negative, read the length of the list |
+| `disconnect` an edge into a step. A starter's inline `{{ref}}` becomes plain words written by the LLM, and the heading block goes. A drafted step's outline task is rewritten by the LLM to name every input in plain words inside its sentences (*weave*, §7.2; the words naming the cut input marked in square brackets), and the outline is drafted again without the edge, the way the gold cuts are built | H2 positive; span = the words naming the cut input. Hard negatives: the same prompt with the edge kept (*kept*: same text A); the woven task drafted with every input and heading block (*drafted*: how a gold negative is built); the rewrite without that mention, the edge cut (*dropped*: same input list and graph facts), so neither side alone carries the label. A second positive per answer puts an unrelated step of the same outline in the cut input's place (*replaced*: as many inputs and facts as the drafted twin, and the task still names data no input carries), so the length of the list carries no label either. minilm-3 read the input list and facts alone; minilm-4, trained on a sentence appended for the purpose, missed every mention woven into a hand-written task; minilm-5 asked for the mention as a separate field and 9 in 10 answers were unusable; msmarco-1, with every full-list row a negative, read the length of the list. From msmarco-3 every input of every step is woven (no per-graph cap), and a second batch of outlines in shapes where steps read two or three inputs (over the round-1 topics and 30 more, none a gold topic) is asked only H2 jobs, so the other heads' data is unchanged |
 | `set_contract` with a description taken from another contract | H3 positive |
 | change a JSON producer's keys while its readers keep theirs, `required` left empty | H3 positive |
 | `set_step` gate ← a gate from the "not checkable" pool | H4 negative |
@@ -200,6 +200,7 @@ Target sizes: H1 12k, H2 8k, H3 5k, H4 6k (train), plus 10% dev and 10% test, al
 | Batch | 32 (gradient accumulation if the GPU is short of memory) |
 | Epochs | 10 (4 through minilm-5; the H2 loss was still falling), early stop on dev macro-F1 |
 | Task sampling | each batch from one head, heads drawn with probability ∝ √(examples), so small heads are not drowned out |
+| Feature dropout | H2 only: the 16 graph facts of 30% of training rows are zeroed, so the head cannot answer from the facts alone (msmarco-1: facts alone separated cut from drafted at 0.91) |
 | Losses | H1 doc: cross-entropy; H1 sentences: binary cross-entropy (masked to `[SEN]` tokens); H2: cross-entropy + span start/end cross-entropy (×0.5); H3: cross-entropy; H4: 3-class cross-entropy with class weights |
 | Seeds | 3 runs per configuration; report mean ± spread |
 | Time | ~40–90 minutes per run on a T4 (estimate) |
@@ -217,6 +218,8 @@ Target sizes: H1 12k, H2 8k, H3 5k, H4 6k (train), plus 10% dev and 10% test, al
 | H2 | precision / recall; span overlap (token F1) | precision ≥ 0.90; span F1 ≥ 0.6 so the quote makes sense |
 | H3 | precision / recall | precision ≥ 0.90 |
 | H4 | precision of "not checkable"; macro-F1 over 3 classes | beats `gate-vague` (word count) on macro-F1, precision ≥ 0.90 on "not checkable" |
+
+Every binary bar is read at the run's own threshold and also needs recall ≥ 0.3: a head that is right on the one case it flags is not a pass (msmarco-2 caught 1 of 28 gold H2 cuts at precision 1.0). `sgsem.train.meets_bar` applies this table.
 
 Ablations reported: MiniLM vs DeBERTa-v3-xsmall; text only vs text + features; 384 vs 512 tokens; with vs without the checker filter in §7.1. A head that misses its bar does not ship; the others still can.
 
