@@ -7,6 +7,7 @@
  * Nothing is stored, and only the names of the tools called are logged (an anonymous usage count).
  * The gate model (lib/graphSemantic.ts) runs in this function too, on the graph's gates, in memory.
  */
+import { after } from "next/server";
 import { CONNECTOR_TOOLS } from "../lib/graphConnector";
 import { INTERNAL_ERROR, INVALID_REQUEST, PARSE_ERROR, SUPPORTED_PROTOCOL_VERSIONS, calledToolNames, errorResponse, handleBodyWithChecks } from "../lib/mcpProtocol";
 
@@ -82,11 +83,16 @@ export async function POST(request: Request): Promise<Response> {
 
   let response: Awaited<ReturnType<typeof handleBodyWithChecks>>;
   try {
-    // The gate model (graphSemantic.ts) scores the graphs this body checks before the tools run, within its budget.
-    response = await handleBodyWithChecks(body, {
-      studioUrl: new URL("/graph/studio", request.url).toString(),
-      downloadUrl: new URL("/graph/download", request.url).toString(),
-    });
+    // The gate model (graphSemantic.ts) scores the graphs this body checks before the tools run, within its budget;
+    // after() keeps the function alive until a load this request started has finished.
+    response = await handleBodyWithChecks(
+      body,
+      {
+        studioUrl: new URL("/graph/studio", request.url).toString(),
+        downloadUrl: new URL("/graph/download", request.url).toString(),
+      },
+      (work) => after(() => work)
+    );
   } catch (error) {
     // Anything a tool did not catch itself still answers as JSON-RPC, not as a framework error page.
     console.error(`[skill-graph-mcp] request failed (${error instanceof Error ? error.name : typeof error})`);

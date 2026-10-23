@@ -53,8 +53,16 @@ describe("gate verdicts from the model", () => {
     vi.resetModules();
     const protocol = await import("../mcpProtocol");
     const semantic = await import("../graphSemantic");
-    await protocol.handleBodyWithChecks({ jsonrpc: "2.0", id: 1, method: "initialize", params: {} }, context);
-    expect(await semantic.gateVerdicts([withGate(VAGUE)], 20_000)).toMatchObject([{ flagged: true }]);
+    const kept: Promise<void>[] = [];
+    await protocol.handleBodyWithChecks({ jsonrpc: "2.0", id: 1, method: "initialize", params: {} }, context, (work) => kept.push(work));
+    expect(kept).toHaveLength(1);
+    await kept[0];
+    // Loaded by the time the route's after() lets the function go: the first check needs no wait.
+    expect(await semantic.gateVerdicts([withGate(VAGUE)], 50)).toMatchObject([{ flagged: true }]);
+    await protocol.handleBodyWithChecks({ jsonrpc: "2.0", id: 2, method: "tools/call", params: { name: "get_graph_format", arguments: {} } }, context, (work) => kept.push(work));
+    expect(kept).toHaveLength(1);
+    await protocol.handleBodyWithChecks({ jsonrpc: "2.0", id: 3, method: "tools/call", params: { name: "validate_graph", arguments: { source: withGate(VAGUE) } } }, context, (work) => kept.push(work));
+    expect(kept).toHaveLength(2);
   }, 60_000);
 
   it("names the graph each tool checks: as given, drafted, edited or decoded from a link", () => {

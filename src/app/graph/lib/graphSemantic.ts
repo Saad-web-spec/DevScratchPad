@@ -67,6 +67,7 @@ let loading: Promise<Runtime | null> | undefined;
 
 /** Reads the manifest, the vocabulary and the model, checks the model's hash, and opens one session. */
 async function load(): Promise<Runtime | null> {
+  const started = Date.now();
   try {
     const manifest = JSON.parse(await readFile(join(MODEL_DIR, MANIFEST), "utf8")) as Manifest;
     if (manifest.input_version !== SEMANTIC_INPUT_VERSION) {
@@ -79,6 +80,8 @@ async function load(): Promise<Runtime | null> {
     ort.env.wasm.numThreads = 1;
     ort.env.logLevel = "error";
     const session = await ort.InferenceSession.create(bytes, { executionProviders: ["wasm"], graphOptimizationLevel: "all", intraOpNumThreads: 1 });
+    // A timing only, never anything about a graph: how long a fresh instance takes to be ready.
+    console.info(`[skill-graph-mcp] semantic model ready in ${Date.now() - started} ms`);
     return { ort, session, tokenizer: new WordPieceTokenizer(vocab), manifest };
   } catch (error) {
     // Logged once per instance; the connector keeps working without the model.
@@ -93,12 +96,13 @@ function runtime(): Promise<Runtime | null> {
 }
 
 /**
- * Starts loading the model without waiting for it. The route calls this on `initialize` and `tools/list`, which
- * Claude sends before any tool call, so the load (a few seconds on a fresh instance) overlaps with them and the
- * first check finds the model ready.
+ * Starts loading the model without waiting for it, and returns the load so the route can keep the function
+ * alive until it ends (`after()` in route.ts): on Vercel, work left running when a response is sent is paused,
+ * so a load started on `initialize` without that only advanced during later requests and was rarely ready for
+ * the first check. Resolves at once when the model is already loaded.
  */
-export function warmGateModel(): void {
-  void runtime();
+export function warmGateModel(): Promise<void> {
+  return runtime().then(() => undefined);
 }
 
 function softmax(logits: Float32Array, temperature: number): number[] {
