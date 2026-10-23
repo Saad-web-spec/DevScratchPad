@@ -38,7 +38,7 @@ const TOOLS: { name: string; does: string }[] = [
   { name: "get_graph_template", does: "Gets one starter graph's source, to build on." },
   { name: "draft_graph", does: "Writes a graph from a plain outline of the steps (what each does and what it reads, plus checks, loops, retries, fan-out, probing, file handoffs and learning), so Claude does not have to write the format by hand. Lists what each step will receive." },
   { name: "edit_graph", does: "Changes a graph by operations (set a step's fields, add or remove a step, connect two steps, define a contract) instead of rewriting the file; all or nothing, then checked." },
-  { name: "validate_graph", does: "Checks a graph: errors, warnings with how to fix them (weak prompts, vague gates and steps that never get the work a verifier checked included), and the stages that will run." },
+  { name: "validate_graph", does: "Checks a graph: errors, warnings with how to fix them (weak prompts, gates a checker could not decide from the step's inputs, read by a small model on the server, and steps that never get the work a verifier checked included), and the stages that will run." },
   { name: "dry_run_graph", does: "Walks the plan with a sample request, without running a model: each step's prompt with its inputs filled in, what it returns and is checked by, and where a problem would hit." },
   { name: "compile_graph", does: "Turns a valid graph into files: the Claude Code kit (orchestrating SKILL.md plus one subagent per step), a single SKILL.md, or a Cursor rule." },
   { name: "open_graph_in_studio", does: "Makes a link that opens the graph in the studio, to see it, walk through the plan, edit and export it." },
@@ -246,6 +246,10 @@ export default function GraphConnectorPage() {
             </table>
           </div>
           <P>Every tool only reads: none of them changes anything in your Claude account, your files or on this site.</P>
+          <P>
+            The tools that check a graph also read each of its gates with a small classifier on our server and warn when no checker could decide one.{" "}
+            <Link href="/graph/gate-check" className={LINK}>How the gate check works</Link>.
+          </P>
         </Section>
 
         <Section id="limits" title="Limits">

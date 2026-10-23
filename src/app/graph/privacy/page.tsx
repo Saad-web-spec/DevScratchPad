@@ -5,7 +5,7 @@ import { SkillGraphIcon } from "@/components/icons/SkillGraphIcon";
 
 const PAGE_URL = "https://www.devscratchpad.tech/graph/privacy";
 const SUPPORT_EMAIL = "support@devscratchpad.tech";
-const EFFECTIVE_DATE = "21 October 2026";
+const EFFECTIVE_DATE = "23 October 2026";
 
 export const metadata: Metadata = {
   title: "Skill Graph Privacy Policy (Studio and Claude Connector)",
@@ -94,6 +94,7 @@ export default function GraphPrivacyPage() {
             items={[
               <><b className="text-zinc-900">What we use it for:</b> only to answer that one request: check, edit or compile the graph, build a studio or download link, or check a step&apos;s answer and say what runs next. A run&apos;s state travels in the run object Claude passes back on each call; we keep none of it.</>,
               <><b className="text-zinc-900">Storage:</b> the input is processed in memory and discarded once the answer is sent. It is not written to a database, a file or our logs.</>,
+              <><b className="text-zinc-900">The gate check:</b> when a tool checks a graph, a small classifier that runs inside the connector on our server reads each gate against the step&apos;s inputs, in the same memory. No other service receives the graph. <Link href="/graph/gate-check" className={LINK}>How it works</Link>.</>,
               <><b className="text-zinc-900">What we log:</b> the name of the tool called (for example validate_graph), to count usage. Not the graph, its contents or any step&apos;s answer.</>,
               <><b className="text-zinc-900">What we never receive:</b> your Claude conversation, chat history, memory, account details, name, email or files. The connector has no sign-in and no accounts.</>,
             ]}

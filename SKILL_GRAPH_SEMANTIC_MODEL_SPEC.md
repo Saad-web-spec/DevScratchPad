@@ -264,7 +264,7 @@ export async function semanticVerdictCheck(graph: SkillGraph, node: GraphNode, a
 
 - **Privacy.** Inference runs in memory inside the existing request, like every other check; nothing is stored or logged (the route logs tool names only). The model is never trained on user graphs or answers. The connector's privacy page gets one line saying a local model checks text and sends nothing anywhere.
 - **Versioning.** The model is `sg-sem-<n>`. Its manifest carries the SHA-256 of the file, its thresholds and the date. `SERVER_INFO.version` bumps whenever the model changes, since warnings change.
-- **Licences.** MiniLM-L12-H384: MIT; the ms-marco cross-encoder checkpoint of it: Apache-2.0. DeBERTa-v3-xsmall: MIT. Qwen2.5-7B-Instruct and Qwen2.5-14B-Instruct: Apache-2.0; Llama-3.1: Llama community licence, which permits this use but must be credited. Generated data and the trained weights are ours; the model card lists the sources.
+- **Licences.** MiniLM-L12-H384: MIT; the ms-marco cross-encoder checkpoint of it: Apache-2.0, but it was trained on the MS MARCO data, whose terms say "intended for non-commercial research purposes only" and grant no licence (microsoft.github.io/msmarco), so a model built on it is not cleanly usable commercially; the raw MiniLM base has no such question. DeBERTa-v3-xsmall: MIT. Qwen2.5-7B-Instruct and Qwen2.5-14B-Instruct: Apache-2.0; Llama-3.1: Llama community licence, which permits this use but must be credited. Generated data and the trained weights are ours; the model card lists the sources.
 
 ## 10b. How training runs on your Colab
 
@@ -295,9 +295,11 @@ src/app/graph/lib/
   semanticTokenizer.ts   WordPiece
   graphSemantic.ts       loading, inference, findings
   __tests__/graphSemantic.test.ts
-public or build-time download:
-  sg-sem-1.int8.onnx, vocab.txt, sg-sem-1.json   (decision: plan §8 question 3)
+models/sg-sem/                (committed; traced into the /graph/mcp function only, never served from public/)
+  sg-sem-h4-1.int8.onnx, vocab.txt, sg-sem-h4-1.json
 ```
+
+**Shipped (2026-10-23): H4 only, from run msmarco-6.** `sg-sem-h4-1.int8.onnx` is the encoder plus the H4 head and feature layer (inputs `ids`, `mask`, `types`, `feats`; output `h4`), dynamic int8, 33.9 MB, gold H4 the same as fp32 (20 of 21 not-checkable caught, 0 of 42 others flagged). H1 and H2 are not shipped: H1 failed its gold bar, and H2 caught 1 of 93 edges cut from the starters, all of them already flagged by the validator. The model sits in the repo rather than `public/` or a fetch at cold start, so loading it costs no Fast Origin Transfer. `lib/graphSemantic.ts` loads it lazily, checks its SHA-256 against the manifest and runs gates one at a time (batching pads to the longest and was slower); `mcpProtocol.handleBodyWithChecks` scores the graph a call will check before the tool runs (`graphConnector.checkedSource`), and `check()` swaps `gate-vague` for `semantic-gate-uncheckable` on every gate the model scored. The page `/graph/gate-check` explains it to users.
 
 Large data stays out of git: generated JSONL lives on Google Drive next to the notebooks; only the gold set and the manifest are committed.
 

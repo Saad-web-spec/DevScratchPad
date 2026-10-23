@@ -17,6 +17,16 @@ const nextConfig: NextConfig = {
     optimizePackageImports: ["lucide-react", "date-fns", "lz-string", "highlight.js", "marked", "@monaco-editor/react", "jszip"],
   },
   devIndicators: false,
+  // The Skill Graph connector's gate model (src/app/graph/lib/graphSemantic.ts): the ONNX runtime stays a Node
+  // require (its wasm build), and the function carries the model files plus the one wasm it loads, not the
+  // package's other builds (jsep/asyncify/jspi, ~70 MB) or source maps.
+  serverExternalPackages: ["onnxruntime-web"],
+  outputFileTracingIncludes: {
+    "/graph/mcp": ["models/sg-sem/**/*", "node_modules/onnxruntime-web/dist/ort-wasm-simd-threaded.wasm", "node_modules/onnxruntime-web/dist/ort-wasm-simd-threaded.mjs"],
+  },
+  outputFileTracingExcludes: {
+    "/graph/mcp": ["node_modules/onnxruntime-web/dist/*.jsep.*", "node_modules/onnxruntime-web/dist/*.asyncify.*", "node_modules/onnxruntime-web/dist/*.jspi.*", "node_modules/onnxruntime-web/dist/*.map"],
+  },
   async redirects() {
     return [
       {

@@ -5,7 +5,8 @@
  * route handler passes the parsed body here and sends back what this returns. Kept free of Next.js
  * types so it can be unit tested.
  */
-import { CONNECTOR_PROMPTS, CONNECTOR_RESOURCES, CONNECTOR_TOOLS, SERVER_INSTRUCTIONS, callConnectorTool, promptMessage, readConnectorResource, type ConnectorContext } from "./graphConnector";
+import { CONNECTOR_PROMPTS, CONNECTOR_RESOURCES, CONNECTOR_TOOLS, SERVER_INSTRUCTIONS, callConnectorTool, checkedSource, promptMessage, readConnectorResource, type ConnectorContext } from "./graphConnector";
+import { gateVerdicts } from "./graphSemantic";
 
 /** Newest first. A client asking for another version gets the newest, and decides whether it can go on. */
 export const SUPPORTED_PROTOCOL_VERSIONS: readonly string[] = ["2025-11-25", "2025-06-18", "2025-03-26", "2024-11-05"];
@@ -134,6 +135,19 @@ export function handleBody(body: unknown, context: ConnectorContext): JsonRpcRes
     return responses.length > 0 ? responses : null;
   }
   return handleMessage(body, context);
+}
+
+/**
+ * handleBody with the semantic model's gate verdicts (graphSemantic.ts): the graphs the body's tool calls will
+ * check are scored first, within the model's time budget, and the tools then run as they always do, with the
+ * verdicts in their context. When the model is unavailable or over budget, this is exactly handleBody.
+ */
+export async function handleBodyWithChecks(body: unknown, context: ConnectorContext): Promise<JsonRpcResponse | JsonRpcResponse[] | null> {
+  const sources = (Array.isArray(body) ? body : [body]).flatMap((message) =>
+    isRecord(message) && message.method === "tools/call" && isRecord(message.params) && typeof message.params.name === "string" ? [checkedSource(message.params.name, message.params.arguments)] : []
+  ).filter((source): source is string => source !== null);
+  const verdicts = sources.length > 0 ? await gateVerdicts(sources) : null;
+  return handleBody(body, verdicts ? { ...context, gateVerdicts: verdicts } : context);
 }
 
 /** The tool a request calls, for an anonymous usage count; never the arguments. */

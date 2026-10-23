@@ -1,0 +1,19 @@
+{
+  "name": "sg-sem-h4",
+  "version": 1,
+  "head": "h4",
+  "run": "msmarco-6",
+  "base": "cross-encoder/ms-marco-MiniLM-L12-v2",
+  "input_version": 2,
+  "model": "sg-sem-h4-1.int8.onnx",
+  "sha256": "acc472f003202690547e1abeb875aac3fcc4b9a998d11da0ea70ab36768c6578",
+  "vocab": "vocab.txt",
+  "max_len": 384,
+  "inputs": ["ids", "mask", "types", "feats"],
+  "output": "h4",
+  "labels": ["checkable", "partly", "not"],
+  "temperature": 2.5,
+  "threshold": 0.8937,
+  "gold": { "not_precision": 1.0, "not_recall": 0.95, "macro_f1": 0.86 },
+  "exported": "2026-10-23"
+}
