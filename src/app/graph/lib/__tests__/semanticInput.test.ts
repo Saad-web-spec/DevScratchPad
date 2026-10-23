@@ -2,8 +2,8 @@ import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterAll, describe, expect, it } from "vitest";
-import { readH2Weave } from "../../../../../scripts/semantic/llmPrompts";
-import { assemble, grounded, mock, round1, round2, splitOf, type Example } from "../../../../../scripts/semantic/pipeline";
+import { readH1, readH2Judge, readH2Weave } from "../../../../../scripts/semantic/llmPrompts";
+import { assemble, grounded, judge, mock, round1, round2, round3, splitOf, type Example } from "../../../../../scripts/semantic/pipeline";
 import { parseGraphSkill, type SkillGraph } from "../graphSkill";
 import { CONNECTOR_TEMPLATES } from "../graphTemplates";
 import { FEATURE_COUNT, SEMANTIC_INPUT_VERSION, contractInput, edgeCandidates, featuresFor, gateInput, missingInputInput, splitSentences, verdictInput } from "../semanticInput";
@@ -105,6 +105,19 @@ describe("sg-sem weave answers", () => {
     expect(readH2Weave("not json", original, ids)).toEqual({ reject: "json" });
   });
 
+  it("reads a label check: the candidate ids it names, unknown ones dropped", () => {
+    expect(readH2Judge('{"needed": ["score_each", "nope", "collect"]}', ["collect", "score_each"])).toEqual(["score_each", "collect"]);
+    expect(readH2Judge('{"needed": []}', ["collect"])).toEqual([]);
+    expect(readH2Judge("I think none.", ["collect"])).toBeNull();
+  });
+
+  it("keeps an honest review written with the words of a problem report only when it has them", () => {
+    const answer = (texts: string[]) => JSON.stringify({ sentences: texts.map((text) => ({ text, open_problem: false })) });
+    const absence = ["None of the 7 packaged items carries a warning.", "No line is above its cap; Equipment is 24,100 against 25,000.", "The only unknown is the deposit on Station Road, which is not a must-have."];
+    expect(readH1(answer(absence), "honest_absence_pass")).toEqual({ sentences: absence.map((text) => ({ text, open: false })) });
+    expect(readH1(answer(["All 7 items list a price.", "The totals add up to 1,240.", "Each claim cites its page."]), "honest_absence_pass")).toEqual({ reject: "no-absence" });
+  });
+
   it("keeps a mention only when it shares a content word with what the cut step returns", () => {
     expect(grounded("the budget totals per category", "[CANDIDATE] budget_review · Worker · Each budget category with its total, its cap and whether it is justified.")).toBe(true);
     expect(grounded("the listing scores", "[CANDIDATE] score_each · Worker · The listing's score with reasons and the commute time.")).toBe(true);
@@ -124,7 +137,18 @@ describe("sg-sem data pipeline, on the mock text model", () => {
     round2(dir, 1);
     mock(join(dir, "round2.requests.jsonl"), join(dir, "round2.outputs.jsonl"));
     assemble(dir);
+    const before = readFileSync(join(dir, "examples.jsonl"), "utf8").trim().split("\n").length;
+    // Round 3: one label check per version of a step; the mock names the cut step, so every built positive survives.
+    round3(dir);
+    mock(join(dir, "round3.requests.jsonl"), join(dir, "round3.outputs.jsonl"));
+    judge(dir);
     const examples = readFileSync(join(dir, "examples.jsonl"), "utf8").trim().split("\n").map((line) => JSON.parse(line) as Example);
+    expect(examples.length).toBe(before);
+    const judged = (JSON.parse(readFileSync(join(dir, "stats.json"), "utf8")) as { judged: Record<string, number> }).judged;
+    expect(judged["judge-positive-denied"]).toBe(0);
+    expect(judged["judge-unanswered"]).toBe(0);
+    const checks = readFileSync(join(dir, "round3.requests.jsonl"), "utf8").trim().split("\n").map((line) => JSON.parse(line) as { kind: string; user: string });
+    expect(checks.every((check) => check.kind === "h2judge" && check.user.includes("not connected to it:\n- "))).toBe(true);
     for (const head of ["h1", "h2", "h3", "h4"]) {
       const labels = new Set(examples.filter((example) => example.head === head).map((example) => example.label));
       expect(labels.size, head).toBeGreaterThanOrEqual(2);

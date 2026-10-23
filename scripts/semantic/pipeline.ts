@@ -8,6 +8,9 @@
  *   round2   → seeds.jsonl, round2.requests.jsonl         (starters + valid drafted graphs; H1, H2, H4 text jobs)
  *   [Colab]  → round2.outputs.jsonl
  *   assemble → examples.jsonl, stats.json, samples.md     (labelled examples, split by seed graph)
+ *   round3   → round3.requests.jsonl                      (one label check per version of a step, for H2)
+ *   [Colab]  → round3.outputs.jsonl
+ *   judge    → examples.jsonl, stats.json                 (H2 pairs the check disagrees with are dropped)
  *
  *   mock --in X.requests.jsonl --out X.outputs.jsonl      (stand-in answers, to test the pipeline without a GPU)
  *
@@ -24,14 +27,17 @@ import {
   H1_BURIED,
   H1_INCONSISTENT,
   H1_STYLES,
+  H2_MENTION_STYLES,
   H4_LABELS,
   h1Request,
+  h2JudgeRequest,
   h2Request,
   h2WeaveRequest,
   h4Request,
   outlineRequest,
   readH1,
   readH2,
+  readH2Judge,
   readH2Weave,
   readH4,
   readJson,
@@ -426,7 +432,7 @@ export function round2(out: string, h1Samples: number): void {
       const request =
         mode === "phrase"
           ? h2Request(id, taskText({ ...node, prompt }).slice(0, 900), ref, describeStep(graph, pred))
-          : h2WeaveRequest(id, (outlineStep(seed, node.id) as { task: string }).task.slice(0, 900), reads.map((n) => describeStep(graph, n)), pred.label || pred.id);
+          : h2WeaveRequest(id, (outlineStep(seed, node.id) as { task: string }).task.slice(0, 900), reads.map((n) => describeStep(graph, n)), pred.label || pred.id, H2_MENTION_STYLES[Math.floor(rng(`style:${id}`)() * H2_MENTION_STYLES.length)]);
       requests.push(keyedByPrompt({ ...request, meta: { ...request.meta, seed: seed.seed, node: node.id, pred: pred.id } }));
     }
   }
@@ -689,6 +695,101 @@ export function assemble(out: string): void {
 /* ------------------------------------------------------------------ mock text model */
 
 /** Stand-in answers with the right shape, so every stage can be tested without a GPU. Not training data. */
+/* ------------------------------------------------------------------ round 3: H2 label check */
+
+/** The candidate line and the input lines of an H2 text B. */
+function partsOfB(textB: string): { candidate: string; inputs: string[] } {
+  const [candidate, ...inputs] = textB.split(" [INPUT] ");
+  return { candidate: candidate.replace(/^\[CANDIDATE\] /, ""), inputs: inputs.map((line) => line.replace(/^\[INPUT\] /, "")) };
+}
+
+/** H2 rows by version of a step: the judge sees each version once, with every candidate. */
+function h2Groups(examples: Example[]): Map<string, Example[]> {
+  const groups = new Map<string, Example[]>();
+  for (const example of examples) {
+    if (example.head !== "h2" || !example.group) continue;
+    const key = `${example.seed}|${example.group}`;
+    groups.set(key, [...(groups.get(key) ?? []), example]);
+  }
+  return groups;
+}
+
+export function round3(out: string): void {
+  const examples = readJsonl<Example>(join(out, "examples.jsonl"), true);
+  const requests: LlmRequest[] = [];
+  for (const [key, rows] of h2Groups(examples)) {
+    const { inputs } = partsOfB(rows[0].text_b);
+    const candidates = rows.map((row) => {
+      const { candidate } = partsOfB(row.text_b);
+      return { id: row.candidate as string, what: candidate.slice(candidate.indexOf(" · ") + 3) };
+    });
+    const positive = rows.find((row) => row.label === 1)?.candidate;
+    const request = h2JudgeRequest(`${rows[0].seed}::judge::${rows[0].group}`, rows[0].text_a.slice(TASK_PREFIX.length), inputs, candidates);
+    requests.push(keyedByPrompt({ ...request, meta: { key, ...(positive ? { positive } : {}) } }));
+  }
+  writeJsonl(join(out, "round3.requests.jsonl"), requests);
+  console.log(`round3: ${requests.length} label checks over ${examples.filter((e) => e.head === "h2").length} H2 pairs`);
+}
+
+/**
+ * Applies the label checks: a positive pair whose cut step the judge does not name goes (its marked words did not name
+ * that step's data), and a negative pair whose candidate it names goes (the task does need it). A group without a
+ * readable answer is left as it is. examples.jsonl is rewritten; the unjudged file stays as examples.raw.jsonl.
+ */
+export function judge(out: string): void {
+  const raw = join(out, "examples.raw.jsonl");
+  const examples = readJsonl<Example>(existsSync(raw) ? raw : join(out, "examples.jsonl"), true);
+  if (!existsSync(raw)) writeJsonl(raw, examples);
+  const requests = new Map(readJsonl<LlmRequest>(join(out, "round3.requests.jsonl"), true).map((request) => [request.id, request]));
+  const answers = new Map<string, string[] | null>();
+  for (const output of readJsonl<LlmOutput>(join(out, "round3.outputs.jsonl"), true)) {
+    const request = requests.get(output.id);
+    if (!request) continue;
+    answers.set(String(request.meta.key), readH2Judge(output.text, requestIds(request)));
+  }
+  const dropped: Record<string, number> = { "judge-unanswered": 0, "judge-unreadable": 0, "judge-positive-denied": 0, "judge-negative-named": 0 };
+  const kept: Example[] = [];
+  for (const example of examples) {
+    if (example.head !== "h2" || !example.group) {
+      kept.push(example);
+      continue;
+    }
+    const key = `${example.seed}|${example.group}`;
+    if (!answers.has(key)) {
+      dropped["judge-unanswered"] += 1;
+      kept.push(example);
+      continue;
+    }
+    const needed = answers.get(key);
+    if (needed === null || needed === undefined) {
+      dropped["judge-unreadable"] += 1;
+      kept.push(example);
+      continue;
+    }
+    if (example.label === 1 && !needed.includes(example.candidate as string)) dropped["judge-positive-denied"] += 1;
+    else if (example.label === 0 && needed.includes(example.candidate as string)) dropped["judge-negative-named"] += 1;
+    else kept.push(example);
+  }
+  writeJsonl(join(out, "examples.jsonl"), kept);
+  const statsPath = join(out, "stats.json");
+  const stats = existsSync(statsPath) ? (JSON.parse(readFileSync(statsPath, "utf8")) as Record<string, unknown>) : {};
+  const byHeadSplit: Record<string, Record<string, number>> = {};
+  for (const example of kept) {
+    const key = `${example.head}/${example.split}`;
+    byHeadSplit[key] ??= {};
+    byHeadSplit[key][`label${example.label}`] = (byHeadSplit[key][`label${example.label}`] ?? 0) + 1;
+  }
+  writeFileSync(statsPath, JSON.stringify({ ...stats, examples: kept.length, by_head_split: byHeadSplit, judged: dropped }, null, 2));
+  console.log(`judge: ${examples.length} → ${kept.length} examples; ${JSON.stringify(dropped)}`);
+  console.log(JSON.stringify(byHeadSplit));
+}
+
+/** The candidate ids a judge request listed, read back from its prompt. */
+function requestIds(request: LlmRequest): string[] {
+  const block = request.user.split("These earlier steps exist but are not connected to it:\n")[1] ?? "";
+  return [...block.matchAll(/^- ([^:\n]+):/gm)].map((match) => match[1]);
+}
+
 export function mockAnswer(request: LlmRequest): string {
   const r = rng(request.id);
   if (request.kind === "outline") {
@@ -718,6 +819,8 @@ export function mockAnswer(request: LlmRequest): string {
         ? good.map((text) => ({ text, open_problem: false }))
         : style === "honest_number_pass"
           ? ledger.map((text) => ({ text, open_problem: false }))
+        : style === "honest_absence_pass"
+          ? ["None of the 7 items carries a warning.", "No line is above its cap; Equipment is 24,100 against 25,000.", "The only unknown is the deposit, which is not a must-have."].map((text) => ({ text, open_problem: false }))
         : style === "buried_problem_pass"
           ? [good[0], bad[Math.floor(r() * 2)], good[1]].map((text) => ({ text, open_problem: bad.includes(text) }))
           : style === "buried_number_pass"
@@ -727,6 +830,7 @@ export function mockAnswer(request: LlmRequest): string {
             : [good[0], fixed[0], good[2]].map((text) => ({ text, open_problem: false }));
     return JSON.stringify({ sentences });
   }
+  if (request.kind === "h2judge") return JSON.stringify({ needed: request.meta.positive ? [request.meta.positive] : [] });
   if (request.kind === "h2") {
     const phrase = `the results of the earlier ${String(request.meta.ref).split(".")[0].replace(/_/g, " ")} step`;
     if (request.meta.mode === "weave") {
@@ -760,9 +864,11 @@ if (isMain) {
   if (command === "round1") round1(out, Number(flags["per-topic"] ?? 4), Number(flags["h2-per-topic"] ?? 4));
   else if (command === "round2") round2(out, Number(flags["h1-samples"] ?? 3));
   else if (command === "assemble") assemble(out);
+  else if (command === "round3") round3(out);
+  else if (command === "judge") judge(out);
   else if (command === "mock") mock(flags.in ?? "", flags.output ?? "");
   else {
-    console.error("usage: pipeline.ts round1|round2|assemble --out <dir> | mock --in <requests.jsonl> --output <outputs.jsonl>");
+    console.error("usage: pipeline.ts round1|round2|assemble|round3|judge --out <dir> | mock --in <requests.jsonl> --output <outputs.jsonl>");
     process.exitCode = 1;
   }
 }

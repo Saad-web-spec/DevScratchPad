@@ -11,6 +11,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import re
 import time
 from collections import defaultdict
 from itertools import zip_longest
@@ -33,8 +34,11 @@ def load_model(name: str):
     if tokenizer.pad_token is None:
         tokenizer.pad_token = tokenizer.eos_token
     memory_gb = torch.cuda.get_device_properties(0).total_memory / 1e9 if torch.cuda.is_available() else 0
-    # A 7B model in fp16 needs ~15 GB: an L4 or A100 holds it whole (faster); a T4 (15 GB) needs 4-bit.
-    if memory_gb >= 20:
+    # fp16 needs ~2.1 GB per billion parameters plus room for the batch: a 7B model fits an L4 or A100 whole, a 14B
+    # model (~30 GB) an A100 only; otherwise 4-bit (a T4 holds 7B that way, an L4 14B).
+    size = re.search(r"(\d+(?:\.\d+)?)B", name, re.IGNORECASE)
+    needed_gb = 2.1 * float(size.group(1)) + 6 if size else 20
+    if memory_gb >= needed_gb:
         model = AutoModelForCausalLM.from_pretrained(name, torch_dtype=torch.float16, device_map="auto")
         mode = "fp16"
     else:

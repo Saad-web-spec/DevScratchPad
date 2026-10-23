@@ -22,12 +22,12 @@ Save the notebook when it finishes: its outputs are what gets reviewed.
 code("""
 REPO = "https://github.com/Saad-web-spec/DevScratchPad.git"
 BRANCH = "sg-sem"  # the branch with the sg-sem code
-GENERATOR = "Qwen/Qwen2.5-7B-Instruct"   # writes the text; runs here on the GPU
+GENERATOR = "Qwen/Qwen2.5-14B-Instruct"  # writes the text; runs here on the GPU (fp16 on an A100, 4-bit on smaller cards). 7B through msmarco-5: its H1 and H4 answers are kept on Drive and reused; H2 rewrites and the label checks are new
 BASE = "cross-encoder/ms-marco-MiniLM-L12-v2"  # the encoder sg-sem is fine-tuned from: the same MiniLM-L12-H384 network, already trained on text pairs (the raw microsoft/MiniLM-L12-H384-uncased never was)
 EPOCHS = 10                                 # 4 through minilm-5: H2 loss was still falling at the end
 QUICK_LOOK = False                         # True: a few answers per round, to check quality first (done; the full data is on Drive)
 TRAIN = not QUICK_LOOK                     # training waits for the full data
-RUN = "msmarco-5"  # minilm-1: H1 missed buried problems, H2 at chance. minilm-2: H1 flagged honest number ledgers, H2 starved (68 positives). minilm-3: H2 read the input list, not the task (dropped/swapped negatives added). minilm-4: H2 only woke on an appended sentence (woven positives added). minilm-5: 9 in 10 woven answers unusable (bracketed mention, drafted twin); the raw encoder never learnt to match A with B, so the base is now the pair-trained checkpoint of the same network. msmarco-1: every full-list row was a negative, so H2 read the length of the input list (replaced positives added). msmarco-2: shortcut closed but 391 H2 positives were too few to learn the comparison (H2-only outlines, every input woven, H2 feature dropout). msmarco-3: 1,170 positives, gold AUROC 0.74, but 1 of 28 cuts at the threshold: the model never saw the step that was missing (H2 pairs now name a candidate step; no new text-model calls). msmarco-4: gold H2 AUROC 0.81, 13 of 28 at 0.5 but none above the dev threshold 0.915; the worst dev rows were positives whose marked words did not name the cut step (ungrounded answers dropped). See MEMORY.md
+RUN = "msmarco-6"  # minilm-1: H1 missed buried problems, H2 at chance. minilm-2: H1 flagged honest number ledgers, H2 starved (68 positives). minilm-3: H2 read the input list, not the task (dropped/swapped negatives added). minilm-4: H2 only woke on an appended sentence (woven positives added). minilm-5: 9 in 10 woven answers unusable (bracketed mention, drafted twin); the raw encoder never learnt to match A with B, so the base is now the pair-trained checkpoint of the same network. msmarco-1: every full-list row was a negative, so H2 read the length of the input list (replaced positives added). msmarco-2: shortcut closed but 391 H2 positives were too few to learn the comparison (H2-only outlines, every input woven, H2 feature dropout). msmarco-3: 1,170 positives, gold AUROC 0.74, but 1 of 28 cuts at the threshold: the model never saw the step that was missing (H2 pairs now name a candidate step; no new text-model calls). msmarco-4: gold H2 AUROC 0.81, 13 of 28 at 0.5 but none above the dev threshold 0.915; the worst dev rows were positives whose marked words did not name the cut step (ungrounded answers dropped). msmarco-5: only 35 dropped, gold H2 4 of 28; the misses are cuts named as a person writes a task ("every extracted receipt"), which the 7B model never wrote, and H1 collapsed on honest answers that use the words no / none / only. Now: Qwen-14B, three mention styles, a label check over every H2 pair, honest H1 answers in problem-report words. See MEMORY.md
 """),
 md("## 1. Storage and setup"),
 code("""
@@ -73,10 +73,17 @@ code("""
 !{PIPE} round2 --out {DATA}
 !cd ml/sg-sem && python -m sgsem.generate --requests {DATA}/round2.requests.jsonl --outputs {DATA}/round2.outputs.jsonl --model {GENERATOR} {LIMIT}
 """),
-md("## 4. Assemble the labelled examples"),
+md("## 4. Assemble the labelled examples, then check every H2 pair's label"),
 code("""
 !{PIPE} assemble --out {DATA}
 print(open(f"{DATA}/stats.json").read())
+"""),
+code("""
+# Round 3: the text model reads every version of a step once (task, connected inputs, unconnected steps) and names the
+# unconnected steps the task works on. Positives it does not confirm and negatives it names are dropped (judge).
+!{PIPE} round3 --out {DATA}
+!cd ml/sg-sem && python -m sgsem.generate --requests {DATA}/round3.requests.jsonl --outputs {DATA}/round3.outputs.jsonl --model {GENERATOR} {LIMIT}
+!{PIPE} judge --out {DATA}
 """),
 code("""
 # For review: raw answers of the text model, two per kind and style (newest first), and the assembled samples.

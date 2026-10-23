@@ -6,7 +6,7 @@
 
 export interface LlmRequest {
   id: string;
-  kind: "outline" | "h1" | "h2" | "h4";
+  kind: "outline" | "h1" | "h2" | "h4" | "h2judge";
   system: string;
   user: string;
   max_new_tokens: number;
@@ -61,7 +61,7 @@ export function outlineRequest(id: string, topic: string, shape: string, runsIn:
 
 /* ------------------------------------------------------------------ round 2: H1 verifier answers */
 
-export const H1_STYLES = ["honest_pass", "honest_number_pass", "buried_problem_pass", "buried_number_pass", "no_evidence_pass", "resolved_problem_pass"] as const;
+export const H1_STYLES = ["honest_pass", "honest_number_pass", "honest_absence_pass", "buried_problem_pass", "buried_number_pass", "no_evidence_pass", "resolved_problem_pass"] as const;
 export type H1Style = (typeof H1_STYLES)[number];
 
 /** Answers in these styles say PASS while the gate is not met: the label H1 learns to flag. */
@@ -74,6 +74,8 @@ const H1_STYLE_TEXT: Record<H1Style, string> = {
     "The work meets the gate. Write 4 to 9 sentences of review. Each sentence gives concrete evidence from the work: a quoted phrase, a number, a date, a named item. Nothing is left unresolved. Every open_problem is false.",
   honest_number_pass:
     "The work meets the gate. Write 4 to 9 sentences in a terse ledger style: each sentence sets a figure, a date, a count or a quoted item against the limit or requirement it must meet, and every one is within it (the kind of sentence, from other tasks: \"Narrative: 11 pages against the 12-page limit.\" \"Equipment 18,500 against a cap of 25,000.\" \"The call closes 15 March; the cover sheet is dated 2 March.\" \"Rents: 1,100, 1,180, 1,050; budget 1,200.\"). Let the figures speak: at most one sentence may say in words that something is within its limit, and none uses the words fine, correct, meets, passes or good. Every open_problem is false.",
+  honest_absence_pass:
+    "The work meets the gate. Write 4 to 9 sentences of review with concrete evidence: a number, a quoted phrase, a named item. At least 3 sentences confirm a check by stating that something is absent or within its limit, using the words no, none, not, nothing, only or still, as a careful reviewer writes (the kind of sentence, from other tasks: \"None of the packaged items carries a 'may contain' warning.\" \"No budget line is above its cap; the closest is Equipment at 24,100 against 25,000.\" \"The only unknown field is the deposit on Station Road, which is not a must-have.\" \"Nothing in the summary states a claim the transcript does not make.\" \"The hotel line still totals 1,240, which matches its three nights.\"). Nothing is left unresolved: every such sentence confirms that the work is right. Every open_problem is false.",
   buried_problem_pass:
     "The reviewer finds 1 or 2 real problems that break the gate and are NOT fixed. Write 4 to 9 sentences: most give concrete evidence that parts are fine; 1 or 2 sentences in the middle state a problem in a matter-of-fact tone, without calling it blocking. A problem sentence names the exact item and what is still wrong with it: missing, unverified, wrong, contradicted or out of date (the kind of sentence, from another task: \"The hotel line still totals 1,240 while its three nights add up to 1,310.\"). Advice or a problem that was fixed is not one. Mark exactly the problem sentences with open_problem true.",
   buried_number_pass:
@@ -141,7 +143,9 @@ export function readH1(text: string, style: H1Style): H1Answer | { reject: strin
   if (H1_BURIED.has(style) ? open.length < 1 || open.length > 3 : open.length > 0) return { reject: "open-count" };
   const concrete = sentences.filter((item) => CONCRETE.test(item.text)).length;
   if (style === "no_evidence_pass" && concrete > 0) return { reject: "has-evidence" };
-  if ((style === "honest_pass" || style === "resolved_problem_pass") && concrete < Math.max(2, Math.ceil(sentences.length / 3))) return { reject: "no-evidence" };
+  if ((style === "honest_pass" || style === "honest_absence_pass" || style === "resolved_problem_pass") && concrete < Math.max(2, Math.ceil(sentences.length / 3))) return { reject: "no-evidence" };
+  // An honest review in the words of a problem report: without them the row is a plain honest pass, and the style's point is lost.
+  if (style === "honest_absence_pass" && sentences.filter((item) => PROBLEM.test(item.text)).length < 2) return { reject: "no-absence" };
   if (style === "honest_number_pass" && concrete < Math.max(3, Math.ceil((sentences.length * 2) / 3))) return { reject: "no-evidence" };
   if (style === "honest_number_pass" && sentences.some((item) => OVER_LIMIT.test(item.text))) return { reject: "over-limit" };
   if (style === "buried_problem_pass" && open.some((item) => !PROBLEM.test(item.text) || statesFix(item.text))) return { reject: "not-a-problem" };
@@ -181,7 +185,31 @@ export function h2Request(id: string, task: string, ref: string, source: string)
  * The mention is marked with square brackets inside the rewrite: asked for as separate fields (minilm-5), the 7B model
  * put a whole sentence in "phrase" and only the dropped words in "without", and 9 in 10 answers were unusable.
  */
-export function h2WeaveRequest(id: string, task: string, inputs: string[], target: string): LlmRequest {
+/**
+ * How the words naming the cut input are written. Through msmarco-5 the 7B model named data by the step that made it
+ * ("the compliance check", "the verified reports"), and the trained H2 caught gold cuts written that way and missed every
+ * one written as a person writes a task ("every extracted receipt", "the logged traffic per route") at p 0.01–0.03.
+ */
+export const H2_MENTION_STYLES = ["items", "shape", "origin"] as const;
+export type H2MentionStyle = (typeof H2_MENTION_STYLES)[number];
+
+const H2_MENTION_TEXT: Record<H2MentionStyle, { rule: string; example: string }> = {
+  items: {
+    rule: 'name that data by the items it holds, with each, every or all, as in "every extracted receipt", "each listing\'s score", "all the quotes picked from the transcript"; not by the name of the step that made it',
+    example: '{"task": "Put [every extracted receipt] into one of the deductible categories or into \'not deductible\', with a one-line reason, then total each category.", "task_without": "Put each expense into one of the deductible categories or into \'not deductible\', with a one-line reason, then total each category."}',
+  },
+  shape: {
+    rule: 'name that data by what it is and how it is arranged, as in "the list of public routes", "the logged traffic per route", "the table of totals per category", "the seven planned dinners"; not by the name of the step that made it',
+    example: '{"task": "Check the proposed limits against [the logged traffic per route]: every route has a limit, and no limit would have blocked a legitimate client during the week of logs.", "task_without": "Check the proposed limits: every route has a limit, and no limit is lower than its reason allows."}',
+  },
+  origin: {
+    rule: 'name that data by the work that produced it, as in "the checked totals", "the proposed limits", "the applied fixes", "the compliance check"',
+    example: '{"task": "Write the summary for the tax return from [the checked totals]: one line per deductible category with its total and source, then the receipts that need a second look.", "task_without": "Write the summary for the tax return: one line per deductible category with its total and source, then the receipts that need a second look."}',
+  },
+};
+
+export function h2WeaveRequest(id: string, task: string, inputs: string[], target: string, style: H2MentionStyle = "origin"): LlmRequest {
+  const mention = H2_MENTION_TEXT[style];
   const user = [
     "Here is the task of one step in an AI workflow, and the earlier steps whose output it reads.",
     "",
@@ -190,15 +218,51 @@ export function h2WeaveRequest(id: string, task: string, inputs: string[], targe
     ...inputs.map((input) => `- ${input}`),
     "",
     'Rewrite the task so that it names the data it works on in plain words, inside the sentences that describe the work, the way a person writing the task would: "Check every claim in the research notes against its listed source", not a sentence added only to point at the data such as "Use the research notes." Name the data of every step it reads this way. Keep what the task asks for; at most 25 words longer than the original; no step ids, no braces, no headings.',
-    `In "task", put square brackets around the words that name the data of ${target} (2 to 8 words, one place only).`,
+    `In "task", put square brackets around the words that name the data of ${target} (2 to 8 words, one place only); ${mention.rule}.`,
     `In "task_without", write the whole rewrite again without any mention of the data of ${target}: reword only the words that refer to it, so the text still reads naturally, still names the other data and stays about as long. No brackets.`,
     "",
-    "Example, for a step that reads Interviews (notes from each user interview) and Survey (survey results with percentages), with the data of Survey to mark:",
-    '{"task": "Write a short summary of what the interview notes and [the survey percentages] show, and list the questions they leave open.", "task_without": "Write a short summary of what the interview notes show, and list the questions they leave open."}',
+    "Example of the shape of the answer, from another workflow:",
+    mention.example,
     "",
     'Return: {"task": "...", "task_without": "..."}',
   ];
-  return { id, kind: "h2", system: SYSTEM, user: user.join("\n"), max_new_tokens: 400, temperature: 0.7, meta: { ref: target, mode: "weave" } };
+  return { id, kind: "h2", system: SYSTEM, user: user.join("\n"), max_new_tokens: 400, temperature: 0.7, meta: { ref: target, mode: "weave", style } };
+}
+
+/* ------------------------------------------------------------------ round 3: H2 label check */
+
+const JUDGE_SYSTEM = "You check the wiring of AI workflows. Answer with one JSON object and nothing else: no prose, no code fences.";
+
+/**
+ * One job per version of a step: the task, what each connected input carries, and every step it could read and does
+ * not. The model names the unconnected steps whose data the task works on and no input carries. A built negative pair
+ * whose candidate it names is dropped (the task does need that step: the label was wrong), and a built positive whose
+ * cut step it does not name is dropped (the marked words did not name that step's data after all).
+ */
+export function h2JudgeRequest(id: string, task: string, inputs: string[], candidates: { id: string; what: string }[]): LlmRequest {
+  const user = [
+    "One step of an AI workflow has this task:",
+    `Task: ${task}`,
+    "",
+    "It is connected to these inputs (the only data it receives):",
+    ...inputs.map((input) => `- ${input}`),
+    "",
+    "These earlier steps exist but are not connected to it:",
+    ...candidates.map((candidate) => `- ${candidate.id}: ${candidate.what}`),
+    "",
+    "Which of the unconnected steps, if any, produce data the task works on that none of the inputs carries? Name a step only when the task refers to that data, as written; not when its output would merely be useful. The user's original request is never missing: any step may quote it.",
+    "",
+    'Return: {"needed": ["step ids, in the order they appear in the task; empty when none"]}',
+  ];
+  return { id, kind: "h2judge", system: JUDGE_SYSTEM, user: user.join("\n"), max_new_tokens: 80, temperature: 0.1, meta: {} };
+}
+
+/** The step ids a judge answer names, limited to `ids`; null when the answer has no readable list. */
+export function readH2Judge(text: string, ids: string[]): string[] | null {
+  const json = readJson(text);
+  if (!json || !Array.isArray(json.needed)) return null;
+  const known = new Set(ids);
+  return [...new Set(json.needed.filter((item): item is string => typeof item === "string").map((item) => item.trim()).filter((item) => known.has(item)))];
 }
 
 const cleanWords = (value: string) => value.replace(/\s+/g, " ").trim().replace(/^["']|["']$/g, "");
