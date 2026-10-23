@@ -17,7 +17,7 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { draftGraph } from "../../src/app/graph/lib/graphDraft";
 import { editGraph } from "../../src/app/graph/lib/graphEdit";
-import { parseGraphSkill, predecessorsOf, runsWithoutSubagent, validateGraph, foreachSource, nodeRefs, getContract, type GraphNode, type SkillGraph } from "../../src/app/graph/lib/graphSkill";
+import { parseGraphSkill, predecessorsOf, descendantsOf, runsWithoutSubagent, validateGraph, foreachSource, nodeRefs, getContract, type GraphNode, type SkillGraph } from "../../src/app/graph/lib/graphSkill";
 import { CONNECTOR_TEMPLATES } from "../../src/app/graph/lib/graphTemplates";
 import { SEMANTIC_INPUT_VERSION, TASK_PREFIX, contractInput, gateInput, missingInputInput, taskText, verdictInput } from "../../src/app/graph/lib/semanticInput";
 import {
@@ -185,6 +185,8 @@ export interface Example {
   source: "llm" | "mutation" | "starter";
   /** What produced it, for error analysis (style, mutation kind, gate label). */
   note: string;
+  /** The step the row is about (text-model rows), so a built H2 twin can be matched by seed, step and note. */
+  node?: string;
 }
 
 /* ------------------------------------------------------------------ round 1 */
@@ -284,6 +286,23 @@ function redraft(seed: Seed, id: string, task: string, after: string[]): { graph
   const graph = load(draft.source) as SkillGraph;
   const node = graph.nodes.find((n) => n.id === id);
   return node ? { graph, node } : null;
+}
+
+/**
+ * An outline step that can stand in for `pred` as an input of `id`: another step of the same outline that the step
+ * does not read already and that is not downstream of it (a cycle). A step that reads `pred` may stand in, as in the
+ * gold cuts (api-rate-limits cuts `traffic` while `propose`, which read it, stays): its own output is other data.
+ * Picked by seeded chance so a seed's replaced positives do not all name the same step. Null when the outline has none.
+ */
+function substituteFor(seed: Seed, graph: SkillGraph, id: string, pred: string, after: string[]): string | null {
+  const steps = ((seed.outline?.steps as Record<string, unknown>[] | undefined) ?? []).map((step) => String(step.id));
+  const downstream = descendantsOf(graph, id);
+  const candidates = steps.filter((other) => {
+    const node = graph.nodes.find((n) => n.id === other);
+    return node !== undefined && other !== id && other !== pred && !after.includes(other) && !downstream.has(other) && node.type !== "input" && !runsWithoutSubagent(node.type);
+  });
+  if (candidates.length === 0) return null;
+  return candidates[Math.floor(rng(`replace:${seed.seed}:${id}:${pred}`)() * candidates.length)] ?? null;
 }
 
 /** The step with `pred` disconnected and `prompt` set; a step left with no input reads the request. Null when the checker rejects the edit. */
@@ -409,7 +428,7 @@ export function assemble(out: string): void {
     const graph = graphOf(seed);
     const node = graph?.nodes.find((n) => n.id === request.meta.node);
     if (!graph || !node) continue;
-    const base = { seed, split: splitOf(seed) };
+    const base = { seed, split: splitOf(seed), node: node.id };
 
     if (request.kind === "h1") {
       const style = request.meta.style as H1Style;
@@ -445,6 +464,11 @@ export function assemble(out: string): void {
        *            which no generated row looked like through minilm-5
        *   dropped  the task without that mention, the input gone: identical input list and graph facts, so only the
        *            words of the task tell them apart (minilm-3 read the list and facts alone; see MEMORY.md)
+       *   replaced the woven task with the cut input's place taken by an unrelated step of the same outline (label 1):
+       *            as many inputs, heading blocks and graph facts as the drafted twin, and the task still names data
+       *            no input carries. Through msmarco-1 every full-list row was a negative, so the model read the
+       *            length of the list (B only vs drafted 0.85, facts only 0.91) and called every gold cut, made on a
+       *            step that keeps its other inputs, "kept" (see MEMORY.md)
        */
       const pred = String(request.meta.pred);
       const seedRow = seeds.get(seed);
@@ -482,6 +506,14 @@ export function assemble(out: string): void {
         const dropped = missingInputInput(without.graph, without.node);
         examples.push({ head: "h2", ...base, text_a: dropped.textA, text_b: dropped.textB, features: dropped.features, label: 0, source: "llm", note: `dropped ${pred}` });
       } else drop("h2-dropped-checker-error");
+      const substitute = substituteFor(seedRow, graph, node.id, pred, step.after);
+      const replaced = substitute ? redraft(seedRow, node.id, answer.task, [...after, substitute]) : null;
+      if (replaced) {
+        const input = missingInputInput(replaced.graph, replaced.node);
+        const where = input.textA.toLowerCase().indexOf(answer.phrase.toLowerCase(), TASK_PREFIX.length);
+        if (where === -1) drop("h2-span-replaced");
+        else examples.push({ head: "h2", ...base, text_a: input.textA, text_b: input.textB, features: input.features, label: 1, span: [where, where + answer.phrase.length], source: "llm", note: `replaced ${pred}` });
+      } else drop(substitute ? "h2-replaced-checker-error" : "h2-replaced-none");
       continue;
     }
 
@@ -602,8 +634,9 @@ export function mockAnswer(request: LlmRequest): string {
       steps: [
         { id: "gather", type: "worker", task: `Collect the facts needed for ${topic} and return them as a numbered list with sources.`, returns: "a numbered list of facts with sources" },
         { id: "options", type: "worker", task: `List the main options for ${topic}, each with one advantage and one risk.`, returns: "a list of options with advantages and risks" },
+        { id: "sources", type: "worker", task: "Rate how reliable each source behind the facts is, one line per source.", after: ["gather"], returns: "a list of sources with a reliability rating" },
         { id: "check", type: "verifier", task: "Check every fact against its source and every option against the facts.", after: ["gather", "options"], gate: "Every fact has a source that says it and every option uses only checked facts." },
-        { id: "write", type: "synthesizer", task: "Write the final answer from the checked facts and options: {{check}} and {{gather}}.", after: ["check", "gather"] },
+        { id: "write", type: "synthesizer", task: "Write the final answer from the checked facts and options: {{check}} and {{gather}}.", after: ["check", "gather", "sources"] },
       ],
     });
   }

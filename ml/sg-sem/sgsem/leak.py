@@ -4,12 +4,14 @@ A sound H2 head has to compare the task text (A) with the input list (B). If A a
 graph facts alone predict the label, the model can pass the generated test without ever comparing them,
 and fails on hand-written graphs where that cue is absent (what the gold set showed for minilm-3).
 
-Prints, per label and row kind (cut = positive; kept = the same A with the input still there; dropped = the same
+Prints, per label and row kind (cut = positive; replaced = positive with the cut input's place taken by an unrelated
+step, so the list is as long as the drafted twin's; kept = the same A with the input still there; dropped = the same
 input list with the mention gone; drafted = the same task words with every input and heading block, as the gold
 negatives are built; as written = every step unchanged): the count, the share of task texts with no {{reference}} at all, the mean number of heading
 blocks in A and of input lines in B. Then, when scikit-learn is installed, fits a bag-of-words classifier
 on the train split from each side alone and reports the test AUROC of positives against each negative kind
-(a built kind against the positives that have a twin of that kind).
+(a built kind against the positives that have a twin of that kind), for all positives and then per positive kind:
+replaced vs drafted is the pair that differs only in the words (msmarco-1, with cut rows only, read the list's length).
 
     python -m sgsem.leak --data /content/drive/MyDrive/sg-sem/data/examples.jsonl
 """
@@ -30,9 +32,7 @@ INPUT_LINE = re.compile(r"\[INPUT\] ")
 
 def kind_of(row: dict) -> str:
     note = row.get("note", "")
-    if note.startswith("cut "):
-        return "cut"
-    for kind in ("kept", "drafted", "dropped"):
+    for kind in ("cut", "replaced", "kept", "drafted", "dropped"):
         if note.startswith(kind + " "):
             return kind
     return "as written" if note.startswith("as written") else note or "other"
@@ -81,27 +81,33 @@ def classify(train: list[dict], test: list[dict]) -> None:
     test_labels = np.array([r["label"] for r in test])
     kinds = np.array([kind_of(r) for r in test])
     negatives = [k for k in ("kept", "drafted", "dropped", "as written") if ((kinds == k) & (test_labels == 0)).any()]
-    cut_of = lambda row: (row["seed"], row.get("note", "").split(" ")[1] if " " in row.get("note", "") else "")
+    cut_of = lambda row: (row["seed"], row.get("node", ""), row.get("note", "").split(" ")[1] if " " in row.get("note", "") else "")
     built = {k: {cut_of(r) for r in test if kind_of(r) == k} for k in ("kept", "drafted", "dropped")}
     twins = {k: np.array([cut_of(r) in keys for r in test]) for k, keys in built.items() if keys}
-    print(f"\ntest AUROC of a train-split classifier that sees one side only (0.5 = the side carries nothing, near 1 = the label is in that side alone):")
-    print(f"{'side':<14}" + "".join(f"{'vs ' + k:>15}" for k in negatives) + f"{'vs all':>15}")
+    scored: dict[str, np.ndarray] = {}
     for name, pick in sides.items():
         if pick is None:
             model = LogisticRegression(max_iter=2000, class_weight="balanced").fit(np.array([r["features"] for r in train]), labels)
-            scores = model.predict_proba(np.array([r["features"] for r in test]))[:, 1]
+            scored[name] = model.predict_proba(np.array([r["features"] for r in test]))[:, 1]
         else:
             vectorizer = TfidfVectorizer(ngram_range=(1, 2), min_df=2, sublinear_tf=True)
             model = LogisticRegression(max_iter=2000, class_weight="balanced").fit(vectorizer.fit_transform(pick(train)), labels)
-            scores = model.predict_proba(vectorizer.transform(pick(test)))[:, 1]
-        cells = []
-        for negative in negatives:
-            # Built negatives are compared with the positives that have a twin of that kind (same seed and cut input), so
-            # positives of another origin (phrase-mode starters, single-input cuts) do not read as a leak; as written: all.
-            keep = (test_labels == 1) & (twins[negative] if negative in twins else True) | (kinds == negative)
+            scored[name] = model.predict_proba(vectorizer.transform(pick(test)))[:, 1]
+    print(f"\ntest AUROC of a train-split classifier that sees one side only (0.5 = the side carries nothing, near 1 = the label is in that side alone):")
+    positive_kinds = [k for k in ("cut", "replaced") if ((kinds == k) & (test_labels == 1)).any()]
+    for positive in [None, *(positive_kinds if len(positive_kinds) > 1 else [])]:
+        print(f"{('positives: ' + positive) if positive else 'all positives':<18}" + "".join(f"{'vs ' + k:>15}" for k in negatives) + f"{'vs all':>15}")
+        for name, scores in scored.items():
+            cells = []
+            chosen = (test_labels == 1) & ((kinds == positive) if positive else True)
+            for negative in negatives:
+                # Built negatives are compared with the positives that have a twin of that kind (same seed, step and cut input), so
+                # positives of another origin (phrase-mode starters, single-input cuts) do not read as a leak; as written: all.
+                keep = chosen & (twins[negative] if negative in twins else True) | (kinds == negative)
+                cells.append(auroc(scores[keep], test_labels[keep]))
+            keep = chosen | (test_labels == 0)
             cells.append(auroc(scores[keep], test_labels[keep]))
-        cells.append(auroc(scores, test_labels))
-        print(f"{name:<14}" + "".join(f"{c:>15.2f}" for c in cells))
+            print(f"{name:<18}" + "".join(f"{c:>15.2f}" for c in cells))
 
 
 def main() -> None:

@@ -130,14 +130,14 @@ describe("sg-sem data pipeline, on the mock text model", () => {
         expect(example.text_a.slice(start, end)).toMatch(/^the results of the earlier /);
       }
     }
-    // Every positive H2 has its negative twin: the same task text, with the input still connected.
-    const positives = examples.filter((e) => e.head === "h2" && e.label === 1);
+    // Every cut H2 has its negative twin: the same task text, with the input still connected.
+    const positives = examples.filter((e) => e.head === "h2" && e.label === 1 && !e.note.startsWith("replaced "));
     for (const positive of positives.slice(0, 50)) expect(examples.some((e) => e.head === "h2" && e.label === 0 && e.text_a === positive.text_a && e.text_b.length > positive.text_b.length)).toBe(true);
     // A dropped negative has its positive's input list and graph facts; only the task's words differ (and with them fact 7, the prompt length).
     const dropped = examples.filter((e) => e.head === "h2" && e.note.startsWith("dropped "));
     expect(dropped.length).toBeGreaterThan(0);
     for (const negative of dropped.slice(0, 50)) {
-      const twin = positives.find((p) => p.seed === negative.seed && p.note === negative.note.replace("dropped", "cut") && p.text_b === negative.text_b);
+      const twin = positives.find((p) => p.seed === negative.seed && p.node === negative.node && p.note === negative.note.replace("dropped", "cut") && p.text_b === negative.text_b);
       expect(twin, negative.note).toBeDefined();
       expect(negative.features.filter((_, i) => i !== 7)).toEqual(twin!.features.filter((_, i) => i !== 7));
       expect(negative.text_a).not.toBe(twin!.text_a);
@@ -146,10 +146,25 @@ describe("sg-sem data pipeline, on the mock text model", () => {
     const drafted = examples.filter((e) => e.head === "h2" && e.note.startsWith("drafted "));
     expect(drafted.length).toBeGreaterThan(0);
     for (const negative of drafted.slice(0, 50)) {
-      const twin = positives.find((p) => p.seed === negative.seed && p.note === negative.note.replace("drafted", "cut"));
+      const twin = positives.find((p) => p.seed === negative.seed && p.node === negative.node && p.note === negative.note.replace("drafted", "cut"));
       expect(twin, negative.note).toBeDefined();
       expect((negative.text_b.match(/\[INPUT\]/g) ?? []).length).toBeGreaterThanOrEqual((twin!.text_b.match(/\[INPUT\]/g) ?? []).length);
       expect(negative.text_a).toContain(twin!.text_a.slice(twin!.span![0], twin!.span![1]));
+    }
+    // A replaced positive has as many inputs as its drafted twin, none of them the cut one, and the cut's span words.
+    const replaced = examples.filter((e) => e.head === "h2" && e.note.startsWith("replaced "));
+    expect(replaced.length).toBeGreaterThan(0);
+    for (const positive of replaced.slice(0, 50)) {
+      const pred = positive.note.slice("replaced ".length);
+      const cut = positives.find((p) => p.seed === positive.seed && p.node === positive.node && p.note === `cut ${pred}`);
+      const twin = drafted.find((n) => n.seed === positive.seed && n.node === positive.node && n.note === `drafted ${pred}`);
+      expect(cut, positive.note).toBeDefined();
+      expect(twin, positive.note).toBeDefined();
+      expect(positive.label).toBe(1);
+      expect((positive.text_b.match(/\[INPUT\]/g) ?? []).length).toBe((twin!.text_b.match(/\[INPUT\]/g) ?? []).length);
+      expect(positive.text_b).not.toContain(`[INPUT] ${pred} `);
+      expect(positive.features[8]).toBe(twin!.features[8]);
+      expect(positive.text_a.slice(positive.span![0], positive.span![1])).toBe(cut!.text_a.slice(cut!.span![0], cut!.span![1]));
     }
     // No seed graph is in two splits.
     const splits = new Map<string, Set<string>>();
