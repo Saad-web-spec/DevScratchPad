@@ -141,14 +141,23 @@ export function handleBody(body: unknown, context: ConnectorContext): JsonRpcRes
  * handleBody with the semantic model's gate verdicts (graphSemantic.ts): the graphs the body's tool calls will
  * check are scored first, within the model's time budget, and the tools then run as they always do, with the
  * verdicts in their context. When the model is unavailable or over budget, this is exactly handleBody.
+ *
+ * `keepAlive` receives the model's load whenever this request should start or finish it: on `initialize` and
+ * `tools/list` (Claude sends them before any tool call) and on a call that checks a graph. The route passes
+ * Next's `after()`, which keeps the function running until the load ends; without it the load is paused once
+ * the response is sent.
  */
-export async function handleBodyWithChecks(body: unknown, context: ConnectorContext): Promise<JsonRpcResponse | JsonRpcResponse[] | null> {
+export async function handleBodyWithChecks(
+  body: unknown,
+  context: ConnectorContext,
+  keepAlive: (work: Promise<void>) => void = () => {}
+): Promise<JsonRpcResponse | JsonRpcResponse[] | null> {
   const messages = Array.isArray(body) ? body : [body];
-  // Claude connects (initialize, tools/list) before it calls a tool: start the model's load then, not on the first check.
-  if (messages.some((message) => isRecord(message) && (message.method === "initialize" || message.method === "tools/list"))) warmGateModel();
   const sources = messages.flatMap((message) =>
     isRecord(message) && message.method === "tools/call" && isRecord(message.params) && typeof message.params.name === "string" ? [checkedSource(message.params.name, message.params.arguments)] : []
   ).filter((source): source is string => source !== null);
+  const connecting = messages.some((message) => isRecord(message) && (message.method === "initialize" || message.method === "tools/list"));
+  if (connecting || sources.length > 0) keepAlive(warmGateModel());
   const verdicts = sources.length > 0 ? await gateVerdicts(sources) : null;
   return handleBody(body, verdicts ? { ...context, gateVerdicts: verdicts } : context);
 }
