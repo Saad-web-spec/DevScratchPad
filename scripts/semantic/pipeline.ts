@@ -438,9 +438,11 @@ export function assemble(out: string): void {
 
     if (request.kind === "h2" && request.meta.mode === "weave") {
       /*
-       * Three rows per answer, built like the gold cuts (the outline drafted again):
+       * Four rows per answer, built like the gold cuts (the outline drafted again):
        *   cut      the woven task, the input gone from after: the task names data the step no longer gets (label 1)
        *   kept     the same prompt with the input still connected: identical text A, so only the list tells them apart
+       *   drafted  the woven task drafted with all its inputs, heading blocks and all: the gold negative of a gold cut,
+       *            which no generated row looked like through minilm-5
        *   dropped  the task without that mention, the input gone: identical input list and graph facts, so only the
        *            words of the task tell them apart (minilm-3 read the list and facts alone; see MEMORY.md)
        */
@@ -470,6 +472,11 @@ export function assemble(out: string): void {
       const negative = missingInputInput(keptGraph, keptGraph.nodes.find((n) => n.id === node.id) as GraphNode);
       examples.push({ head: "h2", ...base, text_a: positive.textA, text_b: positive.textB, features: positive.features, label: 1, span: [at, at + answer.phrase.length], source: "llm", note: `cut ${pred}` });
       examples.push({ head: "h2", ...base, text_a: negative.textA, text_b: negative.textB, features: negative.features, label: 0, source: "llm", note: `kept ${pred}` });
+      const whole = redraft(seedRow, node.id, answer.task, step.after);
+      if (whole) {
+        const drafted = missingInputInput(whole.graph, whole.node);
+        examples.push({ head: "h2", ...base, text_a: drafted.textA, text_b: drafted.textB, features: drafted.features, label: 0, source: "llm", note: `drafted ${pred}` });
+      } else drop("h2-drafted-checker-error");
       const without = redraft(seedRow, node.id, answer.without, after);
       if (without) {
         const dropped = missingInputInput(without.graph, without.node);
@@ -625,7 +632,7 @@ export function mockAnswer(request: LlmRequest): string {
     const phrase = `the results of the earlier ${String(request.meta.ref).split(".")[0].replace(/_/g, " ")} step`;
     if (request.meta.mode === "weave") {
       const task = /^Task: (.*)$/m.exec(request.user)?.[1] ?? "Do the work.";
-      return JSON.stringify({ task: `Starting from ${phrase}, ${task}`, phrase, without: `Working carefully with everything you were handed here earlier, ${task}` });
+      return JSON.stringify({ task: `Starting from [${phrase}], ${task}`, task_without: `Working carefully with everything you were handed here earlier, ${task}` });
     }
     return JSON.stringify({ phrase });
   }

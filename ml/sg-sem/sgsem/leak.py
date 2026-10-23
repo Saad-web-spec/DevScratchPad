@@ -5,8 +5,8 @@ graph facts alone predict the label, the model can pass the generated test witho
 and fails on hand-written graphs where that cue is absent (what the gold set showed for minilm-3).
 
 Prints, per label and row kind (cut = positive; kept = the same A with the input still there; dropped = the same
-input list with the mention gone; swapped = the same input list, the sentence naming another input; as written =
-every step unchanged): the count, the share of task texts with no {{reference}} at all, the mean number of heading
+input list with the mention gone; drafted = the same task words with every input and heading block, as the gold
+negatives are built; as written = every step unchanged): the count, the share of task texts with no {{reference}} at all, the mean number of heading
 blocks in A and of input lines in B. Then, when scikit-learn is installed, fits a bag-of-words classifier
 on the train split from each side alone and reports the test AUROC of positives against each negative kind
 (a built kind against the positives that have a twin of that kind).
@@ -32,7 +32,7 @@ def kind_of(row: dict) -> str:
     note = row.get("note", "")
     if note.startswith("cut "):
         return "cut"
-    for kind in ("kept", "dropped", "swapped"):
+    for kind in ("kept", "drafted", "dropped"):
         if note.startswith(kind + " "):
             return kind
     return "as written" if note.startswith("as written") else note or "other"
@@ -80,9 +80,9 @@ def classify(train: list[dict], test: list[dict]) -> None:
     }
     test_labels = np.array([r["label"] for r in test])
     kinds = np.array([kind_of(r) for r in test])
-    negatives = [k for k in ("kept", "dropped", "swapped", "as written") if ((kinds == k) & (test_labels == 0)).any()]
+    negatives = [k for k in ("kept", "drafted", "dropped", "as written") if ((kinds == k) & (test_labels == 0)).any()]
     cut_of = lambda row: (row["seed"], row.get("note", "").split(" ")[1] if " " in row.get("note", "") else "")
-    built = {k: {cut_of(r) for r in test if kind_of(r) == k} for k in ("kept", "dropped", "swapped")}
+    built = {k: {cut_of(r) for r in test if kind_of(r) == k} for k in ("kept", "drafted", "dropped")}
     twins = {k: np.array([cut_of(r) in keys for r in test]) for k, keys in built.items() if keys}
     print(f"\ntest AUROC of a train-split classifier that sees one side only (0.5 = the side carries nothing, near 1 = the label is in that side alone):")
     print(f"{'side':<14}" + "".join(f"{'vs ' + k:>15}" for k in negatives) + f"{'vs all':>15}")

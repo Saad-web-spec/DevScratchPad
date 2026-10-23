@@ -122,7 +122,7 @@ def balance(examples: list[dict], seed: int, max_ratio: float = 3.0) -> list[dic
     for rows in by_label.values():
         rows = rows[:]
         rng.shuffle(rows)
-        # Steps as written are the easy negatives: they go first, so the built hard negatives (kept, dropped, swapped) stay.
+        # Steps as written are the easy negatives: they go first, so the built hard negatives (kept, drafted, dropped) stay.
         rows.sort(key=lambda example: str(example.get("note", "")).startswith("as written"))
         out.extend(rows[: int(smallest * max_ratio)])
     rng.shuffle(out)

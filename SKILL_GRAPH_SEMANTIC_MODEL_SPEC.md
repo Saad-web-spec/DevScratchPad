@@ -49,7 +49,7 @@ It is "ours" in three ways that matter, and not in one way that would not:
 
 | Part | Choice | Size |
 | --- | --- | --- |
-| Encoder | **`microsoft/MiniLM-L12-H384-uncased`** (default); bake-off against `microsoft/deberta-v3-xsmall` in phase 3 | ~33M params vs ~71M (most of DeBERTa's is a 128k-word vocabulary) |
+| Encoder | **`cross-encoder/ms-marco-MiniLM-L12-v2`** (default): the `microsoft/MiniLM-L12-H384-uncased` network after training on ~500k MS MARCO text pairs, so it starts out able to judge whether one text is supported by another (five runs from the raw checkpoint, which never saw a text pair, left H2 at chance on the gold set); bake-off against `microsoft/deberta-v3-xsmall` in phase 3 | ~33M params vs ~71M (most of DeBERTa's is a 128k-word vocabulary) |
 | Feature projection | 16 → 64, GELU | ~1k |
 | Each doc head | Linear(384+64 → 128) → GELU → Linear(128 → k) | ~65k each |
 | H1 sentence head | Linear(384 → 1) on each `[SEN]` marker token | ~400 |
@@ -158,7 +158,7 @@ It runs our TypeScript library (vite-node, like the tests) on seed graphs and wr
 
 | Mutation | Produces |
 | --- | --- |
-| `disconnect` an edge into a step. A starter's inline `{{ref}}` becomes plain words written by the LLM, and the heading block goes. A drafted step's outline task is rewritten by the LLM to name every input in plain words inside its sentences (*weave*, §7.2), and the outline is drafted again without the edge, the way the gold cuts are built | H2 positive; span = the words naming the cut input. Hard negatives: the same prompt with the edge kept (*kept*: same text A); the rewrite without that mention, the edge cut (*dropped*: same input list and graph facts), so neither side alone carries the label. minilm-3 read the input list and facts alone; minilm-4, trained on a sentence appended for the purpose, missed every mention woven into a hand-written task |
+| `disconnect` an edge into a step. A starter's inline `{{ref}}` becomes plain words written by the LLM, and the heading block goes. A drafted step's outline task is rewritten by the LLM to name every input in plain words inside its sentences (*weave*, §7.2; the words naming the cut input marked in square brackets), and the outline is drafted again without the edge, the way the gold cuts are built | H2 positive; span = the words naming the cut input. Hard negatives: the same prompt with the edge kept (*kept*: same text A); the woven task drafted with every input and heading block (*drafted*: how a gold negative is built); the rewrite without that mention, the edge cut (*dropped*: same input list and graph facts), so neither side alone carries the label. minilm-3 read the input list and facts alone; minilm-4, trained on a sentence appended for the purpose, missed every mention woven into a hand-written task; minilm-5 asked for the mention as a separate field and 9 in 10 answers were unusable |
 | `set_contract` with a description taken from another contract | H3 positive |
 | change a JSON producer's keys while its readers keep theirs, `required` left empty | H3 positive |
 | `set_step` gate ← a gate from the "not checkable" pool | H4 negative |
@@ -198,7 +198,7 @@ Target sizes: H1 12k, H2 8k, H3 5k, H4 6k (train), plus 10% dev and 10% test, al
 | Framework | PyTorch + Hugging Face `transformers`, mixed precision (fp16) |
 | Optimiser | AdamW, lr 5e-5 encoder / 1e-3 heads, weight decay 0.01, 6% warm-up, linear decay |
 | Batch | 32 (gradient accumulation if the GPU is short of memory) |
-| Epochs | 4, early stop on dev macro-F1 |
+| Epochs | 10 (4 through minilm-5; the H2 loss was still falling), early stop on dev macro-F1 |
 | Task sampling | each batch from one head, heads drawn with probability ∝ √(examples), so small heads are not drowned out |
 | Losses | H1 doc: cross-entropy; H1 sentences: binary cross-entropy (masked to `[SEN]` tokens); H2: cross-entropy + span start/end cross-entropy (×0.5); H3: cross-entropy; H4: 3-class cross-entropy with class weights |
 | Seeds | 3 runs per configuration; report mean ± spread |
@@ -260,7 +260,7 @@ export async function semanticVerdictCheck(graph: SkillGraph, node: GraphNode, a
 
 - **Privacy.** Inference runs in memory inside the existing request, like every other check; nothing is stored or logged (the route logs tool names only). The model is never trained on user graphs or answers. The connector's privacy page gets one line saying a local model checks text and sends nothing anywhere.
 - **Versioning.** The model is `sg-sem-<n>`. Its manifest carries the SHA-256 of the file, its thresholds and the date. `SERVER_INFO.version` bumps whenever the model changes, since warnings change.
-- **Licences.** MiniLM-L12-H384: MIT. DeBERTa-v3-xsmall: MIT. Qwen2.5-7B-Instruct: Apache-2.0; Llama-3.1: Llama community licence, which permits this use but must be credited. Generated data and the trained weights are ours; the model card lists the sources.
+- **Licences.** MiniLM-L12-H384: MIT; the ms-marco cross-encoder checkpoint of it: Apache-2.0. DeBERTa-v3-xsmall: MIT. Qwen2.5-7B-Instruct: Apache-2.0; Llama-3.1: Llama community licence, which permits this use but must be credited. Generated data and the trained weights are ours; the model card lists the sources.
 
 ## 10b. How training runs on your Colab
 

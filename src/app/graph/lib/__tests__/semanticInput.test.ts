@@ -85,17 +85,19 @@ describe("semanticInput: the text and numbers sg-sem reads", () => {
 describe("sg-sem weave answers", () => {
   const original = "Identify the key changes in the commits and group them by type.";
   const ids = ["get-commits-since-last-tag", "extract-key-changes"];
-  const answer = (task: string, phrase: string, without: string) => JSON.stringify({ task, phrase, without });
+  const answer = (task: string, without: string) => JSON.stringify({ task, task_without: without });
 
   it("keeps a rewrite that names the data inside the work, and its version without", () => {
-    const read = readH2Weave(answer("Identify the key changes in the list of commits since the last tag and group them by type.", "the list of commits since the last tag", "Identify the key changes and group them by type."), original, ids);
+    const read = readH2Weave(answer("Identify the key changes in [the list of commits since the last tag] and group them by type.", "Identify the key changes and group them by type."), original, ids);
     expect(read).toEqual({ task: "Identify the key changes in the list of commits since the last tag and group them by type.", phrase: "the list of commits since the last tag", without: "Identify the key changes and group them by type." });
   });
 
-  it("drops answers whose phrase is not in the task, is still in the version without, or that spell a step id", () => {
-    expect(readH2Weave(answer("Identify the key changes in the commit list.", "the list of commits", "Identify the key changes and group them."), original, ids)).toEqual({ reject: "phrase-not-in-task" });
-    expect(readH2Weave(answer("Identify the key changes in the commit list and group them.", "the commit list", "Identify the key changes in the list of each commit and group them."), original, ids)).toEqual({ reject: "still-named" });
-    expect(readH2Weave(answer("Read get-commits-since-last-tag and identify the key changes.", "the commit list", "Identify the key changes and group them."), original, ids)).toEqual({ reject: "step-id" });
+  it("drops answers without one bracketed mention, still naming it without, off the task or spelling a step id", () => {
+    expect(readH2Weave(answer("Identify the key changes in the commit list.", "Identify the key changes and group them."), original, ids)).toEqual({ reject: "brackets" });
+    expect(readH2Weave(answer("Identify the key changes in [the commit list] and [the tags].", "Identify the key changes and group them."), original, ids)).toEqual({ reject: "brackets" });
+    expect(readH2Weave(answer("Identify the key changes in [the commit list] and group them.", "Identify the key changes in the list of each commit and group them."), original, ids)).toEqual({ reject: "still-named" });
+    expect(readH2Weave(answer("Write a short summary of what [the survey percentages] show.", "Write a short summary of what the notes show."), original, ids)).toEqual({ reject: "off-task" });
+    expect(readH2Weave(answer("Read get-commits-since-last-tag and identify the key changes in [the commit list].", "Identify the key changes and group them."), original, ids)).toEqual({ reject: "step-id" });
     expect(readH2Weave("not json", original, ids)).toEqual({ reject: "json" });
   });
 });
@@ -139,6 +141,15 @@ describe("sg-sem data pipeline, on the mock text model", () => {
       expect(twin, negative.note).toBeDefined();
       expect(negative.features.filter((_, i) => i !== 7)).toEqual(twin!.features.filter((_, i) => i !== 7));
       expect(negative.text_a).not.toBe(twin!.text_a);
+    }
+    // A drafted negative is the woven task with every input: the positive's task words, one input more.
+    const drafted = examples.filter((e) => e.head === "h2" && e.note.startsWith("drafted "));
+    expect(drafted.length).toBeGreaterThan(0);
+    for (const negative of drafted.slice(0, 50)) {
+      const twin = positives.find((p) => p.seed === negative.seed && p.note === negative.note.replace("drafted", "cut"));
+      expect(twin, negative.note).toBeDefined();
+      expect((negative.text_b.match(/\[INPUT\]/g) ?? []).length).toBeGreaterThanOrEqual((twin!.text_b.match(/\[INPUT\]/g) ?? []).length);
+      expect(negative.text_a).toContain(twin!.text_a.slice(twin!.span![0], twin!.span![1]));
     }
     // No seed graph is in two splits.
     const splits = new Map<string, Set<string>>();

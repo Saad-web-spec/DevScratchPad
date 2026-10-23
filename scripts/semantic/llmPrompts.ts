@@ -178,6 +178,8 @@ export function h2Request(id: string, task: string, ref: string, source: string)
  * `target` is the label of the one that will be cut. The model writes the task naming every input in plain words
  * within its sentences (minilm-3 and minilm-4 only ever saw a sentence appended for the purpose, and missed every
  * hand-written mention), and the same task with the target's data not mentioned, so the two differ in that mention only.
+ * The mention is marked with square brackets inside the rewrite: asked for as separate fields (minilm-5), the 7B model
+ * put a whole sentence in "phrase" and only the dropped words in "without", and 9 in 10 answers were unusable.
  */
 export function h2WeaveRequest(id: string, task: string, inputs: string[], target: string): LlmRequest {
   const user = [
@@ -188,10 +190,13 @@ export function h2WeaveRequest(id: string, task: string, inputs: string[], targe
     ...inputs.map((input) => `- ${input}`),
     "",
     'Rewrite the task so that it names the data it works on in plain words, inside the sentences that describe the work, the way a person writing the task would: "Check every claim in the research notes against its listed source", not a sentence added only to point at the data such as "Use the research notes." Name the data of every step it reads this way. Keep what the task asks for; at most 25 words longer than the original; no step ids, no braces, no headings.',
-    `Then write that rewrite once more without any mention of the data of ${target}: reword only the words that refer to it, so the text still reads naturally, still names the other data and stays about as long.`,
-    `Also return the words of the first rewrite that name the data of ${target} (2 to 8 words, copied exactly).`,
+    `In "task", put square brackets around the words that name the data of ${target} (2 to 8 words, one place only).`,
+    `In "task_without", write the whole rewrite again without any mention of the data of ${target}: reword only the words that refer to it, so the text still reads naturally, still names the other data and stays about as long. No brackets.`,
     "",
-    'Return: {"task": "...", "phrase": "...", "without": "..."}',
+    "Example, for a step that reads Interviews (notes from each user interview) and Survey (survey results with percentages), with the data of Survey to mark:",
+    '{"task": "Write a short summary of what the interview notes and [the survey percentages] show, and list the questions they leave open.", "task_without": "Write a short summary of what the interview notes show, and list the questions they leave open."}',
+    "",
+    'Return: {"task": "...", "task_without": "..."}',
   ];
   return { id, kind: "h2", system: SYSTEM, user: user.join("\n"), max_new_tokens: 400, temperature: 0.7, meta: { ref: target, mode: "weave" } };
 }
@@ -209,26 +214,34 @@ export function readH2(text: string): string | null {
 }
 
 /**
- * A weave-mode H2 answer: the task naming every input, the words of it naming the target, and the task without
- * that mention. `original` is the task it rewrote; `ids` are the step ids that must not appear in the text.
- * A reason string when unusable, so the pipeline can count why answers were dropped.
+ * A weave-mode H2 answer: the task naming every input, the words of it naming the target (the one bracketed part),
+ * and the task without that mention. `original` is the task it rewrote; `ids` are the step ids that must not appear
+ * in the text. A reason string when unusable, so the pipeline can count why answers were dropped.
  */
 export function readH2Weave(text: string, original: string, ids: string[]): { task: string; phrase: string; without: string } | { reject: string } {
   const json = readJson(text);
-  if (typeof json?.task !== "string" || typeof json?.phrase !== "string" || typeof json?.without !== "string") return { reject: "json" };
-  const task = cleanWords(json.task);
-  const phrase = cleanWords(json.phrase);
-  const without = cleanWords(json.without);
+  if (typeof json?.task !== "string" || typeof json?.task_without !== "string") return { reject: "json" };
+  const marked = cleanWords(json.task);
+  const marks = [...marked.matchAll(/\[([^[\]]+)\]/g)];
+  if (marks.length !== 1 || /[[\]]/.test(marked.replace(marks[0][0], ""))) return { reject: "brackets" };
+  const phrase = cleanWords(marks[0][1]).replace(/[.,;:]+$/, "");
+  const task = cleanWords(marked.replace(marks[0][0], marks[0][1]));
+  const without = cleanWords(json.task_without);
+  if (/[[\]]/.test(without)) return { reject: "brackets" };
   const count = (value: string) => value.split(" ").length;
   const limit = count(original) + 40;
   if (count(phrase) < 2 || count(phrase) > 12 || count(task) < 6 || count(without) < 6 || count(task) > limit || count(without) > limit) return { reject: "length" };
   if (/[{}]/.test(task + without) || /^[A-Z][A-Z _-]{3,}:/m.test(task + "\n" + without)) return { reject: "braces" };
   const lower = (value: string) => value.toLowerCase();
   if (ids.some((id) => /[_-]/.test(id) && lower(task + without).includes(lower(id)))) return { reject: "step-id" };
-  if (!lower(task).includes(lower(phrase))) return { reject: "phrase-not-in-task" };
+  // The rewrite keeps the step's work: a third of the original's content words stay (not the example copied).
+  const contentOf = (value: string) => lower(value).split(/[^a-z0-9]+/).filter((word) => word.length > 3);
+  const rewritten = new Set(contentOf(task));
+  const originalWords = [...new Set(contentOf(original))];
+  if (originalWords.length > 0 && originalWords.filter((word) => rewritten.has(word)).length < originalWords.length / 3) return { reject: "off-task" };
   if (lower(without).includes(lower(phrase))) return { reject: "phrase-in-without" };
   // The mention reworded is still a mention: every content word of the phrase left in the text means it was not dropped.
-  const content = lower(phrase).split(/[^a-z0-9]+/).filter((word) => word.length > 3);
+  const content = contentOf(phrase);
   const left = new Set(lower(without).split(/[^a-z0-9]+/));
   if (content.length > 0 && content.every((word) => left.has(word))) return { reject: "still-named" };
   if (lower(without) === lower(task)) return { reject: "same" };

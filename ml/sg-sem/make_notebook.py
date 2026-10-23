@@ -23,10 +23,11 @@ code("""
 REPO = "https://github.com/Saad-web-spec/DevScratchPad.git"
 BRANCH = "sg-sem"  # the branch with the sg-sem code
 GENERATOR = "Qwen/Qwen2.5-7B-Instruct"   # writes the text; runs here on the GPU
-BASE = "microsoft/MiniLM-L12-H384-uncased"  # the encoder sg-sem is fine-tuned from
+BASE = "cross-encoder/ms-marco-MiniLM-L12-v2"  # the encoder sg-sem is fine-tuned from: the same MiniLM-L12-H384 network, already trained on text pairs (the raw microsoft/MiniLM-L12-H384-uncased never was)
+EPOCHS = 10                                 # 4 through minilm-5: H2 loss was still falling at the end
 QUICK_LOOK = False                         # True: a few answers per round, to check quality first (done; the full data is on Drive)
 TRAIN = not QUICK_LOOK                     # training waits for the full data
-RUN = "minilm-5"  # minilm-1: H1 missed buried problems, H2 at chance. minilm-2: H1 flagged honest number ledgers, H2 starved (68 positives). minilm-3: H2 read the input list, not the task (dropped/swapped negatives added). minilm-4: H2 only woke on an appended sentence (woven positives added). See MEMORY.md
+RUN = "msmarco-1"  # minilm-1: H1 missed buried problems, H2 at chance. minilm-2: H1 flagged honest number ledgers, H2 starved (68 positives). minilm-3: H2 read the input list, not the task (dropped/swapped negatives added). minilm-4: H2 only woke on an appended sentence (woven positives added). minilm-5: 9 in 10 woven answers unusable (bracketed mention, drafted twin); the raw encoder never learnt to match A with B, so the base is now the pair-trained checkpoint of the same network. See MEMORY.md
 """),
 md("## 1. Storage and setup"),
 code("""
@@ -97,7 +98,7 @@ print(open(f"{DATA}/samples.md").read()[:12000])
 md("## 5. Train (runs when `QUICK_LOOK = False`)"),
 code("""
 if TRAIN:
-    !cd ml/sg-sem && python -m sgsem.train --data {DATA}/examples.jsonl --out {RUNS}/{RUN} --base {BASE}
+    !cd ml/sg-sem && python -m sgsem.train --data {DATA}/examples.jsonl --out {RUNS}/{RUN} --base {BASE} --epochs {EPOCHS}
 else:
     print("QUICK_LOOK is on: training waits for the full data.")
 """),
