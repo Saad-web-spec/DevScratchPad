@@ -2,6 +2,7 @@ import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterAll, describe, expect, it } from "vitest";
+import { readH2Weave } from "../../../../../scripts/semantic/llmPrompts";
 import { assemble, mock, round1, round2, splitOf, type Example } from "../../../../../scripts/semantic/pipeline";
 import { parseGraphSkill, type SkillGraph } from "../graphSkill";
 import { CONNECTOR_TEMPLATES } from "../graphTemplates";
@@ -81,6 +82,24 @@ describe("semanticInput: the text and numbers sg-sem reads", () => {
   });
 });
 
+describe("sg-sem weave answers", () => {
+  const original = "Identify the key changes in the commits and group them by type.";
+  const ids = ["get-commits-since-last-tag", "extract-key-changes"];
+  const answer = (task: string, phrase: string, without: string) => JSON.stringify({ task, phrase, without });
+
+  it("keeps a rewrite that names the data inside the work, and its version without", () => {
+    const read = readH2Weave(answer("Identify the key changes in the list of commits since the last tag and group them by type.", "the list of commits since the last tag", "Identify the key changes and group them by type."), original, ids);
+    expect(read).toEqual({ task: "Identify the key changes in the list of commits since the last tag and group them by type.", phrase: "the list of commits since the last tag", without: "Identify the key changes and group them by type." });
+  });
+
+  it("drops answers whose phrase is not in the task, is still in the version without, or that spell a step id", () => {
+    expect(readH2Weave(answer("Identify the key changes in the commit list.", "the list of commits", "Identify the key changes and group them."), original, ids)).toEqual({ reject: "phrase-not-in-task" });
+    expect(readH2Weave(answer("Identify the key changes in the commit list and group them.", "the commit list", "Identify the key changes in the list of each commit and group them."), original, ids)).toEqual({ reject: "still-named" });
+    expect(readH2Weave(answer("Read get-commits-since-last-tag and identify the key changes.", "the commit list", "Identify the key changes and group them."), original, ids)).toEqual({ reject: "step-id" });
+    expect(readH2Weave("not json", original, ids)).toEqual({ reject: "json" });
+  });
+});
+
 describe("sg-sem data pipeline, on the mock text model", () => {
   const dir = mkdtempSync(join(tmpdir(), "sg-sem-"));
   afterAll(() => rmSync(dir, { recursive: true, force: true }));
@@ -101,7 +120,7 @@ describe("sg-sem data pipeline, on the mock text model", () => {
       expect(example.split).toBe(splitOf(example.seed));
       if (example.head === "h1") {
         expect((example.text_b.match(/\[SEN\]/g) ?? []).length).toBe(example.sentences!.length);
-        if (example.note === "buried_problem_pass") expect(example.sentences).toContain(1);
+        if (example.note.startsWith("buried_")) expect(example.sentences).toContain(1);
         else expect(example.sentences!.every((flag) => flag === 0)).toBe(true);
       }
       if (example.head === "h2" && example.label === 1) {
@@ -112,6 +131,15 @@ describe("sg-sem data pipeline, on the mock text model", () => {
     // Every positive H2 has its negative twin: the same task text, with the input still connected.
     const positives = examples.filter((e) => e.head === "h2" && e.label === 1);
     for (const positive of positives.slice(0, 50)) expect(examples.some((e) => e.head === "h2" && e.label === 0 && e.text_a === positive.text_a && e.text_b.length > positive.text_b.length)).toBe(true);
+    // A dropped negative has its positive's input list and graph facts; only the task's words differ (and with them fact 7, the prompt length).
+    const dropped = examples.filter((e) => e.head === "h2" && e.note.startsWith("dropped "));
+    expect(dropped.length).toBeGreaterThan(0);
+    for (const negative of dropped.slice(0, 50)) {
+      const twin = positives.find((p) => p.seed === negative.seed && p.note === negative.note.replace("dropped", "cut") && p.text_b === negative.text_b);
+      expect(twin, negative.note).toBeDefined();
+      expect(negative.features.filter((_, i) => i !== 7)).toEqual(twin!.features.filter((_, i) => i !== 7));
+      expect(negative.text_a).not.toBe(twin!.text_a);
+    }
     // No seed graph is in two splits.
     const splits = new Map<string, Set<string>>();
     for (const example of examples) splits.set(example.seed, (splits.get(example.seed) ?? new Set()).add(example.split));

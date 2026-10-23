@@ -26,7 +26,7 @@ GENERATOR = "Qwen/Qwen2.5-7B-Instruct"   # writes the text; runs here on the GPU
 BASE = "microsoft/MiniLM-L12-H384-uncased"  # the encoder sg-sem is fine-tuned from
 QUICK_LOOK = False                         # True: a few answers per round, to check quality first (done; the full data is on Drive)
 TRAIN = not QUICK_LOOK                     # training waits for the full data
-RUN = "minilm-4"  # minilm-1: H1 missed buried problems, H2 at chance. minilm-2: H1 flagged honest number ledgers, H2 starved (68 positives). minilm-3: H2 read the input list, not the task (dropped/swapped negatives added). See MEMORY.md
+RUN = "minilm-5"  # minilm-1: H1 missed buried problems, H2 at chance. minilm-2: H1 flagged honest number ledgers, H2 starved (68 positives). minilm-3: H2 read the input list, not the task (dropped/swapped negatives added). minilm-4: H2 only woke on an appended sentence (woven positives added). See MEMORY.md
 """),
 md("## 1. Storage and setup"),
 code("""
@@ -86,7 +86,7 @@ for line in reversed(open(f"{DATA}/round2.outputs.jsonl").readlines()):
     row = json.loads(line); request = requests.get(row["id"])
     if request is None:  # an answer to an older prompt
         continue
-    kind = (request["kind"], request["meta"].get("style", ""))
+    kind = (request["kind"], request["meta"].get("style", request["meta"].get("mode", "")))
     if shown[kind] < 2:
         shown[kind] += 1
         print(f"--- {' '.join(filter(None, kind))} {request['meta']}")

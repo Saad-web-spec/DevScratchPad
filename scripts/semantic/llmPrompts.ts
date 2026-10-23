@@ -154,42 +154,46 @@ export function readH1(text: string, style: H1Style): H1Answer | { reject: strin
 
 /**
  * H2 text job, in one of two modes. `phrase`: the step's task holds an inline `{{ref}}` to the earlier step (the
- * starters do), and the model writes the plain-word phrase that replaces it. `quote`: the task names that data in
- * words already (drafted graphs: the reference sat in a heading block the pipeline removes), and the model quotes
- * those words. Either way the words become the span the warning quotes.
+ * starters do), and the model writes the plain-word phrase that replaces it. `weave`: a drafted step whose task
+ * names none of its inputs (they reach it only through heading blocks); the model rewrites the task so it names
+ * each input in words inside the work it describes, as a person writes a task, plus a version that leaves one
+ * input out. Either way the words naming the cut input become the span the warning quotes.
  */
-export function h2Request(id: string, task: string, ref: string, source: string, mode: "phrase" | "insert"): LlmRequest {
-  const user =
-    mode === "phrase"
-      ? [
-          `This instruction to an AI step contains the placeholder {{${ref}}}: it is filled in with the output of an earlier step.`,
-          "",
-          `Instruction: ${task}`,
-          `The earlier step: ${source}`,
-          "",
-          `Write a short noun phrase (2 to 8 words) that names the data {{${ref}}} stands for, as a person would write it in the instruction instead of the placeholder, e.g. "the list of claims with their sources". No braces, no step ids.`,
-          "",
-          'Return: {"phrase": "..."}',
-        ]
-      : [
-          "This instruction to an AI step works on the output of an earlier step, but the lines that handed that output over are gone, so it no longer says what it works on.",
-          "",
-          `Instruction: ${task}`,
-          `The earlier step: ${source}`,
-          "",
-          'Write one sentence to put into the instruction that tells the step to use that data, naming the data in plain words as a person would, e.g. "Check each claim against the list of sources from the research." or "Use the scores of every criterion for the final grade." 8 to 25 words; no step ids, no braces. Also return the words of your sentence that name the data (2 to 8 words, copied exactly from the sentence).',
-          "",
-          'Return: {"sentence": "...", "phrase": "..."}',
-        ];
-  return {
-    id,
-    kind: "h2",
-    system: SYSTEM,
-    user: user.join("\n"),
-    max_new_tokens: mode === "phrase" ? 60 : 120,
-    temperature: 0.7,
-    meta: { ref, mode },
-  };
+export function h2Request(id: string, task: string, ref: string, source: string): LlmRequest {
+  const user = [
+    `This instruction to an AI step contains the placeholder {{${ref}}}: it is filled in with the output of an earlier step.`,
+    "",
+    `Instruction: ${task}`,
+    `The earlier step: ${source}`,
+    "",
+    `Write a short noun phrase (2 to 8 words) that names the data {{${ref}}} stands for, as a person would write it in the instruction instead of the placeholder, e.g. "the list of claims with their sources". No braces, no step ids.`,
+    "",
+    'Return: {"phrase": "..."}',
+  ];
+  return { id, kind: "h2", system: SYSTEM, user: user.join("\n"), max_new_tokens: 60, temperature: 0.7, meta: { ref, mode: "phrase" } };
+}
+
+/**
+ * `weave` mode (see h2Request). `inputs`: every earlier step the task reads, as "Label: what it returns";
+ * `target` is the label of the one that will be cut. The model writes the task naming every input in plain words
+ * within its sentences (minilm-3 and minilm-4 only ever saw a sentence appended for the purpose, and missed every
+ * hand-written mention), and the same task with the target's data not mentioned, so the two differ in that mention only.
+ */
+export function h2WeaveRequest(id: string, task: string, inputs: string[], target: string): LlmRequest {
+  const user = [
+    "Here is the task of one step in an AI workflow, and the earlier steps whose output it reads.",
+    "",
+    `Task: ${task}`,
+    "It reads:",
+    ...inputs.map((input) => `- ${input}`),
+    "",
+    'Rewrite the task so that it names the data it works on in plain words, inside the sentences that describe the work, the way a person writing the task would: "Check every claim in the research notes against its listed source", not a sentence added only to point at the data such as "Use the research notes." Name the data of every step it reads this way. Keep what the task asks for; at most 25 words longer than the original; no step ids, no braces, no headings.',
+    `Then write that rewrite once more without any mention of the data of ${target}: reword only the words that refer to it, so the text still reads naturally, still names the other data and stays about as long.`,
+    `Also return the words of the first rewrite that name the data of ${target} (2 to 8 words, copied exactly).`,
+    "",
+    'Return: {"task": "...", "phrase": "...", "without": "..."}',
+  ];
+  return { id, kind: "h2", system: SYSTEM, user: user.join("\n"), max_new_tokens: 400, temperature: 0.7, meta: { ref: target, mode: "weave" } };
 }
 
 const cleanWords = (value: string) => value.replace(/\s+/g, " ").trim().replace(/^["']|["']$/g, "");
@@ -204,17 +208,31 @@ export function readH2(text: string): string | null {
   return words >= 2 && words <= 12 && !/[{}]/.test(clean) ? clean : null;
 }
 
-/** An insert-mode H2 answer: the sentence to put into the task and the words of it that name the data; null when unusable. */
-export function readH2Insert(text: string): { sentence: string; phrase: string } | null {
+/**
+ * A weave-mode H2 answer: the task naming every input, the words of it naming the target, and the task without
+ * that mention. `original` is the task it rewrote; `ids` are the step ids that must not appear in the text.
+ * A reason string when unusable, so the pipeline can count why answers were dropped.
+ */
+export function readH2Weave(text: string, original: string, ids: string[]): { task: string; phrase: string; without: string } | { reject: string } {
   const json = readJson(text);
-  if (typeof json?.sentence !== "string" || typeof json?.phrase !== "string") return null;
-  const sentence = cleanWords(json.sentence);
+  if (typeof json?.task !== "string" || typeof json?.phrase !== "string" || typeof json?.without !== "string") return { reject: "json" };
+  const task = cleanWords(json.task);
   const phrase = cleanWords(json.phrase);
-  const sentenceWords = sentence.split(" ").length;
-  const phraseWords = phrase.split(" ").length;
-  if (sentenceWords < 6 || sentenceWords > 40 || phraseWords < 2 || phraseWords > 12 || /[{}]/.test(sentence)) return null;
-  if (!sentence.toLowerCase().includes(phrase.toLowerCase())) return null;
-  return { sentence: /[.!?]$/.test(sentence) ? sentence : `${sentence}.`, phrase };
+  const without = cleanWords(json.without);
+  const count = (value: string) => value.split(" ").length;
+  const limit = count(original) + 40;
+  if (count(phrase) < 2 || count(phrase) > 12 || count(task) < 6 || count(without) < 6 || count(task) > limit || count(without) > limit) return { reject: "length" };
+  if (/[{}]/.test(task + without) || /^[A-Z][A-Z _-]{3,}:/m.test(task + "\n" + without)) return { reject: "braces" };
+  const lower = (value: string) => value.toLowerCase();
+  if (ids.some((id) => /[_-]/.test(id) && lower(task + without).includes(lower(id)))) return { reject: "step-id" };
+  if (!lower(task).includes(lower(phrase))) return { reject: "phrase-not-in-task" };
+  if (lower(without).includes(lower(phrase))) return { reject: "phrase-in-without" };
+  // The mention reworded is still a mention: every content word of the phrase left in the text means it was not dropped.
+  const content = lower(phrase).split(/[^a-z0-9]+/).filter((word) => word.length > 3);
+  const left = new Set(lower(without).split(/[^a-z0-9]+/));
+  if (content.length > 0 && content.every((word) => left.has(word))) return { reject: "still-named" };
+  if (lower(without) === lower(task)) return { reject: "same" };
+  return { task, phrase, without };
 }
 
 /* ------------------------------------------------------------------ round 2: H4 gates */

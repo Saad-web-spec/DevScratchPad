@@ -27,11 +27,12 @@ import {
   H4_LABELS,
   h1Request,
   h2Request,
+  h2WeaveRequest,
   h4Request,
   outlineRequest,
   readH1,
   readH2,
-  readH2Insert,
+  readH2Weave,
   readH4,
   readJson,
   type H1Style,
@@ -165,6 +166,8 @@ export interface Seed {
   seed: string;
   origin: "starter" | "draft";
   source: string;
+  /** Drafted seeds: the cleaned outline `source` was drafted from, so a step can be drafted again with other text or inputs. */
+  outline?: Record<string, unknown>;
 }
 
 export interface Example {
@@ -215,7 +218,8 @@ function seedsFrom(out: string): { seeds: Seed[]; drafted: number; rejected: Rec
       rejected.json += 1;
       continue;
     }
-    const draft = draftGraph({ ...cleanOutline(outline), runs_in: request.meta.runs_in });
+    const args = { ...cleanOutline(outline), runs_in: request.meta.runs_in };
+    const draft = draftGraph(args);
     if ("error" in draft) {
       rejected.draft += 1;
       because(draft.error);
@@ -233,7 +237,7 @@ function seedsFrom(out: string): { seeds: Seed[]; drafted: number; rejected: Rec
       continue;
     }
     names.add(name);
-    seeds.push({ seed: name, origin: "draft", source: draft.source });
+    seeds.push({ seed: name, origin: "draft", source: draft.source, outline: args });
     drafted += 1;
   }
   return { seeds, drafted, rejected, reasons };
@@ -248,30 +252,38 @@ function refsTo(pred: string): RegExp {
  * The step's prompt without the heading block that named `pred` (a drafted prompt holds one per input, e.g.
  * `READ RECEIPTS:\n{{read_receipts}}`), and whether an inline `{{pred}}` reference remains in the text. The block
  * spells the step id in capitals, so a positive that kept it would teach a token match instead of a reading.
- * With `replacement`, a sentence written by the LLM stands where the block stood, so the task names the data in
- * plain words at the place a person would have written it.
  */
-function withoutInput(prompt: string, pred: string, replacement = ""): { prompt: string; inline: boolean } {
+function withoutInput(prompt: string, pred: string): { prompt: string; inline: boolean } {
   const block = new RegExp(`(^|\n\n)([^\n]{1,120}):\n\{\{\s*${pred}(?:\.[^}]*)?\s*\}\}(?=\n\n|$)`);
   const heading = block.exec(prompt)?.[2] ?? "";
   // Only a heading that spells the step id in capitals goes; a written one ("The claims:") stays, and its reference becomes the phrase.
   const stripped =
     /[A-Z]/.test(heading) && heading === heading.toUpperCase()
-      ? prompt.replace(block, (_, separator: string) => (replacement ? `${separator}${replacement}` : "")).replace(/^\n\n/, "")
+      ? prompt.replace(block, "").replace(/^\n\n/, "")
       : prompt;
   return { prompt: stripped, inline: refsTo(pred).test(stripped) };
 }
 
-/** One readable H2 answer: the plain-word phrase naming `pred`, and in insert mode the sentence that carries it. */
-interface H2Answer {
-  pred: string;
-  phrase: string;
-  insert: { sentence: string; phrase: string } | null;
+/** The cleaned outline step a drafted node came from; null for a starter or a step the outline does not hold. */
+function outlineStep(seed: Seed | undefined, id: string): { task: string; after: string[] } | null {
+  const steps = seed?.outline?.steps;
+  const step = Array.isArray(steps) ? (steps as Record<string, unknown>[]).find((s) => s.id === id) : undefined;
+  if (!step || typeof step.task !== "string") return null;
+  return { task: step.task, after: Array.isArray(step.after) ? step.after.filter((a): a is string => typeof a === "string") : [] };
 }
 
-/** `prompt` with `pred` named in plain words: the LLM's sentence where the heading block stood, or the phrase in place of the inline reference. */
-function namedIn(prompt: string, answer: H2Answer): string {
-  return answer.insert ? withoutInput(prompt, answer.pred, answer.insert.sentence).prompt : withoutInput(prompt, answer.pred).prompt.replace(refsTo(answer.pred), answer.phrase);
+/**
+ * The seed drafted again with one step's task text and inputs changed, the way the gold cuts are built: the
+ * drafter writes the heading blocks, and the request block for a step left with no input. Null on a draft or checker error.
+ */
+function redraft(seed: Seed, id: string, task: string, after: string[]): { graph: SkillGraph; node: GraphNode } | null {
+  const outline = seed.outline as Record<string, unknown>;
+  const steps = (outline.steps as Record<string, unknown>[]).map((step) => (step.id === id ? { ...step, task, after } : step));
+  const draft = draftGraph({ ...outline, steps });
+  if ("error" in draft || errorsOf(draft.source) > 0) return null;
+  const graph = load(draft.source) as SkillGraph;
+  const node = graph.nodes.find((n) => n.id === id);
+  return node ? { graph, node } : null;
 }
 
 /** The step with `pred` disconnected and `prompt` set; a step left with no input reads the request. Null when the checker rejects the edit. */
@@ -290,11 +302,11 @@ function cutStep(source: string, graph: SkillGraph, node: GraphNode, pred: strin
 
 /**
  * A step that reads `pred`: removing that edge leaves it working on less. The list a step fans out over is skipped.
- * `phrase`: an inline `{{pred}}` stays in the text and the LLM names it in plain words. `insert`: the reference was
- * only a heading block, so the LLM writes a sentence naming the data and it goes where the block stood.
+ * `phrase`: an inline `{{pred}}` stays in the text and the LLM names it in plain words. `weave`: the reference was
+ * only a heading block, so the LLM rewrites the step's outline task to name its inputs in words (h2WeaveRequest).
  */
-function h2Candidates(graph: SkillGraph): { node: GraphNode; pred: GraphNode; ref: string; prompt: string; mode: "phrase" | "insert" }[] {
-  const out: { node: GraphNode; pred: GraphNode; ref: string; prompt: string; mode: "phrase" | "insert" }[] = [];
+function h2Candidates(graph: SkillGraph): { node: GraphNode; pred: GraphNode; ref: string; prompt: string; mode: "phrase" | "weave" }[] {
+  const out: { node: GraphNode; pred: GraphNode; ref: string; prompt: string; mode: "phrase" | "weave" }[] = [];
   for (const node of modelSteps(graph)) {
     const preds = [...new Set(predecessorsOf(graph, node.id))].map((id) => graph.nodes.find((n) => n.id === id)).filter((n): n is GraphNode => n !== undefined);
     const list = foreachSource(node);
@@ -303,11 +315,14 @@ function h2Candidates(graph: SkillGraph): { node: GraphNode; pred: GraphNode; re
       const ref = nodeRefs(node).find((r) => r.head === pred.id);
       if (!ref) continue;
       const { prompt, inline } = withoutInput(node.prompt, pred.id);
-      out.push({ node, pred, ref: ref.raw, prompt, mode: inline ? "phrase" : "insert" });
+      out.push({ node, pred, ref: ref.raw, prompt, mode: inline ? "phrase" : "weave" });
     }
   }
   return out;
 }
+
+/** H2 text jobs per seed graph: 6 through minilm-4; the weave jobs make nearly all positives now. */
+const H2_PER_SEED = 8;
 
 export function round2(out: string, h1Samples: number): void {
   const { seeds, drafted, rejected, reasons } = seedsFrom(out);
@@ -329,8 +344,15 @@ export function round2(out: string, h1Samples: number): void {
       const gates = h4Request(`${seed.seed}::h4::${node.id}`, task, inputs);
       requests.push(keyedByPrompt({ ...gates, meta: { seed: seed.seed, node: node.id } }));
     }
-    for (const { node, pred, ref, prompt, mode } of h2Candidates(graph).slice(0, 6)) {
-      const request = h2Request(`${seed.seed}::h2::${node.id}::${pred.id}`, taskText({ ...node, prompt }).slice(0, 900), ref, describeStep(graph, pred), mode);
+    // A weave job needs the step's outline task with no reference of its own: a drafted step, not a starter.
+    const usable = h2Candidates(graph).filter((c) => c.mode === "phrase" || /^[^{}]+$/.test(outlineStep(seed, c.node.id)?.task ?? "{"));
+    for (const { node, pred, ref, prompt, mode } of usable.slice(0, H2_PER_SEED)) {
+      const id = `${seed.seed}::h2::${node.id}::${pred.id}`;
+      const reads = [...new Set(predecessorsOf(graph, node.id))].map((p) => graph.nodes.find((n) => n.id === p)).filter((n): n is GraphNode => n !== undefined && n.type !== "input");
+      const request =
+        mode === "phrase"
+          ? h2Request(id, taskText({ ...node, prompt }).slice(0, 900), ref, describeStep(graph, pred))
+          : h2WeaveRequest(id, (outlineStep(seed, node.id) as { task: string }).task.slice(0, 900), reads.map((n) => describeStep(graph, n)), pred.label || pred.id);
       requests.push(keyedByPrompt({ ...request, meta: { ...request.meta, seed: seed.seed, node: node.id, pred: pred.id } }));
     }
   }
@@ -379,7 +401,6 @@ export function assemble(out: string): void {
     }
     return graphs.get(seed);
   };
-  const h2Answers = new Map<string, H2Answer[]>(); // per `seed::node`: the answers that made a cut positive
 
   for (const output of readJsonl<LlmOutput>(join(out, "round2.outputs.jsonl"), true)) {
     const request = requests.get(output.id);
@@ -415,18 +436,58 @@ export function assemble(out: string): void {
       continue;
     }
 
+    if (request.kind === "h2" && request.meta.mode === "weave") {
+      /*
+       * Three rows per answer, built like the gold cuts (the outline drafted again):
+       *   cut      the woven task, the input gone from after: the task names data the step no longer gets (label 1)
+       *   kept     the same prompt with the input still connected: identical text A, so only the list tells them apart
+       *   dropped  the task without that mention, the input gone: identical input list and graph facts, so only the
+       *            words of the task tell them apart (minilm-3 read the list and facts alone; see MEMORY.md)
+       */
+      const pred = String(request.meta.pred);
+      const seedRow = seeds.get(seed);
+      const step = outlineStep(seedRow, node.id);
+      if (!seedRow || !step) continue;
+      const answer = readH2Weave(output.text, step.task, graph.nodes.map((n) => n.id));
+      if ("reject" in answer) {
+        drop(`h2-weave-${answer.reject}`);
+        continue;
+      }
+      const after = step.after.filter((id) => id !== pred);
+      const cut = redraft(seedRow, node.id, answer.task, after);
+      const kept = cut ? editGraph(seedRow.source, [{ op: "set_prompt", id: node.id, prompt: cut.node.prompt }]) : null;
+      if (!cut || !kept || "error" in kept || errorsOf(kept.source) > 0) {
+        drop("h2-checker-error");
+        continue;
+      }
+      const positive = missingInputInput(cut.graph, cut.node);
+      const at = positive.textA.toLowerCase().indexOf(answer.phrase.toLowerCase(), TASK_PREFIX.length);
+      if (at === -1) {
+        drop("h2-span-cut");
+        continue;
+      }
+      const keptGraph = load(kept.source) as SkillGraph;
+      const negative = missingInputInput(keptGraph, keptGraph.nodes.find((n) => n.id === node.id) as GraphNode);
+      examples.push({ head: "h2", ...base, text_a: positive.textA, text_b: positive.textB, features: positive.features, label: 1, span: [at, at + answer.phrase.length], source: "llm", note: `cut ${pred}` });
+      examples.push({ head: "h2", ...base, text_a: negative.textA, text_b: negative.textB, features: negative.features, label: 0, source: "llm", note: `kept ${pred}` });
+      const without = redraft(seedRow, node.id, answer.without, after);
+      if (without) {
+        const dropped = missingInputInput(without.graph, without.node);
+        examples.push({ head: "h2", ...base, text_a: dropped.textA, text_b: dropped.textB, features: dropped.features, label: 0, source: "llm", note: `dropped ${pred}` });
+      } else drop("h2-dropped-checker-error");
+      continue;
+    }
+
     if (request.kind === "h2") {
       const pred = String(request.meta.pred);
-      const insert = request.meta.mode === "insert" ? readH2Insert(output.text) : null;
-      const phrase = insert ? insert.phrase : readH2(output.text);
+      const phrase = readH2(output.text);
       if (!phrase) {
         drop("h2-unreadable");
         continue;
       }
       const source = seeds.get(seed)?.source ?? "";
-      const answer: H2Answer = { pred, phrase, insert };
-      // The heading block that named the input goes: an inline reference becomes the plain-word phrase, or the LLM's sentence stands where the block stood.
-      const rewritten = namedIn(node.prompt, answer);
+      // The heading block that named the input goes and the inline reference becomes the plain-word phrase.
+      const rewritten = withoutInput(node.prompt, pred).prompt.replace(refsTo(pred), phrase);
       if (rewritten === node.prompt) {
         drop("h2-no-ref");
         continue;
@@ -448,8 +509,6 @@ export function assemble(out: string): void {
       const negative = missingInputInput(keptGraph, keptNode);
       examples.push({ head: "h2", ...base, text_a: positive.textA, text_b: positive.textB, features: positive.features, label: 1, span: [at, at + phrase.length], source: "mutation", note: `cut ${pred}` });
       examples.push({ head: "h2", ...base, text_a: negative.textA, text_b: negative.textB, features: negative.features, label: 0, source: "mutation", note: `kept ${pred}` });
-      const key = `${seed}::${node.id}`;
-      h2Answers.set(key, [...(h2Answers.get(key) ?? []), answer]);
       continue;
     }
 
@@ -460,37 +519,6 @@ export function assemble(out: string): void {
         const pair = gateInput(graph, { ...node, gate: gate.text });
         if (!pair) continue;
         examples.push({ head: "h4", ...base, text_a: pair.textA, text_b: pair.textB, features: pair.features, label: H4_LABELS.indexOf(gate.label), source: "llm", note: gate.label });
-      }
-    }
-  }
-
-  /*
-   * H2 negatives that share the cut positive's input list and graph facts, so neither side alone gives the label away
-   * (minilm-3 read "a generated sentence and a short input list" and never compared the two; see MEMORY.md):
-   *   dropped  the input is cut and its heading block goes with nothing in its place: the task no longer asks for it
-   *   swapped  the input is cut and, where its block stood, stands the sentence naming another input the step still
-   *            reads (that input's heading block stays): the positive and this differ only in which data the sentence names
-   * Both need the cut input to be a heading block only (insert mode): removing an inline reference would leave a hole.
-   */
-  for (const [key, answers] of h2Answers) {
-    const [seed, nodeId] = key.split("::");
-    const graph = graphOf(seed);
-    const node = graph?.nodes.find((n) => n.id === nodeId);
-    const source = seeds.get(seed)?.source ?? "";
-    if (!graph || !node) continue;
-    const base = { seed, split: splitOf(seed) };
-    for (const cut of answers.filter((a) => a.insert)) {
-      const { prompt: without, inline } = withoutInput(node.prompt, cut.pred);
-      if (inline || without === node.prompt) continue;
-      const dropped = cutStep(source, graph, node, cut.pred, without);
-      if (dropped) examples.push({ head: "h2", ...base, text_a: dropped.textA, text_b: dropped.textB, features: dropped.features, label: 0, source: "mutation", note: `dropped ${cut.pred}` });
-      else drop("h2-dropped-checker-error");
-      for (const other of answers.filter((a) => a.pred !== cut.pred && a.insert)) {
-        const prompt = withoutInput(node.prompt, cut.pred, other.insert?.sentence).prompt;
-        if (prompt === without) continue;
-        const swapped = cutStep(source, graph, node, cut.pred, prompt);
-        if (swapped) examples.push({ head: "h2", ...base, text_a: swapped.textA, text_b: swapped.textB, features: swapped.features, label: 0, source: "mutation", note: `swapped ${cut.pred} for ${other.pred}` });
-        else drop("h2-swapped-checker-error");
       }
     }
   }
@@ -595,7 +623,10 @@ export function mockAnswer(request: LlmRequest): string {
   }
   if (request.kind === "h2") {
     const phrase = `the results of the earlier ${String(request.meta.ref).split(".")[0].replace(/_/g, " ")} step`;
-    if (request.meta.mode === "insert") return JSON.stringify({ sentence: `Work from ${phrase} when you do this.`, phrase });
+    if (request.meta.mode === "weave") {
+      const task = /^Task: (.*)$/m.exec(request.user)?.[1] ?? "Do the work.";
+      return JSON.stringify({ task: `Starting from ${phrase}, ${task}`, phrase, without: `Working carefully with everything you were handed here earlier, ${task}` });
+    }
     return JSON.stringify({ phrase });
   }
   return JSON.stringify({

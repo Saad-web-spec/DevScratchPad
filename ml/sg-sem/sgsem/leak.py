@@ -8,7 +8,8 @@ Prints, per label and row kind (cut = positive; kept = the same A with the input
 input list with the mention gone; swapped = the same input list, the sentence naming another input; as written =
 every step unchanged): the count, the share of task texts with no {{reference}} at all, the mean number of heading
 blocks in A and of input lines in B. Then, when scikit-learn is installed, fits a bag-of-words classifier
-on the train split from each side alone and reports the test AUROC of positives against each negative kind.
+on the train split from each side alone and reports the test AUROC of positives against each negative kind
+(a built kind against the positives that have a twin of that kind).
 
     python -m sgsem.leak --data /content/drive/MyDrive/sg-sem/data/examples.jsonl
 """
@@ -80,6 +81,9 @@ def classify(train: list[dict], test: list[dict]) -> None:
     test_labels = np.array([r["label"] for r in test])
     kinds = np.array([kind_of(r) for r in test])
     negatives = [k for k in ("kept", "dropped", "swapped", "as written") if ((kinds == k) & (test_labels == 0)).any()]
+    cut_of = lambda row: (row["seed"], row.get("note", "").split(" ")[1] if " " in row.get("note", "") else "")
+    built = {k: {cut_of(r) for r in test if kind_of(r) == k} for k in ("kept", "dropped", "swapped")}
+    twins = {k: np.array([cut_of(r) in keys for r in test]) for k, keys in built.items() if keys}
     print(f"\ntest AUROC of a train-split classifier that sees one side only (0.5 = the side carries nothing, near 1 = the label is in that side alone):")
     print(f"{'side':<14}" + "".join(f"{'vs ' + k:>15}" for k in negatives) + f"{'vs all':>15}")
     for name, pick in sides.items():
@@ -92,7 +96,9 @@ def classify(train: list[dict], test: list[dict]) -> None:
             scores = model.predict_proba(vectorizer.transform(pick(test)))[:, 1]
         cells = []
         for negative in negatives:
-            keep = (test_labels == 1) | (kinds == negative)
+            # Built negatives are compared with the positives that have a twin of that kind (same seed and cut input), so
+            # positives of another origin (phrase-mode starters, single-input cuts) do not read as a leak; as written: all.
+            keep = (test_labels == 1) & (twins[negative] if negative in twins else True) | (kinds == negative)
             cells.append(auroc(scores[keep], test_labels[keep]))
         cells.append(auroc(scores, test_labels))
         print(f"{name:<14}" + "".join(f"{c:>15.2f}" for c in cells))
