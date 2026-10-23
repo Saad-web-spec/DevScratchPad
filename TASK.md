@@ -678,3 +678,19 @@ The user's list for making the connector useful to non-developers in a chat: a r
 - [x] Verified: 1332 tests (366 graph, 36 in `graphChatRun.test.ts`), validate-presets, typecheck, lint 0 errors (63 old warnings), build, MCP Inspector CLI against the dev server (16 tools all read-only, 13 with output schemas, 6 prompts, prompts/get, resources/read, a run_graph call), all 14 starters driven to `done` through run_graph with answers shaped by each graph (fan-out, probe, loop + check, approval, reflect), live HTTP run_graph first call → sent back → done and save_workflow
 - [ ] Real-Claude test of run_graph on claude.ai (does Claude report all answers in one call, and show the progress lines)
 - [ ] Deploy (the connector answers version 1.2.0 only after a deploy; Claude caches tools/list per version)
+
+## 2026-10-23 — Skill Graph connector: the gate check (sg-sem H4, run msmarco-6)
+
+The first sg-sem head in production, after the tryout on broken starters (H4 caught 68 of 84 vague gates, 0 of 140 short checkable ones flagged; H2 caught 1 of 93 cuts, all already flagged by the validator, so it does not ship; H1 failed its gold bar).
+
+- [x] `models/sg-sem/`: `sg-sem-h4-1.int8.onnx` (encoder + H4 head, dynamic int8, 33.9 MB, gold H4 the same as fp32), `vocab.txt`, manifest `sg-sem-h4-1.json` (SHA-256, temperature 2.5, threshold 0.8937, input version 2)
+- [x] `lib/semanticTokenizer.ts`: BERT uncased WordPiece plus the special tokens, no package; `__tests__/fixtures/semanticTokenizer.json` (190 pairs from `ml/sg-sem/sgsem/fixture.py`, checked against the run's own tokenizer) matched token for token
+- [x] `lib/graphSemantic.ts`: `onnxruntime-web` 1.30.0 (wasm, one thread), loaded lazily once per instance, hash-checked, one gate at a time, 1.5 s budget including the load; null when unavailable, and the connector answers as before
+- [x] `mcpProtocol.handleBodyWithChecks` scores the graph a call will check (`graphConnector.checkedSource`: given, drafted, edited or decoded) before the tool runs; `check()` drops `gate-vague` for every gate the model scored and adds `semantic-gate-uncheckable` with the confidence for a flagged one. validate, draft, edit, compile, open, read-link, bake and save all get it. The studio is unchanged (browser, four-word rule)
+- [x] `next.config.ts`: `serverExternalPackages: ["onnxruntime-web"]`; the model files and the one wasm traced into `/graph/mcp` only, the other wasm builds and source maps excluded. Function total 50.6 MB (model + wasm ≈ 48 MB; budget 60 MB)
+- [x] Page `/graph/gate-check` (what it does, real scores, what kind of model: a MiniLM cross-encoder classifier, not an LLM; accuracy, limits, privacy); linked from the connector page and the privacy policy (new bullet, effective 23 October 2026); sitemap
+- [x] Verified: tsc 0, vitest 1355/1355 (13 new), validate-presets, lint 0 errors (63 old warnings), build; live `validate_graph` over HTTP on the dev server: "The fixes are elegant." warned at 0.91, "All tests pass." and the starter's gate not
+- [x] Vercel preview (`e6dfd2d`): from Pakistan, warm `validate_graph` 0.94–1.17 s vs production without the model 0.84–1.09 s (ping 0.57 s, edge sin1 → function iad1), so the model adds ~0.1 s; vague gate flagged at 0.91, "All tests pass." and the starter's gate not. First call on a fresh instance 5.8 s (production 2.4 s) and no verdict: the load did not finish within the 1.5 s budget
+- [x] Cold-start fix: `warmGateModel()` on `initialize` / `tools/list` (Claude sends them before any tool call); a tool call on an instance where nothing started the load waits 0 ms (`coldWaitMs`) and answers without the model; `SERVER_INFO.version` 1.3.0 so Claude refetches the tool descriptions. vitest 1356/1356
+- [x] Note: the user's first Claude test ran against production (`main`, no model), so "The fixes are elegant." (4 words) got no warning there; that is the gap the model closes
+- [ ] Real-Claude test of the warning on claude.ai

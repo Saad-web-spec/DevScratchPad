@@ -17,6 +17,7 @@ import { advanceRun, startRun, type RunAnswer } from "./graphRun";
 import { resolveWorkflow, workflowPrompt } from "./graphWorkflow";
 import { MAX_HASH_LENGTH, SHARE_URL_SOFT_LIMIT, decodeShareHash, encodeShareHash } from "./graphShare";
 import { dryRunGraph } from "./graphSimulate";
+import type { GateVerdict } from "./graphSemantic";
 import {
   DEFAULT_MAX_ITERATIONS,
   LOOP_ITERATIONS_CAP,
@@ -64,6 +65,12 @@ export interface ConnectorContext {
   studioUrl: string;
   /** Absolute URL of the kit download page, e.g. https://www.devscratchpad.tech/graph/download. */
   downloadUrl?: string;
+  /**
+   * What the semantic model said about the gates of the graph this call checks (graphSemantic.ts), computed by
+   * the route before the tool runs (checkedSource names the graph). Unset when the model did not run: the
+   * word-count rule `gate-vague` then stands in for it.
+   */
+  gateVerdicts?: readonly GateVerdict[];
 }
 
 /** None of the tools change anything anywhere, so every one is annotated the same way. */
@@ -328,7 +335,7 @@ export const CONNECTOR_TOOLS: readonly ConnectorTool[] = [
     name: "validate_graph",
     title: "Check a graph",
     description:
-      "Checks a graph.skill.md with the Skill Graph checker. Returns the errors (which block compiling) and warnings, each with how to fix it, and the stage plan: which steps run in which order and which run in parallel. Besides the wiring, it flags weak prompts: a verifier without a gate, a vague gate, a prompt that never says what to return or never names its inputs, a key a step reads that its source's contract does not require, a contract that describes a different payload than its steps read, and a step that reads only a verifier that never hands on the work it checked. It cannot tell whether a step's task needs data it does not get; dry_run_graph shows what each step sees. Nothing is stored.",
+      "Checks a graph.skill.md with the Skill Graph checker. Returns the errors (which block compiling) and warnings, each with how to fix it, and the stage plan: which steps run in which order and which run in parallel. Besides the wiring, it flags weak prompts: a verifier without a gate, a gate that cannot be decided from the step's inputs (a small model on the server reads each gate against them), a prompt that never says what to return or never names its inputs, a key a step reads that its source's contract does not require, a contract that describes a different payload than its steps read, and a step that reads only a verifier that never hands on the work it checked. It cannot tell whether a step's task needs data it does not get; dry_run_graph shows what each step sees. Nothing is stored.",
     inputSchema: { type: "object", properties: { source: SOURCE_PROPERTY }, required: ["source"], additionalProperties: false },
     outputSchema: { type: "object", properties: CHECK_OUTPUT, required: ["valid", "errors", "warnings", "stages"] },
     annotations: readOnly("Check a graph"),
@@ -652,14 +659,37 @@ interface Checked {
   warnings: GraphIssue[];
 }
 
-/** The same checks the studio runs: the validator plus prompt sections that match no node. */
-function check(source: string): Checked {
+/** The warning a gate the model reads as not checkable gets, worded like the checker's other prompt warnings. */
+function uncheckableGateMessage(step: string, gate: string, score: number): string {
+  return `The gate of "${step}" ("${gate.trim()}") is a judgement its checker cannot decide from the step's inputs (confidence ${score.toFixed(2)}). Say what must be true for it to pass, e.g. "every total matches the sum of its line items".`;
+}
+
+/**
+ * Applies the model's gate verdicts (spec §6): a gate the model scored loses the word-count rule `gate-vague`,
+ * and gets `semantic-gate-uncheckable` when the model flagged it. A verdict counts only for the step and gate
+ * text it was computed on, so a graph that differs from the one the route scored keeps the plain rules.
+ */
+function applyGateVerdicts(issues: GraphIssue[], graph: SkillGraph, verdicts: readonly GateVerdict[] | undefined): GraphIssue[] {
+  if (!verdicts) return issues;
+  const scored = new Set<string>();
+  const flagged: GraphIssue[] = [];
+  for (const node of graph.nodes) {
+    const verdict = node.gate ? verdicts.find((item) => item.step === node.id && item.gate === node.gate) : undefined;
+    if (!verdict) continue;
+    scored.add(node.id);
+    if (verdict.flagged) flagged.push({ severity: "warning", code: "semantic-gate-uncheckable", nodeId: node.id, message: uncheckableGateMessage(node.id, verdict.gate, verdict.score) });
+  }
+  return [...issues.filter((issue) => !(issue.code === "gate-vague" && issue.nodeId && scored.has(issue.nodeId))), ...flagged];
+}
+
+/** The same checks the studio runs: the validator plus prompt sections that match no node, and the model's gate verdicts when the route has them. */
+function check(source: string, context?: ConnectorContext): Checked {
   const parsed = parseGraphSkill(source);
   if (!parsed.graph) return { graph: null, fatal: parsed.fatal, errors: [], warnings: [] };
   const orphans = findOrphanSections(source, parsed.graph).map(
     (id): GraphIssue => ({ severity: "warning", code: "orphan-section", message: `"## @node: ${id}" matches no node, so its prompt is ignored. Fix the id, or add a node "${id}".` })
   );
-  const issues = [...validateGraph(parsed.graph), ...orphans];
+  const issues = applyGateVerdicts([...validateGraph(parsed.graph), ...orphans], parsed.graph, context?.gateVerdicts);
   return { graph: parsed.graph, fatal: null, errors: issues.filter((issue) => issue.severity === "error"), warnings: issues.filter((issue) => issue.severity === "warning") };
 }
 
@@ -722,10 +752,10 @@ function fatalMessage(fatal: string | null): string {
 
 /* ------------------------------------------------------------------ tools */
 
-function validateTool(args: Record<string, unknown>): ToolResult {
+function validateTool(args: Record<string, unknown>, context: ConnectorContext): ToolResult {
   const input = readSource(args);
   if ("error" in input) return text(input.error, true);
-  const result = check(input.source);
+  const result = check(input.source, context);
   if (!result.graph) return withData(text(fatalMessage(result.fatal)), checkData(result));
 
   const { lines, stages, subagents } = planLines(result.graph);
@@ -753,7 +783,7 @@ function compileTool(args: Record<string, unknown>, context: ConnectorContext): 
   if (typeof target !== "string" || !(COMPILE_TARGETS as readonly string[]).includes(target)) {
     return text(`target must be one of ${COMPILE_TARGETS.join(", ")}.`, true);
   }
-  const result = check(input.source);
+  const result = check(input.source, context);
   if (!result.graph) return text(fatalMessage(result.fatal), true);
   if (result.errors.length > 0) {
     return text([`The graph has ${plural(result.errors.length, "error")}, so it cannot be compiled yet:`, ...issueLines(result.errors)].join("\n"), true);
@@ -813,7 +843,7 @@ function openTool(args: Record<string, unknown>, context: ConnectorContext): Too
   if (!url) {
     return text("This graph is too large to fit in a link. Use compile_graph for the files, or save the source as graph.skill.md and open it in the studio with Open file.", true);
   }
-  const result = check(input.source);
+  const result = check(input.source, context);
   const status = !result.graph
     ? "The studio will show why the file cannot be read."
     : result.errors.length > 0
@@ -834,7 +864,7 @@ function openTool(args: Record<string, unknown>, context: ConnectorContext): Too
 function draftTool(args: Record<string, unknown>, context: ConnectorContext): ToolResult {
   const draft = draftGraph(args);
   if ("error" in draft) return text(`${draft.error} draft_graph's input schema describes each field.`, true);
-  const result = check(draft.source);
+  const result = check(draft.source, context);
   if (!result.graph) return text(fatalMessage(result.fatal), true);
   const { lines, stages, subagents } = planLines(result.graph);
   const url = studioLink(draft.source, context);
@@ -880,7 +910,7 @@ function dryRunTool(args: Record<string, unknown>): ToolResult {
 
 /** The checker's result and the plan after a change, then the new source: what edit_graph and bake_lessons return. */
 function changedGraphText(head: string[], source: string, context: ConnectorContext): { text: string; data: Record<string, unknown> } {
-  const result = check(source);
+  const result = check(source, context);
   const url = studioLink(source, context);
   const counts = `${plural(result.errors.length, "error")}, ${plural(result.warnings.length, "warning")}`;
   const plan = result.graph ? planLines(result.graph).lines : [];
@@ -1030,7 +1060,7 @@ function saveWorkflowTool(args: Record<string, unknown>, context: ConnectorConte
   const input = graph.nodes.find((node) => node.type === "input");
   if (input && typeof args.input_hint === "string" && args.input_hint.trim()) input.label = args.input_hint.replace(/\s+/g, " ").trim().slice(0, 80);
   const source = serializeGraphSkill(graph);
-  const errors = check(source).errors;
+  const errors = check(source, context).errors;
   if (errors.length > 0) return text([`The workflow has ${plural(errors.length, "error")}, so it cannot be run yet:`, ...issueLines(errors)].join("\n"), true);
   const link = studioLink(source, context);
   if (!link) return text("This workflow is too large to fit in a link. Save the source as graph.skill.md instead; run_graph also takes the source itself.", true);
@@ -1061,20 +1091,59 @@ function saveWorkflowTool(args: Record<string, unknown>, context: ConnectorConte
   );
 }
 
-function readLinkTool(args: Record<string, unknown>): ToolResult {
+function readLinkTool(args: Record<string, unknown>, context: ConnectorContext): ToolResult {
   const link = args.link;
   if (typeof link !== "string" || link.trim() === "") return text("link is required: a Skill Graph studio link, or the part from # on.", true);
   if (link.length > MAX_HASH_LENGTH + 512) return text("This link is too long to be a Skill Graph link.", true);
   const hash = link.slice(link.indexOf("#"));
   const shared = link.includes("#") ? decodeShareHash(hash.trim()) : null;
   if (!shared) return text("This is not a Skill Graph link, or it was cut off: the graph lives in the part after #g= (or #graph=), and the whole link is needed.", true);
-  const result = check(shared.source);
+  const result = check(shared.source, context);
   const status = !result.graph
     ? fatalMessage(result.fatal)
     : result.errors.length > 0
       ? `"${result.graph.name}" (${plural(result.errors.length, "error")}, ${plural(result.warnings.length, "warning")}); validate_graph lists them.`
       : `"${result.graph.name}" is valid (${plural(result.warnings.length, "warning")}).`;
   return text([status, "", "Source (graph.skill.md):", "", shared.source].join("\n"));
+}
+
+/**
+ * The graph a tool call will check, as graph.skill.md, so the route can score its gates before the tool runs:
+ * the source given, the drafted or edited one for draft_graph and edit_graph, the decoded one for a studio
+ * link. Null when the call checks no graph or its input is not usable (the tool itself explains why).
+ */
+export function checkedSource(name: string, rawArgs: unknown): string | null {
+  const args = typeof rawArgs === "object" && rawArgs !== null && !Array.isArray(rawArgs) ? (rawArgs as Record<string, unknown>) : {};
+  try {
+    switch (name) {
+      case "draft_graph": {
+        const draft = draftGraph(args);
+        return "error" in draft ? null : draft.source;
+      }
+      case "edit_graph": {
+        const input = readSource(args);
+        if ("error" in input) return null;
+        const edited = editGraph(input.source, args.operations);
+        return "error" in edited ? null : edited.source;
+      }
+      case "read_studio_link": {
+        const link = typeof args.link === "string" && args.link.includes("#") && args.link.length <= MAX_HASH_LENGTH + 512 ? decodeShareHash(args.link.slice(args.link.indexOf("#")).trim()) : null;
+        return link?.source ?? null;
+      }
+      case "validate_graph":
+      case "compile_graph":
+      case "open_graph_in_studio":
+      case "bake_lessons":
+      case "save_workflow": {
+        const input = readSource(args);
+        return "error" in input ? null : input.source;
+      }
+      default:
+        return null;
+    }
+  } catch {
+    return null;
+  }
 }
 
 /** Runs a tool. Returns null for a tool that does not exist, so the caller can answer with a protocol error. */
@@ -1106,7 +1175,7 @@ export function callConnectorTool(name: string, rawArgs: unknown, context: Conne
     case "draft_graph":
       return draftTool(args, context);
     case "validate_graph":
-      return validateTool(args);
+      return validateTool(args, context);
     case "dry_run_graph":
       return dryRunTool(args);
     case "compile_graph":
@@ -1114,7 +1183,7 @@ export function callConnectorTool(name: string, rawArgs: unknown, context: Conne
     case "open_graph_in_studio":
       return openTool(args, context);
     case "read_studio_link":
-      return readLinkTool(args);
+      return readLinkTool(args, context);
     case "edit_graph":
       return editTool(args, context);
     case "review_lessons":

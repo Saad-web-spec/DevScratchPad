@@ -1,0 +1,2 @@
+# The semantic model is checked against its SHA-256 at load; never let git touch its bytes.
+*.onnx binary

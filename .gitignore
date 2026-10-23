@@ -53,3 +53,7 @@ next-env.d.ts
 /fix_exports.js
 /*.mp4
 /WhatsApp Image *
+
+# sg-sem: trained runs downloaded from Google Drive and tryout rows (large, rebuilt on demand)
+/ml/sg-sem/runs/
+/ml/sg-sem/tryout/

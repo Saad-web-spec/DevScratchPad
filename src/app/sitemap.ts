@@ -166,6 +166,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 0.7,
     },
     {
+      url: `${SITE_URL}/graph/gate-check`,
+      lastModified: lastModifiedOf("src/app/graph/gate-check"),
+      changeFrequency: "monthly" as const,
+      priority: 0.5,
+    },
+    {
       url: `${SITE_URL}/graph/privacy`,
       lastModified: lastModifiedOf("src/app/graph/privacy"),
       changeFrequency: "yearly" as const,

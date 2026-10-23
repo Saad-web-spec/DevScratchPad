@@ -5,9 +5,10 @@
  * receives user content: graphs are checked, edited or compiled, and a refereed run's step answers are
  * checked, in memory, and the answer goes straight back (a run's state travels in the run object).
  * Nothing is stored, and only the names of the tools called are logged (an anonymous usage count).
+ * The gate model (lib/graphSemantic.ts) runs in this function too, on the graph's gates, in memory.
  */
 import { CONNECTOR_TOOLS } from "../lib/graphConnector";
-import { INTERNAL_ERROR, INVALID_REQUEST, PARSE_ERROR, SUPPORTED_PROTOCOL_VERSIONS, calledToolNames, errorResponse, handleBody } from "../lib/mcpProtocol";
+import { INTERNAL_ERROR, INVALID_REQUEST, PARSE_ERROR, SUPPORTED_PROTOCOL_VERSIONS, calledToolNames, errorResponse, handleBodyWithChecks } from "../lib/mcpProtocol";
 
 /** Comfortably above the largest graph the parser accepts (500,000 characters), once JSON-escaped. */
 const MAX_BODY_LENGTH = 2_000_000;
@@ -79,9 +80,10 @@ export async function POST(request: Request): Promise<Response> {
   const tools = calledToolNames(body).filter((name) => KNOWN_TOOLS.has(name));
   if (tools.length > 0) console.info(`[skill-graph-mcp] ${tools.join(",")}`);
 
-  let response: ReturnType<typeof handleBody>;
+  let response: Awaited<ReturnType<typeof handleBodyWithChecks>>;
   try {
-    response = handleBody(body, {
+    // The gate model (graphSemantic.ts) scores the graphs this body checks before the tools run, within its budget.
+    response = await handleBodyWithChecks(body, {
       studioUrl: new URL("/graph/studio", request.url).toString(),
       downloadUrl: new URL("/graph/download", request.url).toString(),
     });

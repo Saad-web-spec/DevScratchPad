@@ -1,0 +1,435 @@
+[
+  {
+    "name": "grant-application-check",
+    "description": "Checks a research grant draft against the funder's call before it is submitted.",
+    "input_label": "GRANT DRAFT AND THE FUNDER'S CALL TEXT",
+    "runs_in": "chat",
+    "steps": [
+      {
+        "id": "requirements",
+        "type": "worker",
+        "task": "Read the funder's call text and list every requirement the application must meet: page limits, required sections, eligibility rules, budget caps and deadlines. Quote the call for each one.",
+        "after": [],
+        "returns": "The requirements, each with the quote from the call it comes from.",
+        "format": "json",
+        "keys": [
+          "requirements"
+        ]
+      },
+      {
+        "id": "budget_review",
+        "type": "worker",
+        "task": "Read the budget table in the grant draft. Add up every line, compare each category with the caps in the call, and list any line without a justification in the text.",
+        "after": [],
+        "returns": "Each budget category with its total, its cap and whether it is justified.",
+        "format": "json",
+        "keys": [
+          "categories",
+          "grand_total"
+        ]
+      },
+      {
+        "id": "eligibility",
+        "type": "worker",
+        "task": "Check the applicant's institution, career stage and country against the eligibility rules of the call. Say for each rule whether the draft shows it is met, with the sentence that shows it.",
+        "after": [],
+        "returns": "Each eligibility rule with met / not met / not shown and the evidence."
+      },
+      {
+        "id": "compliance_check",
+        "type": "verifier",
+        "task": "Compare the draft with the list of the call's requirements, using the budget totals per category and the eligibility findings. For every requirement, say whether the draft meets it and quote where.",
+        "after": [
+          "requirements",
+          "budget_review",
+          "eligibility"
+        ],
+        "returns": "A requirement-by-requirement check and a verdict.",
+        "gate": "Every requirement from the call is met with a quote from the draft, no budget category is above its cap, and every eligibility rule is shown as met."
+      },
+      {
+        "id": "feedback",
+        "type": "synthesizer",
+        "task": "Write feedback for the applicant from the compliance check: what to fix before submitting, in order of risk, then what is already strong.",
+        "after": [
+          "compliance_check"
+        ],
+        "returns": "A short fix list and strengths."
+      }
+    ]
+  },
+  {
+    "name": "allergy-safe-meal-plan",
+    "description": "Plans a week of meals for a household with food allergies and checks every recipe and shopping item.",
+    "input_label": "HOUSEHOLD ALLERGIES, DIETS AND WEEKLY BUDGET",
+    "runs_in": "chat",
+    "steps": [
+      {
+        "id": "plan_meals",
+        "type": "worker",
+        "task": "Plan seven dinners for the household. For each, give the recipe name, every ingredient with its quantity, and the servings. Avoid every allergen the user lists, including traces.",
+        "after": [],
+        "returns": "Seven dinners with ingredients and quantities.",
+        "format": "json",
+        "keys": [
+          "meals"
+        ]
+      },
+      {
+        "id": "shopping_list",
+        "type": "worker",
+        "task": "Turn the seven planned dinners into one shopping list grouped by aisle, merging duplicate ingredients, with an estimated price for each item and a total.",
+        "after": [
+          "plan_meals"
+        ],
+        "returns": "A shopping list with prices and a total.",
+        "format": "json",
+        "keys": [
+          "items",
+          "total"
+        ]
+      },
+      {
+        "id": "allergy_check",
+        "type": "verifier",
+        "task": "Check every planned dinner and every item on the shopping list against the allergies in the user's request. Look up packaged items for 'may contain' warnings. Check the shopping list total against the budget.",
+        "after": [
+          "plan_meals",
+          "shopping_list"
+        ],
+        "returns": "Per meal and per item: safe or not, with the reason; the budget check; a verdict.",
+        "gate": "No meal or shopping item contains a listed allergen or a 'may contain' warning for one, and the shopping total is within the weekly budget."
+      },
+      {
+        "id": "week_plan",
+        "type": "synthesizer",
+        "task": "Write the final week plan from the allergy check and the shopping list: one line per day, then the shopping list.",
+        "after": [
+          "allergy_check",
+          "shopping_list"
+        ],
+        "returns": "The week plan and shopping list."
+      }
+    ]
+  },
+  {
+    "name": "podcast-show-notes",
+    "description": "Turns a podcast transcript into show notes with timestamps and checked quotes.",
+    "input_label": "EPISODE TRANSCRIPT WITH TIMESTAMPS",
+    "runs_in": "chat",
+    "steps": [
+      {
+        "id": "segments",
+        "type": "worker",
+        "task": "Split the transcript into 5 to 10 topic segments. For each, give the start timestamp, a title and a two-sentence summary.",
+        "after": [],
+        "returns": "Segments with timestamps, titles and summaries.",
+        "format": "json",
+        "keys": [
+          "segments"
+        ]
+      },
+      {
+        "id": "quotes",
+        "type": "worker",
+        "task": "Pick the 3 to 5 most quotable lines from the transcript. Copy each one word for word with its speaker and timestamp.",
+        "after": [],
+        "returns": "Quotes with speaker and timestamp.",
+        "format": "json",
+        "keys": [
+          "quotes"
+        ]
+      },
+      {
+        "id": "notes_check",
+        "type": "verifier",
+        "task": "Check the topic segments and the picked quotes against the transcript: every timestamp must point at the right moment, every quote must match the transcript word for word, and every summary must say only what was said.",
+        "after": [
+          "segments",
+          "quotes"
+        ],
+        "returns": "Each segment and quote marked correct or wrong, with the reason, and a verdict.",
+        "gate": "Every timestamp is within 15 seconds of the moment it names, every quote matches the transcript word for word with the right speaker, and no summary states something the transcript does not say."
+      },
+      {
+        "id": "show_notes",
+        "type": "synthesizer",
+        "task": "Write the show notes from the checked segments and quotes: a three-sentence episode summary, the timestamped segment list, then the quotes.",
+        "after": [
+          "notes_check",
+          "segments",
+          "quotes"
+        ],
+        "returns": "Show notes ready to publish."
+      }
+    ]
+  },
+  {
+    "name": "apartment-shortlist",
+    "description": "Scores rental listings against a renter's needs and shortlists the best three.",
+    "input_label": "LISTING LINKS, BUDGET, COMMUTE ADDRESS AND MUST-HAVES",
+    "runs_in": "chat",
+    "steps": [
+      {
+        "id": "collect",
+        "type": "worker",
+        "task": "Open each listing link and extract rent, deposit, size, bedrooms, move-in date, pet policy and full address. Mark any field the listing does not state as unknown.",
+        "after": [],
+        "returns": "One entry per listing with the extracted fields.",
+        "format": "json",
+        "keys": [
+          "listings"
+        ]
+      },
+      {
+        "id": "score_each",
+        "type": "worker",
+        "task": "Score this listing out of 10 against the user's budget, commute address and must-haves. Look up the public-transport commute time to the commute address. Give the score with one line of reasons per criterion.",
+        "after": [
+          "collect"
+        ],
+        "foreach": "collect.listings",
+        "returns": "The listing's score with reasons and the commute time.",
+        "format": "json",
+        "keys": [
+          "listing",
+          "score",
+          "commute_minutes",
+          "reasons"
+        ]
+      },
+      {
+        "id": "shortlist_check",
+        "type": "verifier",
+        "task": "Check the listing scores against the extracted listing data and the user's must-haves. Confirm the top three are the three highest scores and that none breaks a must-have or the budget.",
+        "after": [
+          "score_each",
+          "collect"
+        ],
+        "returns": "The checked top three and a verdict.",
+        "gate": "The shortlist holds the three highest-scoring listings, each one's rent is within the budget, and none breaks a must-have or has a must-have field marked unknown."
+      },
+      {
+        "id": "recommend",
+        "type": "synthesizer",
+        "task": "Write the recommendation from the checked shortlist: the three listings in order, each with rent, commute time and the one reason it is on the list, then what to ask the landlord.",
+        "after": [
+          "shortlist_check"
+        ],
+        "returns": "The shortlist and questions to ask."
+      }
+    ]
+  },
+  {
+    "name": "flaky-test-hunt",
+    "description": "Finds flaky tests in a repository, explains why each one flakes and checks the fixes.",
+    "input_label": "TEST COMMAND AND THE CI FAILURE HISTORY",
+    "runs_in": "claude_code",
+    "steps": [
+      {
+        "id": "rerun",
+        "type": "worker",
+        "task": "Run the test command 20 times and record which tests fail in which runs. Return each test that failed at least once but not every time, with its failure count and the first error message.",
+        "after": [],
+        "returns": "The flaky tests with failure counts and errors.",
+        "format": "json",
+        "keys": [
+          "flaky"
+        ],
+        "tools": [
+          "Bash",
+          "Read"
+        ]
+      },
+      {
+        "id": "diagnose",
+        "type": "worker",
+        "task": "Read the source of this flaky test and the code it covers. Find why it fails only sometimes: timing, shared state, test order, network or randomness. Propose the smallest fix and apply it.",
+        "after": [
+          "rerun"
+        ],
+        "foreach": "rerun.flaky",
+        "returns": "The cause, the fix applied and the files changed.",
+        "format": "json",
+        "keys": [
+          "test",
+          "cause",
+          "fix",
+          "files"
+        ],
+        "tools": [
+          "Read",
+          "Edit",
+          "Grep"
+        ]
+      },
+      {
+        "id": "fix_check",
+        "type": "verifier",
+        "task": "Rerun the full test command 30 times after the applied fixes. Compare with the original list of flaky tests and confirm each cause is plausible from the diff.",
+        "after": [
+          "diagnose",
+          "rerun"
+        ],
+        "returns": "Per test: fixed or still flaky, with run counts, and a verdict.",
+        "gate": "Every test from the flaky list passes in all 30 reruns, no other test fails in any rerun, and every fix changes only test code or the code the cause names.",
+        "tools": [
+          "Bash",
+          "Read"
+        ]
+      },
+      {
+        "id": "report",
+        "type": "synthesizer",
+        "task": "Write a pull request description from the rerun results: one paragraph per test with the cause and the fix, then the rerun numbers.",
+        "after": [
+          "fix_check"
+        ],
+        "returns": "A pull request description."
+      }
+    ]
+  },
+  {
+    "name": "api-rate-limits",
+    "description": "Proposes rate limits for each public API route from its traffic and checks them against real peaks.",
+    "input_label": "ROUTE FILES AND A WEEK OF ACCESS LOGS",
+    "runs_in": "claude_code",
+    "steps": [
+      {
+        "id": "routes",
+        "type": "worker",
+        "task": "List every public HTTP route in the route files with its method, path and whether it needs authentication.",
+        "after": [],
+        "returns": "The routes with method, path and auth.",
+        "format": "json",
+        "keys": [
+          "routes"
+        ],
+        "tools": [
+          "Read",
+          "Grep"
+        ]
+      },
+      {
+        "id": "traffic",
+        "type": "worker",
+        "task": "Parse the access logs and compute, for each route, the peak requests per minute per client and the 99th percentile per client over the week.",
+        "after": [],
+        "returns": "Per route: peak and p99 requests per minute per client.",
+        "format": "json",
+        "keys": [
+          "per_route"
+        ],
+        "tools": [
+          "Bash",
+          "Read"
+        ]
+      },
+      {
+        "id": "propose",
+        "type": "worker",
+        "task": "Propose a per-client limit for every public route using the traffic numbers per route: at least twice the p99, lower for unauthenticated routes that write data. Give the limit and the reason per route.",
+        "after": [
+          "routes",
+          "traffic"
+        ],
+        "returns": "A limit and a reason per route.",
+        "format": "json",
+        "keys": [
+          "limits"
+        ]
+      },
+      {
+        "id": "limits_check",
+        "type": "verifier",
+        "task": "Check the proposed limits against the logged traffic per route and the list of public routes: every route has a limit, and no limit would have blocked a legitimate client during the week of logs.",
+        "after": [
+          "propose",
+          "traffic",
+          "routes"
+        ],
+        "returns": "Per route: the limit, the logged peak and whether it holds, and a verdict.",
+        "gate": "Every public route has a limit, every limit is at least twice that route's p99, and no limit is below a peak any authenticated client reached in the logs."
+      },
+      {
+        "id": "config",
+        "type": "synthesizer",
+        "task": "Write the rate-limit configuration file from the checked limits in the format the repository already uses, with a comment per route giving the logged p99.",
+        "after": [
+          "limits_check"
+        ],
+        "returns": "The configuration file."
+      }
+    ]
+  },
+  {
+    "name": "tax-receipt-sort",
+    "description": "Sorts a year of receipts into deductible categories and totals them for a tax return.",
+    "input_label": "RECEIPT PHOTOS OR TEXT, COUNTRY AND JOB",
+    "runs_in": "chat",
+    "steps": [
+      {
+        "id": "read_receipts",
+        "type": "worker",
+        "task": "Read every receipt and extract its date, vendor, amount, currency and what was bought. Mark receipts that are unreadable.",
+        "after": [],
+        "returns": "One entry per receipt.",
+        "format": "json",
+        "keys": [
+          "receipts"
+        ]
+      },
+      {
+        "id": "rules",
+        "type": "worker",
+        "task": "Look up which expense categories are deductible for the user's job in the user's country this tax year, with the official source and any cap per category.",
+        "after": [],
+        "returns": "Deductible categories with caps and sources.",
+        "format": "json",
+        "keys": [
+          "categories"
+        ],
+        "tools": [
+          "WebSearch",
+          "WebFetch"
+        ]
+      },
+      {
+        "id": "categorise",
+        "type": "worker",
+        "task": "Put every extracted receipt into one of the deductible categories or into 'not deductible', with a one-line reason, then total each category.",
+        "after": [
+          "read_receipts",
+          "rules"
+        ],
+        "returns": "Receipts by category with totals.",
+        "format": "json",
+        "keys": [
+          "by_category",
+          "totals"
+        ]
+      },
+      {
+        "id": "totals_check",
+        "type": "verifier",
+        "task": "Re-add each category total from its receipts, check every extracted receipt appears exactly once, and compare each total with the cap of its deductible category.",
+        "after": [
+          "categorise",
+          "read_receipts",
+          "rules"
+        ],
+        "returns": "The re-added totals, the missing or doubled receipts, the cap check and a verdict.",
+        "gate": "Every readable receipt is in exactly one category, every category total equals the sum of its receipts, and no deductible total exceeds its cap."
+      },
+      {
+        "id": "summary",
+        "type": "synthesizer",
+        "task": "Write the summary for the tax return from the checked totals: one line per deductible category with its total and source, then the receipts that need a second look.",
+        "after": [
+          "totals_check"
+        ],
+        "returns": "Totals per category and a review list."
+      }
+    ]
+  }
+]

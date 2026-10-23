@@ -1,0 +1,874 @@
+/**
+ * sg-sem training data pipeline (SKILL_GRAPH_SEMANTIC_MODEL_SPEC.md §7). Runs our real graph library, so the
+ * examples are built by the same code the connector runs. Text that needs a language model (outlines,
+ * verifier answers, plain-word phrases, gates) is written by a local open model on Colab between the steps:
+ *
+ *   round1   → round1.requests.jsonl                      (outlines to draft, one per topic and shape)
+ *   [Colab]  → round1.outputs.jsonl
+ *   round2   → seeds.jsonl, round2.requests.jsonl         (starters + valid drafted graphs; H1, H2, H4 text jobs)
+ *   [Colab]  → round2.outputs.jsonl
+ *   assemble → examples.jsonl, stats.json, samples.md     (labelled examples, split by seed graph)
+ *   round3   → round3.requests.jsonl                      (one label check per version of a step, for H2)
+ *   [Colab]  → round3.outputs.jsonl
+ *   judge    → examples.jsonl, stats.json                 (H2 pairs the check disagrees with are dropped)
+ *
+ *   mock --in X.requests.jsonl --out X.outputs.jsonl      (stand-in answers, to test the pipeline without a GPU)
+ *
+ * Run: npx vite-node scripts/semantic/pipeline.ts <command> --out <dir> [options]
+ */
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { join } from "node:path";
+import { draftGraph } from "../../src/app/graph/lib/graphDraft";
+import { editGraph } from "../../src/app/graph/lib/graphEdit";
+import { parseGraphSkill, predecessorsOf, descendantsOf, runsWithoutSubagent, validateGraph, foreachSource, nodeRefs, getContract, type GraphNode, type SkillGraph } from "../../src/app/graph/lib/graphSkill";
+import { CONNECTOR_TEMPLATES } from "../../src/app/graph/lib/graphTemplates";
+import { SEMANTIC_INPUT_VERSION, TASK_PREFIX, contractInput, edgeCandidates, gateInput, inputsText, missingInputInput, taskText, verdictInput } from "../../src/app/graph/lib/semanticInput";
+import {
+  H1_BURIED,
+  H1_INCONSISTENT,
+  H1_STYLES,
+  H2_MENTION_STYLES,
+  H4_LABELS,
+  h1Request,
+  h2JudgeRequest,
+  h2Request,
+  h2WeaveRequest,
+  h4Request,
+  outlineRequest,
+  readH1,
+  readH2,
+  readH2Judge,
+  readH2Weave,
+  readH4,
+  readJson,
+  type H1Style,
+  type LlmOutput,
+  type LlmRequest,
+} from "./llmPrompts";
+import { CODE_TOPICS, EVERYDAY_TOPICS, H2_OUTLINE_SHAPES, H2_TOPICS, OUTLINE_SHAPES } from "./topics";
+
+/* ------------------------------------------------------------------ small helpers */
+
+function args(): { command: string; flags: Record<string, string> } {
+  const [command = "", ...rest] = process.argv.slice(2);
+  const flags: Record<string, string> = {};
+  for (let i = 0; i < rest.length; i += 1) {
+    if (rest[i].startsWith("--")) {
+      flags[rest[i].slice(2)] = rest[i + 1] && !rest[i + 1].startsWith("--") ? rest[i + 1] : "true";
+      if (flags[rest[i].slice(2)] !== "true") i += 1;
+    }
+  }
+  return { command, flags };
+}
+
+function readJsonl<T>(path: string, required = false): T[] {
+  if (!existsSync(path)) {
+    if (required) throw new Error(`${path} does not exist: run the step before this one first.`);
+    return [];
+  }
+  return readFileSync(path, "utf8")
+    .split(/\r?\n/)
+    .filter((line) => line.trim())
+    .map((line) => JSON.parse(line) as T);
+}
+
+function writeJsonl(path: string, rows: unknown[]): void {
+  writeFileSync(path, rows.map((row) => JSON.stringify(row)).join("\n") + (rows.length > 0 ? "\n" : ""), "utf8");
+}
+
+/** FNV-1a, for stable splits and seeded choices. */
+function hash(text: string): number {
+  let h = 0x811c9dc5;
+  for (let i = 0; i < text.length; i += 1) {
+    h ^= text.charCodeAt(i);
+    h = Math.imul(h, 0x01000193) >>> 0;
+  }
+  return h;
+}
+
+/** A deterministic random number generator per key (mulberry32). */
+function rng(key: string): () => number {
+  let a = hash(key);
+  return () => {
+    a = (a + 0x6d2b79f5) >>> 0;
+    let t = a;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+/**
+ * The request with a short hash of its prompt added to its id. Answers are kept by id across runs, so when a
+ * prompt changes, its requests get new ids and are asked again instead of reusing answers to the old prompt.
+ */
+function keyedByPrompt(request: LlmRequest): LlmRequest {
+  return { ...request, id: `${request.id}@${hash(`${request.system}\n${request.user}`).toString(36)}` };
+}
+
+/** Every example of one seed graph lands in the same split, so the test never holds a graph seen in training. */
+export function splitOf(seed: string): "train" | "dev" | "test" {
+  const bucket = hash(`split:${seed}`) % 10;
+  return bucket === 0 ? "test" : bucket === 1 ? "dev" : "train";
+}
+
+function load(source: string): SkillGraph | null {
+  return parseGraphSkill(source).graph;
+}
+
+function errorsOf(source: string): number {
+  return errorMessages(source).length;
+}
+
+function errorMessages(source: string): string[] {
+  const graph = load(source);
+  return graph ? validateGraph(graph).filter((issue) => issue.severity === "error").map((issue) => issue.message) : ["does not parse"];
+}
+
+/** An error message with its ids and numbers taken out, so the same mistake counts as one reason. */
+function reasonOf(message: string): string {
+  return message.replace(/"[^"]*"/g, "…").replace(/\d+/g, "N").slice(0, 120);
+}
+
+/**
+ * Drops the optional fields a text model copies from the template with no value ("foreach": "",
+ * "keys": [], "gate": null): the drafter reads those as wrong values and rejects the whole outline.
+ * A step that fans out over an earlier step's list also gets that step in its after, which the model forgets.
+ */
+export function cleanOutline(outline: Record<string, unknown>): Record<string, unknown> {
+  if (!Array.isArray(outline.steps)) return outline;
+  const empty = (value: unknown) => value === null || (typeof value === "string" && !value.trim()) || (Array.isArray(value) && value.length === 0);
+  const earlier = new Set<string>();
+  const steps = outline.steps.map((step: unknown) => {
+    if (typeof step !== "object" || step === null || Array.isArray(step)) return step;
+    const clean: Record<string, unknown> = Object.fromEntries(Object.entries(step).filter(([key, value]) => key === "after" || !empty(value)));
+    const from = typeof clean.foreach === "string" ? clean.foreach.split(".")[0] : "";
+    if (earlier.has(from) && Array.isArray(clean.after) && !clean.after.includes(from)) clean.after = [...clean.after, from];
+    if (typeof clean.id === "string") earlier.add(clean.id);
+    return clean;
+  });
+  return { ...outline, steps };
+}
+
+/** Model steps: the ones with a prompt an agent follows. */
+function modelSteps(graph: SkillGraph): GraphNode[] {
+  return graph.nodes.filter((node) => node.type !== "input" && !runsWithoutSubagent(node.type));
+}
+
+/** The inputs line of a step, without the model's markers, for a text-model prompt. */
+function inputsForPrompt(graph: SkillGraph, node: GraphNode): string {
+  return inputsText(graph, node).replace(/\[INPUT\]\s*/g, "\n- ").trim();
+}
+
+function describeStep(graph: SkillGraph, node: GraphNode): string {
+  const edge = graph.edges.find((e) => e.from === node.id && e.contract);
+  const contract = edge?.contract ? getContract(graph, edge.contract) : undefined;
+  return `${node.label || node.id}: ${contract?.description ?? taskText(node).slice(0, 240)}`;
+}
+
+/* ------------------------------------------------------------------ records */
+
+export interface Seed {
+  seed: string;
+  origin: "starter" | "draft";
+  source: string;
+  /** Drafted seeds: the cleaned outline `source` was drafted from, so a step can be drafted again with other text or inputs. */
+  outline?: Record<string, unknown>;
+  /** Drafted from an H2-only outline: round 2 asks only H2 jobs of it, and assemble writes only H2 rows. */
+  h2Only?: boolean;
+}
+
+export interface Example {
+  head: "h1" | "h2" | "h3" | "h4";
+  seed: string;
+  split: "train" | "dev" | "test";
+  text_a: string;
+  text_b: string;
+  features: number[];
+  label: number;
+  /** H1: one 0/1 per [SEN] in text_b, in order. */
+  sentences?: number[];
+  /** H2 positives: [start, end) character offsets in text_a of the words that name the missing data. */
+  span?: [number, number];
+  source: "llm" | "mutation" | "starter";
+  /** What produced it, for error analysis (style, mutation kind, gate label). */
+  note: string;
+  /** The step the row is about (text-model rows), so a built H2 twin can be matched by seed, step and note. */
+  node?: string;
+  /** H2: the step the pair asks about (`[CANDIDATE]` in text_b). */
+  candidate?: string;
+  /** H2: the rows of one version of one step, one per candidate; the step is flagged when any of them is (spec §8.2). */
+  group?: string;
+}
+
+/**
+ * H2 rows of one version of a step, one per candidate (`edgeCandidates`). `pred` is the input the version is about;
+ * when it is a candidate (cut, replaced, dropped) its row gets `label`, and the span of `phrase` when that is 1, and
+ * the other candidates are negatives noted `other`. When the step still reads it (kept, drafted) every row is a
+ * negative noted `<kind> <pred>`. Null when a positive's phrase is not in its task text.
+ */
+function h2Rows(
+  graph: SkillGraph,
+  node: GraphNode,
+  base: { seed: string; split: Example["split"] },
+  source: Example["source"],
+  kind: string,
+  pred: string | null,
+  label = 0,
+  phrase = ""
+): Example[] | null {
+  const candidates = edgeCandidates(graph, node);
+  const named = pred ? `${kind} ${pred}` : kind;
+  const predIsCandidate = candidates.some((candidate) => candidate.id === pred);
+  const rows: Example[] = [];
+  for (const candidate of candidates) {
+    const pair = missingInputInput(graph, node, candidate);
+    const row: Example = { head: "h2", ...base, text_a: pair.textA, text_b: pair.textB, features: pair.features, label: 0, source, note: named, node: node.id, candidate: candidate.id, group: `${node.id}: ${named}` };
+    if (candidate.id === pred) {
+      if (label === 1) {
+        const at = pair.textA.toLowerCase().indexOf(phrase.toLowerCase(), TASK_PREFIX.length);
+        if (!phrase || at === -1) return null;
+        Object.assign(row, { label: 1, span: [at, at + phrase.length] });
+      }
+    } else if (predIsCandidate) row.note = `other (${named}): ${candidate.id}`;
+    rows.push(row);
+  }
+  return rows;
+}
+
+/* ------------------------------------------------------------------ round 1 */
+
+export function round1(out: string, perPair: number, h2PerTopic: number): void {
+  const requests: LlmRequest[] = [];
+  const topics = [...EVERYDAY_TOPICS.map((t) => [t, "chat"] as const), ...CODE_TOPICS.map((t) => [t, "claude_code"] as const)];
+  for (const [topicIndex, [topic, runsIn]] of topics.entries()) {
+    const random = rng(`shapes:${topic}`);
+    const shapes = [...OUTLINE_SHAPES].sort(() => random() - 0.5).slice(0, perPair);
+    shapes.forEach((shape, index) => requests.push(outlineRequest(`outline-${topicIndex}-${index}`, topic, shape, runsIn)));
+  }
+  /*
+   * H2-only outlines (msmarco-3): through msmarco-2, H2 had 391 train positives against the spec's 8k, because the
+   * outlines above mostly give a step one input. These shapes give steps two or three, over the topics above and
+   * H2_TOPICS; round 2 asks only H2 jobs of them, so H1 / H3 / H4 data stays as it was.
+   */
+  const h2Topics = [...topics, ...H2_TOPICS.map((t, i) => [t, i < 18 ? "chat" : "claude_code"] as const)];
+  for (const [topicIndex, [topic, runsIn]] of h2Topics.entries()) {
+    const random = rng(`h2-shapes:${topic}`);
+    const shapes = [...H2_OUTLINE_SHAPES].sort(() => random() - 0.5).slice(0, h2PerTopic);
+    shapes.forEach((shape, index) => {
+      const request = outlineRequest(`h2-outline-${topicIndex}-${index}`, topic, shape, runsIn);
+      requests.push({ ...request, meta: { ...request.meta, h2_only: 1 } });
+    });
+  }
+  writeJsonl(join(out, "round1.requests.jsonl"), requests);
+  console.log(`round1: ${requests.length} outline requests → ${join(out, "round1.requests.jsonl")}`);
+}
+
+/* ------------------------------------------------------------------ round 2 */
+
+function seedsFrom(out: string): { seeds: Seed[]; drafted: number; rejected: Record<string, number>; reasons: Record<string, number> } {
+  const seeds: Seed[] = CONNECTOR_TEMPLATES.map((template) => ({ seed: template.id, origin: "starter", source: template.source }));
+  const requests = new Map(readJsonl<LlmRequest>(join(out, "round1.requests.jsonl"), true).map((request) => [request.id, request]));
+  const rejected: Record<string, number> = { json: 0, draft: 0, errors: 0, duplicate: 0 };
+  const reasons: Record<string, number> = {};
+  const because = (message: string) => (reasons[reasonOf(message)] = (reasons[reasonOf(message)] ?? 0) + 1);
+  let drafted = 0;
+  const names = new Set(seeds.map((seed) => seed.seed));
+  for (const output of readJsonl<LlmOutput>(join(out, "round1.outputs.jsonl"), true)) {
+    const outline = readJson(output.text);
+    const request = requests.get(output.id);
+    if (!outline || !request) {
+      rejected.json += 1;
+      continue;
+    }
+    const args = { ...cleanOutline(outline), runs_in: request.meta.runs_in };
+    const draft = draftGraph(args);
+    if ("error" in draft) {
+      rejected.draft += 1;
+      because(draft.error);
+      continue;
+    }
+    const errors = errorMessages(draft.source);
+    if (errors.length > 0) {
+      rejected.errors += 1;
+      because(errors[0]);
+      continue;
+    }
+    const name = `draft-${output.id}`;
+    if (names.has(name)) {
+      rejected.duplicate += 1;
+      continue;
+    }
+    names.add(name);
+    seeds.push({ seed: name, origin: "draft", source: draft.source, outline: args, ...(request.meta.h2_only ? { h2Only: true } : {}) });
+    drafted += 1;
+  }
+  return { seeds, drafted, rejected, reasons };
+}
+
+/** Matches every `{{pred}}` or `{{pred.key}}` reference. */
+function refsTo(pred: string): RegExp {
+  return new RegExp(`\{\{\s*${pred}(?:\.[^}]*)?\s*\}\}`, "g");
+}
+
+/**
+ * The step's prompt without the heading block that named `pred` (a drafted prompt holds one per input, e.g.
+ * `READ RECEIPTS:\n{{read_receipts}}`), and whether an inline `{{pred}}` reference remains in the text. The block
+ * spells the step id in capitals, so a positive that kept it would teach a token match instead of a reading.
+ */
+function withoutInput(prompt: string, pred: string): { prompt: string; inline: boolean } {
+  const block = new RegExp(`(^|\n\n)([^\n]{1,120}):\n\{\{\s*${pred}(?:\.[^}]*)?\s*\}\}(?=\n\n|$)`);
+  const heading = block.exec(prompt)?.[2] ?? "";
+  // Only a heading that spells the step id in capitals goes; a written one ("The claims:") stays, and its reference becomes the phrase.
+  const stripped =
+    /[A-Z]/.test(heading) && heading === heading.toUpperCase()
+      ? prompt.replace(block, "").replace(/^\n\n/, "")
+      : prompt;
+  return { prompt: stripped, inline: refsTo(pred).test(stripped) };
+}
+
+/** The cleaned outline step a drafted node came from; null for a starter or a step the outline does not hold. */
+function outlineStep(seed: Seed | undefined, id: string): { task: string; after: string[] } | null {
+  const steps = seed?.outline?.steps;
+  const step = Array.isArray(steps) ? (steps as Record<string, unknown>[]).find((s) => s.id === id) : undefined;
+  if (!step || typeof step.task !== "string") return null;
+  return { task: step.task, after: Array.isArray(step.after) ? step.after.filter((a): a is string => typeof a === "string") : [] };
+}
+
+/**
+ * The seed drafted again with one step's task text and inputs changed, the way the gold cuts are built: the
+ * drafter writes the heading blocks, and the request block for a step left with no input. Null on a draft or checker error.
+ */
+function redraft(seed: Seed, id: string, task: string, after: string[]): { graph: SkillGraph; node: GraphNode } | null {
+  const outline = seed.outline as Record<string, unknown>;
+  const steps = (outline.steps as Record<string, unknown>[]).map((step) => (step.id === id ? { ...step, task, after } : step));
+  const draft = draftGraph({ ...outline, steps });
+  if ("error" in draft || errorsOf(draft.source) > 0) return null;
+  const graph = load(draft.source) as SkillGraph;
+  const node = graph.nodes.find((n) => n.id === id);
+  return node ? { graph, node } : null;
+}
+
+/**
+ * An outline step that can stand in for `pred` as an input of `id`: another step of the same outline that the step
+ * does not read already and that is not downstream of it (a cycle). A step that reads `pred` may stand in, as in the
+ * gold cuts (api-rate-limits cuts `traffic` while `propose`, which read it, stays): its own output is other data.
+ * Picked by seeded chance so a seed's replaced positives do not all name the same step. Null when the outline has none.
+ */
+function substituteFor(seed: Seed, graph: SkillGraph, id: string, pred: string, after: string[]): string | null {
+  const steps = ((seed.outline?.steps as Record<string, unknown>[] | undefined) ?? []).map((step) => String(step.id));
+  const downstream = descendantsOf(graph, id);
+  const candidates = steps.filter((other) => {
+    const node = graph.nodes.find((n) => n.id === other);
+    return node !== undefined && other !== id && other !== pred && !after.includes(other) && !downstream.has(other) && node.type !== "input" && !runsWithoutSubagent(node.type);
+  });
+  if (candidates.length === 0) return null;
+  return candidates[Math.floor(rng(`replace:${seed.seed}:${id}:${pred}`)() * candidates.length)] ?? null;
+}
+
+/** The step with `pred` disconnected and `prompt` set; a step left with no input reads the request. Null when the checker rejects the edit. */
+function cutStep(source: string, graph: SkillGraph, node: GraphNode, pred: string, prompt: string): { graph: SkillGraph; node: GraphNode } | null {
+  const remaining = [...new Set(predecessorsOf(graph, node.id))].filter((id) => id !== pred);
+  const input = graph.nodes.find((n) => n.type === "input");
+  const cut = editGraph(source, [
+    { op: "set_prompt", id: node.id, prompt },
+    { op: "disconnect", from: pred, to: node.id },
+    ...(remaining.length === 0 && input ? [{ op: "connect" as const, from: input.id, to: node.id }] : []),
+  ]);
+  if ("error" in cut || errorsOf(cut.source) > 0) return null;
+  const cutGraph = load(cut.source) as SkillGraph;
+  return { graph: cutGraph, node: cutGraph.nodes.find((n) => n.id === node.id) as GraphNode };
+}
+
+/**
+ * A step that reads `pred`: removing that edge leaves it working on less. The list a step fans out over is skipped.
+ * `phrase`: an inline `{{pred}}` stays in the text and the LLM names it in plain words. `weave`: the reference was
+ * only a heading block, so the LLM rewrites the step's outline task to name its inputs in words (h2WeaveRequest).
+ */
+function h2Candidates(graph: SkillGraph): { node: GraphNode; pred: GraphNode; ref: string; prompt: string; mode: "phrase" | "weave" }[] {
+  const out: { node: GraphNode; pred: GraphNode; ref: string; prompt: string; mode: "phrase" | "weave" }[] = [];
+  for (const node of modelSteps(graph)) {
+    const preds = [...new Set(predecessorsOf(graph, node.id))].map((id) => graph.nodes.find((n) => n.id === id)).filter((n): n is GraphNode => n !== undefined);
+    const list = foreachSource(node);
+    for (const pred of preds) {
+      if (pred.type === "input" || runsWithoutSubagent(pred.type) || list?.node === pred.id) continue;
+      const ref = nodeRefs(node).find((r) => r.head === pred.id);
+      if (!ref) continue;
+      const { prompt, inline } = withoutInput(node.prompt, pred.id);
+      out.push({ node, pred, ref: ref.raw, prompt, mode: inline ? "phrase" : "weave" });
+    }
+  }
+  return out;
+}
+
+/** H2 text jobs per seed graph: 6 through minilm-4, 8 through msmarco-2; now every input of every step is woven. */
+const H2_PER_SEED = 32;
+
+export function round2(out: string, h1Samples: number): void {
+  const { seeds, drafted, rejected, reasons } = seedsFrom(out);
+  writeJsonl(join(out, "seeds.jsonl"), seeds);
+  const requests: LlmRequest[] = [];
+  for (const seed of seeds) {
+    const graph = load(seed.source);
+    if (!graph) continue;
+    for (const node of modelSteps(graph)) {
+      if (!node.gate || seed.h2Only) continue;
+      const task = taskText(node).slice(0, 700);
+      const inputs = inputsForPrompt(graph, node);
+      for (const style of H1_STYLES) {
+        for (let sample = 0; sample < h1Samples; sample += 1) {
+          const request = h1Request(`${seed.seed}::h1::${node.id}::${style}::${sample}`, style, node.gate, task, inputs);
+          requests.push(keyedByPrompt({ ...request, meta: { ...request.meta, seed: seed.seed, node: node.id } }));
+        }
+      }
+      const gates = h4Request(`${seed.seed}::h4::${node.id}`, task, inputs);
+      requests.push(keyedByPrompt({ ...gates, meta: { seed: seed.seed, node: node.id } }));
+    }
+    // A weave job needs the step's outline task with no reference of its own: a drafted step, not a starter.
+    const usable = h2Candidates(graph).filter((c) => c.mode === "phrase" || /^[^{}]+$/.test(outlineStep(seed, c.node.id)?.task ?? "{"));
+    for (const { node, pred, ref, prompt, mode } of usable.slice(0, H2_PER_SEED)) {
+      const id = `${seed.seed}::h2::${node.id}::${pred.id}`;
+      const reads = [...new Set(predecessorsOf(graph, node.id))].map((p) => graph.nodes.find((n) => n.id === p)).filter((n): n is GraphNode => n !== undefined && n.type !== "input");
+      const request =
+        mode === "phrase"
+          ? h2Request(id, taskText({ ...node, prompt }).slice(0, 900), ref, describeStep(graph, pred))
+          : h2WeaveRequest(id, (outlineStep(seed, node.id) as { task: string }).task.slice(0, 900), reads.map((n) => describeStep(graph, n)), pred.label || pred.id, H2_MENTION_STYLES[Math.floor(rng(`style:${id}`)() * H2_MENTION_STYLES.length)]);
+      requests.push(keyedByPrompt({ ...request, meta: { ...request.meta, seed: seed.seed, node: node.id, pred: pred.id } }));
+    }
+  }
+  writeJsonl(join(out, "round2.requests.jsonl"), requests);
+  const kinds = requests.reduce<Record<string, number>>((acc, r) => ({ ...acc, [r.kind]: (acc[r.kind] ?? 0) + 1 }), {});
+  console.log(`round2: ${seeds.length} seeds (${drafted} drafted; rejected ${JSON.stringify(rejected)}), ${requests.length} requests ${JSON.stringify(kinds)}`);
+  const top = Object.entries(reasons).sort((a, b) => b[1] - a[1]).slice(0, 8);
+  if (top.length > 0) console.log(`why outlines were rejected:\n${top.map(([reason, count]) => `  ${count} × ${reason}`).join("\n")}`);
+}
+
+/* ------------------------------------------------------------------ assemble */
+
+function normal(text: string): string {
+  return text.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+}
+
+/** Writes a verifier answer the way answers come: as bullets, numbered points or a paragraph. */
+function formatAnswer(sentences: string[], key: string): string {
+  const random = rng(`format:${key}`)();
+  const body = random < 0.35 ? sentences.map((s) => `- ${s}`).join("\n") : random < 0.6 ? sentences.map((s, i) => `${i + 1}. ${s}`).join("\n") : sentences.join(" ");
+  return `${body}\n\nGATE: PASS`;
+}
+
+function words(text: string): Set<string> {
+  return new Set(normal(text).split(" ").filter((w) => w.length > 3));
+}
+
+function jaccard(a: string, b: string): number {
+  const x = words(a);
+  const y = words(b);
+  const both = [...x].filter((w) => y.has(w)).length;
+  return x.size + y.size === 0 ? 1 : both / (x.size + y.size - both);
+}
+
+/** Word starts that name no particular data: a mention made only of these is grounded in nothing. */
+const GENERIC = new Set(["each", "every", "with", "from", "that", "this", "these", "those", "their", "which", "about", "into", "list", "data", "resul", "outpu", "infor", "detai", "steps", "items", "entry", "entri", "json", "objec", "array", "based", "given", "provi", "previ", "earli", "above"]);
+
+/** Content words cut to their first five letters, so "scores" meets "score" and "categories" meets "category". */
+function wordStarts(text: string): Set<string> {
+  return new Set([...words(text.replace(/[-_]/g, " "))].map((word) => word.slice(0, 5)).filter((start) => !GENERIC.has(start)));
+}
+
+/**
+ * Whether a woven mention shares a content word with the cut step's candidate line (what it returns, its id).
+ * msmarco-4's worst dev rows were positives whose bracketed words named the request or the step's own work ("the
+ * new API version endpoints and parameters" for a planner that splits the work): the model was right to reject
+ * them, and such rows teach it to hold back on real mentions. 27 of the 28 gold mentions pass.
+ */
+export function grounded(phrase: string, candidateLine: string): boolean {
+  const named = wordStarts(candidateLine);
+  return [...wordStarts(phrase)].some((start) => named.has(start));
+}
+
+export function assemble(out: string): void {
+  const seeds = new Map(readJsonl<Seed>(join(out, "seeds.jsonl"), true).map((seed) => [seed.seed, seed]));
+  const requests = new Map(readJsonl<LlmRequest>(join(out, "round2.requests.jsonl"), true).map((request) => [request.id, request]));
+  const examples: Example[] = [];
+  const dropped: Record<string, number> = {};
+  const drop = (why: string) => (dropped[why] = (dropped[why] ?? 0) + 1);
+  const graphs = new Map<string, SkillGraph>();
+  const graphOf = (seed: string) => {
+    if (!graphs.has(seed)) {
+      const graph = load(seeds.get(seed)?.source ?? "");
+      if (graph) graphs.set(seed, graph);
+    }
+    return graphs.get(seed);
+  };
+
+  for (const output of readJsonl<LlmOutput>(join(out, "round2.outputs.jsonl"), true)) {
+    const request = requests.get(output.id);
+    if (!request) continue;
+    const seed = String(request.meta.seed);
+    const graph = graphOf(seed);
+    const node = graph?.nodes.find((n) => n.id === request.meta.node);
+    if (!graph || !node) continue;
+    const base = { seed, split: splitOf(seed), node: node.id };
+
+    if (request.kind === "h1") {
+      const style = request.meta.style as H1Style;
+      const answer = readH1(output.text, style);
+      if ("reject" in answer) {
+        drop(`h1-${style}-${answer.reject}`);
+        continue;
+      }
+      const pair = verdictInput(graph, node, formatAnswer(answer.sentences.map((s) => s.text), output.id));
+      if (!pair) {
+        drop("h1-no-verdict");
+        continue;
+      }
+      const flagged = answer.sentences.filter((s) => s.open).map((s) => normal(s.text));
+      const sentences = pair.sentences.map((sentence) => {
+        const piece = normal(sentence);
+        return flagged.some((flag) => flag.length > 0 && (piece.includes(flag) || flag.includes(piece))) ? 1 : 0;
+      });
+      if (H1_BURIED.has(style) && !sentences.includes(1)) {
+        drop("h1-flag-lost");
+        continue;
+      }
+      examples.push({ head: "h1", ...base, text_a: pair.textA, text_b: pair.textB, features: pair.features, label: H1_INCONSISTENT.has(style) ? 1 : 0, sentences, source: "llm", note: style });
+      continue;
+    }
+
+    if (request.kind === "h2" && request.meta.mode === "weave") {
+      /*
+       * Five versions of the step per answer, built like the gold cuts (the outline drafted again), each written as
+       * one row per candidate step (h2Rows; from msmarco-4 a pair names the step that might be missing):
+       *   cut      the woven task, the input gone from after: its row says the task needs that step (label 1)
+       *   kept     the same prompt with the input still connected: the input is no candidate, every row a negative
+       *   drafted  the woven task drafted with all its inputs, heading blocks and all: the gold negative of a gold cut
+       *   dropped  the task without that mention, the input gone: the cut's very pairs, only the task's words differ
+       *   replaced the woven task with the cut input's place taken by an unrelated step of the same outline (label 1):
+       *            as many inputs as the drafted twin, so the length of the list carries no label (msmarco-1 read it)
+       * In every version the other candidates are negatives: the task names data of one step, not of any step left out.
+       */
+      const pred = String(request.meta.pred);
+      const seedRow = seeds.get(seed);
+      const step = outlineStep(seedRow, node.id);
+      if (!seedRow || !step) continue;
+      const answer = readH2Weave(output.text, step.task, graph.nodes.map((n) => n.id));
+      if ("reject" in answer) {
+        drop(`h2-weave-${answer.reject}`);
+        continue;
+      }
+      const after = step.after.filter((id) => id !== pred);
+      const cut = redraft(seedRow, node.id, answer.task, after);
+      const kept = cut ? editGraph(seedRow.source, [{ op: "set_prompt", id: node.id, prompt: cut.node.prompt }]) : null;
+      if (!cut || !kept || "error" in kept || errorsOf(kept.source) > 0) {
+        drop("h2-checker-error");
+        continue;
+      }
+      const positives = h2Rows(cut.graph, cut.node, base, "llm", "cut", pred, 1, answer.phrase);
+      if (!positives) {
+        drop("h2-span-cut");
+        continue;
+      }
+      // The whole answer goes when its mention does not name the cut step's data: every version of it is built on that mention.
+      if (!grounded(answer.phrase, positives.find((row) => row.label === 1)?.text_b.split(" [INPUT]")[0] ?? "")) {
+        drop("h2-weave-ungrounded");
+        continue;
+      }
+      const keptGraph = load(kept.source) as SkillGraph;
+      examples.push(...positives, ...(h2Rows(keptGraph, keptGraph.nodes.find((n) => n.id === node.id) as GraphNode, base, "llm", "kept", pred) ?? []));
+      const whole = redraft(seedRow, node.id, answer.task, step.after);
+      if (whole) examples.push(...(h2Rows(whole.graph, whole.node, base, "llm", "drafted", pred) ?? []));
+      else drop("h2-drafted-checker-error");
+      const without = redraft(seedRow, node.id, answer.without, after);
+      if (without) examples.push(...(h2Rows(without.graph, without.node, base, "llm", "dropped", pred) ?? []));
+      else drop("h2-dropped-checker-error");
+      const substitute = substituteFor(seedRow, graph, node.id, pred, step.after);
+      const replaced = substitute ? redraft(seedRow, node.id, answer.task, [...after, substitute]) : null;
+      if (replaced) {
+        const rows = h2Rows(replaced.graph, replaced.node, base, "llm", "replaced", pred, 1, answer.phrase);
+        if (rows) examples.push(...rows);
+        else drop("h2-span-replaced");
+      } else drop(substitute ? "h2-replaced-checker-error" : "h2-replaced-none");
+      continue;
+    }
+
+    if (request.kind === "h2") {
+      const pred = String(request.meta.pred);
+      const phrase = readH2(output.text);
+      if (!phrase) {
+        drop("h2-unreadable");
+        continue;
+      }
+      const source = seeds.get(seed)?.source ?? "";
+      // The heading block that named the input goes and the inline reference becomes the plain-word phrase.
+      const rewritten = withoutInput(node.prompt, pred).prompt.replace(refsTo(pred), phrase);
+      if (rewritten === node.prompt) {
+        drop("h2-no-ref");
+        continue;
+      }
+      const kept = editGraph(source, [{ op: "set_prompt", id: node.id, prompt: rewritten }]);
+      // A step left with no input reads the request, like a first step; its task still names the data it lost.
+      const cut = cutStep(source, graph, node, pred, rewritten);
+      if ("error" in kept || errorsOf(kept.source) > 0 || !cut) {
+        drop("h2-checker-error");
+        continue;
+      }
+      const positives = h2Rows(cut.graph, cut.node, base, "mutation", "cut", pred, 1, phrase);
+      if (!positives) {
+        drop("h2-span-cut");
+        continue;
+      }
+      const keptGraph = load(kept.source) as SkillGraph;
+      examples.push(...positives, ...(h2Rows(keptGraph, keptGraph.nodes.find((n) => n.id === node.id) as GraphNode, base, "mutation", "kept", pred) ?? []));
+      continue;
+    }
+
+    if (request.kind === "h4") {
+      const gates = readH4(output.text);
+      if (gates.length === 0) drop("h4-unreadable");
+      for (const gate of gates) {
+        const pair = gateInput(graph, { ...node, gate: gate.text });
+        if (!pair) continue;
+        examples.push({ head: "h4", ...base, text_a: pair.textA, text_b: pair.textB, features: pair.features, label: H4_LABELS.indexOf(gate.label), source: "llm", note: gate.label });
+      }
+    }
+  }
+
+  // Without a text model: H2 negatives from every step as written, H3 from contract swaps, H4 from the starters' own gates.
+  for (const seed of seeds.values()) {
+    const graph = graphOf(seed.seed);
+    if (!graph) continue;
+    const base = { seed: seed.seed, split: splitOf(seed.seed) };
+    for (const node of modelSteps(graph)) examples.push(...(h2Rows(graph, node, base, seed.origin === "starter" ? "starter" : "mutation", "as written", null) ?? []));
+    // An H2-only seed adds H2 rows and nothing else, so the other heads train on the same data as before.
+    if (seed.h2Only) continue;
+    for (const node of modelSteps(graph)) {
+      if (seed.origin === "starter" && node.gate) {
+        const gate = gateInput(graph, node);
+        if (gate) examples.push({ head: "h4", ...base, text_a: gate.textA, text_b: gate.textB, features: gate.features, label: 0, source: "starter", note: "starter gate" });
+      }
+    }
+    const names = [...new Set(graph.edges.map((edge) => edge.contract).filter((name): name is string => Boolean(name)))];
+    for (const name of names) {
+      const pair = contractInput(graph, name);
+      if (pair) examples.push({ head: "h3", ...base, text_a: pair.textA, text_b: pair.textB, features: pair.features, label: 0, source: "mutation", note: "as written" });
+    }
+    let swaps = 0;
+    for (const a of names) {
+      for (const b of names) {
+        if (a === b || swaps >= 3) continue;
+        const first = getContract(graph, a);
+        const second = getContract(graph, b);
+        if (!first || !second || jaccard(first.description, second.description) >= 0.35) continue;
+        const swapped: SkillGraph = { ...graph, contracts: { ...graph.contracts, [a]: { ...first, description: second.description } } };
+        const pair = contractInput(swapped, a);
+        if (!pair) continue;
+        examples.push({ head: "h3", ...base, text_a: pair.textA, text_b: pair.textB, features: pair.features, label: 1, source: "mutation", note: `description of ${b}` });
+        swaps += 1;
+      }
+    }
+  }
+
+  writeJsonl(join(out, "examples.jsonl"), examples);
+  const stats: Record<string, Record<string, number>> = {};
+  for (const example of examples) {
+    const key = `${example.head}/${example.split}`;
+    stats[key] ??= {};
+    stats[key][`label${example.label}`] = (stats[key][`label${example.label}`] ?? 0) + 1;
+  }
+  writeFileSync(join(out, "stats.json"), JSON.stringify({ input_version: SEMANTIC_INPUT_VERSION, seeds: seeds.size, examples: examples.length, by_head_split: stats, dropped }, null, 2));
+  const samples: string[] = ["# sg-sem samples", ""];
+  for (const head of ["h1", "h2", "h3", "h4"] as const) {
+    for (const label of [0, 1, 2]) {
+      const pick = examples.filter((e) => e.head === head && e.label === label).slice(0, 3);
+      for (const example of pick) {
+        samples.push(`## ${head} label ${label} (${example.note}, ${example.seed})`, "", "```", example.text_a, "", example.text_b, "```", "");
+        if (example.sentences) samples.push(`sentence labels: ${example.sentences.join("")}`, "");
+        if (example.span) samples.push(`span: "${example.text_a.slice(example.span[0], example.span[1])}"`, "");
+      }
+    }
+  }
+  writeFileSync(join(out, "samples.md"), samples.join("\n"));
+  console.log(`assemble: ${examples.length} examples from ${seeds.size} seeds; dropped ${JSON.stringify(dropped)}`);
+  console.log(JSON.stringify(stats));
+}
+
+/* ------------------------------------------------------------------ mock text model */
+
+/** Stand-in answers with the right shape, so every stage can be tested without a GPU. Not training data. */
+/* ------------------------------------------------------------------ round 3: H2 label check */
+
+/** The candidate line and the input lines of an H2 text B. */
+function partsOfB(textB: string): { candidate: string; inputs: string[] } {
+  const [candidate, ...inputs] = textB.split(" [INPUT] ");
+  return { candidate: candidate.replace(/^\[CANDIDATE\] /, ""), inputs: inputs.map((line) => line.replace(/^\[INPUT\] /, "")) };
+}
+
+/** H2 rows by version of a step: the judge sees each version once, with every candidate. */
+function h2Groups(examples: Example[]): Map<string, Example[]> {
+  const groups = new Map<string, Example[]>();
+  for (const example of examples) {
+    if (example.head !== "h2" || !example.group) continue;
+    const key = `${example.seed}|${example.group}`;
+    groups.set(key, [...(groups.get(key) ?? []), example]);
+  }
+  return groups;
+}
+
+export function round3(out: string): void {
+  const examples = readJsonl<Example>(join(out, "examples.jsonl"), true);
+  const requests: LlmRequest[] = [];
+  for (const [key, rows] of h2Groups(examples)) {
+    const { inputs } = partsOfB(rows[0].text_b);
+    const candidates = rows.map((row) => {
+      const { candidate } = partsOfB(row.text_b);
+      return { id: row.candidate as string, what: candidate.slice(candidate.indexOf(" · ") + 3) };
+    });
+    const positive = rows.find((row) => row.label === 1)?.candidate;
+    const request = h2JudgeRequest(`${rows[0].seed}::judge::${rows[0].group}`, rows[0].text_a.slice(TASK_PREFIX.length), inputs, candidates);
+    requests.push(keyedByPrompt({ ...request, meta: { key, ...(positive ? { positive } : {}) } }));
+  }
+  writeJsonl(join(out, "round3.requests.jsonl"), requests);
+  console.log(`round3: ${requests.length} label checks over ${examples.filter((e) => e.head === "h2").length} H2 pairs`);
+}
+
+/**
+ * Applies the label checks: a positive pair whose cut step the judge does not name goes (its marked words did not name
+ * that step's data), and a negative pair whose candidate it names goes (the task does need it). A group without a
+ * readable answer is left as it is. examples.jsonl is rewritten; the unjudged file stays as examples.raw.jsonl.
+ */
+export function judge(out: string): void {
+  const raw = join(out, "examples.raw.jsonl");
+  const examples = readJsonl<Example>(existsSync(raw) ? raw : join(out, "examples.jsonl"), true);
+  if (!existsSync(raw)) writeJsonl(raw, examples);
+  const requests = new Map(readJsonl<LlmRequest>(join(out, "round3.requests.jsonl"), true).map((request) => [request.id, request]));
+  const answers = new Map<string, string[] | null>();
+  for (const output of readJsonl<LlmOutput>(join(out, "round3.outputs.jsonl"), true)) {
+    const request = requests.get(output.id);
+    if (!request) continue;
+    answers.set(String(request.meta.key), readH2Judge(output.text, requestIds(request)));
+  }
+  const dropped: Record<string, number> = { "judge-unanswered": 0, "judge-unreadable": 0, "judge-positive-denied": 0, "judge-negative-named": 0 };
+  const kept: Example[] = [];
+  for (const example of examples) {
+    if (example.head !== "h2" || !example.group) {
+      kept.push(example);
+      continue;
+    }
+    const key = `${example.seed}|${example.group}`;
+    if (!answers.has(key)) {
+      dropped["judge-unanswered"] += 1;
+      kept.push(example);
+      continue;
+    }
+    const needed = answers.get(key);
+    if (needed === null || needed === undefined) {
+      dropped["judge-unreadable"] += 1;
+      kept.push(example);
+      continue;
+    }
+    if (example.label === 1 && !needed.includes(example.candidate as string)) dropped["judge-positive-denied"] += 1;
+    else if (example.label === 0 && needed.includes(example.candidate as string)) dropped["judge-negative-named"] += 1;
+    else kept.push(example);
+  }
+  writeJsonl(join(out, "examples.jsonl"), kept);
+  const statsPath = join(out, "stats.json");
+  const stats = existsSync(statsPath) ? (JSON.parse(readFileSync(statsPath, "utf8")) as Record<string, unknown>) : {};
+  const byHeadSplit: Record<string, Record<string, number>> = {};
+  for (const example of kept) {
+    const key = `${example.head}/${example.split}`;
+    byHeadSplit[key] ??= {};
+    byHeadSplit[key][`label${example.label}`] = (byHeadSplit[key][`label${example.label}`] ?? 0) + 1;
+  }
+  writeFileSync(statsPath, JSON.stringify({ ...stats, examples: kept.length, by_head_split: byHeadSplit, judged: dropped }, null, 2));
+  console.log(`judge: ${examples.length} → ${kept.length} examples; ${JSON.stringify(dropped)}`);
+  console.log(JSON.stringify(byHeadSplit));
+}
+
+/** The candidate ids a judge request listed, read back from its prompt. */
+function requestIds(request: LlmRequest): string[] {
+  const block = request.user.split("These earlier steps exist but are not connected to it:\n")[1] ?? "";
+  return [...block.matchAll(/^- ([^:\n]+):/gm)].map((match) => match[1]);
+}
+
+export function mockAnswer(request: LlmRequest): string {
+  const r = rng(request.id);
+  if (request.kind === "outline") {
+    const topic = String(request.meta.topic ?? "the task");
+    return JSON.stringify({
+      name: `mock-${hash(request.id) % 100000}`,
+      description: `Handles ${topic}.`,
+      input_label: "REQUEST",
+      steps: [
+        { id: "gather", type: "worker", task: `Collect the facts needed for ${topic} and return them as a numbered list with sources.`, returns: "a numbered list of facts with sources" },
+        { id: "options", type: "worker", task: `List the main options for ${topic}, each with one advantage and one risk.`, returns: "a list of options with advantages and risks" },
+        { id: "sources", type: "worker", task: "Rate how reliable each source behind the facts is, one line per source.", after: ["gather"], returns: "a list of sources with a reliability rating" },
+        { id: "check", type: "verifier", task: "Check every fact against its source and every option against the facts.", after: ["gather", "options"], gate: "Every fact has a source that says it and every option uses only checked facts." },
+        { id: "write", type: "synthesizer", task: "Write the final answer from the checked facts and options: {{check}} and {{gather}}.", after: ["check", "gather", "sources"] },
+      ],
+    });
+  }
+  if (request.kind === "h1") {
+    const style = request.meta.style as H1Style;
+    const good = ["The first claim matches the cited page, which states 5 hours.", "All 7 items list a price with a link.", "The totals add up to 1,240 as stated."];
+    const bad = ["The second source could not be opened, so claim 2 is unverified.", "The budget table still leaves out the hotel tax."];
+    const fixed = ["Claim 3 had a dead link; it now cites the official report, which confirms it."];
+    const numbers = ["The hotel line totals 1,240 while its three nights add up to 1,310.", "Day 3 lists the museum for Monday, when its page gives Tuesday to Sunday as opening days."];
+    const ledger = ["Narrative: 11 pages against the 12-page limit.", "Equipment 18,500 against a cap of 25,000.", "The call closes 15 March; the cover sheet is dated 2 March."];
+    const sentences =
+      style === "honest_pass"
+        ? good.map((text) => ({ text, open_problem: false }))
+        : style === "honest_number_pass"
+          ? ledger.map((text) => ({ text, open_problem: false }))
+        : style === "honest_absence_pass"
+          ? ["None of the 7 items carries a warning.", "No line is above its cap; Equipment is 24,100 against 25,000.", "The only unknown is the deposit, which is not a must-have."].map((text) => ({ text, open_problem: false }))
+        : style === "buried_problem_pass"
+          ? [good[0], bad[Math.floor(r() * 2)], good[1]].map((text) => ({ text, open_problem: bad.includes(text) }))
+          : style === "buried_number_pass"
+            ? [good[0], numbers[Math.floor(r() * 2)], good[2]].map((text) => ({ text, open_problem: numbers.includes(text) }))
+            : style === "no_evidence_pass"
+            ? [{ text: "Everything looks thorough and well organised.", open_problem: false }, { text: "The work meets the requirements.", open_problem: false }]
+            : [good[0], fixed[0], good[2]].map((text) => ({ text, open_problem: false }));
+    return JSON.stringify({ sentences });
+  }
+  if (request.kind === "h2judge") return JSON.stringify({ needed: request.meta.positive ? [request.meta.positive] : [] });
+  if (request.kind === "h2") {
+    const phrase = `the results of the earlier ${String(request.meta.ref).split(".")[0].replace(/_/g, " ")} step`;
+    if (request.meta.mode === "weave") {
+      const task = /^Task: (.*)$/m.exec(request.user)?.[1] ?? "Do the work.";
+      return JSON.stringify({ task: `Starting from [${phrase}], ${task}`, task_without: `Working carefully with everything you were handed here earlier, ${task}` });
+    }
+    return JSON.stringify({ phrase });
+  }
+  return JSON.stringify({
+    checkable: ["Every total equals the sum of its line items.", "Each claim cites a source that is in the inputs.", "No two items contradict each other on price or date."],
+    partly: ["Every item has a price and the plan feels balanced.", "All dates are listed and the tone is friendly."],
+    not: ["The result is excellent.", "The user will be happy with it.", "It is better than what competitors would do next year."],
+  });
+}
+
+export function mock(input: string, output: string): void {
+  const requests = readJsonl<LlmRequest>(input, true);
+  writeJsonl(output, requests.map((request) => ({ id: request.id, text: mockAnswer(request) })));
+  console.log(`mock: ${requests.length} answers → ${output}`);
+}
+
+/* ------------------------------------------------------------------ entry */
+
+// Run as a command unless a test imports this file. (vite-node drops the script path from argv, and argv[1]
+// is vite-node's own path, which differs by system: `vite-node.mjs` on Windows, `.bin/vite-node` on Linux.)
+const isMain = !process.env.VITEST;
+if (isMain) {
+  const { command, flags } = args();
+  const out = flags.out ?? "ml/sg-sem/.data";
+  mkdirSync(out, { recursive: true });
+  if (command === "round1") round1(out, Number(flags["per-topic"] ?? 4), Number(flags["h2-per-topic"] ?? 4));
+  else if (command === "round2") round2(out, Number(flags["h1-samples"] ?? 3));
+  else if (command === "assemble") assemble(out);
+  else if (command === "round3") round3(out);
+  else if (command === "judge") judge(out);
+  else if (command === "mock") mock(flags.in ?? "", flags.output ?? "");
+  else {
+    console.error("usage: pipeline.ts round1|round2|assemble|round3|judge --out <dir> | mock --in <requests.jsonl> --output <outputs.jsonl>");
+    process.exitCode = 1;
+  }
+}

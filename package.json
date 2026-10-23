@@ -56,6 +56,7 @@
     "marked": "^18.0.11",
     "marked-highlight": "^2.2.4",
     "next": "16.3.3",
+    "onnxruntime-web": "1.30.0",
     "react": "19.2.8",
     "react-dom": "19.2.8",
     "reflect-metadata": "^0.2.2",

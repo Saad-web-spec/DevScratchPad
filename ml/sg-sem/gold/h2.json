@@ -1,0 +1,33 @@
+{
+  "_comment": "H2 positives: the step loses one edge (cut) but its task still names that data in plain words (phrase = the span). Negatives are every model step of every gold graph as written.",
+  "cuts": [
+    { "graph": "grant-application-check", "step": "compliance_check", "cut": "requirements", "phrase": "the list of the call's requirements" },
+    { "graph": "grant-application-check", "step": "compliance_check", "cut": "budget_review", "phrase": "the budget totals per category" },
+    { "graph": "grant-application-check", "step": "compliance_check", "cut": "eligibility", "phrase": "the eligibility findings" },
+    { "graph": "grant-application-check", "step": "feedback", "cut": "compliance_check", "phrase": "the compliance check" },
+    { "graph": "allergy-safe-meal-plan", "step": "shopping_list", "cut": "plan_meals", "phrase": "the seven planned dinners" },
+    { "graph": "allergy-safe-meal-plan", "step": "allergy_check", "cut": "plan_meals", "phrase": "every planned dinner" },
+    { "graph": "allergy-safe-meal-plan", "step": "allergy_check", "cut": "shopping_list", "phrase": "every item on the shopping list" },
+    { "graph": "allergy-safe-meal-plan", "step": "week_plan", "cut": "shopping_list", "phrase": "the shopping list" },
+    { "graph": "podcast-show-notes", "step": "notes_check", "cut": "segments", "phrase": "the topic segments" },
+    { "graph": "podcast-show-notes", "step": "notes_check", "cut": "quotes", "phrase": "the picked quotes" },
+    { "graph": "apartment-shortlist", "step": "shortlist_check", "cut": "collect", "phrase": "the extracted listing data" },
+    { "graph": "apartment-shortlist", "step": "shortlist_check", "cut": "score_each", "phrase": "the listing scores" },
+    { "graph": "apartment-shortlist", "step": "recommend", "cut": "shortlist_check", "phrase": "the checked shortlist" },
+    { "graph": "flaky-test-hunt", "step": "fix_check", "cut": "rerun", "phrase": "the original list of flaky tests" },
+    { "graph": "flaky-test-hunt", "step": "fix_check", "cut": "diagnose", "phrase": "the applied fixes" },
+    { "graph": "flaky-test-hunt", "step": "report", "cut": "fix_check", "phrase": "the rerun results" },
+    { "graph": "api-rate-limits", "step": "propose", "cut": "traffic", "phrase": "the traffic numbers per route" },
+    { "graph": "api-rate-limits", "step": "propose", "cut": "routes", "phrase": "every public route" },
+    { "graph": "api-rate-limits", "step": "limits_check", "cut": "traffic", "phrase": "the logged traffic per route" },
+    { "graph": "api-rate-limits", "step": "limits_check", "cut": "routes", "phrase": "the list of public routes" },
+    { "graph": "api-rate-limits", "step": "limits_check", "cut": "propose", "phrase": "the proposed limits" },
+    { "graph": "api-rate-limits", "step": "config", "cut": "limits_check", "phrase": "the checked limits" },
+    { "graph": "tax-receipt-sort", "step": "categorise", "cut": "read_receipts", "phrase": "every extracted receipt" },
+    { "graph": "tax-receipt-sort", "step": "categorise", "cut": "rules", "phrase": "the deductible categories" },
+    { "graph": "tax-receipt-sort", "step": "totals_check", "cut": "categorise", "phrase": "each category total" },
+    { "graph": "tax-receipt-sort", "step": "totals_check", "cut": "read_receipts", "phrase": "every extracted receipt" },
+    { "graph": "tax-receipt-sort", "step": "totals_check", "cut": "rules", "phrase": "the cap of its deductible category" },
+    { "graph": "tax-receipt-sort", "step": "summary", "cut": "totals_check", "phrase": "the checked totals" }
+  ]
+}
