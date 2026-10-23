@@ -461,6 +461,25 @@ function jaccard(a: string, b: string): number {
   return x.size + y.size === 0 ? 1 : both / (x.size + y.size - both);
 }
 
+/** Word starts that name no particular data: a mention made only of these is grounded in nothing. */
+const GENERIC = new Set(["each", "every", "with", "from", "that", "this", "these", "those", "their", "which", "about", "into", "list", "data", "resul", "outpu", "infor", "detai", "steps", "items", "entry", "entri", "json", "objec", "array", "based", "given", "provi", "previ", "earli", "above"]);
+
+/** Content words cut to their first five letters, so "scores" meets "score" and "categories" meets "category". */
+function wordStarts(text: string): Set<string> {
+  return new Set([...words(text.replace(/[-_]/g, " "))].map((word) => word.slice(0, 5)).filter((start) => !GENERIC.has(start)));
+}
+
+/**
+ * Whether a woven mention shares a content word with the cut step's candidate line (what it returns, its id).
+ * msmarco-4's worst dev rows were positives whose bracketed words named the request or the step's own work ("the
+ * new API version endpoints and parameters" for a planner that splits the work): the model was right to reject
+ * them, and such rows teach it to hold back on real mentions. 27 of the 28 gold mentions pass.
+ */
+export function grounded(phrase: string, candidateLine: string): boolean {
+  const named = wordStarts(candidateLine);
+  return [...wordStarts(phrase)].some((start) => named.has(start));
+}
+
 export function assemble(out: string): void {
   const seeds = new Map(readJsonl<Seed>(join(out, "seeds.jsonl"), true).map((seed) => [seed.seed, seed]));
   const requests = new Map(readJsonl<LlmRequest>(join(out, "round2.requests.jsonl"), true).map((request) => [request.id, request]));
@@ -541,6 +560,11 @@ export function assemble(out: string): void {
       const positives = h2Rows(cut.graph, cut.node, base, "llm", "cut", pred, 1, answer.phrase);
       if (!positives) {
         drop("h2-span-cut");
+        continue;
+      }
+      // The whole answer goes when its mention does not name the cut step's data: every version of it is built on that mention.
+      if (!grounded(answer.phrase, positives.find((row) => row.label === 1)?.text_b.split(" [INPUT]")[0] ?? "")) {
+        drop("h2-weave-ungrounded");
         continue;
       }
       const keptGraph = load(kept.source) as SkillGraph;

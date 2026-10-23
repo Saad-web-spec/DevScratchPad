@@ -3,7 +3,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterAll, describe, expect, it } from "vitest";
 import { readH2Weave } from "../../../../../scripts/semantic/llmPrompts";
-import { assemble, mock, round1, round2, splitOf, type Example } from "../../../../../scripts/semantic/pipeline";
+import { assemble, grounded, mock, round1, round2, splitOf, type Example } from "../../../../../scripts/semantic/pipeline";
 import { parseGraphSkill, type SkillGraph } from "../graphSkill";
 import { CONNECTOR_TEMPLATES } from "../graphTemplates";
 import { FEATURE_COUNT, SEMANTIC_INPUT_VERSION, contractInput, edgeCandidates, featuresFor, gateInput, missingInputInput, splitSentences, verdictInput } from "../semanticInput";
@@ -103,6 +103,14 @@ describe("sg-sem weave answers", () => {
     expect(readH2Weave(answer("Write a short summary of what [the survey percentages] show.", "Write a short summary of what the notes show."), original, ids)).toEqual({ reject: "off-task" });
     expect(readH2Weave(answer("Read get-commits-since-last-tag and identify the key changes in [the commit list].", "Identify the key changes and group them."), original, ids)).toEqual({ reject: "step-id" });
     expect(readH2Weave("not json", original, ids)).toEqual({ reject: "json" });
+  });
+
+  it("keeps a mention only when it shares a content word with what the cut step returns", () => {
+    expect(grounded("the budget totals per category", "[CANDIDATE] budget_review · Worker · Each budget category with its total, its cap and whether it is justified.")).toBe(true);
+    expect(grounded("the listing scores", "[CANDIDATE] score_each · Worker · The listing's score with reasons and the commute time.")).toBe(true);
+    // msmarco-4's dev rows: words of the request, not of the planner that was cut; generic words name nothing.
+    expect(grounded("the new API version endpoints and parameters", "[CANDIDATE] split_work · Planner · A JSON object containing references to the three worker steps.")).toBe(false);
+    expect(grounded("the results from each step", "[CANDIDATE] gather · Worker · The data from each source.")).toBe(false);
   });
 });
 
