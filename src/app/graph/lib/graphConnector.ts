@@ -80,8 +80,15 @@ function readOnly(title: string): ToolAnnotations {
 
 const SOURCE_PROPERTY = {
   type: "string",
-  description: "The full graph.skill.md text: YAML frontmatter with topology and contracts, then one ## @node: <id> section per step.",
+  description:
+    "The graph: either a Skill Graph studio link (#g=… or https://…#g=… from draft_graph, edit_graph or open_graph_in_studio) or the full graph.skill.md text: YAML frontmatter with topology and contracts, then one ## @node: <id> section per step.",
   maxLength: MAX_SOURCE_LENGTH,
+};
+
+const COMPACT_PROPERTY = {
+  type: "boolean",
+  description:
+    "When true, omit the full graph.skill.md source from the reply and return only the checker result, stage plan, tools per step and studio_link (which edit_graph, validate_graph, dry_run_graph, run_graph and compile_graph accept as source).",
 };
 
 export const COMPILE_TARGETS = ["claude_code_kit", "single_skill", "cursor_rule"] as const;
@@ -110,8 +117,8 @@ const CHECK_OUTPUT = {
 };
 
 const SOURCE_OUTPUT = {
-  source: { type: "string", description: "The graph.skill.md text." },
-  studio_link: { type: "string", description: "A link that opens the graph in the studio; absent when the graph is too large for a link." },
+  source: { type: "string", description: "The graph.skill.md text (omitted when compact is true and studio_link is present)." },
+  studio_link: { type: "string", description: "A link that opens the graph in the studio and can be passed as source to later tools; absent when the graph is too large for a link." },
 };
 
 const RUN_OUTPUT_SCHEMA = {
@@ -241,7 +248,7 @@ export const CONNECTOR_TOOLS: readonly ConnectorTool[] = [
     name: "draft_graph",
     title: "Draft a graph from an outline",
     description:
-      "Writes a graph.skill.md from a plain outline of the workflow: a name, what it is for, and its steps, each with what it does and which steps it reads from. Fills in the format: the input node, edges, contracts, prompts that reference their inputs, read-only tools and model tiers, and on request fan-out (foreach), probing and file handoffs. Returns the source, the checker's result, what it filled in and what each step receives. Nothing is stored.",
+      "Writes a graph.skill.md from a plain outline of the workflow: a name, what it is for, and its steps, each with what it does and which steps it reads from. Fills in the format: the input node, edges, contracts, prompts that reference their inputs, read-only tools and model tiers, and on request fan-out (foreach), probing and file handoffs. Returns the source (unless compact is true), the checker's result, what it filled in and what each step receives. Nothing is stored.",
     inputSchema: {
       type: "object",
       properties: {
@@ -275,7 +282,7 @@ export const CONNECTOR_TOOLS: readonly ConnectorTool[] = [
                 type: "array",
                 items: { type: "string" },
                 description:
-                  "Tools the step may use, by their Claude Code names, e.g. WebSearch, WebFetch, Read, Grep, Edit, Bash. In a chat, WebSearch and WebFetch are Claude's web search, Read means files shared in the chat, and any step may use the user's connected apps (Drive, Sheets…) when its task says so. Defaults: WebSearch, WebFetch when runs_in is chat; Read, Grep, Glob for claude_code.",
+                  "Tools the step may use, by their Claude Code names, e.g. WebSearch, WebFetch, Read, Grep, Edit, Bash. In a chat, WebSearch and WebFetch are Claude's web search, Read means files shared in the chat (pass [] or [Read] when a step should not search the web), and any step may use the user's connected apps (Drive, Sheets…) when its task says so. Defaults: WebSearch, WebFetch when runs_in is chat; Read, Grep, Glob for claude_code.",
               },
               model: { type: "string", description: "haiku, sonnet, opus or fable. Defaults: verifier opus, other model steps sonnet." },
               fresh_context: { type: "boolean", description: "Run in a fresh context that sees only its inputs. Defaults to true for verifiers." },
@@ -324,11 +331,12 @@ export const CONNECTOR_TOOLS: readonly ConnectorTool[] = [
           enum: ["chat", "claude_code"],
           description: "Where the workflow will run: chat (the Claude app, with run_graph; the default) gives steps web search by default; claude_code (a repository) gives them read-only file tools.",
         },
+        compact: COMPACT_PROPERTY,
       },
       required: ["name", "description", "steps"],
       additionalProperties: false,
     },
-    outputSchema: { type: "object", properties: { ...CHECK_OUTPUT, ...SOURCE_OUTPUT, notes: { type: "array", items: { type: "string" } } }, required: ["valid", "errors", "warnings", "stages", "source"] },
+    outputSchema: { type: "object", properties: { ...CHECK_OUTPUT, ...SOURCE_OUTPUT, notes: { type: "array", items: { type: "string" } } }, required: ["valid", "errors", "warnings", "stages"] },
     annotations: readOnly("Draft a graph from an outline"),
   },
   {
@@ -411,7 +419,7 @@ export const CONNECTOR_TOOLS: readonly ConnectorTool[] = [
     name: "edit_graph",
     title: "Edit a graph",
     description:
-      "Changes a graph.skill.md by operations instead of a rewrite: set_step (set or clear fields on a step, or add one with type and after), remove_step, rename_step (updates every reference), set_prompt, connect and disconnect (with an optional contract), set_contract, remove_contract, and set_skill (name, description, handoff, experience). Operations apply in order, all or nothing. Returns the new source, what each operation did, the checker's result and a studio link. Nothing is stored.",
+      "Changes a graph.skill.md (or a studio_link from an earlier call) by operations instead of a rewrite: set_step (set or clear fields on a step, or add one with type and after), remove_step, rename_step (updates every reference), set_prompt, connect and disconnect (with an optional contract), set_contract, remove_contract, and set_skill (name, description, handoff, experience). Operations apply in order, all or nothing. Returns the new source (unless compact is true), what each operation did, the checker's result and a studio link. Nothing is stored.",
     inputSchema: {
       type: "object",
       properties: {
@@ -445,11 +453,12 @@ export const CONNECTOR_TOOLS: readonly ConnectorTool[] = [
             required: ["op"],
           },
         },
+        compact: COMPACT_PROPERTY,
       },
       required: ["source", "operations"],
       additionalProperties: false,
     },
-    outputSchema: { type: "object", properties: { ...CHECK_OUTPUT, ...SOURCE_OUTPUT, applied: { type: "array", items: { type: "string" } } }, required: ["valid", "errors", "warnings", "stages", "source", "applied"] },
+    outputSchema: { type: "object", properties: { ...CHECK_OUTPUT, ...SOURCE_OUTPUT, applied: { type: "array", items: { type: "string" } } }, required: ["valid", "errors", "warnings", "stages", "applied"] },
     annotations: readOnly("Edit a graph"),
   },
   {
@@ -644,11 +653,17 @@ function plural(count: number, word: string): string {
   return `${count} ${word}${count === 1 ? "" : "s"}`;
 }
 
-/** Reads the `source` argument, or explains what is wrong with it. */
+/** Reads the `source` argument (either graph.skill.md text or a studio link), or explains what is wrong with it. */
 function readSource(args: Record<string, unknown>): { source: string } | { error: string } {
   const source = args.source;
-  if (typeof source !== "string" || source.trim() === "") return { error: "source is required: pass the full graph.skill.md text. get_graph_format describes it." };
+  if (typeof source !== "string" || source.trim() === "") return { error: "source is required: pass the full graph.skill.md text (or the studio_link URL / #g=… hash). get_graph_format describes it." };
   if (source.length > MAX_SOURCE_LENGTH) return { error: `source is too large (${source.length.toLocaleString("en-US")} characters; the limit is ${MAX_SOURCE_LENGTH.toLocaleString("en-US")}).` };
+  const trimmed = source.trim();
+  if (!trimmed.startsWith("---") && (trimmed.startsWith("#g=") || trimmed.startsWith("#graph=") || /^https?:\/\/\S+#(?:g|graph)=/.test(trimmed))) {
+    const shared = decodeShareHash(trimmed.slice(trimmed.indexOf("#")).trim());
+    if (!shared) return { error: "source looks like a Skill Graph link, but it could not be decoded (it may have been cut off). Pass the complete link including #g=…, or the graph.skill.md text." };
+    return { source: shared.source };
+  }
   return { source };
 }
 
@@ -708,6 +723,14 @@ function planLines(graph: SkillGraph): { lines: string[]; stages: number; subage
   return { lines, stages: plan.length, subagents };
 }
 
+function toolsLine(graph: SkillGraph): string | null {
+  const steps = buildPlan(graph)
+    .flatMap((stage) => stage.nodes)
+    .filter((node) => !runsWithoutSubagent(node.type));
+  if (steps.length === 0) return null;
+  return `Tools per step: ${steps.map((node) => `${node.id} [${node.tools && node.tools.length > 0 ? node.tools.join(", ") : "all"}]`).join(", ")}`;
+}
+
 /** A studio link with the graph compressed into the hash, or null when it is too large for one. */
 function studioLink(source: string, context: ConnectorContext): string | null {
   const hash = encodeShareHash({ source });
@@ -759,6 +782,7 @@ function validateTool(args: Record<string, unknown>, context: ConnectorContext):
   if (!result.graph) return withData(text(fatalMessage(result.fatal)), checkData(result));
 
   const { lines, stages, subagents } = planLines(result.graph);
+  const tools = toolsLine(result.graph);
   const counts = `${plural(result.errors.length, "error")}, ${plural(result.warnings.length, "warning")}`;
   const summary =
     result.errors.length === 0
@@ -772,6 +796,7 @@ function validateTool(args: Record<string, unknown>, context: ConnectorContext):
       "",
       "Plan (stages run in order; steps in one stage run at the same time):",
       ...(lines.length ? lines : ["(no steps after the input yet)"]),
+      ...(tools ? [tools] : []),
     ].join("\n")
   ), checkData(result));
 }
@@ -867,9 +892,16 @@ function draftTool(args: Record<string, unknown>, context: ConnectorContext): To
   const result = check(draft.source, context);
   if (!result.graph) return text(fatalMessage(result.fatal), true);
   const { lines, stages, subagents } = planLines(result.graph);
+  const tools = toolsLine(result.graph);
   const url = studioLink(draft.source, context);
+  const compact = args.compact === true && Boolean(url);
   const counts = `${plural(result.errors.length, "error")}, ${plural(result.warnings.length, "warning")}`;
-  const data = { ...checkData(result), source: draft.source, notes: draft.notes, ...(url ? { studio_link: url } : {}) };
+  const data = {
+    ...checkData(result),
+    ...(compact ? {} : { source: draft.source }),
+    notes: draft.notes,
+    ...(url ? { studio_link: url } : {}),
+  };
   return withData(text(
     [
       result.errors.length === 0
@@ -881,6 +913,7 @@ function draftTool(args: Record<string, unknown>, context: ConnectorContext): To
       "",
       "Plan:",
       ...lines,
+      ...(tools ? [tools] : []),
       "",
       "Check before installing: each step gets only this. Confirm it is what its task needs (e.g. a step that totals scores must receive the scores), and that every {{step}} or {{step.key}} in a prompt is something that step returns. Then dry_run_graph with a realistic sample.",
       ...buildPlan(result.graph).flatMap((stage) => stage.nodes.map((node) => `- ${node.id}: ${handOff(result.graph as SkillGraph, node).join("; ")}`)),
@@ -890,10 +923,9 @@ function draftTool(args: Record<string, unknown>, context: ConnectorContext): To
         ? [`To use it now in this chat, run_graph takes this source${url ? " or the studio link" : ""} as the workflow; save_workflow keeps it under a name.`]
         : []),
       ...(url ? ["", `Studio link: ${markdownLink(url, result.graph)}`] : []),
-      "",
-      "Source (graph.skill.md):",
-      "",
-      draft.source,
+      ...(compact
+        ? ["", "Source omitted (compact: true). Pass studio_link as source (or workflow) to edit_graph, validate_graph, dry_run_graph, compile_graph, run_graph, or save_workflow, or call read_studio_link to view the full graph.skill.md."]
+        : ["", "Source (graph.skill.md):", "", draft.source]),
     ].join("\n")
   ), data);
 }
@@ -909,11 +941,13 @@ function dryRunTool(args: Record<string, unknown>): ToolResult {
 }
 
 /** The checker's result and the plan after a change, then the new source: what edit_graph and bake_lessons return. */
-function changedGraphText(head: string[], source: string, context: ConnectorContext): { text: string; data: Record<string, unknown> } {
+function changedGraphText(head: string[], source: string, context: ConnectorContext, compact = false): { text: string; data: Record<string, unknown> } {
   const result = check(source, context);
   const url = studioLink(source, context);
+  const omitSource = compact && Boolean(url);
   const counts = `${plural(result.errors.length, "error")}, ${plural(result.warnings.length, "warning")}`;
   const plan = result.graph ? planLines(result.graph).lines : [];
+  const tools = result.graph ? toolsLine(result.graph) : null;
   return {
     text: [
       ...head,
@@ -921,14 +955,13 @@ function changedGraphText(head: string[], source: string, context: ConnectorCont
       !result.graph ? fatalMessage(result.fatal) : result.errors.length === 0 ? `The graph is valid (${counts}).` : `The graph is not valid yet (${counts}).`,
       ...(result.errors.length ? ["", "Errors:", ...issueLines(result.errors)] : []),
       ...(result.warnings.length ? ["", "Warnings:", ...issueLines(result.warnings)] : []),
-      ...(plan.length ? ["", "Plan:", ...plan] : []),
+      ...(plan.length ? ["", "Plan:", ...plan, ...(tools ? [tools] : [])] : []),
       ...(url ? ["", `Studio link: ${markdownLink(url, result.graph)}`] : []),
-      "",
-      "Source (graph.skill.md):",
-      "",
-      source,
+      ...(omitSource
+        ? ["", "Source omitted (compact: true). Pass studio_link as source (or workflow) to edit_graph, validate_graph, dry_run_graph, compile_graph, run_graph, or save_workflow, or call read_studio_link to view the full graph.skill.md."]
+        : ["", "Source (graph.skill.md):", "", source]),
     ].join("\n"),
-    data: { ...checkData(result), source, ...(url ? { studio_link: url } : {}) },
+    data: { ...checkData(result), ...(omitSource ? {} : { source }), ...(url ? { studio_link: url } : {}) },
   };
 }
 
@@ -937,7 +970,7 @@ function editTool(args: Record<string, unknown>, context: ConnectorContext): Too
   if ("error" in input) return text(input.error, true);
   const edited = editGraph(input.source, args.operations);
   if ("error" in edited) return text(edited.error, true);
-  const answer = changedGraphText([`Applied ${plural(edited.applied.length, "operation")}:`, ...edited.applied.map((line) => `- ${line}`)], edited.source, context);
+  const answer = changedGraphText([`Applied ${plural(edited.applied.length, "operation")}:`, ...edited.applied.map((line) => `- ${line}`)], edited.source, context, args.compact === true);
   return withData(text(answer.text), { ...answer.data, applied: edited.applied });
 }
 
@@ -1130,11 +1163,14 @@ export function checkedSource(name: string, rawArgs: unknown): string | null {
         const link = typeof args.link === "string" && args.link.includes("#") && args.link.length <= MAX_HASH_LENGTH + 512 ? decodeShareHash(args.link.slice(args.link.indexOf("#")).trim()) : null;
         return link?.source ?? null;
       }
+      case "save_workflow": {
+        const workflow = resolveWorkflow(args.workflow);
+        return "error" in workflow ? null : workflow.source;
+      }
       case "validate_graph":
       case "compile_graph":
       case "open_graph_in_studio":
-      case "bake_lessons":
-      case "save_workflow": {
+      case "bake_lessons": {
         const input = readSource(args);
         return "error" in input ? null : input.source;
       }

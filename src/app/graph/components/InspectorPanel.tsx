@@ -455,7 +455,7 @@ function IncomingEdges({ graph, node, onEdgeContract, onConnect }: { graph: Skil
 
 const RISK_HINT: Record<RiskLane, string> = {
   contained: "Reversible and local.",
-  wide: "Reversible, but touches a lot: a command check must pass.",
+  wide: "Reversible, but touches a lot: a command check must pass when the step edits files or runs shell commands.",
   irreversible: "Hard to undo: an approval step must come first, and it is never retried automatically.",
 };
 

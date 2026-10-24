@@ -81,6 +81,11 @@ function setStep(graph: SkillGraph, op: Record<string, unknown>): { graph: Skill
   if (!id || !isValidNodeId(id)) return "id must start with a letter and use only letters, digits, _ or -.";
   const fields = op.fields === undefined ? {} : op.fields;
   if (!isRecord(fields)) return "fields must be an object of step fields, e.g. {\"model\": \"opus\", \"check\": \"npm test\"}.";
+  // A misnamed key (patch, changes, set…) would otherwise apply nothing and still read as a success.
+  if (op.fields === undefined && op.after === undefined && graph.nodes.some((node) => node.id === id)) {
+    const stray = Object.keys(op).filter((key) => key !== "op" && key !== "id");
+    return `set_step on "${id}" changes nothing: put the changes under fields${stray.length > 0 ? ` (not ${stray.join(", ")})` : ""}, e.g. {"op": "set_step", "id": "${id}", "fields": {"model": "opus"}}.`;
+  }
   const unknown = Object.keys(fields).filter((key) => !(STEP_FIELDS as readonly string[]).includes(key) && key !== "prompt");
   if (unknown.length > 0) return `unknown field${unknown.length === 1 ? "" : "s"} ${unknown.join(", ")}. Step fields: ${STEP_FIELDS.join(", ")}, prompt.`;
   if (fields.type === null) return "type cannot be cleared; every step has one.";

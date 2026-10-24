@@ -141,8 +141,11 @@ const ISSUES: { severity: "Error" | "Warning"; message: string; fix: string }[] 
   { severity: "Warning", message: "Never reads an incoming edge", fix: "Either use that input in the prompt or remove the edge so both steps can run in parallel." },
   { severity: "Warning", message: "Parallel steps can all edit files", fix: "A step counts when it lists Edit or Write, or has no tools list (it inherits every tool). Give them separate files, limit their tools, or run them one after the other." },
   { severity: "Error", message: "Irreversible step without approval", fix: "Add an approval node upstream so a person signs off first, and set on_fail: stop on that step." },
-  { severity: "Warning", message: "Wide step without a check", fix: "Add check: npm test (or your test command), or a code step after it." },
+  { severity: "Warning", message: "Wide step without a check", fix: "Applies to steps that edit files or run shell commands: add check: npm test (or your test command), or a code step after it." },
+  { severity: "Warning", message: "Approval guards nothing, or has risk set on the approval itself", fix: "Connect the approval before the risky step, or move risk: wide / irreversible from the approval to the action step after it." },
   { severity: "Warning", message: "Empty tools list", fix: "Claude Code reads [] as every tool. List what the step needs, or remove the key." },
+  { severity: "Warning", message: "Prompt references the same input twice", fix: "Keep either {{step}} or {{step.output}} in the prompt, not both, so the input is not pasted twice." },
+  { severity: "Warning", message: "Fan-out step references the whole list", fix: "Use {{item}} instead of {{step.key}} in a foreach step so each parallel run gets only its own item." },
   { severity: "Warning", message: "Nothing runs in parallel", fix: "If every step really needs the one before, one agent with a check may serve you better than a graph." },
   { severity: "Warning", message: "Prompt section matches no node", fix: "A ## @node: section whose id is not in the topology is ignored and removed on the next canvas edit. Fix the id, or add the node." },
   { severity: "Error", message: "Retry target is not upstream, or not a model step", fix: "Pick a step that runs before this one and does model work. Code, approval and input steps have nothing to redo." },
@@ -550,7 +553,7 @@ export default function GraphGuidePage() {
               </li>
             </ul>
             <P>
-              Mark how much a step can break with <C>risk</C>. <C>wide</C> steps (touching many files) should have a check. <C>irreversible</C> steps (publishing, migrations,
+              Mark how much a step can break with <C>risk</C>. <C>wide</C> steps that edit files or run shell commands should have a check. <C>irreversible</C> steps (publishing, migrations,
               deletions, payments) need an approval upstream and <C>on_fail: stop</C>. A missing approval before an irreversible step is an error that blocks export; the other
               gaps are warnings. A gate without <C>on_fail</C> stops and reports; set <C>on_fail: retry</C> to re-run the failed work.
             </P>

@@ -1469,6 +1469,28 @@ function validatePrompts(graph: SkillGraph): GraphIssue[] {
         message: `"${node.id}" never names what it receives, so its prompt cannot say how to use it. Put ${names.join(", ")} where the step should use ${preds.length === 1 ? "it" : "each"}.`,
       });
     }
+    const wholeRefs = new Map<string, string[]>();
+    for (const match of node.prompt.matchAll(TEMPLATE_PATTERN)) {
+      const raw = match[1];
+      const dot = raw.indexOf(".");
+      const head = dot === -1 ? raw : raw.slice(0, dot);
+      const path = dot === -1 ? "" : raw.slice(dot + 1);
+      if ((path === "" || path === "output") && !isOwnRef(node, head) && byId.has(head) && byId.get(head)?.type !== "input") {
+        const list = wholeRefs.get(head) ?? [];
+        list.push(`{{${raw}}}`);
+        wholeRefs.set(head, list);
+      }
+    }
+    for (const [head, raws] of wholeRefs) {
+      if (raws.length > 1) {
+        issues.push({
+          severity: "warning",
+          code: "duplicate-input-ref",
+          nodeId: node.id,
+          message: `"${node.id}" references the full output of "${head}" ${raws.length} times (${raws.join(" and ")}). Keep one reference so the step does not receive "${head}" twice.`,
+        });
+      }
+    }
     const review = readsOnlyReview(graph, node, byId);
     if (review) issues.push(review);
   }
@@ -1522,6 +1544,19 @@ function validateFanOutAndHandoffs(graph: SkillGraph): GraphIssue[] {
           code: "foreach-parallel-writers",
           nodeId: node.id,
           message: `"${node.id}" runs up to ${node.maxParallel ?? DEFAULT_MAX_PARALLEL} copies at once and can edit files, so runs may overwrite each other. Set max_parallel: 1, or limit its tools.`,
+        });
+      }
+      const wholeListRef = nodeRefs(node).find(
+        (ref) =>
+          ref.head === list.node &&
+          (ref.path === "" || ref.path === "output" || (list.key !== undefined && (ref.path === list.key || ref.path.startsWith(`${list.key}.`))))
+      );
+      if (wholeListRef) {
+        issues.push({
+          severity: "warning",
+          code: "foreach-reads-whole-list",
+          nodeId: node.id,
+          message: `"${node.id}" fans out over "${node.foreach}" (one run per entry as {{item}}), but its prompt also reads {{${wholeListRef.raw}}}, which is the whole list. Use {{item}} for the single entry this run handles.`,
         });
       }
     } else if (node.maxParallel !== undefined || node.maxItems !== undefined) {
@@ -1637,9 +1672,18 @@ function validateFlow(graph: SkillGraph): GraphIssue[] {
   return issues;
 }
 
+/** True when a step can edit repository files or run shell commands (Claude Code), as opposed to a chat step. */
+function usesShellOrWritesFiles(node: GraphNode): boolean {
+  if (writesFiles(node)) return true;
+  return (node.tools ?? []).some((tool) => {
+    const base = baseToolName(tool);
+    return base === "Bash" || base === "PowerShell";
+  });
+}
+
 /**
  * Loops and gates: a check a program can fail, retries capped, and gating by blast radius
- * (wide work needs a command check, irreversible work needs a human approval before it).
+ * (wide work needs a command check in Claude Code or a gate/verifier/approval in chat; irreversible work needs a human approval before it).
  */
 function validateReliability(graph: SkillGraph): GraphIssue[] {
   const issues: GraphIssue[] = [];
@@ -1726,7 +1770,8 @@ function validateReliability(graph: SkillGraph): GraphIssue[] {
         issues.push({ severity: "warning", code: "irreversible-retry", nodeId: node.id, message: `"${node.id}" is irreversible; do not retry it automatically. Set on_fail: stop.` });
       }
     }
-    if (node.risk === "wide" && !hasCommandCheck(node) && !nodesOf(descendantsOf(graph, node.id)).some(hasCommandCheck)) {
+    const descendants = nodesOf(descendantsOf(graph, node.id));
+    if (node.risk === "wide" && usesShellOrWritesFiles(node) && !hasCommandCheck(node) && !descendants.some(hasCommandCheck)) {
       issues.push({
         severity: "warning",
         code: "wide-without-check",
@@ -1743,13 +1788,18 @@ function validateReliability(graph: SkillGraph): GraphIssue[] {
       });
     }
     if (node.type === "approval") {
-      const after = nodesOf(descendantsOf(graph, node.id));
+      const after = descendants;
       if (after.length > 0 && !after.some((n) => n.risk === "wide" || n.risk === "irreversible")) {
+        const selfRisk = node.risk === "wide" || node.risk === "irreversible";
+        const nextIds = successorsOf(graph, node.id);
+        const targetHint = nextIds.length > 0 ? ` (e.g. on ${nextIds.map((id) => `"${id}"`).join(", ")})` : "";
         issues.push({
           severity: "warning",
           code: "approval-guards-nothing",
           nodeId: node.id,
-          message: `Approval "${node.id}" pauses the run, but nothing after it is marked wide or irreversible. Move it right before the step that is hard to undo, or to the end.`,
+          message: selfRisk
+            ? `Approval "${node.id}" is marked risk: ${node.risk}, but an approval only pauses the run. Move risk: ${node.risk} to the step after "${node.id}"${targetHint}.`
+            : `Approval "${node.id}" pauses the run, but nothing after it is marked wide or irreversible. Move it right before the step that is hard to undo${targetHint}, or to the end.`,
         });
       }
     }

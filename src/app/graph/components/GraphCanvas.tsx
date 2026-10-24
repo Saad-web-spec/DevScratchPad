@@ -131,7 +131,7 @@ function RiskChip({ node }: { node: GraphNode }) {
   if (!node.risk || node.risk === "contained") return null;
   return (
     <span
-      title={node.risk === "irreversible" ? "Hard to undo: runs only after an approval" : "Wide blast radius: needs a command check"}
+      title={node.risk === "irreversible" ? "Hard to undo: runs only after an approval" : "Wide blast radius: needs a command check in Claude Code"}
       className={cn("shrink-0 rounded-md px-1.5 py-0.5 text-[10px] font-semibold leading-none", node.risk === "irreversible" ? "bg-orange-50 text-orange-700" : "bg-zinc-100 text-zinc-600")}
     >
       {node.risk}

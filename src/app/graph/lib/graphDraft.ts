@@ -16,6 +16,7 @@ import {
   TOOL_PATTERN,
   CONTRACT_KEY_PATTERN,
   DEFAULT_MAX_LESSONS,
+  extractTemplateRefs,
   isValidNodeId,
   serializeGraphSkill,
   type Contract,
@@ -74,6 +75,7 @@ interface DraftStep {
   gate?: string;
   onFail?: "retry" | "stop";
   tools?: string[];
+  emptyTools?: boolean;
   model?: string;
   freshContext?: boolean;
   risk?: RiskLane;
@@ -127,6 +129,7 @@ function readStep(raw: unknown, index: number): DraftStep | string {
   const keys = strings(raw.keys);
   if (keys?.some((key) => !CONTRACT_KEY_PATTERN.test(key))) return `${where}.keys must be plain names (letters, digits, _ or -).`;
   const tools = strings(raw.tools);
+  const emptyTools = Array.isArray(raw.tools) && (!tools || tools.length === 0);
   if (tools?.some((tool) => !TOOL_PATTERN.test(tool))) return `${where}.tools has an invalid tool name. Use Claude Code tool names such as Read, Grep, WebSearch or Bash.`;
   const model = text(raw.model, 80);
   if (model && !MODEL_PATTERN.test(model)) return `${where}.model must be haiku, sonnet, opus, fable or a model id.`;
@@ -180,6 +183,7 @@ function readStep(raw: unknown, index: number): DraftStep | string {
     gate: text(raw.gate, 600),
     onFail: onFail as DraftStep["onFail"],
     tools,
+    emptyTools: emptyTools || undefined,
     model,
     freshContext: typeof raw.fresh_context === "boolean" ? raw.fresh_context : undefined,
     risk: risk as RiskLane | undefined,
@@ -250,10 +254,30 @@ export function draftGraph(args: Record<string, unknown>): DraftResult | { error
 
   const notes: string[] = [];
   const readOnlySteps: string[] = [];
+  const noWebSteps: string[] = [];
   const parents = (step: DraftStep) => (step.after.length > 0 ? [...new Set(step.after)] : [DRAFT_INPUT_ID]);
   const childrenOf = (id: string) => steps.filter((step) => parents(step).includes(id));
   const childCount = (id: string) => childrenOf(id).length;
   const byId = new Map(steps.map((step) => [step.id, step]));
+
+  // An approval step only pauses the run; if the outline put risk: wide/irreversible on the approval itself, move it to the action step after it.
+  for (const step of steps) {
+    if (step.type !== "approval" || (step.risk !== "wide" && step.risk !== "irreversible")) continue;
+    const afterApproval = childrenOf(step.id).filter((child) => child.type !== "approval");
+    if (afterApproval.length === 0) continue;
+    const movedRisk = step.risk;
+    const movedTo: string[] = [];
+    for (const child of afterApproval) {
+      if (!child.risk) {
+        child.risk = movedRisk;
+        movedTo.push(child.id);
+      }
+    }
+    step.risk = undefined;
+    if (movedTo.length > 0) {
+      notes.push(`${step.id}: approvals only pause the run, so risk: ${movedRisk} was moved to ${listing(movedTo)} after it.`);
+    }
+  }
 
   // A fan-out step runs over a JSON list that a step it reads returns.
   for (const step of steps) {
@@ -343,8 +367,15 @@ export function draftGraph(args: Record<string, unknown>): DraftResult | { error
     }
 
     node.model = step.model ?? DEFAULT_MODEL[step.type];
-    node.tools = step.tools && step.tools.length > 0 ? step.tools : [...defaultTools];
-    if (!step.tools || step.tools.length === 0) readOnlySteps.push(step.id);
+    if (step.emptyTools) {
+      node.tools = ["Read"];
+      noWebSteps.push(step.id);
+    } else if (step.tools && step.tools.length > 0) {
+      node.tools = step.tools;
+    } else {
+      node.tools = [...defaultTools];
+      readOnlySteps.push(step.id);
+    }
     const verifier = step.type === "verifier";
     node.isolatedContext = step.freshContext ?? verifier;
     if (verifier || step.gate) {
@@ -380,19 +411,40 @@ export function draftGraph(args: Record<string, unknown>): DraftResult | { error
       if (node.onFail !== "retry") notes.push(`${step.id}: has retry_target but does not retry (no gate or check with on_fail: retry), so it is never used.`);
     }
 
+    // If a fan-out task references the full list ({{step.foreach}}) inline, rewrite it to {{item}} and note it.
+    let taskText = step.task;
+    if (step.foreach) {
+      const escaped = step.foreach.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      const wholeListPattern = new RegExp(`\\{\\{\\s*${escaped}\\s*\\}\\}`, "g");
+      if (wholeListPattern.test(taskText)) {
+        taskText = taskText.replace(wholeListPattern, "{{item}}");
+        notes.push(`${step.id}: replaced {{${step.foreach}}} (the whole list) with {{item}} (one entry per parallel run).`);
+      }
+    }
+
+    const existingRefs = extractTemplateRefs(taskText);
     // The prompt names every input with a reference, so the compiled step knows where each one is.
-    const sections = [step.task];
+    const sections = [taskText];
     if (step.returns && !contractOf.has(step.id)) sections.push(`Return ${step.returns.replace(/^return\s+/i, "")}`);
     // The work a verifier checks reaches later steps only through what the verifier returns.
     if (verifier && childCount(step.id) > 0 && !step.returns) sections.push(PASS_ON);
     const readsRequest = parents(step).includes(DRAFT_INPUT_ID);
-    if (readsRequest || verifier) sections.push(`The request:\n{{goal}}`);
+    if ((readsRequest || verifier) && !existingRefs.some((ref) => ref.head === "goal")) sections.push(`The request:\n{{goal}}`);
     for (const from of parents(step)) {
       if (from === DRAFT_INPUT_ID) continue;
       const parent = byId.get(from) as DraftStep;
       const parentLabel = parent.label ?? labelFor(from);
-      if (list?.from === from) sections.push(`Your item, one entry of ${list.key ? `${list.key} from` : "the list from"} ${parentLabel}:\n{{item}}`);
-      else sections.push(splitting.has(from) ? `Your task:\n{{${from}.${step.id}}}` : `${parentLabel}:\n{{${from}}}`);
+      if (list?.from === from) {
+        if (!existingRefs.some((ref) => ref.head === "item")) {
+          sections.push(`Your item, one entry of ${list.key ? `${list.key} from` : "the list from"} ${parentLabel}:\n{{item}}`);
+        }
+      } else if (splitting.has(from)) {
+        if (!existingRefs.some((ref) => ref.head === from && ref.path === step.id)) {
+          sections.push(`Your task:\n{{${from}.${step.id}}}`);
+        }
+      } else if (!existingRefs.some((ref) => ref.head === from)) {
+        sections.push(`${parentLabel}:\n{{${from}}}`);
+      }
     }
     node.prompt = sections.join("\n\n");
     nodes.push(node);
@@ -416,6 +468,9 @@ export function draftGraph(args: Record<string, unknown>): DraftResult | { error
     );
   }
 
+  if (noWebSteps.length > 0) {
+    notes.unshift(`${noWebSteps.join(", ")}: tools: [] was given, so ${noWebSteps.length === 1 ? "it gets" : "they get"} Read only (no WebSearch or WebFetch; in graph.skill.md an empty tools list means "inherit every tool").`);
+  }
   if (readOnlySteps.length > 0) {
     notes.unshift(`${readOnlySteps.join(", ")}: no tools were given, so ${readOnlySteps.length === 1 ? "it gets" : "they get"} ${defaultTools.join(", ")} (${runsIn === "chat" ? "web search, for a chat" : "read-only file tools, for Claude Code"}). Add what a step needs, e.g. ${runsIn === "chat" ? "Read for files shared in the chat" : "WebSearch, Edit or Bash"}.`);
   }
